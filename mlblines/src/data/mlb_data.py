@@ -153,7 +153,7 @@ def fetch_season_games(days_back=90):
                 "sportId": 1,
                 "startDate": start_str,
                 "endDate": end_str,
-                "gameType": "R",  # Regular season only
+                "gameType": "R,S",  # Regular season + spring training
                 "hydrate": "probablePitcher,linescore,decisions",
             },
         )
@@ -218,7 +218,7 @@ def fetch_todays_games():
         params={
             "sportId": 1,
             "date": today,
-            "gameType": "R",
+            "gameType": "R,S",
             "hydrate": "probablePitcher,linescore",
         },
     )
