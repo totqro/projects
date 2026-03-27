@@ -399,7 +399,12 @@ def blend_model_and_market(model_probs, market_probs, model_weight=0.65):
     blended["home_cover_prob"] = min(blended["home_cover_prob"], blended["home_win_prob"])
     blended["away_cover_prob"] = min(blended["away_cover_prob"], blended["away_win_prob"])
 
-    blended["expected_total"] = model_probs.get("expected_total", 9.0)
+    # Blend expected total with market total line — use reduced model weight
+    # for totals since model total predictions are noisier than win predictions
+    model_total = model_probs.get("expected_total", 9.0)
+    market_total = market_probs.get("total_line", model_total)
+    total_model_weight = effective_weight * 0.5  # half the win-prob weight
+    blended["expected_total"] = total_model_weight * model_total + (1 - total_model_weight) * market_total
     blended["model_confidence"] = confidence
     blended["effective_model_weight"] = effective_weight
 
