@@ -67,6 +67,11 @@ jobs:
           "
         continue-on-error: true
 
+      - name: Fetch latest NHL files from nhllines repo
+        run: |
+          git clone --depth 1 https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/totqro/nhllines.git /tmp/nhllines 2>/dev/null || \
+          git clone --depth 1 https://github.com/totqro/nhllines.git /tmp/nhllines 2>/dev/null || true
+
       - name: Build deploy folder
         run: |
           mkdir -p build/mlblines build/nhllines
@@ -80,14 +85,23 @@ jobs:
           cp mlblines/mlbdata/latest_analysis.json build/mlblines/ 2>/dev/null || echo '{"recommendations":[],"games_analyzed":[],"timestamp":""}' > build/mlblines/latest_analysis.json
           cp mlblines/mlbdata/bet_results.json build/mlblines/ 2>/dev/null || echo '{"results":{}}' > build/mlblines/bet_results.json
           cp mlblines/mlbdata/analysis_history.json build/mlblines/ 2>/dev/null || true
-          # NHL app files (static source tracked in repo)
-          cp nhllines_web/index.html build/nhllines/
-          cp nhllines_web/app.js build/nhllines/
-          cp nhllines_web/styles.css build/nhllines/
-          # NHL data files from last committed state
-          cp nhllines_data/latest_analysis.json build/nhllines/ 2>/dev/null || echo '{"recommendations":[],"games_analyzed":[],"timestamp":""}' > build/nhllines/latest_analysis.json
-          cp nhllines_data/bet_results.json build/nhllines/ 2>/dev/null || echo '{"results":{}}' > build/nhllines/bet_results.json
-          cp nhllines_data/analysis_history.json build/nhllines/ 2>/dev/null || true
+          # NHL app + data files — pull LIVE from nhllines repo (not stale local copies)
+          if [ -d /tmp/nhllines ]; then
+            cp /tmp/nhllines/web/index.html build/nhllines/
+            cp /tmp/nhllines/web/app.js build/nhllines/
+            cp /tmp/nhllines/web/styles.css build/nhllines/
+            cp /tmp/nhllines/data/latest_analysis.json build/nhllines/ 2>/dev/null || true
+            cp /tmp/nhllines/data/bet_results.json build/nhllines/ 2>/dev/null || true
+            cp /tmp/nhllines/data/analysis_history.json build/nhllines/ 2>/dev/null || true
+          else
+            echo "::warning::Could not clone nhllines repo — NHL data will be stale"
+            cp nhllines_web/index.html build/nhllines/
+            cp nhllines_web/app.js build/nhllines/
+            cp nhllines_web/styles.css build/nhllines/
+            cp nhllines_data/latest_analysis.json build/nhllines/ 2>/dev/null || echo '{"recommendations":[],"games_analyzed":[],"timestamp":""}' > build/nhllines/latest_analysis.json
+            cp nhllines_data/bet_results.json build/nhllines/ 2>/dev/null || echo '{"results":{}}' > build/nhllines/bet_results.json
+            cp nhllines_data/analysis_history.json build/nhllines/ 2>/dev/null || true
+          fi
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools

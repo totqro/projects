@@ -2,6 +2,16 @@ let allRecommendations = [], allOddsData = {}, currentStake = 1, filtersSetUp = 
 let currentFilters = { grade:'all', type:'all', book:'all', sortBy:'edge' };
 let profitChartInstance = null, allSortedBets = [], pinnedTooltipIndex = -1;
 
+// Model changes — dates when the +EV calculation logic was materially changed
+const MODEL_CHANGES = [
+    { date:'2026-03-06', label:'Optimize model', desc:'Model parameter tuning' },
+    { date:'2026-03-08', label:'Add ML + injuries', desc:'XGBoost ML model, auto-retrain, injury impact scoring' },
+    { date:'2026-03-11', label:'Change blend', desc:'Adjusted model vs market blend weights' },
+    { date:'2026-03-14', label:'Fix totals + injuries', desc:'Poisson for alt lines, .5-only filter, reduced injury coeff 75%' },
+    { date:'2026-03-16', label:'6 degradation fixes', desc:'Recency weighting, Under bias 1.67x, sharp book filter, daily retrain, model weight 55→65%, time-decay similarity' },
+    { date:'2026-03-22', label:'Block .0 lines', desc:'Remove whole-number total lines (push risk), rebuild injury scoring' },
+];
+
 // Helpers
 const $ = id => document.getElementById(id);
 const $$ = sel => document.querySelectorAll(sel);
@@ -145,6 +155,22 @@ function showPinnedTooltip(chart,idx,chartBets) {
     cont.appendChild(tt);
 }
 
+function showModelChangeTooltip(chart,mc) {
+    dismissPinnedTooltip(); pinnedTooltipIndex=-2; // special value for model change
+    const cont=chart.canvas.parentElement;
+    const x=chart.scales.x.getPixelForValue(mc.idx);
+    const tt=document.createElement('div'); tt.className='chart-tooltip-pinned';
+    tt.style.borderColor='var(--orange)';
+    tt.innerHTML=`<button class="tooltip-close" onclick="dismissPinnedTooltip()">&times;</button>
+        <div class="tooltip-title" style="color:var(--orange)">🔧 Model Change — ${mc.date}</div>
+        <div class="tooltip-line" style="font-weight:700">${mc.label}</div>
+        <div class="tooltip-line" style="color:var(--t2);font-size:.78rem">${mc.desc}</div>`;
+    let l=x-120, t=40;
+    if(l<0) l=x+10; if(l+240>cont.offsetWidth) l=x-250;
+    tt.style.left=l+'px'; tt.style.top=t+'px';
+    cont.appendChild(tt);
+}
+
 function renderProfitChart(bets,sp=0,se=0) {
     const canvas=$('profit-chart'); if(!canvas||typeof Chart==='undefined') return;
     dismissPinnedTooltip();
@@ -154,13 +180,53 @@ function renderProfitChart(bets,sp=0,se=0) {
         c.fillStyle='#6B7A8D'; c.font='14px sans-serif'; c.textAlign='center';
         c.fillText('No bets in this time range',canvas.width/2,canvas.height/2); return;
     }
-    let cp=sp, ce=se; const labels=[],pd=[],ed=[],colors=[];
+    let cp=sp, ce=se; const labels=[],pd=[],ed=[],colors=[],betDates=[];
     bets.forEach(r => {
         cp+=r.profit; ce+=r.bet.stake*r.bet.edge;
-        labels.push(new Date(r.bet.analysis_timestamp||r.checked_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}));
+        const d=new Date(r.bet.analysis_timestamp||r.checked_at);
+        labels.push(d.toLocaleDateString('en-US',{month:'short',day:'numeric'}));
+        betDates.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
         pd.push(+cp.toFixed(2)); ed.push(+ce.toFixed(2));
         colors.push(r.result==='won'?'#00C896':'#FF4D6A');
     });
+
+    // Find which bet indices correspond to model change dates
+    const changeIndices = [];
+    MODEL_CHANGES.forEach(mc => {
+        // Find first bet ON or AFTER this date
+        const idx = betDates.findIndex(d => d >= mc.date);
+        if (idx >= 0) changeIndices.push({idx, ...mc});
+    });
+
+    // Custom plugin to draw vertical lines at model change points
+    const modelChangePlugin = {
+        id:'modelChanges',
+        afterDraw(chart) {
+            const ctx=chart.ctx, xScale=chart.scales.x, yScale=chart.scales.y;
+            changeIndices.forEach((mc,i) => {
+                const x = xScale.getPixelForValue(mc.idx);
+                if (x < xScale.left || x > xScale.right) return;
+                // Vertical dashed line
+                ctx.save();
+                ctx.beginPath(); ctx.setLineDash([4,4]);
+                ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=1;
+                ctx.moveTo(x, yScale.top); ctx.lineTo(x, yScale.bottom);
+                ctx.stroke(); ctx.setLineDash([]);
+                // Label — stagger vertically to avoid overlap
+                const yOff = yScale.top + 8 + (i % 3) * 14;
+                ctx.font='bold 9px sans-serif'; ctx.fillStyle='rgba(255,255,255,0.7)';
+                ctx.textAlign='center';
+                // Diamond marker
+                ctx.fillStyle='#F4901E'; ctx.beginPath();
+                ctx.moveTo(x,yOff); ctx.lineTo(x+4,yOff+4); ctx.lineTo(x,yOff+8); ctx.lineTo(x-4,yOff+4); ctx.closePath(); ctx.fill();
+                // Label text
+                ctx.fillStyle='rgba(255,255,255,0.6)';
+                ctx.fillText(mc.label, x, yOff+18);
+                ctx.restore();
+            });
+        }
+    };
+
     if(profitChartInstance) profitChartInstance.destroy();
     const mob=window.innerWidth<768, chartBets=bets;
     profitChartInstance = new Chart(canvas.getContext('2d'), {
@@ -169,10 +235,22 @@ function renderProfitChart(bets,sp=0,se=0) {
             {label:'Actual Profit',data:pd,borderColor:'#007C85',backgroundColor:'rgba(0,124,133,.1)',fill:true,tension:.3,borderWidth:2.5,pointRadius:mob?3:4,pointHitRadius:mob?20:8,pointBackgroundColor:colors,pointBorderColor:colors,pointBorderWidth:0},
             {label:'Expected (EV)',data:ed,borderColor:'#F4901E',borderDash:[6,3],borderWidth:1.5,pointRadius:0,fill:false,tension:.3}
         ]},
+        plugins:[modelChangePlugin],
         options:{
             responsive:true, maintainAspectRatio:false,
             interaction:{intersect:false,mode:'index'},
-            onClick(ev,els) { if(els.length) { const i=els[0].index; pinnedTooltipIndex===i?dismissPinnedTooltip():showPinnedTooltip(this,i,chartBets); } else dismissPinnedTooltip(); },
+            onClick(ev,els) {
+                // Check if click is near a model change marker
+                const rect=canvas.getBoundingClientRect();
+                const cx=ev.native.clientX-rect.left;
+                const xScale=this.scales.x;
+                for(const mc of changeIndices) {
+                    const mx=xScale.getPixelForValue(mc.idx);
+                    if(Math.abs(cx-mx)<15) { showModelChangeTooltip(this,mc); return; }
+                }
+                if(els.length) { const i=els[0].index; pinnedTooltipIndex===i?dismissPinnedTooltip():showPinnedTooltip(this,i,chartBets); }
+                else dismissPinnedTooltip();
+            },
             plugins:{
                 legend:{display:true,position:'top',labels:{color:'#B8C4D0',font:{size:mob?10:12},usePointStyle:true,padding:mob?10:16}},
                 tooltip:{enabled:!mob,backgroundColor:'rgba(20,25,35,.95)',titleColor:'#E8EDF2',bodyColor:'#B8C4D0',borderColor:'rgba(255,255,255,.1)',borderWidth:1,padding:10,
