@@ -1,24 +1,60 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
+# Dependencies
 /node_modules
 /.pnp
 .pnp.js
 
-# testing
-/coverage
-
-# production
+# Production build
 /build
 
-# misc
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+
+# NHL caches & models
+nhllines/cache/
+nhllines/ml_models/
+nhllines/.venv/
+nhllines/.vscode/
+
+# MLB caches & models
+mlblines/cache/
+mlblines/ml_models/
+
+# Config with secrets (keep examples)
+nhllines/config.json
+mlblines/config.json
+
+# Data files — only track the three key data files per sport
+nhllines/data/*
+!nhllines/data/bet_results.json
+!nhllines/data/analysis_history.json
+!nhllines/data/latest_analysis.json
+
+mlblines/mlbdata/*
+!mlblines/mlbdata/bet_results.json
+!mlblines/mlbdata/analysis_history.json
+!mlblines/mlbdata/latest_analysis.json
+
+# Misc
 .DS_Store
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+*.log
+*.swp
+*.swo
 
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Testing
+/coverage

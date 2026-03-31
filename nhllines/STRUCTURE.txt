@@ -1,0 +1,88 @@
+nhllines/
+│
+├── 📄 main.py                      # Main entry point
+├── 📄 config.json                  # API keys (gitignored)
+├── 📄 requirements.txt             # Dependencies
+├── 📄 README.md                    # Project overview
+├── 📄 .gitignore                   # Git ignore rules
+├── 📄 REFACTORING_COMPLETE.md      # Refactoring summary
+│
+├── 📁 src/                         # Source code
+│   ├── 📄 __init__.py
+│   │
+│   ├── 📁 models/                  # Prediction models
+│   │   ├── 📄 __init__.py
+│   │   ├── 📄 ml_model.py
+│   │   ├── 📄 ml_model_streamlined.py  ⭐ Current model
+│   │   ├── 📄 ml_model_enhanced.py
+│   │   └── 📄 model.py
+│   │
+│   ├── 📁 data/                    # Data fetching
+│   │   ├── 📄 __init__.py
+│   │   ├── 📄 nhl_data.py
+│   │   ├── 📄 odds_fetcher.py      ⭐ Multi-key rotation
+│   │   ├── 📄 scraper.py
+│   │   └── 📄 player_data.py
+│   │
+│   ├── 📁 analysis/                # Analysis modules
+│   │   ├── 📄 __init__.py
+│   │   ├── 📄 ev_calculator.py
+│   │   ├── 📄 bet_tracker.py
+│   │   ├── 📄 analysis_history.py
+│   │   ├── 📄 goalie_tracker.py
+│   │   ├── 📄 injury_tracker.py
+│   │   ├── 📄 advanced_stats.py
+│   │   └── 📄 team_splits.py
+│   │
+│   └── 📁 utils/                   # Utilities
+│       ├── 📄 __init__.py
+│       ├── 📄 backtest_model.py
+│       ├── 📄 optimize_adjustments.py
+│       ├── 📄 optimize_cache.py
+│       ├── 📄 system_report.py
+│       └── 📄 setup.py
+│
+├── 📁 docs/                        # Documentation
+│   ├── 📄 PROJECT_STRUCTURE.md     ⭐ Structure guide
+│   ├── 📄 SYSTEM_OVERVIEW.md       ⭐ Complete overview
+│   ├── 📄 BETTING_PRINCIPLES.md    ⭐ Core philosophy
+│   ├── 📄 QUICK_REFERENCE.md
+│   ├── 📄 IMPLEMENTATION_CHECKLIST.md
+│   ├── 📄 CLV_IMPLEMENTATION_PLAN.md
+│   ├── 📄 OPTIMIZATION_COMPLETE.md
+│   ├── 📄 PERFORMANCE_ANALYSIS.md
+│   └── ... (20+ more docs)
+│
+├── 📁 web/                         # Web interface
+│   ├── �� index.html
+│   ├── 📄 styles.css
+│   └── 📄 app.js
+│
+├── 📁 scripts/                     # Deployment scripts
+│   ├── 📄 deploy.sh
+│   ├── 📄 quick_deploy.sh
+│   ├── 📄 setup_ml.sh
+│   └── ... (other .sh files)
+│
+├── 📁 data/                        # Data files (gitignored)
+│   ├── 📄 analysis_history.json
+│   ├── 📄 bet_results.json
+│   ├── 📄 bet_history.json
+│   └── 📄 latest_analysis.json
+│
+├── 📁 cache/                       # API cache (gitignored)
+│   └── ... (auto-generated)
+│
+├── 📁 ml_models/                   # Trained models (gitignored)
+│   └── ... (auto-generated)
+│
+├── 📁 tests/                       # Tests (future)
+│
+├── 📁 .venv/                       # Virtual env (gitignored)
+├── 📁 .git/                        # Git repo
+└── 📁 .vscode/                     # VS Code (gitignored)
+
+Legend:
+⭐ = Key files
+📁 = Folder
+📄 = File
