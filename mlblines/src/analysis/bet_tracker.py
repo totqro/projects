@@ -24,22 +24,22 @@ def check_results(days_back=7):
 
     print(f"Found {len(all_bets)} bets to check")
 
-    if BET_LOG_PATH.exists():
-        results_log = json.loads(BET_LOG_PATH.read_text())
-    else:
-        results_log = {"results": {}}
+    # Always rebuild from scratch to fix any past errors
+    results_log = {"results": {}}
 
     print(f"Fetching game results from last {days_back} days...")
     games = fetch_season_games(days_back=days_back)
 
+    # Build game results keyed by (date, matchup) to handle series correctly
     game_results = {}
     for game in games:
         date = game["date"][:10]
         home = game["home_team"]
         away = game["away_team"]
         game_key = f"{away} @ {home}"
+        date_key = f"{date}_{game_key}"
 
-        game_results[game_key] = {
+        game_results[date_key] = {
             "date": date,
             "home_score": game["home_score"],
             "away_score": game["away_score"],
@@ -50,15 +50,19 @@ def check_results(days_back=7):
 
     updated = 0
     for bet in all_bets:
-        bet_id = f"{bet['game']}_{bet['pick']}"
-        if bet_id in results_log["results"]:
-            continue
-
         game_key = bet["game"]
-        if game_key not in game_results:
+        # Extract the date from the analysis timestamp (bets are for that day's games)
+        analysis_ts = bet.get("analysis_timestamp", "")
+        bet_date = analysis_ts[:10] if analysis_ts else ""
+
+        # Include date in bet_id to distinguish same-matchup bets across days
+        bet_id = f"{bet_date}_{game_key}_{bet['pick']}"
+
+        date_key = f"{bet_date}_{game_key}"
+        if date_key not in game_results:
             continue
 
-        result = game_results[game_key]
+        result = game_results[date_key]
         outcome = _check_bet_result(bet, result)
 
         if outcome is None:
@@ -100,7 +104,16 @@ def _check_bet_result(bet, result):
     if bet_type == "Moneyline":
         team = pick.split(" ")[0]
         game = bet["game"]
-        if team in game.split(" @ ")[0]:  # Away team
+        parts = game.split(" @ ")
+        if len(parts) == 2:
+            away_team = parts[0]
+            home_team = parts[1]
+            if team == away_team:
+                return result["away_won"]
+            elif team == home_team:
+                return result["home_won"]
+        # Fallback: check if team is in the away or home position
+        if team in game.split(" @ ")[0]:
             return result["away_won"]
         else:
             return result["home_won"]
