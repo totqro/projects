@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NHL +EV Betting Finder</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-nav">
+                <a href="/" class="back-link">← Back to Projects</a>
+            </div>
+            <h1>🏒 NHL +EV Betting Finder</h1>
+            <p class="subtitle">Conservative Mode: Moneylines + Totals Only</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('today')">Today's Picks</button>
+            <button class="tab-button" onclick="showTab('performance')">Performance History</button>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading analysis...</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;">
+            <p>⚠️ Could not load analysis data. Make sure latest_analysis.json is available.</p>
+        </div>
+
+        <!-- Today's Picks Tab -->
+        <div id="today-tab" class="tab-content" style="display: none;">
+            <!-- Summary Stats -->
+            <section class="summary-card">
+                <h2>Analysis Summary</h2>
+                <div class="stats-grid">
+                    <div class="stat">
+                        <span class="stat-label">Last Updated</span>
+                        <span class="stat-value" id="timestamp">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Games Analyzed</span>
+                        <span class="stat-value" id="games-analyzed">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">+EV Bets Found</span>
+                        <span class="stat-value" id="bets-found">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Expected ROI</span>
+                        <span class="stat-value" id="expected-roi">-</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recommendations -->
+            <section class="recommendations">
+                <div class="section-header">
+                    <h2>Top Betting Recommendations</h2>
+                    <div class="filter-controls">
+                        <select id="filter-grade" class="filter-select">
+                            <option value="all">All Grades</option>
+                            <option value="A">A Grade</option>
+                            <option value="B+">B+ Grade</option>
+                            <option value="B">B Grade</option>
+                            <option value="C+">C+ Grade</option>
+                        </select>
+                        <select id="filter-type" class="filter-select">
+                            <option value="all">All Types</option>
+                            <option value="Moneyline">Moneyline</option>
+                            <option value="Total">Total</option>
+                            <option value="Spread">Spread</option>
+                        </select>
+                        <select id="sort-by" class="filter-select">
+                            <option value="edge">Sort by Edge</option>
+                            <option value="roi">Sort by ROI</option>
+                            <option value="confidence">Sort by Confidence</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grade-legend">
+                    <span class="grade-item"><span class="grade grade-a">A</span> 7%+ exceptional</span>
+                    <span class="grade-item"><span class="grade grade-b-plus">B+</span> 4-7% very good</span>
+                    <span class="grade-item"><span class="grade grade-b">B</span> 3-4% solid</span>
+                    <span class="grade-item"><span class="grade grade-c-plus">C+</span> 2-3% playable</span>
+                </div>
+                <div id="recommendations-list"></div>
+            </section>
+
+            <!-- Game Analysis -->
+            <section class="game-analysis">
+                <h2>Game-by-Game Analysis</h2>
+                <div id="games-list"></div>
+            </section>
+        </div>
+
+        <!-- Performance History Tab -->
+        <div id="performance-tab" class="tab-content" style="display: none;">
+            <section class="summary-card">
+                <h2>Overall Performance</h2>
+                <div class="stats-grid">
+                    <div class="stat">
+                        <span class="stat-label">Total Bets</span>
+                        <span class="stat-value" id="perf-total-bets">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Win Rate</span>
+                        <span class="stat-value" id="perf-win-rate">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Actual ROI</span>
+                        <span class="stat-value" id="perf-roi">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Total Profit</span>
+                        <span class="stat-value" id="perf-profit">-</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Expected vs Actual -->
+            <section class="performance-comparison">
+                <h2>Expected vs Actual Performance</h2>
+                <div class="comparison-grid">
+                    <div class="comparison-card">
+                        <h3>Expected Gain</h3>
+                        <div class="big-number" id="expected-gain">$0.00</div>
+                    </div>
+                    <div class="comparison-card">
+                        <h3>Actual Gain</h3>
+                        <div class="big-number" id="actual-gain">$0.00</div>
+                    </div>
+                    <div class="comparison-card">
+                        <h3>Difference</h3>
+                        <div class="big-number" id="gain-difference">$0.00</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Performance by Grade -->
+            <section class="grade-performance">
+                <h2>Performance by Grade</h2>
+                <div id="grade-performance-list"></div>
+            </section>
+
+            <!-- Recent Results -->
+            <section class="recent-results">
+                <h2>Recent Bet Results</h2>
+                <div id="recent-results-list"></div>
+            </section>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
