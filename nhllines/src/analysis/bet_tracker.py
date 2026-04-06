@@ -112,6 +112,15 @@ def check_results(days_back: int = 7):
     
     print(f"✅ Updated {updated} bet results")
     
+    # Update model feedback system with new results
+    if updated > 0:
+        try:
+            from src.analysis.model_feedback import update_model_from_results
+            print("\n[Feedback] Updating model learning system...")
+            update_model_from_results()
+        except Exception as e:
+            print(f"Warning: Could not update model feedback: {e}")
+    
     # Print summary
     _print_performance_summary_from_results(results_log["results"])
 

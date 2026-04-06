@@ -2,22 +2,38 @@
 
 **Status:** Production - Optimized and Validated  
 **Performance:** 60% win rate, +33% ROI (35 bets tracked)  
-**Deployment:** https://projects-brawlstars.web.app/nhllines/
+**Deployment:** https://projects-brawlstars.web.app/nhllines/  
+**New:** 🧠 Self-learning model with feedback system
 
 ---
 
 ## Quick Start
 
 ```bash
-# Run daily analysis
+# Run daily analysis (uses learned weights automatically)
 python main.py --conservative
 
-# Check bet results
+# Check bet results (automatically updates model learning)
 python bet_tracker.py --check
+
+# View model learning progress
+python update_model_feedback.py
 
 # View system status
 python system_report.py
 ```
+
+---
+
+## What's New: Model Feedback System
+
+The model now learns from every bet result and continuously improves:
+- ✅ Tracks prediction accuracy and calibration
+- ✅ Dynamically adjusts model/market blend weights
+- ✅ Filters out historically poor bet types
+- ✅ Recalibrates confidence scores
+
+See `QUICK_START_FEEDBACK.md` for details.
 
 ---
 
@@ -29,6 +45,7 @@ nhllines/
 │   ├── main.py            # Main analysis pipeline
 │   ├── ml_model_streamlined.py  # Optimized ML model
 │   ├── model.py           # Similarity-based model
+│   ├── model_feedback.py  # 🆕 Learning system
 │   ├── odds_fetcher.py    # Odds API integration
 │   ├── nhl_data.py        # NHL API data fetching
 │   ├── ev_calculator.py   # EV and edge calculations
@@ -40,10 +57,17 @@ nhllines/
 │
 ├── docs/                   # Documentation
 │   ├── SYSTEM_OVERVIEW.md # Complete system overview
+│   ├── MODEL_FEEDBACK.md  # 🆕 Feedback system docs
 │   ├── BETTING_PRINCIPLES.md  # Core philosophy
 │   ├── QUICK_REFERENCE.md # User guide
 │   ├── CLV_IMPLEMENTATION_PLAN.md  # Next priority
 │   └── ...                # Other guides
+│
+├── data/                   # Data files
+│   ├── latest_analysis.json    # Current predictions
+│   ├── bet_results.json        # Historical results
+│   ├── analysis_history.json   # Past predictions
+│   └── model_feedback.json     # 🆕 Learned weights
 │
 ├── web/                    # Web interface
 │   ├── index.html         # Main page

@@ -1,6 +1,5 @@
 const GITHUB_USERNAME = process.env.REACT_APP_GITHUB_USERNAME;
 const GITHUB_TOKEN = process.env.REACT_APP_GITHUB_TOKEN; // optional, increases rate limit
-
 const headers = GITHUB_TOKEN
   ? { Authorization: `token ${GITHUB_TOKEN}` }
   : {};

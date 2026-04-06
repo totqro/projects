@@ -83,6 +83,13 @@ def run_analysis(
     print(f"  {datetime.now(EST).strftime('%A, %B %d %Y %H:%M')} EST")
     print("=" * 60)
     print()
+    
+    # Load model feedback system for learned weights
+    from src.analysis.model_feedback import get_feedback_system
+    feedback = get_feedback_system()
+    optimal_model_weight = feedback.get_optimal_model_weight()
+    print(f"[Feedback] Using learned model weight: {optimal_model_weight:.2f}")
+    print()
 
     # Step 1: Fetch current standings
     print("[1/5] Fetching current NHL standings...")
@@ -463,11 +470,17 @@ def run_analysis(
             else:
                 player_context = ""
 
-            # Blend model with market
+            # Blend model with market using learned optimal weight
             # No post-blend manual adjustments — all contextual factors (B2B, goalie,
             # splits, rest) are incorporated as ML features so XGBoost learns optimal
             # weights. Analysis of 575 games showed manual adjustments hurt performance.
-            blended = blend_model_and_market(model_probs, market_probs)
+            # Model weight is dynamically adjusted based on recent calibration performance.
+            
+            # Adjust confidence based on historical calibration
+            adjusted_confidence = feedback.get_adjusted_confidence(model_probs["confidence"])
+            model_probs["confidence"] = adjusted_confidence
+            
+            blended = blend_model_and_market(model_probs, market_probs, model_weight=optimal_model_weight)
 
             # Print analysis
             line_source = "theScore" if thescore_odds.get("total_over") else "best available"
@@ -536,6 +549,22 @@ def run_analysis(
                 conservative=conservative,
                 book_filter=book_filter,
             )
+            
+            # Filter bets using learned criteria from feedback system
+            filtered_bets = []
+            for bet in game_bets:
+                if feedback.should_take_bet(
+                    bet.get("edge", 0),
+                    bet.get("confidence", 0.5),
+                    bet.get("bet_type", "")
+                ):
+                    filtered_bets.append(bet)
+                else:
+                    print(f"    [Feedback] Filtered out {bet['pick']} "
+                          f"(historical performance suggests skipping)")
+            
+            game_bets = filtered_bets
+            
             # Attach all_book_odds to each bet for line shopping UI
             all_books = best_odds.get("all_books", {})
             for bet in game_bets:

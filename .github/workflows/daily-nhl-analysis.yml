@@ -62,18 +62,36 @@ jobs:
           check_results(days_back=14)
           "
         continue-on-error: true
+      
+      - name: Update model feedback system
+        working-directory: nhllines
+        run: |
+          python -c "
+          from src.analysis.model_feedback import update_model_from_results
+          print('Updating model feedback with latest results...')
+          update_model_from_results()
+          "
+        continue-on-error: true
 
       - name: Verify performance data updated
         run: |
           echo "=== Data file status ==="
-          ls -la nhllines/data/bet_results.json nhllines/data/analysis_history.json nhllines/data/latest_analysis.json 2>/dev/null || true
+          ls -la nhllines/data/bet_results.json nhllines/data/analysis_history.json nhllines/data/latest_analysis.json nhllines/data/model_feedback.json 2>/dev/null || true
           python -c "
           import json
           br = json.load(open('nhllines/data/bet_results.json'))
           results = br.get('results', {})
           dates = sorted([v.get('checked_at','')[:10] for v in results.values() if v.get('checked_at')], reverse=True)
           print(f'Tracked bets: {len(results)}')
-          print(f'Most recent check: {dates[0] if dates else \"none\"}')
+          
+          # Show feedback stats
+          try:
+              fb = json.load(open('nhllines/data/model_feedback.json'))
+              print(f'Model weight: {fb[\"optimal_weights\"][\"model_weight\"]:.2f}')
+              print(f'Confidence scaling: {fb[\"optimal_weights\"][\"confidence_scaling\"]:.2f}')
+          except:
+              print('No feedback data yet')
+          "          print(f'Most recent check: {dates[0] if dates else \"none\"}')
           won = sum(1 for v in results.values() if v.get('result') == 'won')
           lost = sum(1 for v in results.values() if v.get('result') == 'lost')
           print(f'Record: {won}W-{lost}L')
@@ -115,7 +133,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add nhllines/data/bet_results.json nhllines/data/analysis_history.json nhllines/data/latest_analysis.json
+          git add nhllines/data/bet_results.json nhllines/data/analysis_history.json nhllines/data/latest_analysis.json nhllines/data/model_feedback.json
           if git diff --cached --quiet; then
             echo "No data changes to commit"
           else

@@ -11,6 +11,7 @@ from .goalie_tracker import get_todays_starters, get_goalie_matchup_analysis
 from .injury_tracker import get_todays_injuries, get_injury_impact_for_game
 from .advanced_stats import get_team_advanced_stats
 from .team_splits import get_team_splits
+from .model_feedback import get_feedback_system, update_model_from_results
 
 __all__ = [
     'evaluate_all_bets',
@@ -26,4 +27,6 @@ __all__ = [
     'get_injury_impact_for_game',
     'get_team_advanced_stats',
     'get_team_splits',
+    'get_feedback_system',
+    'update_model_from_results',
 ]
