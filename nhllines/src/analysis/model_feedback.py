@@ -43,6 +43,7 @@ class ModelFeedback:
             "confidence_accuracy": {},  # confidence_bin -> {correct, total}
             "bet_type_accuracy": {},    # bet_type -> {correct, total}
             "recent_performance": [],   # Last 100 predictions
+            "processed_bets": [],       # IDs of already-processed bets
             "optimal_weights": {
                 "model_weight": 0.65,
                 "confidence_scaling": 1.0,
@@ -65,13 +66,22 @@ class ModelFeedback:
             bet_results: Dict from bet_results.json with resolved bets
         """
         print("\n[Feedback] Updating model with bet results...")
-        
+
+        # Ensure processed_bets list exists (for data files created before this field)
+        if "processed_bets" not in self.feedback_data:
+            self.feedback_data["processed_bets"] = []
+        processed = set(self.feedback_data["processed_bets"])
+
         updated_count = 0
         for bet_id, result in bet_results.items():
+            if bet_id in processed:
+                continue  # Already processed this bet
+
             bet = result["bet"]
             outcome = result["result"]
-            
+
             if outcome == "push":
+                processed.add(bet_id)
                 continue  # Skip pushes
             
             won = (outcome == "won")
@@ -83,19 +93,20 @@ class ModelFeedback:
             edge = bet.get("edge", 0)
             
             # Update calibration bins (group by 5% buckets)
-            prob_bin = int(true_prob * 20) * 5  # 0, 5, 10, ..., 95, 100
+            # Use string keys for JSON compatibility
+            prob_bin = str(int(true_prob * 20) * 5)  # "0", "5", ..., "95", "100"
             if prob_bin not in self.feedback_data["calibration_bins"]:
                 self.feedback_data["calibration_bins"][prob_bin] = {"correct": 0, "total": 0}
-            
+
             self.feedback_data["calibration_bins"][prob_bin]["total"] += 1
             if won:
                 self.feedback_data["calibration_bins"][prob_bin]["correct"] += 1
-            
+
             # Update confidence bins
-            conf_bin = int(confidence * 10) * 10  # 0, 10, 20, ..., 90, 100
+            conf_bin = str(int(confidence * 10) * 10)  # "0", "10", ..., "90", "100"
             if conf_bin not in self.feedback_data["confidence_accuracy"]:
                 self.feedback_data["confidence_accuracy"][conf_bin] = {"correct": 0, "total": 0}
-            
+
             self.feedback_data["confidence_accuracy"][conf_bin]["total"] += 1
             if won:
                 self.feedback_data["confidence_accuracy"][conf_bin]["correct"] += 1
@@ -123,8 +134,11 @@ class ModelFeedback:
             if len(self.feedback_data["recent_performance"]) > 100:
                 self.feedback_data["recent_performance"] = \
                     self.feedback_data["recent_performance"][-100:]
-            
+
+            processed.add(bet_id)
             updated_count += 1
+
+        self.feedback_data["processed_bets"] = list(processed)
         
         if updated_count > 0:
             self._recalculate_optimal_weights()
@@ -191,8 +205,8 @@ class ModelFeedback:
         for prob_bin, data in bins.items():
             if data["total"] < 5:
                 continue  # Skip bins with too few samples
-            
-            predicted_prob = prob_bin / 100.0
+
+            predicted_prob = int(prob_bin) / 100.0
             actual_prob = data["correct"] / data["total"]
             error = predicted_prob - actual_prob
             
@@ -250,16 +264,16 @@ class ModelFeedback:
         print("\n  Calibration by Predicted Probability:")
         print("  " + "-" * 56)
         bins = self.feedback_data["calibration_bins"]
-        for prob_bin in sorted(bins.keys()):
+        for prob_bin in sorted(bins.keys(), key=int):
             data = bins[prob_bin]
             if data["total"] < 3:
                 continue
-            
-            predicted = prob_bin / 100.0
+
+            predicted = int(prob_bin) / 100.0
             actual = data["correct"] / data["total"]
             diff = actual - predicted
             
-            print(f"    {prob_bin:3d}%: {actual:.1%} actual "
+            print(f"    {int(prob_bin):3d}%: {actual:.1%} actual "
                   f"({data['correct']}/{data['total']}) "
                   f"[{diff:+.1%}]")
         
@@ -319,7 +333,7 @@ class ModelFeedback:
                 return False
         
         # Check confidence level performance
-        conf_bin = int(confidence * 10) * 10
+        conf_bin = str(int(confidence * 10) * 10)
         conf_data = self.feedback_data["confidence_accuracy"].get(conf_bin, {})
         if conf_data.get("total", 0) >= 10:
             conf_win_rate = conf_data["correct"] / conf_data["total"]
