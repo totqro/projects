@@ -1,6 +1,7 @@
 let allRecommendations = [], allOddsData = {}, currentStake = 1, filtersSetUp = false;
 let currentFilters = { grade:'all', type:'all', book:'all', sortBy:'edge' };
 let currentMode = 'espn'; // 'espn' or 'all'
+let rawPerformanceData = null; // Store raw bet_results for mode filtering
 
 // Mode-specific configurations derived from optimization analysis (144 bets, Mar-Apr 2026)
 const MODE_CONFIG = {
@@ -21,6 +22,17 @@ const MODE_CONFIG = {
 };
 let profitChartInstance = null, allSortedBets = [], pinnedTooltipIndex = -1;
 
+// Filter bets by current mode config
+function filterBetsByMode(bets) {
+    const cfg = MODE_CONFIG[currentMode];
+    return bets.filter(r => {
+        if (!cfg.bookFilter(r.bet.book||'')) return false;
+        if ((r.bet.edge||0) < cfg.minEdge) return false;
+        if (cfg.excludeUnders && (r.bet.pick||'').includes('Under')) return false;
+        return true;
+    });
+}
+
 // Model changes — dates when the +EV calculation logic was materially changed
 const MODEL_CHANGES = [
     { date:'2026-03-06', label:'Optimize model', desc:'Model parameter tuning' },
@@ -29,6 +41,7 @@ const MODEL_CHANGES = [
     { date:'2026-03-14', label:'Fix totals + injuries', desc:'Poisson for alt lines, .5-only filter, reduced injury coeff 75%' },
     { date:'2026-03-16', label:'6 degradation fixes', desc:'Recency weighting, Under bias 1.67x, sharp book filter, daily retrain, model weight 55→65%, time-decay similarity' },
     { date:'2026-03-22', label:'Block .0 lines', desc:'Remove whole-number total lines (push risk), rebuild injury scoring' },
+    { date:'2026-04-07', label:'ESPN optimization', desc:'ESPN mode (7%+ edge, no unders), sharp book reclassification, min edge 2→4%, confidence floor 50%' },
 ];
 
 // Helpers
@@ -73,13 +86,16 @@ async function loadPerformanceData() {
     try {
         const ts=Date.now();
         const [rr,hr] = await Promise.all([fetch(`bet_results.json?v=${ts}`),fetch(`analysis_history.json?v=${ts}`)]);
-        displayPerformance(rr.ok?await rr.json():null, hr.ok?await hr.json():null);
+        rawPerformanceData = rr.ok ? await rr.json() : null;
+        displayPerformance(rawPerformanceData, hr.ok?await hr.json():null);
     } catch(e) { console.error(e); displayNoPerformanceData(); }
 }
 
 function displayPerformance(results) {
     if (!results?.results || !Object.keys(results.results).length) { displayNoPerformanceData(); return; }
-    const bets = Object.values(results.results).filter(r=>r.result!=='push');
+    let bets = Object.values(results.results).filter(r=>r.result!=='push');
+    bets = filterBetsByMode(bets);
+    if (!bets.length) { displayNoPerformanceData(); return; }
     const won = bets.filter(r=>r.result==='won');
     const staked = bets.reduce((s,r)=>s+r.bet.stake,0);
     const profit = bets.reduce((s,r)=>s+r.profit,0);
@@ -327,6 +343,11 @@ function setMode(mode) {
     if (bookSel) bookSel.value = 'all';
 
     applyFilters();
+
+    // Refresh performance tab if it's currently visible
+    if ($('performance-tab').style.display !== 'none' && rawPerformanceData) {
+        displayPerformance(rawPerformanceData);
+    }
 }
 
 // Filters
