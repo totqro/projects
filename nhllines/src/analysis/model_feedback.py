@@ -324,10 +324,11 @@ class ModelFeedback:
             type_win_rate = type_data["correct"] / type_data["total"]
             
             # If this bet type historically underperforms, require higher edge
+            # Optimized: Totals at 42.9% WR need 6%+ edge, ML at 52.3% WR is fine at 4%
             if type_win_rate < 0.50:
-                edge_threshold = 0.04  # Require 4%+ edge
+                edge_threshold = 0.06  # Require 6%+ edge for underperforming bet types
             else:
-                edge_threshold = 0.02  # Standard 2%+ edge
+                edge_threshold = 0.04  # Standard 4%+ edge
             
             if edge < edge_threshold:
                 return False

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NHL +EV Betting Finder</title>
-    <link rel="stylesheet" href="styles.css?v=8.0">
+    <link rel="stylesheet" href="styles.css?v=9.0">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -14,8 +14,14 @@
                 <a href="/" class="back-link">← Back to Projects</a>
             </div>
             <h1>🏒 NHL +EV Betting Finder</h1>
-            <p class="subtitle">Conservative Mode: Moneylines + Totals Only</p>
+            <p class="subtitle">ESPN Bet Only — 7%+ Edge, No Unders</p>
         </header>
+
+        <!-- Mode Switch + Tab Navigation -->
+        <div class="mode-switch">
+            <button class="mode-btn active" data-mode="espn" onclick="setMode('espn')">ESPN Bet</button>
+            <button class="mode-btn" data-mode="all" onclick="setMode('all')">All Books</button>
+        </div>
 
         <!-- Tab Navigation -->
         <div class="tabs">
@@ -177,6 +183,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=8.0"></script>
+    <script src="app.js?v=9.0"></script>
 </body>
 </html>

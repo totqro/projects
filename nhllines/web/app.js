@@ -1,5 +1,24 @@
 let allRecommendations = [], allOddsData = {}, currentStake = 1, filtersSetUp = false;
 let currentFilters = { grade:'all', type:'all', book:'all', sortBy:'edge' };
+let currentMode = 'espn'; // 'espn' or 'all'
+
+// Mode-specific configurations derived from optimization analysis (144 bets, Mar-Apr 2026)
+const MODE_CONFIG = {
+    espn: {
+        label: 'ESPN Bet',
+        minEdge: 0.07,       // 7%+ edge — ESPN 7%+ was 71.4% WR, +47.4% ROI
+        bookFilter: book => book.toLowerCase() === 'espnbet',
+        excludeUnders: true, // Unders on ESPN were 7W-10L, -$1.50
+        description: 'ESPN Bet Only — 7%+ Edge, No Unders',
+    },
+    all: {
+        label: 'All Books',
+        minEdge: 0.04,       // 4%+ edge — soft books ML at 4%+ was +13.8% ROI
+        bookFilter: book => !['fanduel','betparx','lowvig','fliff','pinnacle','betcris','draftkings','betanysports'].includes(book.toLowerCase()),
+        excludeUnders: false, // Unders still need 7%+ but that's handled server-side
+        description: 'Soft Books — 4%+ Edge, Optimized Filters',
+    }
+};
 let profitChartInstance = null, allSortedBets = [], pinnedTooltipIndex = -1;
 
 // Model changes — dates when the +EV calculation logic was materially changed
@@ -290,6 +309,26 @@ function displayAnalysis(data) {
     displayGames(data.games_analyzed);
 }
 
+// Mode switch
+function setMode(mode) {
+    currentMode = mode;
+    $$('.mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.mode-btn[data-mode="${mode}"]`).classList.add('active');
+
+    // Update subtitle to reflect active mode
+    const sub = document.querySelector('.subtitle');
+    if (sub) sub.textContent = MODE_CONFIG[mode].description;
+
+    // Re-populate book filter for this mode
+    populateBookFilter(allRecommendations);
+    // Reset book filter since available books changed
+    currentFilters.book = 'all';
+    const bookSel = $('filter-book');
+    if (bookSel) bookSel.value = 'all';
+
+    applyFilters();
+}
+
 // Filters
 function setupFilters() {
     if(filtersSetUp) return; filtersSetUp=true;
@@ -299,18 +338,34 @@ function setupFilters() {
 }
 
 function applyFilters() {
+    const cfg = MODE_CONFIG[currentMode];
     let f=[...allRecommendations];
+
+    // Apply mode-level filters first
+    f = f.filter(b => cfg.bookFilter(b.book));
+    f = f.filter(b => b.edge >= cfg.minEdge);
+    if (cfg.excludeUnders) f = f.filter(b => !(b.pick||'').includes('Under'));
+
+    // Then apply user filters on top
     if(currentFilters.grade!=='all') f=f.filter(b=>getGrade(b.edge)===currentFilters.grade);
     if(currentFilters.type!=='all') f=f.filter(b=>b.bet_type===currentFilters.type);
     if(currentFilters.book!=='all') f=f.filter(b=>b.book===currentFilters.book);
     const sorts={edge:(a,b)=>b.edge-a.edge,roi:(a,b)=>b.roi-a.roi,confidence:(a,b)=>b.confidence-a.confidence,
         book:(a,b)=>a.book==='thescore'?-1:b.book==='thescore'?1:a.book.localeCompare(b.book)};
     f.sort(sorts[currentFilters.sortBy]||sorts.edge);
+
+    // Update bet count in summary
+    const betsFound = $('bets-found');
+    if (betsFound) betsFound.textContent = f.length;
+
     displayRecommendations(f,currentStake);
 }
 
 function populateBookFilter(recs) {
-    const sel=$('filter-book'), books=[...new Set(recs.map(b=>b.book))].sort();
+    const cfg = MODE_CONFIG[currentMode];
+    const sel=$('filter-book');
+    // Only show books that pass the current mode's filter
+    const books=[...new Set(recs.filter(b => cfg.bookFilter(b.book)).map(b=>b.book))].sort();
     sel.innerHTML='<option value="all">All Books</option>';
     if(books.includes('thescore')) sel.innerHTML+=`<option value="thescore">theScore Bet</option>`;
     books.filter(b=>b!=='thescore').forEach(b => { sel.innerHTML+=`<option value="${b}">${fmtBook(b)}</option>`; });

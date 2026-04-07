@@ -6,11 +6,12 @@ Compares live NHL betting lines to historical similar-game analysis
 to find positive expected value bets.
 
 Usage:
-    python main.py                   # Full analysis with live odds
+    python main.py                   # Full analysis with live odds (optimized: 4%+ edge, soft books)
     python main.py --no-odds         # Historical analysis only (no API key needed)
     python main.py --stake 0.50      # Set stake per bet (default $1.00 CAD)
     python main.py --days 120        # Historical lookback days (default 90)
-    python main.py --min-edge 0.03   # Minimum edge to show (default 0.02)
+    python main.py --min-edge 0.05   # Minimum edge to show (default 0.04)
+    python main.py --espn-only       # Only show bets available on ESPN Bet
 
 Setup:
     1. pip3 install requests
@@ -69,11 +70,12 @@ from src.analysis import (
 def run_analysis(
     stake: float = 1.00,
     days_back: int = 90,
-    min_edge: float = 0.02,
+    min_edge: float = 0.04,
     use_odds: bool = True,
     n_similar: int = 50,
     conservative: bool = False,
     book_filter: str = "soft",
+    espn_only: bool = False,
 ):
     """Main analysis pipeline."""
     print("=" * 60)
@@ -548,6 +550,7 @@ def run_analysis(
                 stake=stake, min_edge=min_edge,
                 conservative=conservative,
                 book_filter=book_filter,
+                espn_only=espn_only,
             )
             
             # Filter bets using learned criteria from feedback system
@@ -854,8 +857,8 @@ def main():
                         help="Stake per bet in CAD (default: 1.00)")
     parser.add_argument("--days", type=int, default=90,
                         help="Historical lookback in days (default: 90)")
-    parser.add_argument("--min-edge", type=float, default=0.02,
-                        help="Minimum edge to recommend (default: 0.02 = 2%%)")
+    parser.add_argument("--min-edge", type=float, default=0.04,
+                        help="Minimum edge to recommend (default: 0.04 = 4%%)")
     parser.add_argument("--no-odds", action="store_true",
                         help="Run without live odds (no API key needed)")
     parser.add_argument("--similar", type=int, default=50,
@@ -866,6 +869,8 @@ def main():
                         help="Include spread bets (disabled by default, spread model unreliable)")
     parser.add_argument("--all-books", action="store_true",
                         help="Include all books (default: filter out sharp books where model has no edge)")
+    parser.add_argument("--espn-only", action="store_true",
+                        help="Only show bets available on ESPN Bet")
     args = parser.parse_args()
 
     run_analysis(
@@ -876,6 +881,7 @@ def main():
         n_similar=args.similar,
         conservative=not args.with_spreads,
         book_filter="all" if args.all_books else "soft",
+        espn_only=args.espn_only,
     )
 
 

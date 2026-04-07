@@ -8,16 +8,20 @@ from src.data.odds_fetcher import american_to_decimal, american_to_implied_prob
 from src.models.model import _poisson_over_prob
 
 # Books where the model has historically had edge (soft/recreational books)
-# Based on performance analysis: BetMGM 75%, ESPN 58%, Bovada/Bally 60%
-# Sharp books where model loses: FanDuel 33%, BetParx 17%, Fliff 20%, LowVig 29%
+# Based on optimization analysis (144 bets, Mar-Apr 2026):
+#   Bovada 78% WR +65% ROI, BetMGM 67% WR +29% ROI, HardRock 67% WR +24% ROI
+# Sharp/losing books: BetParx 17% WR -92% ROI, LowVig 29% WR -61% ROI,
+#   Betanysports 17% WR -56% ROI, Fliff 20% WR -37% ROI,
+#   FanDuel 36% WR -25% ROI, DraftKings 37% WR -24% ROI
 SOFT_BOOKS = {
-    "espnbet", "betmgm", "bovada", "ballybet", "draftkings",
+    "espnbet", "betmgm", "bovada", "ballybet",
     "betrivers", "pointsbet", "thescore", "betway", "bet365",
     "williamhill_us", "unibet_us", "superbook", "twinspires",
     "wynnbet", "hardrockbet",
 }
 SHARP_BOOKS = {
     "fanduel", "betparx", "lowvig", "fliff", "pinnacle", "betcris",
+    "draftkings", "betanysports",
 }
 
 
@@ -68,11 +72,12 @@ def evaluate_all_bets(
     blended_probs: dict,
     best_odds: dict,
     stake: float = 1.00,
-    min_edge: float = 0.02,  # Minimum 2% edge to recommend
-    min_confidence: float = 0.3,
+    min_edge: float = 0.04,  # Minimum 4% edge (optimized from 2% — bets below 4% lose money)
+    min_confidence: float = 0.5,  # Minimum 50% confidence (optimized from 30%)
     conservative: bool = False,
-    max_edge: float = 1.0,  # No practical cap - show all edges
+    max_edge: float = 1.0,  # No practical cap - high-edge bets are the most profitable
     book_filter: str = "soft",  # "soft" = exclude sharp books, "all" = no filter
+    espn_only: bool = False,  # ESPN Bet only mode
 ) -> list:
     """
     Evaluate all possible bets for a single game.
@@ -87,13 +92,15 @@ def evaluate_all_bets(
     if confidence < min_confidence:
         return bets
 
-    # In conservative mode, raise the bar
+    # In conservative mode, raise the bar further
     if conservative:
-        min_edge = max(min_edge, 0.03)  # At least 3% edge
-        min_confidence = max(min_confidence, 0.5)
+        min_edge = max(min_edge, 0.05)  # At least 5% edge (optimized: 5%+ is break-even point)
+        min_confidence = max(min_confidence, 0.60)
 
     # Book filter helper — skip bets on sharp books where model has no edge
     def _book_allowed(book_key: str) -> bool:
+        if espn_only:
+            return book_key.lower() == "espnbet"
         if book_filter == "all":
             return True
         return book_key.lower() not in SHARP_BOOKS
@@ -249,8 +256,9 @@ def evaluate_all_bets(
 
         ev_data = calculate_ev(true_prob=true_prob, american_odds=price, stake=stake)
 
-        # Under bets require higher edge — model has strong Under bias (39% win rate)
-        effective_min_edge = min_edge * 1.67 if side == "under" else min_edge  # ~5% for conservative mode
+        # Under bets require much higher edge — optimization showed Unders are -18.4% ROI
+        # Only take Unders at 7%+ edge (historically profitable band)
+        effective_min_edge = max(min_edge, 0.07) if side == "under" else min_edge
 
         if ev_data["edge"] >= effective_min_edge and ev_data["edge"] <= max_edge:
             candidate = {
