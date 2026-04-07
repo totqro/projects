@@ -22,10 +22,19 @@ const MODE_CONFIG = {
 };
 let profitChartInstance = null, allSortedBets = [], pinnedTooltipIndex = -1;
 
-// Filter performance bets by current mode (book only — edge/under thresholds are for forward picks, not history)
+// Filter performance bets by current mode
 function filterBetsByMode(bets) {
     const cfg = MODE_CONFIG[currentMode];
-    return bets.filter(r => cfg.bookFilter(r.bet.book||''));
+    if (currentMode === 'espn') {
+        // ESPN: filter by book only — show all historical ESPN Bet results
+        return bets.filter(r => cfg.bookFilter(r.bet.book||''));
+    }
+    // All Books: apply full filters (soft book filter + edge threshold)
+    return bets.filter(r => {
+        if (!cfg.bookFilter(r.bet.book||'')) return false;
+        if ((r.bet.edge||0) < cfg.minEdge) return false;
+        return true;
+    });
 }
 
 
