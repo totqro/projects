@@ -83,7 +83,11 @@ jobs:
           results = br.get('results', {})
           dates = sorted([v.get('checked_at','')[:10] for v in results.values() if v.get('checked_at')], reverse=True)
           print(f'Tracked bets: {len(results)}')
-          
+          print(f'Most recent check: {dates[0] if dates else \"none\"}')
+          won = sum(1 for v in results.values() if v.get('result') == 'won')
+          lost = sum(1 for v in results.values() if v.get('result') == 'lost')
+          print(f'Record: {won}W-{lost}L')
+
           # Show feedback stats
           try:
               fb = json.load(open('nhllines/data/model_feedback.json'))
@@ -91,10 +95,6 @@ jobs:
               print(f'Confidence scaling: {fb[\"optimal_weights\"][\"confidence_scaling\"]:.2f}')
           except:
               print('No feedback data yet')
-          "          print(f'Most recent check: {dates[0] if dates else \"none\"}')
-          won = sum(1 for v in results.values() if v.get('result') == 'won')
-          lost = sum(1 for v in results.values() if v.get('result') == 'lost')
-          print(f'Record: {won}W-{lost}L')
           "
 
       - name: Build deploy folder
