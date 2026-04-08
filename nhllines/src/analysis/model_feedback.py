@@ -318,8 +318,8 @@ class ModelFeedback:
         Returns:
             True if bet meets learned criteria
         """
-        # Hard floor: optimization showed confidence < 70% loses money
-        if confidence < 0.70:
+        # Hard floor: require minimum confidence
+        if confidence < 0.50:
             return False
 
         # Check bet type historical performance

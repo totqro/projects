@@ -72,8 +72,8 @@ def evaluate_all_bets(
     blended_probs: dict,
     best_odds: dict,
     stake: float = 1.00,
-    min_edge: float = 0.03,  # Minimum 3% edge (optimized: high-confidence + soft books is the edge)
-    min_confidence: float = 0.70,  # Minimum 70% confidence (optimized: 70%+ = 67% WR, <70% = losing)
+    min_edge: float = 0.03,  # Minimum 3% edge (optimized: soft books + edge ≥3% = 65% WR)
+    min_confidence: float = 0.50,  # Minimum 50% confidence (soft book filter is the real edge)
     conservative: bool = False,
     max_edge: float = 1.0,  # No practical cap - high-edge bets are the most profitable
     book_filter: str = "soft",  # "soft" = exclude sharp books, "all" = no filter
