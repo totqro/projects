@@ -4,8 +4,9 @@ from .ev_calculator import (
     format_recommendations,
     kelly_criterion,
     calculate_ev,
+    generate_parlays,
 )
-from .bet_tracker import get_performance_stats
+from .bet_tracker import get_performance_stats, get_parlay_performance
 from .analysis_history import save_analysis, get_history_stats
 from .goalie_tracker import get_todays_starters, get_goalie_matchup_analysis
 from .injury_tracker import get_todays_injuries, get_injury_impact_for_game
@@ -18,7 +19,9 @@ __all__ = [
     'format_recommendations',
     'kelly_criterion',
     'calculate_ev',
+    'generate_parlays',
     'get_performance_stats',
+    'get_parlay_performance',
     'save_analysis',
     'get_history_stats',
     'get_todays_starters',

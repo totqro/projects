@@ -105,6 +105,45 @@ def evaluate_all_bets(
             return True
         return book_key.lower() not in SHARP_BOOKS
 
+    # ESPN-only mode: rebuild best_odds using ESPN's actual prices
+    # so edge is calculated against ESPN's lines, not best-available
+    if espn_only:
+        espn_book = best_odds.get("all_books", {}).get("espnbet", {})
+        if not espn_book:
+            return bets  # ESPN has no odds for this game
+
+        best_odds = dict(best_odds)  # shallow copy
+        # Moneyline
+        if "ml_home" in espn_book:
+            best_odds["moneyline"] = {
+                "home": {"price": espn_book["ml_home"], "book": "espnbet"},
+                "away": {"price": espn_book.get("ml_away", 0), "book": "espnbet"} if "ml_away" in espn_book else None,
+            }
+        else:
+            best_odds["moneyline"] = {"home": None, "away": None}
+
+        # Totals
+        if "total_over" in espn_book:
+            over_data = espn_book["total_over"]
+            under_data = espn_book.get("total_under", {})
+            best_odds["total"] = {
+                "over": {"price": over_data["price"], "point": over_data["point"], "book": "espnbet"} if isinstance(over_data, dict) else None,
+                "under": {"price": under_data["price"], "point": under_data["point"], "book": "espnbet"} if isinstance(under_data, dict) else None,
+            }
+        else:
+            best_odds["total"] = {"over": None, "under": None}
+
+        # Spread
+        if "spread_home" in espn_book:
+            home_sp = espn_book["spread_home"]
+            away_sp = espn_book.get("spread_away", {})
+            best_odds["spread"] = {
+                "home": {"price": home_sp["price"], "point": home_sp["point"], "book": "espnbet"} if isinstance(home_sp, dict) else None,
+                "away": {"price": away_sp["price"], "point": away_sp["point"], "book": "espnbet"} if isinstance(away_sp, dict) else None,
+            }
+        else:
+            best_odds["spread"] = {"home": None, "away": None}
+
     # --- MONEYLINE BETS ---
     # Evaluate both but only keep the one with higher edge (if any)
     # Underdogs (positive odds) require higher edge — optimization showed
@@ -445,6 +484,117 @@ def format_recommendations(all_bets: list, top_n: int = 15, quota_info: dict = N
         lines.append("")
 
     return "\n".join(lines)
+
+
+def generate_parlays(recommendations: list, max_legs: int = 3, stake: float = 1.00) -> list:
+    """
+    Generate parlay combinations from the day's best straight bets.
+
+    Focuses on ML favorites (historically 75% WR on ESPN) as parlay legs.
+    Generates 2-leg and 3-leg parlays, ranked by expected value.
+
+    Args:
+        recommendations: List of straight bet recommendations
+        max_legs: Maximum legs per parlay (2 or 3)
+        stake: Stake per parlay
+
+    Returns:
+        List of parlay dicts sorted by EV
+    """
+    from itertools import combinations
+
+    # Optimal parlay leg selection based on backtesting (126 parlays, Mar-Apr 2026):
+    #   ML Fav + Overs (3%+ edge): 40W-86L, +$56.93, +45.2% ROI
+    #   ML Fav only: 8W-7L, +$12.52, +83.4% ROI (safer but 4.5x less profit)
+    #   Adding underdogs: -2.7% ROI (kills profitability)
+    #   Overs at 5%+ edge: -8.9% ROI (too restrictive)
+
+    # ML favorites: negative odds, 3%+ edge
+    ml_favorites = [
+        b for b in recommendations
+        if b["bet_type"] == "Moneyline"
+        and b["odds"] < 0
+        and b["edge"] >= 0.03
+        and b["confidence"] >= 0.50
+    ]
+
+    # Overs with 3%+ edge (the sweet spot — 5%+ is too restrictive)
+    overs = [
+        b for b in recommendations
+        if b["bet_type"] == "Total"
+        and "Over" in b.get("pick", "")
+        and b["edge"] >= 0.03
+        and b["confidence"] >= 0.50
+    ]
+
+    eligible = ml_favorites + overs
+
+    if len(eligible) < 2:
+        return []
+
+    parlays = []
+
+    for n_legs in range(2, min(max_legs + 1, len(eligible) + 1)):
+        for combo in combinations(eligible, n_legs):
+            # Skip parlays with bets from the same game
+            games = [leg["game"] for leg in combo]
+            if len(set(games)) < len(games):
+                continue
+
+            # Combined decimal odds = product of individual decimal odds
+            combined_decimal = 1.0
+            combined_true_prob = 1.0
+            combined_implied_prob = 1.0
+
+            for leg in combo:
+                combined_decimal *= leg["decimal_odds"]
+                combined_true_prob *= leg["true_prob"]
+                combined_implied_prob *= leg["implied_prob"]
+
+            # Parlay EV = (true_prob * payout) - stake
+            payout = stake * (combined_decimal - 1)
+            ev = (combined_true_prob * payout) - ((1 - combined_true_prob) * stake)
+            roi = ev / stake
+            edge = combined_true_prob - combined_implied_prob
+
+            # Combined American odds
+            if combined_decimal >= 2.0:
+                combined_american = int(round((combined_decimal - 1) * 100))
+            else:
+                combined_american = int(round(-100 / (combined_decimal - 1)))
+
+            parlays.append({
+                "legs": [
+                    {
+                        "pick": leg["pick"],
+                        "game": leg["game"],
+                        "odds": leg["odds"],
+                        "decimal_odds": leg["decimal_odds"],
+                        "true_prob": leg["true_prob"],
+                        "implied_prob": leg["implied_prob"],
+                        "edge": leg["edge"],
+                        "bet_type": leg["bet_type"],
+                        "book": leg["book"],
+                    }
+                    for leg in combo
+                ],
+                "n_legs": n_legs,
+                "combined_odds": combined_american,
+                "combined_decimal": round(combined_decimal, 3),
+                "combined_true_prob": round(combined_true_prob, 4),
+                "combined_implied_prob": round(combined_implied_prob, 4),
+                "ev": round(ev, 4),
+                "roi": round(roi, 4),
+                "edge": round(edge, 4),
+                "payout": round(stake * combined_decimal, 2),
+                "stake": stake,
+            })
+
+    # Sort by EV descending
+    parlays.sort(key=lambda p: p["ev"], reverse=True)
+
+    # Return top 10 parlays
+    return parlays[:10]
 
 
 def kelly_criterion(true_prob: float, decimal_odds: float, fraction: float = 0.25) -> float:

@@ -73,10 +73,26 @@ jobs:
           "
         continue-on-error: true
 
+      - name: Generate parlay performance data
+        working-directory: nhllines
+        run: |
+          python -c "
+          from src.analysis.bet_tracker import get_parlay_performance
+          import json
+          from pathlib import Path
+          perf = get_parlay_performance(stake=0.50)
+          if perf:
+              Path('data/parlay_results.json').write_text(json.dumps(perf, indent=2, default=str))
+              print(f'Parlay history: {perf[\"won\"]}W-{perf[\"lost\"]}L ({perf[\"win_rate\"]:.1%}) ROI: {perf[\"roi\"]:+.1%}')
+          else:
+              print('No parlay data available yet')
+          "
+        continue-on-error: true
+
       - name: Verify performance data updated
         run: |
           echo "=== Data file status ==="
-          ls -la nhllines/data/bet_results.json nhllines/data/analysis_history.json nhllines/data/latest_analysis.json nhllines/data/model_feedback.json 2>/dev/null || true
+          ls -la nhllines/data/bet_results.json nhllines/data/analysis_history.json nhllines/data/latest_analysis.json nhllines/data/model_feedback.json nhllines/data/parlay_results.json 2>/dev/null || true
           python -c "
           import json
           br = json.load(open('nhllines/data/bet_results.json'))
@@ -110,6 +126,7 @@ jobs:
           cp nhllines/data/latest_analysis.json build/nhllines/ 2>/dev/null || echo '{"recommendations":[],"games_analyzed":[],"timestamp":""}' > build/nhllines/latest_analysis.json
           cp nhllines/data/bet_results.json build/nhllines/ 2>/dev/null || echo '{"results":{}}' > build/nhllines/bet_results.json
           cp nhllines/data/analysis_history.json build/nhllines/ 2>/dev/null || true
+          cp nhllines/data/parlay_results.json build/nhllines/ 2>/dev/null || true
           # MLB app + data files (same repo now)
           cp mlblines/web/index.html build/mlblines/
           cp mlblines/web/app.js build/mlblines/
@@ -133,7 +150,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add nhllines/data/bet_results.json nhllines/data/analysis_history.json nhllines/data/latest_analysis.json nhllines/data/model_feedback.json
+          git add nhllines/data/bet_results.json nhllines/data/analysis_history.json nhllines/data/latest_analysis.json nhllines/data/model_feedback.json nhllines/data/parlay_results.json
           if git diff --cached --quiet; then
             echo "No data changes to commit"
           else

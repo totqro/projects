@@ -55,7 +55,9 @@ from src.analysis import (
     format_recommendations,
     kelly_criterion,
     calculate_ev,
+    generate_parlays,
     get_performance_stats,
+    get_parlay_performance,
     save_analysis,
     get_history_stats,
     get_todays_starters,
@@ -819,6 +821,11 @@ def run_analysis(
         print("  Run 'python bet_tracker.py --check' to update results")
         print()
 
+    # Generate parlay recommendations from the day's best straight bets
+    parlays = generate_parlays(all_bets, max_legs=3, stake=stake)
+    if parlays:
+        print(f"\n🎰 Generated {len(parlays)} parlay combinations")
+
     # Save results
     output = {
         "timestamp": datetime.now(EST).isoformat(),
@@ -831,6 +838,7 @@ def run_analysis(
             {k: v for k, v in bet.items() if not callable(v)}
             for bet in all_bets
         ],
+        "parlays": parlays,
         "quota_info": quota_info,
     }
 
@@ -838,6 +846,14 @@ def run_analysis(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(output, indent=2, default=str))
     print(f"Full analysis saved to: {output_path}")
+
+    # Generate parlay performance data from historical results
+    parlay_perf = get_parlay_performance(stake=stake)
+    if parlay_perf:
+        parlay_perf_path = Path(__file__).parent / "data" / "parlay_results.json"
+        parlay_perf_path.write_text(json.dumps(parlay_perf, indent=2, default=str))
+        print(f"  🎰 Parlay history: {parlay_perf['won']}W-{parlay_perf['lost']}L "
+              f"({parlay_perf['win_rate']:.1%}) | ROI: {parlay_perf['roi']:+.1%}")
     
     # Save to history (with deduplication and 30-day rolling window)
     save_analysis(output)
