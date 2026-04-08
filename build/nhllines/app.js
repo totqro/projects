@@ -471,8 +471,10 @@ async function loadParlayPerformance() {
     } catch(e) { hideParlayPerf(); }
 }
 
+let parlayChartInstance = null;
+
 function hideParlayPerf() {
-    ['parlay-perf-section','parlay-legs-breakdown','parlay-history-section'].forEach(id => {
+    ['parlay-perf-section','parlay-chart-section','parlay-legs-breakdown','parlay-history-section'].forEach(id => {
         const el = $(id); if (el) el.style.display = 'none';
     });
 }
@@ -494,6 +496,9 @@ function displayParlayPerformance(data) {
     const profEl = $('parlay-perf-profit');
     profEl.textContent = signUsd(data.total_profit);
     profEl.className = `stat-value ${profitClass}`;
+
+    // Profit chart
+    renderParlayProfitChart(data.parlays || []);
 
     // Breakdown by leg count
     const byLegs = data.by_legs || {};
@@ -531,6 +536,87 @@ function displayParlayPerformance(data) {
             <div class="result-profit ${p.profit>=0?'positive':'negative'}">${signUsd(p.profit)}</div>
         </div>`;
     }).join('');
+}
+
+function renderParlayProfitChart(parlays) {
+    const canvas = $('parlay-profit-chart');
+    if (!canvas || typeof Chart === 'undefined' || !parlays.length) return;
+
+    $('parlay-chart-section').style.display = '';
+
+    // Sort chronologically
+    const sorted = [...parlays].sort((a, b) => a.date.localeCompare(b.date));
+
+    let cumProfit = 0;
+    const labels = [], profitData = [], colors = [];
+
+    sorted.forEach(p => {
+        cumProfit += p.profit;
+        const d = new Date(p.date + 'T12:00:00');
+        labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        profitData.push(+cumProfit.toFixed(2));
+        colors.push(p.result === 'won' ? '#00C896' : '#FF4D6A');
+    });
+
+    if (parlayChartInstance) parlayChartInstance.destroy();
+
+    const mob = window.innerWidth < 768;
+    parlayChartInstance = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Cumulative Profit',
+                data: profitData,
+                borderColor: '#F4901E',
+                backgroundColor: 'rgba(244,144,30,.1)',
+                fill: true,
+                tension: .3,
+                borderWidth: 2.5,
+                pointRadius: mob ? 3 : 4,
+                pointHitRadius: mob ? 20 : 8,
+                pointBackgroundColor: colors,
+                pointBorderColor: colors,
+                pointBorderWidth: 0,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    enabled: true,
+                    backgroundColor: 'rgba(20,25,35,.95)',
+                    titleColor: '#E8EDF2',
+                    bodyColor: '#B8C4D0',
+                    borderColor: 'rgba(255,255,255,.1)',
+                    borderWidth: 1,
+                    padding: 10,
+                    callbacks: {
+                        afterBody(ctx) {
+                            const p = sorted[ctx[0].dataIndex];
+                            if (!p) return '';
+                            const legs = p.legs.map(l => l.pick).join(' + ');
+                            return `${p.result === 'won' ? 'W' : 'L'}: ${legs}\nP/L: ${signUsd(p.profit)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#6B7A8D', font: { size: mob ? 9 : 10 }, maxRotation: 45, maxTicksLimit: mob ? 8 : 20 },
+                    grid: { color: 'rgba(255,255,255,.05)' }
+                },
+                y: {
+                    ticks: { color: '#6B7A8D', callback: v => usd(v), font: { size: mob ? 9 : 11 } },
+                    grid: { color: 'rgba(255,255,255,.05)' },
+                    title: { display: !mob, text: 'Cumulative Profit ($)', color: '#6B7A8D' }
+                }
+            }
+        }
+    });
 }
 
 // Game analysis
