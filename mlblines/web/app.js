@@ -1,9 +1,36 @@
 let allRecommendations = [], allOddsData = {}, currentStake = 0.5, filtersSetUp = false;
 let currentFilters = { grade:'all', type:'all', book:'all', sortBy:'edge' };
+let currentMode = 'espn'; // 'espn' or 'all'
+let rawPerformanceData = null;
 let profitChartInstance = null, allSortedBets = [], pinnedTooltipIndex = -1;
 
-// Model changes — dates when the +EV calculation logic was materially changed
-const MODEL_CHANGES = [];
+const MODE_CONFIG = {
+    espn: {
+        label: 'ESPN Bet',
+        minEdge: 0.03,
+        bookFilter: book => book.toLowerCase() === 'espnbet',
+        description: 'ESPN Bet Only — 3%+ Edge, Conservative Mode',
+    },
+    all: {
+        label: 'All Books',
+        minEdge: 0.03,
+        bookFilter: book => !['fanduel','betparx','lowvig','fliff','pinnacle','betcris'].includes(book.toLowerCase()),
+        description: 'Soft Books — 3%+ Edge, Conservative Mode',
+    }
+};
+
+// Filter performance bets by current mode
+function filterBetsByMode(bets) {
+    const cfg = MODE_CONFIG[currentMode];
+    if (currentMode === 'espn') {
+        return bets.filter(r => cfg.bookFilter(r.bet.book||''));
+    }
+    return bets.filter(r => {
+        if (!cfg.bookFilter(r.bet.book||'')) return false;
+        if ((r.bet.edge||0) < cfg.minEdge) return false;
+        return true;
+    });
+}
 
 // Helpers
 const $ = id => document.getElementById(id);
@@ -47,13 +74,16 @@ async function loadPerformanceData() {
     try {
         const ts=Date.now();
         const [rr,hr] = await Promise.all([fetch(`bet_results.json?v=${ts}`),fetch(`analysis_history.json?v=${ts}`)]);
-        displayPerformance(rr.ok?await rr.json():null, hr.ok?await hr.json():null);
+        rawPerformanceData = rr.ok ? await rr.json() : null;
+        displayPerformance(rawPerformanceData, hr.ok?await hr.json():null);
     } catch(e) { console.error(e); displayNoPerformanceData(); }
 }
 
 function displayPerformance(results) {
     if (!results?.results || !Object.keys(results.results).length) { displayNoPerformanceData(); return; }
-    const bets = Object.values(results.results).filter(r=>r.result!=='push');
+    let bets = Object.values(results.results).filter(r=>r.result!=='push');
+    bets = filterBetsByMode(bets);
+    if (!bets.length) { displayNoPerformanceData(); return; }
     const won = bets.filter(r=>r.result==='won');
     const staked = bets.reduce((s,r)=>s+r.bet.stake,0);
     const profit = bets.reduce((s,r)=>s+r.profit,0);
@@ -148,22 +178,6 @@ function showPinnedTooltip(chart,idx,chartBets) {
     cont.appendChild(tt);
 }
 
-function showModelChangeTooltip(chart,mc) {
-    dismissPinnedTooltip(); pinnedTooltipIndex=-2;
-    const cont=chart.canvas.parentElement;
-    const x=chart.scales.x.getPixelForValue(mc.idx);
-    const tt=document.createElement('div'); tt.className='chart-tooltip-pinned';
-    tt.style.borderColor='var(--mlb-red)';
-    tt.innerHTML=`<button class="tooltip-close" onclick="dismissPinnedTooltip()">&times;</button>
-        <div class="tooltip-title" style="color:var(--mlb-red)">Model Change — ${mc.date}</div>
-        <div class="tooltip-line" style="font-weight:700">${mc.label}</div>
-        <div class="tooltip-line" style="color:var(--text-secondary);font-size:.78rem">${mc.desc}</div>`;
-    let l=x-120, t=40;
-    if(l<0) l=x+10; if(l+240>cont.offsetWidth) l=x-250;
-    tt.style.left=l+'px'; tt.style.top=t+'px';
-    cont.appendChild(tt);
-}
-
 function renderProfitChart(bets,sp=0,se=0) {
     const canvas=$('profit-chart'); if(!canvas||typeof Chart==='undefined') return;
     dismissPinnedTooltip();
@@ -183,37 +197,6 @@ function renderProfitChart(bets,sp=0,se=0) {
         colors.push(r.result==='won'?'#22C55E':'#EF4444');
     });
 
-    // Find which bet indices correspond to model change dates
-    const changeIndices = [];
-    MODEL_CHANGES.forEach(mc => {
-        const idx = betDates.findIndex(d => d >= mc.date);
-        if (idx >= 0) changeIndices.push({idx, ...mc});
-    });
-
-    // Custom plugin to draw vertical lines at model change points
-    const modelChangePlugin = {
-        id:'modelChanges',
-        afterDraw(chart) {
-            const ctx=chart.ctx, xScale=chart.scales.x, yScale=chart.scales.y;
-            changeIndices.forEach((mc,i) => {
-                const x = xScale.getPixelForValue(mc.idx);
-                if (x < xScale.left || x > xScale.right) return;
-                ctx.save();
-                ctx.beginPath(); ctx.setLineDash([4,4]);
-                ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=1;
-                ctx.moveTo(x, yScale.top); ctx.lineTo(x, yScale.bottom);
-                ctx.stroke(); ctx.setLineDash([]);
-                const yOff = yScale.top + 8 + (i % 3) * 14;
-                ctx.fillStyle='#E4002B'; ctx.beginPath();
-                ctx.moveTo(x,yOff); ctx.lineTo(x+4,yOff+4); ctx.lineTo(x,yOff+8); ctx.lineTo(x-4,yOff+4); ctx.closePath(); ctx.fill();
-                ctx.fillStyle='rgba(255,255,255,0.6)';
-                ctx.font='bold 9px sans-serif'; ctx.textAlign='center';
-                ctx.fillText(mc.label, x, yOff+18);
-                ctx.restore();
-            });
-        }
-    };
-
     if(profitChartInstance) profitChartInstance.destroy();
     const mob=window.innerWidth<768, chartBets=bets;
     profitChartInstance = new Chart(canvas.getContext('2d'), {
@@ -222,18 +205,10 @@ function renderProfitChart(bets,sp=0,se=0) {
             {label:'Actual Profit',data:pd,borderColor:'#C41E3A',backgroundColor:'rgba(196,30,58,.1)',fill:true,tension:.3,borderWidth:2.5,pointRadius:mob?3:4,pointHitRadius:mob?20:8,pointBackgroundColor:colors,pointBorderColor:colors,pointBorderWidth:0},
             {label:'Expected (EV)',data:ed,borderColor:'#F4901E',borderDash:[6,3],borderWidth:1.5,pointRadius:0,fill:false,tension:.3}
         ]},
-        plugins:[modelChangePlugin],
         options:{
             responsive:true, maintainAspectRatio:false,
             interaction:{intersect:false,mode:'index'},
             onClick(ev,els) {
-                const rect=canvas.getBoundingClientRect();
-                const cx=ev.native.clientX-rect.left;
-                const xScale=this.scales.x;
-                for(const mc of changeIndices) {
-                    const mx=xScale.getPixelForValue(mc.idx);
-                    if(Math.abs(cx-mx)<15) { showModelChangeTooltip(this,mc); return; }
-                }
                 if(els.length) { const i=els[0].index; pinnedTooltipIndex===i?dismissPinnedTooltip():showPinnedTooltip(this,i,chartBets); }
                 else dismissPinnedTooltip();
             },
@@ -276,6 +251,23 @@ function displayAnalysis(data) {
     displayGames(data.games_analyzed);
 }
 
+// Mode switch
+function setMode(mode) {
+    currentMode = mode;
+    $$('.mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.mode-btn[data-mode="${mode}"]`).classList.add('active');
+    const sub = document.querySelector('.subtitle');
+    if (sub) sub.textContent = MODE_CONFIG[mode].description;
+    populateBookFilter(allRecommendations);
+    currentFilters.book = 'all';
+    const bookSel = $('filter-book');
+    if (bookSel) bookSel.value = 'all';
+    applyFilters();
+    if ($('performance-tab').style.display !== 'none' && rawPerformanceData) {
+        displayPerformance(rawPerformanceData);
+    }
+}
+
 // Filters
 function setupFilters() {
     if(filtersSetUp) return; filtersSetUp=true;
@@ -285,18 +277,24 @@ function setupFilters() {
 }
 
 function applyFilters() {
+    const cfg = MODE_CONFIG[currentMode];
     let f=[...allRecommendations];
+    f = f.filter(b => cfg.bookFilter(b.book));
+    f = f.filter(b => b.edge >= cfg.minEdge);
     if(currentFilters.grade!=='all') f=f.filter(b=>getGrade(b.edge)===currentFilters.grade);
     if(currentFilters.type!=='all') f=f.filter(b=>b.bet_type===currentFilters.type);
     if(currentFilters.book!=='all') f=f.filter(b=>b.book===currentFilters.book);
     const sorts={edge:(a,b)=>b.edge-a.edge,roi:(a,b)=>b.roi-a.roi,confidence:(a,b)=>b.confidence-a.confidence,
         book:(a,b)=>a.book==='thescore'?-1:b.book==='thescore'?1:a.book.localeCompare(b.book)};
     f.sort(sorts[currentFilters.sortBy]||sorts.edge);
+    const betsFound = $('bets-found');
+    if (betsFound) betsFound.textContent = f.length;
     displayRecommendations(f,currentStake);
 }
 
 function populateBookFilter(recs) {
-    const sel=$('filter-book'), books=[...new Set(recs.map(b=>b.book))].sort();
+    const cfg = MODE_CONFIG[currentMode];
+    const sel=$('filter-book'), books=[...new Set(recs.filter(b => cfg.bookFilter(b.book)).map(b=>b.book))].sort();
     sel.innerHTML='<option value="all">All Books</option>';
     if(books.includes('thescore')) sel.innerHTML+=`<option value="thescore">theScore Bet</option>`;
     books.filter(b=>b!=='thescore').forEach(b => { sel.innerHTML+=`<option value="${b}">${fmtBook(b)}</option>`; });

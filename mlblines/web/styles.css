@@ -29,8 +29,15 @@ header::before { content:''; position:absolute; top:0; left:0; right:0; height:2
 header h1 { font-size:1.9rem; margin-bottom:6px; font-weight:700; letter-spacing:-.02em; }
 .subtitle { font-size:.9rem; color:var(--t2); font-weight:500; letter-spacing:.04em; text-transform:uppercase; }
 
+/* Mode Switch */
+.mode-switch { display:flex; gap:4px; margin:12px 0 8px; background:var(--bg-s); border-radius:var(--r); border:1px solid var(--bd); padding:4px; }
+.mode-btn { flex:1; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:.88rem; background:transparent; color:var(--t3); transition:all .2s; }
+.mode-btn.active[data-mode="espn"] { background:linear-gradient(135deg,#c8102e,#e4002b); color:#fff; box-shadow:0 2px 8px rgba(228,0,43,.3); }
+.mode-btn.active[data-mode="all"] { background:linear-gradient(135deg,var(--mlb-navy),var(--mlb-navy-bright)); color:#fff; box-shadow:0 2px 8px rgba(30,91,198,.3); }
+.mode-btn:not(.active):hover { color:var(--t1); background:var(--bg-i); }
+
 /* Tabs */
-.tabs { display:flex; margin:16px 0; background:var(--bg-s); border-radius:var(--r); border:1px solid var(--bd); padding:4px; gap:4px; position:sticky; top:0; z-index:100; }
+.tabs { display:flex; margin:8px 0 16px; background:var(--bg-s); border-radius:var(--r); border:1px solid var(--bd); padding:4px; gap:4px; position:sticky; top:0; z-index:100; }
 .tab-button { background:transparent; border:none; padding:10px 20px; font-size:.88rem; font-weight:600; color:var(--t2); cursor:pointer; transition:all .2s; flex:1; text-transform:uppercase; letter-spacing:.06em; border-radius:7px; min-height:44px; }
 .tab-button:hover { color:var(--t1); background:var(--bg-i); }
 .tab-button.active { background:var(--mlb-navy-dim); color:var(--mlb-navy-bright); box-shadow:0 0 12px rgba(30,91,198,.2); }

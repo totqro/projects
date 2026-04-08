@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MLB +EV Betting Finder</title>
-    <link rel="stylesheet" href="styles.css?v=1.0">
+    <link rel="stylesheet" href="styles.css?v=2.0">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -14,8 +14,13 @@
                 <a href="/" class="back-link">&larr; Back to Projects</a>
             </div>
             <h1>&#9918; MLB +EV Betting Finder</h1>
-            <p class="subtitle">Conservative Mode: Moneylines + Totals Only | 3%+ Edge | Skip Whole-Number Totals</p>
+            <p class="subtitle">ESPN Bet Only — 3%+ Edge, Conservative Mode</p>
         </header>
+
+        <div class="mode-switch">
+            <button class="mode-btn active" data-mode="espn" onclick="setMode('espn')">ESPN Bet</button>
+            <button class="mode-btn" data-mode="all" onclick="setMode('all')">All Books</button>
+        </div>
 
         <div class="tabs">
             <button class="tab-button active" onclick="showTab('today')">Today's Picks</button>
@@ -168,6 +173,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=1.0"></script>
+    <script src="app.js?v=2.0"></script>
 </body>
 </html>
