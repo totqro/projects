@@ -309,27 +309,32 @@ class ModelFeedback:
     def should_take_bet(self, edge: float, confidence: float, bet_type: str) -> bool:
         """
         Use historical performance to decide if a bet is worth taking.
-        
+
         Args:
             edge: Predicted edge
             confidence: Model confidence
             bet_type: Type of bet (Moneyline, Total, Spread)
-            
+
         Returns:
             True if bet meets learned criteria
         """
+        # Hard floor: optimization showed confidence < 70% loses money
+        if confidence < 0.70:
+            return False
+
         # Check bet type historical performance
         type_data = self.feedback_data["bet_type_accuracy"].get(bet_type, {})
         if type_data.get("total", 0) >= 10:
             type_win_rate = type_data["correct"] / type_data["total"]
-            
+
             # If this bet type historically underperforms, require higher edge
-            # Optimized: Totals at 42.9% WR need 6%+ edge, ML at 52.3% WR is fine at 4%
-            if type_win_rate < 0.50:
-                edge_threshold = 0.06  # Require 6%+ edge for underperforming bet types
+            if type_win_rate < 0.45:
+                edge_threshold = 0.06  # Require 6%+ edge for poorly performing types
+            elif type_win_rate < 0.50:
+                edge_threshold = 0.05  # Require 5%+ edge for underperforming types
             else:
-                edge_threshold = 0.04  # Standard 4%+ edge
-            
+                edge_threshold = 0.03  # Standard 3%+ edge for good performers
+
             if edge < edge_threshold:
                 return False
         

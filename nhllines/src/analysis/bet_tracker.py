@@ -44,15 +44,16 @@ def check_results(days_back: int = 7):
     print(f"Fetching game results from last {days_back} days...")
     games = fetch_season_games(days_back=days_back)
     
-    # Create lookup dict: game_key -> result
+    # Create lookup dict: (date, game_key) -> result
+    # Use date+matchup as key to handle rematches correctly
     game_results = {}
     for game in games:
         date = game["date"][:10]
         home = game["home_team"]
         away = game["away_team"]
         game_key = f"{away} @ {home}"
-        
-        game_results[game_key] = {
+
+        game_results[(date, game_key)] = {
             "date": date,
             "home_score": game["home_score"],
             "away_score": game["away_score"],
@@ -60,23 +61,32 @@ def check_results(days_back: int = 7):
             "home_won": game["home_score"] > game["away_score"],
             "away_won": game["away_score"] > game["home_score"],
         }
-    
+
     # Check each bet
     updated = 0
     for bet in all_bets:
-        # Create unique bet ID based on game and pick (not timestamp)
-        # This prevents duplicates from multiple analyses
-        bet_id = f"{bet['game']}_{bet['pick']}"
-        
+        # Extract the date from the analysis timestamp
+        analysis_ts = bet.get("analysis_timestamp", "")
+        bet_date = analysis_ts[:10] if analysis_ts else ""
+
+        # Create unique bet ID including date to handle rematches
+        bet_id = f"{bet_date}_{bet['game']}_{bet['pick']}"
+
         # Skip if already resolved
         if bet_id in results_log["results"]:
             continue
-        
+
         game_key = bet["game"]
-        if game_key not in game_results:
+        # Look up by (date, game_key) first, fall back to any matching game
+        result = game_results.get((bet_date, game_key))
+        if result is None:
+            # Try matching without date (for bets without timestamps)
+            for (d, gk), r in game_results.items():
+                if gk == game_key:
+                    result = r
+                    break
+        if result is None:
             continue
-        
-        result = game_results[game_key]
         outcome = _check_bet_result(bet, result)
 
         if outcome is None:

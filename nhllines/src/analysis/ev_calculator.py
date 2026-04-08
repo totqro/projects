@@ -72,8 +72,8 @@ def evaluate_all_bets(
     blended_probs: dict,
     best_odds: dict,
     stake: float = 1.00,
-    min_edge: float = 0.04,  # Minimum 4% edge (optimized from 2% — bets below 4% lose money)
-    min_confidence: float = 0.5,  # Minimum 50% confidence (optimized from 30%)
+    min_edge: float = 0.03,  # Minimum 3% edge (optimized: high-confidence + soft books is the edge)
+    min_confidence: float = 0.70,  # Minimum 70% confidence (optimized: 70%+ = 67% WR, <70% = losing)
     conservative: bool = False,
     max_edge: float = 1.0,  # No practical cap - high-edge bets are the most profitable
     book_filter: str = "soft",  # "soft" = exclude sharp books, "all" = no filter
@@ -94,8 +94,8 @@ def evaluate_all_bets(
 
     # In conservative mode, raise the bar further
     if conservative:
-        min_edge = max(min_edge, 0.05)  # At least 5% edge (optimized: 5%+ is break-even point)
-        min_confidence = max(min_confidence, 0.60)
+        min_edge = max(min_edge, 0.04)  # At least 4% edge in conservative mode
+        min_confidence = max(min_confidence, 0.75)  # 75%+ confidence in conservative mode
 
     # Book filter helper — skip bets on sharp books where model has no edge
     def _book_allowed(book_key: str) -> bool:
@@ -107,39 +107,46 @@ def evaluate_all_bets(
 
     # --- MONEYLINE BETS ---
     # Evaluate both but only keep the one with higher edge (if any)
+    # Underdogs (positive odds) require higher edge — optimization showed
+    # favorites at 64% WR vs underdogs at 39% WR with same edge threshold
+    underdog_min_edge = max(min_edge, 0.06)  # Underdogs need 6%+ edge to be profitable
     home_ml_bet = None
     away_ml_bet = None
-    
+
     if best_odds["moneyline"]["home"] and _book_allowed(best_odds["moneyline"]["home"]["book"]):
+        home_odds = best_odds["moneyline"]["home"]["price"]
+        required_edge = underdog_min_edge if home_odds > 0 else min_edge
         ev_data = calculate_ev(
             true_prob=blended_probs["home_win_prob"],
-            american_odds=best_odds["moneyline"]["home"]["price"],
+            american_odds=home_odds,
             stake=stake,
         )
-        if ev_data["edge"] >= min_edge and ev_data["edge"] <= max_edge:
+        if ev_data["edge"] >= required_edge and ev_data["edge"] <= max_edge:
             home_ml_bet = {
                 "game": game_label,
                 "bet_type": "Moneyline",
                 "pick": f"{home_team} ML",
                 "book": best_odds["moneyline"]["home"]["book"],
-                "odds": best_odds["moneyline"]["home"]["price"],
+                "odds": home_odds,
                 **ev_data,
                 "confidence": confidence,
             }
 
     if best_odds["moneyline"]["away"] and _book_allowed(best_odds["moneyline"]["away"]["book"]):
+        away_odds = best_odds["moneyline"]["away"]["price"]
+        required_edge = underdog_min_edge if away_odds > 0 else min_edge
         ev_data = calculate_ev(
             true_prob=blended_probs["away_win_prob"],
-            american_odds=best_odds["moneyline"]["away"]["price"],
+            american_odds=away_odds,
             stake=stake,
         )
-        if ev_data["edge"] >= min_edge and ev_data["edge"] <= max_edge:
+        if ev_data["edge"] >= required_edge and ev_data["edge"] <= max_edge:
             away_ml_bet = {
                 "game": game_label,
                 "bet_type": "Moneyline",
                 "pick": f"{away_team} ML",
                 "book": best_odds["moneyline"]["away"]["book"],
-                "odds": best_odds["moneyline"]["away"]["price"],
+                "odds": away_odds,
                 **ev_data,
                 "confidence": confidence,
             }
