@@ -1,6 +1,3421 @@
 {
   "analyses": [
     {
+      "timestamp": "2026-04-09T17:08:05.480374-04:00",
+      "stake": 0.5,
+      "days_back": 90,
+      "min_edge": 0.04,
+      "n_historical_games": 583,
+      "games_analyzed": [
+        {
+          "game": "TOR @ NYI",
+          "home": "NYI",
+          "away": "TOR",
+          "model_probs": {
+            "home_win_prob": 0.6555324459281291,
+            "away_win_prob": 0.34446755407187096,
+            "expected_total": 6.959031799342924,
+            "over_prob": 0.4966354220272701,
+            "under_prob": 0.5033645779727298,
+            "home_cover_prob": 0.5258905521200874,
+            "away_cover_prob": 0.4741094478799126,
+            "total_line": 6.5,
+            "spread_line": -1.5,
+            "n_games": 50,
+            "avg_similarity": 0.7445196799306655,
+            "confidence": 0.4497963925647468,
+            "raw_confidence": 0.34379982601578435,
+            "raw_home_win_prob": 0.5376578932115996,
+            "raw_over_prob": 0.4951062102727095,
+            "goal_distribution": {
+              "3": 0.06,
+              "4": 0.08,
+              "5": 0.22,
+              "6": 0.12,
+              "7": 0.2,
+              "8": 0.18,
+              "9": 0.08,
+              "10": 0.04,
+              "13": 0.02
+            }
+          },
+          "market_probs": {
+            "home_win_prob": 0.7071329420212504,
+            "away_win_prob": 0.2928670579787495,
+            "over_prob": 0.49053201329978885,
+            "under_prob": 0.5094679867002112,
+            "spread_home_cover_prob": 0.5002727004864663,
+            "total_line": 6.5,
+            "spread_line": -1.5,
+            "n_books_ml": 15,
+            "n_books_total": 15,
+            "n_books_spread": 15
+          },
+          "blended_probs": {
+            "home_win_prob": 0.6814345535629807,
+            "away_win_prob": 0.31856544643701934,
+            "over_prob": 0.4935716695099801,
+            "under_prob": 0.5064283304900199,
+            "home_cover_prob": 0.5104793853456047,
+            "away_cover_prob": 0.31856544643701934,
+            "expected_total": 6.959031799342924,
+            "model_confidence": 0.4497963925647468,
+            "effective_model_weight": 0.49802599594959046
+          },
+          "n_similar": 50,
+          "n_bets": 0,
+          "context_indicators": {
+            "fatigue": [],
+            "goalie": [],
+            "injuries": [
+              {
+                "team": "NYI",
+                "impact": 5.2,
+                "severity": "negative"
+              }
+            ],
+            "splits": [],
+            "advanced": []
+          },
+          "goalie_matchup": {
+            "home": null,
+            "away": null
+          },
+          "team_splits": {
+            "home": {
+              "games": 10,
+              "wins": 6,
+              "losses": 3,
+              "ot_losses": 1,
+              "win_pct": 0.6,
+              "goals_for": 30,
+              "goals_against": 32,
+              "gf_pg": 3.0,
+              "ga_pg": 3.2,
+              "goal_diff": -0.2
+            },
+            "away": {
+              "games": 10,
+              "wins": 3,
+              "losses": 6,
+              "ot_losses": 1,
+              "win_pct": 0.3,
+              "goals_for": 28,
+              "goals_against": 41,
+              "gf_pg": 2.8,
+              "ga_pg": 4.1,
+              "goal_diff": -1.3
+            }
+          },
+          "injuries": {
+            "home": {
+              "impact_score": 5.2,
+              "key_injuries": [],
+              "total_injuries": 10,
+              "positions_affected": {
+                "F": 5,
+                "D": 3,
+                "G": 2
+              },
+              "injury_details": [
+                {
+                  "player": "Semyon Varlamov",
+                  "position": "G",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.5,
+                  "impact": 0.67,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Semyon Varlamov",
+                  "position": "G",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.5,
+                  "impact": 0.67,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Alexander Romanov",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 14",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Alexander Romanov",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 14",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Urho Vaakanainen",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 11",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Pierre Engvall",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Kyle Palmieri",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Pierre Engvall",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Kyle Palmieri",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Matt Rempe",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                }
+              ]
+            },
+            "away": {
+              "impact_score": 3.4,
+              "key_injuries": [],
+              "total_injuries": 6,
+              "positions_affected": {
+                "F": 1,
+                "D": 3,
+                "G": 2
+              },
+              "injury_details": [
+                {
+                  "player": "Kevin Lankinen",
+                  "position": "G",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.5,
+                  "impact": 0.67,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Thatcher Demko",
+                  "position": "G",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.5,
+                  "impact": 0.67,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Chris Tanev",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Chris Tanev",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Derek Forbort",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 16",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Filip Chytil",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 16",
+                  "found_in_roster": false
+                }
+              ]
+            }
+          },
+          "advanced_stats": {
+            "home": {
+              "xGF_per_60": 2.7525641025641026,
+              "xGA_per_60": 2.789102564102564,
+              "xGF_pct": 49.670329670329664,
+              "corsi_pct": 49.67032967032967,
+              "fenwick_pct": 49.67032967032967,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            },
+            "away": {
+              "xGF_per_60": 2.947435897435897,
+              "xGA_per_60": 3.3980769230769234,
+              "xGF_pct": 46.44913627639155,
+              "corsi_pct": 46.449136276391556,
+              "fenwick_pct": 46.449136276391556,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            }
+          }
+        },
+        {
+          "game": "CBJ @ BUF",
+          "home": "BUF",
+          "away": "CBJ",
+          "model_probs": {
+            "home_win_prob": 0.6233429505634773,
+            "away_win_prob": 0.3766570494365227,
+            "expected_total": 6.695806358547953,
+            "over_prob": 0.5325782625471714,
+            "under_prob": 0.46742173745282856,
+            "home_cover_prob": 0.5582418216742897,
+            "away_cover_prob": 0.4417581783257103,
+            "total_line": 6.5,
+            "spread_line": -1.5,
+            "n_games": 50,
+            "avg_similarity": 0.7410767169699882,
+            "confidence": 0.4732099369557054,
+            "raw_confidence": 0.3817164970942598,
+            "raw_home_win_prob": 0.5828844918497464,
+            "raw_over_prob": 0.5463624361145614,
+            "goal_distribution": {
+              "3": 0.06,
+              "4": 0.04,
+              "5": 0.22,
+              "6": 0.14,
+              "7": 0.16,
+              "8": 0.12,
+              "9": 0.1,
+              "10": 0.06,
+              "11": 0.08,
+              "13": 0.02
+            }
+          },
+          "market_probs": {
+            "home_win_prob": 0.5060084894748452,
+            "away_win_prob": 0.4939915105251548,
+            "over_prob": 0.4879099044460922,
+            "under_prob": 0.5120900955539078,
+            "spread_home_cover_prob": 0.36723133020260396,
+            "total_line": 6.5,
+            "spread_line": -1.5,
+            "n_books_ml": 14,
+            "n_books_total": 14,
+            "n_books_spread": 14
+          },
+          "blended_probs": {
+            "home_win_prob": 0.5654409291517012,
+            "away_win_prob": 0.4345590708482988,
+            "over_prob": 0.5105353929315359,
+            "under_prob": 0.48946460706846406,
+            "home_cover_prob": 0.44463208293431733,
+            "away_cover_prob": 0.4345590708482988,
+            "expected_total": 6.695806358547953,
+            "model_confidence": 0.4732099369557054,
+            "effective_model_weight": 0.5065216060604893
+          },
+          "n_similar": 50,
+          "n_bets": 0,
+          "context_indicators": {
+            "fatigue": [],
+            "goalie": [
+              {
+                "team": "BUF",
+                "type": "cold",
+                "value": 0.879,
+                "severity": "negative"
+              }
+            ],
+            "injuries": [],
+            "splits": [],
+            "advanced": []
+          },
+          "goalie_matchup": {
+            "home": {
+              "name": "Alex Lyon",
+              "quality_score": 55.3,
+              "recent_save_pct": 0.879,
+              "recent_gaa": 3.07,
+              "recent_quality_starts": 4
+            },
+            "away": null
+          },
+          "team_splits": {
+            "home": {
+              "games": 10,
+              "wins": 7,
+              "losses": 2,
+              "ot_losses": 1,
+              "win_pct": 0.7,
+              "goals_for": 37,
+              "goals_against": 32,
+              "gf_pg": 3.7,
+              "ga_pg": 3.2,
+              "goal_diff": 0.5
+            },
+            "away": {
+              "games": 10,
+              "wins": 5,
+              "losses": 5,
+              "ot_losses": 0,
+              "win_pct": 0.5,
+              "goals_for": 24,
+              "goals_against": 26,
+              "gf_pg": 2.4,
+              "ga_pg": 2.6,
+              "goal_diff": -0.2
+            }
+          },
+          "injuries": {
+            "home": {
+              "impact_score": 5.0,
+              "key_injuries": [],
+              "total_injuries": 10,
+              "positions_affected": {
+                "F": 8,
+                "D": 0,
+                "G": 2
+              },
+              "injury_details": [
+                {
+                  "player": "Alex Lyon",
+                  "position": "G",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.5,
+                  "impact": 0.67,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Alex Lyon",
+                  "position": "G",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.5,
+                  "impact": 0.67,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Noah Ostlund",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Jiri Kulich",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Justin Danforth",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 13",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Noah Ostlund",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Jiri Kulich",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Justin Danforth",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 13",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Samuel Honzek",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Jonathan Huberdeau",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                }
+              ]
+            },
+            "away": {
+              "impact_score": 0,
+              "key_injuries": [],
+              "total_injuries": 0,
+              "positions_affected": {},
+              "injury_details": []
+            }
+          },
+          "advanced_stats": {
+            "home": {
+              "xGF_per_60": 3.3069620253164556,
+              "xGA_per_60": 2.837974683544304,
+              "xGF_pct": 53.8160469667319,
+              "corsi_pct": 53.8160469667319,
+              "fenwick_pct": 53.8160469667319,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            },
+            "away": {
+              "xGF_per_60": 2.983974358974359,
+              "xGA_per_60": 2.93525641025641,
+              "xGF_pct": 50.41152263374485,
+              "corsi_pct": 50.41152263374485,
+              "fenwick_pct": 50.41152263374485,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            }
+          }
+        },
+        {
+          "game": "PHI @ DET",
+          "home": "DET",
+          "away": "PHI",
+          "model_probs": {
+            "home_win_prob": 0.3142675156052075,
+            "away_win_prob": 0.6857324986999072,
+            "expected_total": 6.310364713914273,
+            "over_prob": 0.4279394688198241,
+            "under_prob": 0.5720605311801759,
+            "home_cover_prob": 0.4697544014330022,
+            "away_cover_prob": 0.5302455985669978,
+            "total_line": 6.5,
+            "spread_line": -1.5,
+            "n_games": 50,
+            "avg_similarity": 0.7591716137957999,
+            "confidence": 0.5148999682043323,
+            "raw_confidence": 0.4492307177398094,
+            "raw_home_win_prob": 0.4585502010890492,
+            "raw_over_prob": 0.4012453160674522,
+            "goal_distribution": {
+              "1": 0.02,
+              "2": 0.02,
+              "3": 0.12,
+              "4": 0.04,
+              "5": 0.32,
+              "6": 0.1,
+              "7": 0.06,
+              "8": 0.1,
+              "9": 0.16,
+              "10": 0.02,
+              "11": 0.04
+            }
+          },
+          "market_probs": {
+            "home_win_prob": 0.5174723719329791,
+            "away_win_prob": 0.4825276280670208,
+            "over_prob": 0.5140181455755123,
+            "under_prob": 0.4859818544244877,
+            "spread_home_cover_prob": 0.3129469294862331,
+            "total_line": 5.5,
+            "spread_line": -1.5,
+            "n_books_ml": 14,
+            "n_books_total": 14,
+            "n_books_spread": 14
+          },
+          "blended_probs": {
+            "home_win_prob": 0.4116067237010198,
+            "away_win_prob": 0.5883932762989802,
+            "over_prob": 0.46917288410700086,
+            "under_prob": 0.5308271158929991,
+            "home_cover_prob": 0.3783017638745714,
+            "away_cover_prob": 0.5883932762989802,
+            "expected_total": 6.310364713914273,
+            "model_confidence": 0.5148999682043323,
+            "effective_model_weight": 0.520979912316647
+          },
+          "n_similar": 50,
+          "n_bets": 0,
+          "context_indicators": {
+            "fatigue": [],
+            "goalie": [],
+            "injuries": [],
+            "splits": [
+              {
+                "team": "DET",
+                "type": "weak_home",
+                "value": 0.2,
+                "severity": "negative"
+              },
+              {
+                "team": "PHI",
+                "type": "strong_road",
+                "value": 0.9,
+                "severity": "positive"
+              }
+            ],
+            "advanced": []
+          },
+          "goalie_matchup": {
+            "home": null,
+            "away": null
+          },
+          "team_splits": {
+            "home": {
+              "games": 10,
+              "wins": 2,
+              "losses": 5,
+              "ot_losses": 3,
+              "win_pct": 0.2,
+              "goals_for": 26,
+              "goals_against": 36,
+              "gf_pg": 2.6,
+              "ga_pg": 3.6,
+              "goal_diff": -1.0
+            },
+            "away": {
+              "games": 10,
+              "wins": 9,
+              "losses": 1,
+              "ot_losses": 0,
+              "win_pct": 0.9,
+              "goals_for": 39,
+              "goals_against": 24,
+              "gf_pg": 3.9,
+              "ga_pg": 2.4,
+              "goal_diff": 1.5
+            }
+          },
+          "injuries": {
+            "home": {
+              "impact_score": 0,
+              "key_injuries": [],
+              "total_injuries": 0,
+              "positions_affected": {},
+              "injury_details": []
+            },
+            "away": {
+              "impact_score": 1.9,
+              "key_injuries": [],
+              "total_injuries": 4,
+              "positions_affected": {
+                "F": 3,
+                "D": 1,
+                "G": 0
+              },
+              "injury_details": [
+                {
+                  "player": "Caleb Jones",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Rodrigo Abols",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 14",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Rodrigo Abols",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 14",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Filip Hallander",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 14",
+                  "found_in_roster": false
+                }
+              ]
+            }
+          },
+          "advanced_stats": {
+            "home": {
+              "xGF_per_60": 2.776923076923077,
+              "xGA_per_60": 2.8987179487179486,
+              "xGF_pct": 48.927038626609445,
+              "corsi_pct": 48.927038626609445,
+              "fenwick_pct": 48.927038626609445,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            },
+            "away": {
+              "xGF_per_60": 2.837820512820513,
+              "xGA_per_60": 2.8256410256410254,
+              "xGF_pct": 50.10752688172043,
+              "corsi_pct": 50.10752688172043,
+              "fenwick_pct": 50.10752688172043,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            }
+          }
+        },
+        {
+          "game": "FLA @ OTT",
+          "home": "OTT",
+          "away": "FLA",
+          "model_probs": {
+            "home_win_prob": 0.6285972717445144,
+            "away_win_prob": 0.3714027282554856,
+            "expected_total": 6.426834272192826,
+            "over_prob": 0.5053705155963222,
+            "under_prob": 0.4946294844036778,
+            "home_cover_prob": 0.5547866322751704,
+            "away_cover_prob": 0.44521336772482956,
+            "total_line": 6.5,
+            "spread_line": -1.5,
+            "n_games": 50,
+            "avg_similarity": 0.7459937946876215,
+            "confidence": 0.5172130915755011,
+            "raw_confidence": 0.45297666651903024,
+            "raw_home_win_prob": 0.5749279699224762,
+            "raw_over_prob": 0.5073448907946799,
+            "goal_distribution": {
+              "3": 0.08,
+              "4": 0.1,
+              "5": 0.14,
+              "6": 0.16,
+              "7": 0.18,
+              "8": 0.14,
+              "9": 0.1,
+              "10": 0.04,
+              "11": 0.04,
+              "14": 0.02
+            }
+          },
+          "market_probs": {
+            "home_win_prob": 0.7405222511968571,
+            "away_win_prob": 0.25947774880314284,
+            "over_prob": 0.47848799016275695,
+            "under_prob": 0.521512009837243,
+            "spread_home_cover_prob": 0.5402407837657797,
+            "total_line": 6.5,
+            "spread_line": -1.5,
+            "n_books_ml": 14,
+            "n_books_total": 14,
+            "n_books_spread": 14
+          },
+          "blended_probs": {
+            "home_win_prob": 0.6821243978664917,
+            "away_win_prob": 0.3178756021335083,
+            "over_prob": 0.49251418686255277,
+            "under_prob": 0.5074858131374472,
+            "home_cover_prob": 0.5463123244136209,
+            "away_cover_prob": 0.3178756021335083,
+            "expected_total": 6.426834272192826,
+            "model_confidence": 0.5172130915755011,
+            "effective_model_weight": 0.5217588925734935
+          },
+          "n_similar": 50,
+          "n_bets": 0,
+          "context_indicators": {
+            "fatigue": [],
+            "goalie": [],
+            "injuries": [
+              {
+                "team": "FLA",
+                "impact": 5.6,
+                "severity": "negative"
+              }
+            ],
+            "splits": [
+              {
+                "team": "FLA",
+                "type": "weak_road",
+                "value": 0.2,
+                "severity": "negative"
+              }
+            ],
+            "advanced": []
+          },
+          "goalie_matchup": {
+            "home": null,
+            "away": null
+          },
+          "team_splits": {
+            "home": {
+              "games": 10,
+              "wins": 7,
+              "losses": 2,
+              "ot_losses": 1,
+              "win_pct": 0.7,
+              "goals_for": 39,
+              "goals_against": 25,
+              "gf_pg": 3.9,
+              "ga_pg": 2.5,
+              "goal_diff": 1.4
+            },
+            "away": {
+              "games": 10,
+              "wins": 2,
+              "losses": 7,
+              "ot_losses": 1,
+              "win_pct": 0.2,
+              "goals_for": 24,
+              "goals_against": 42,
+              "gf_pg": 2.4,
+              "ga_pg": 4.2,
+              "goal_diff": -1.8
+            }
+          },
+          "injuries": {
+            "home": {
+              "impact_score": 1.5,
+              "key_injuries": [],
+              "total_injuries": 3,
+              "positions_affected": {
+                "F": 1,
+                "D": 2,
+                "G": 0
+              },
+              "injury_details": [
+                {
+                  "player": "Nick Jensen",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 28",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Nick Jensen",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 28",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Rodrigo Abols",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 14",
+                  "found_in_roster": false
+                }
+              ]
+            },
+            "away": {
+              "impact_score": 5.6,
+              "key_injuries": [],
+              "total_injuries": 12,
+              "positions_affected": {
+                "F": 10,
+                "D": 2,
+                "G": 0
+              },
+              "injury_details": [
+                {
+                  "player": "Niko Mikkola",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Niko Mikkola",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Evan Rodrigues",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Jonah Gadjovich",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Aleksander Barkov",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Brad Marchand",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Evan Rodrigues",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Jonah Gadjovich",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Aleksander Barkov",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Brad Marchand",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Andrei Kuzmenko",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 16",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Kevin Fiala",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                }
+              ]
+            }
+          },
+          "advanced_stats": {
+            "home": {
+              "xGF_per_60": 3.215384615384615,
+              "xGA_per_60": 2.923076923076923,
+              "xGF_pct": 52.38095238095239,
+              "corsi_pct": 52.38095238095239,
+              "fenwick_pct": 52.38095238095239,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            },
+            "away": {
+              "xGF_per_60": 2.837820512820513,
+              "xGA_per_60": 3.23974358974359,
+              "xGF_pct": 46.6933867735471,
+              "corsi_pct": 46.6933867735471,
+              "fenwick_pct": 46.6933867735471,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            }
+          }
+        },
+        {
+          "game": "TBL @ MTL",
+          "home": "MTL",
+          "away": "TBL",
+          "model_probs": {
+            "home_win_prob": 0.6025348951014939,
+            "away_win_prob": 0.39746510489850606,
+            "expected_total": 6.903554267674744,
+            "over_prob": 0.4846976962683147,
+            "under_prob": 0.5153023037316853,
+            "home_cover_prob": 0.5134505678432614,
+            "away_cover_prob": 0.4865494321567386,
+            "total_line": 6.5,
+            "spread_line": 1.5,
+            "n_games": 50,
+            "avg_similarity": 0.7371860281864774,
+            "confidence": 0.4630453349383138,
+            "raw_confidence": 0.36525560313896976,
+            "raw_home_win_prob": 0.519322690039038,
+            "raw_over_prob": 0.4780171606629453,
+            "goal_distribution": {
+              "3": 0.1,
+              "4": 0.06,
+              "5": 0.2,
+              "6": 0.18,
+              "7": 0.18,
+              "8": 0.06,
+              "9": 0.14,
+              "11": 0.06,
+              "15": 0.02
+            }
+          },
+          "market_probs": {
+            "home_win_prob": 0.48291805263486115,
+            "away_win_prob": 0.5170819473651388,
+            "over_prob": 0.48765472706150287,
+            "under_prob": 0.5123452729384972,
+            "spread_home_cover_prob": 0.6831278741551151,
+            "total_line": 6.5,
+            "spread_line": 1.5,
+            "n_books_ml": 14,
+            "n_books_total": 14,
+            "n_books_spread": 14
+          },
+          "blended_probs": {
+            "home_win_prob": 0.5430696080359096,
+            "away_win_prob": 0.45693039196409035,
+            "over_prob": 0.4861677290944007,
+            "under_prob": 0.5138322709055994,
+            "home_cover_prob": 0.5430696080359096,
+            "away_cover_prob": 0.3851324388941294,
+            "expected_total": 6.903554267674744,
+            "model_confidence": 0.4630453349383138,
+            "effective_model_weight": 0.5028686108131291
+          },
+          "n_similar": 50,
+          "n_bets": 0,
+          "context_indicators": {
+            "fatigue": [],
+            "goalie": [],
+            "injuries": [
+              {
+                "team": "TBL",
+                "impact": 6.5,
+                "severity": "negative"
+              }
+            ],
+            "splits": [],
+            "advanced": []
+          },
+          "goalie_matchup": {
+            "home": null,
+            "away": {
+              "name": "Jonas Johansson",
+              "quality_score": 49.0,
+              "recent_save_pct": 0.9,
+              "recent_gaa": 3.0,
+              "recent_quality_starts": 0
+            }
+          },
+          "team_splits": {
+            "home": {
+              "games": 10,
+              "wins": 7,
+              "losses": 2,
+              "ot_losses": 1,
+              "win_pct": 0.7,
+              "goals_for": 35,
+              "goals_against": 25,
+              "gf_pg": 3.5,
+              "ga_pg": 2.5,
+              "goal_diff": 1.0
+            },
+            "away": {
+              "games": 10,
+              "wins": 4,
+              "losses": 4,
+              "ot_losses": 2,
+              "win_pct": 0.4,
+              "goals_for": 38,
+              "goals_against": 39,
+              "gf_pg": 3.8,
+              "ga_pg": 3.9,
+              "goal_diff": -0.1
+            }
+          },
+          "injuries": {
+            "home": {
+              "impact_score": 2.7,
+              "key_injuries": [],
+              "total_injuries": 6,
+              "positions_affected": {
+                "F": 6,
+                "D": 0,
+                "G": 0
+              },
+              "injury_details": [
+                {
+                  "player": "Joe Veleno",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Patrik Laine",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 12",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Joe Veleno",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Patrik Laine",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 12",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Stefan Noesen",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Oct 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Zack MacEwen",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                }
+              ]
+            },
+            "away": {
+              "impact_score": 6.5,
+              "key_injuries": [],
+              "total_injuries": 13,
+              "positions_affected": {
+                "F": 6,
+                "D": 7,
+                "G": 0
+              },
+              "injury_details": [
+                {
+                  "player": "Victor Hedman",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Maxwell Crozier",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 29",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Declan Carlile",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 13",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Victor Hedman",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Maxwell Crozier",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 29",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Declan Carlile",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 13",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Chris Tanev",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Anthony Cirelli",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Brandon Hagel",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Dominic James",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 30",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Anthony Cirelli",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Brandon Hagel",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Dominic James",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 30",
+                  "found_in_roster": false
+                }
+              ]
+            }
+          },
+          "advanced_stats": {
+            "home": {
+              "xGF_per_60": 3.3249999999999997,
+              "xGA_per_60": 2.983974358974359,
+              "xGF_pct": 52.702702702702695,
+              "corsi_pct": 52.702702702702695,
+              "fenwick_pct": 52.702702702702695,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            },
+            "away": {
+              "xGF_per_60": 3.4224358974358973,
+              "xGA_per_60": 2.691666666666667,
+              "xGF_pct": 55.976095617529886,
+              "corsi_pct": 55.97609561752988,
+              "fenwick_pct": 55.97609561752988,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            }
+          }
+        },
+        {
+          "game": "PIT @ NJD",
+          "home": "NJD",
+          "away": "PIT",
+          "model_probs": {
+            "home_win_prob": 0.5163137286247921,
+            "away_win_prob": 0.48368625707009316,
+            "expected_total": 7.1334741783493545,
+            "over_prob": 0.48740074597288374,
+            "under_prob": 0.5125992540271163,
+            "home_cover_prob": 0.5442610507863668,
+            "away_cover_prob": 0.4557389492136332,
+            "total_line": 6.5,
+            "spread_line": -1.5,
+            "n_games": 50,
+            "avg_similarity": 0.734722322333978,
+            "confidence": 0.4530817660574162,
+            "raw_confidence": 0.3491202689188927,
+            "raw_home_win_prob": 0.5641791810934984,
+            "raw_over_prob": 0.4817308945114708,
+            "goal_distribution": {
+              "2": 0.04,
+              "3": 0.06,
+              "4": 0.1,
+              "5": 0.16,
+              "6": 0.14,
+              "7": 0.18,
+              "8": 0.1,
+              "9": 0.16,
+              "10": 0.02,
+              "11": 0.02,
+              "13": 0.02
+            }
+          },
+          "market_probs": {
+            "home_win_prob": 0.5004463414177085,
+            "away_win_prob": 0.4995536585822915,
+            "over_prob": 0.5325463333320019,
+            "under_prob": 0.46745366666799815,
+            "spread_home_cover_prob": 0.5335056531445156,
+            "total_line": 6.5,
+            "spread_line": -1.5,
+            "n_books_ml": 14,
+            "n_books_total": 14,
+            "n_books_spread": 14
+          },
+          "blended_probs": {
+            "home_win_prob": 0.5083679060751238,
+            "away_win_prob": 0.49163209392487617,
+            "over_prob": 0.5100080486985625,
+            "under_prob": 0.48999195130143747,
+            "home_cover_prob": 0.5083679060751238,
+            "away_cover_prob": 0.4621987648936048,
+            "expected_total": 7.1334741783493545,
+            "model_confidence": 0.4530817660574162,
+            "effective_model_weight": 0.4992356053351301
+          },
+          "n_similar": 50,
+          "n_bets": 0,
+          "context_indicators": {
+            "fatigue": [],
+            "goalie": [],
+            "injuries": [],
+            "splits": [],
+            "advanced": []
+          },
+          "goalie_matchup": {
+            "home": null,
+            "away": null
+          },
+          "team_splits": {
+            "home": {
+              "games": 10,
+              "wins": 6,
+              "losses": 2,
+              "ot_losses": 2,
+              "win_pct": 0.6,
+              "goals_for": 40,
+              "goals_against": 36,
+              "gf_pg": 4.0,
+              "ga_pg": 3.6,
+              "goal_diff": 0.4
+            },
+            "away": {
+              "games": 10,
+              "wins": 4,
+              "losses": 4,
+              "ot_losses": 2,
+              "win_pct": 0.4,
+              "goals_for": 40,
+              "goals_against": 39,
+              "gf_pg": 4.0,
+              "ga_pg": 3.9,
+              "goal_diff": 0.1
+            }
+          },
+          "injuries": {
+            "home": {
+              "impact_score": 3.9,
+              "key_injuries": [],
+              "total_injuries": 8,
+              "positions_affected": {
+                "F": 6,
+                "D": 1,
+                "G": 1
+              },
+              "injury_details": [
+                {
+                  "player": "Semyon Varlamov",
+                  "position": "G",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.5,
+                  "impact": 0.67,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Alexander Romanov",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 14",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Stefan Noesen",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Oct 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Zack MacEwen",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Stefan Noesen",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Oct 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Zack MacEwen",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Pierre Engvall",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Kyle Palmieri",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                }
+              ]
+            },
+            "away": {
+              "impact_score": 2.4,
+              "key_injuries": [],
+              "total_injuries": 5,
+              "positions_affected": {
+                "F": 3,
+                "D": 2,
+                "G": 0
+              },
+              "injury_details": [
+                {
+                  "player": "Caleb Jones",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Caleb Jones",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Filip Hallander",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 14",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Filip Hallander",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 14",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Logan Couture",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                }
+              ]
+            }
+          },
+          "advanced_stats": {
+            "home": {
+              "xGF_per_60": 2.667307692307692,
+              "xGA_per_60": 2.9108974358974353,
+              "xGF_pct": 47.81659388646288,
+              "corsi_pct": 47.81659388646288,
+              "fenwick_pct": 47.81659388646288,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            },
+            "away": {
+              "xGF_per_60": 3.41025641025641,
+              "xGA_per_60": 3.0448717948717947,
+              "xGF_pct": 52.83018867924528,
+              "corsi_pct": 52.83018867924528,
+              "fenwick_pct": 52.83018867924528,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            }
+          }
+        },
+        {
+          "game": "WPG @ STL",
+          "home": "STL",
+          "away": "WPG",
+          "model_probs": {
+            "home_win_prob": 0.5025964048696917,
+            "away_win_prob": 0.49740358082519354,
+            "expected_total": 5.51933865177312,
+            "over_prob": 0.5427350992728012,
+            "under_prob": 0.45726490072719883,
+            "home_cover_prob": 0.5251244817011941,
+            "away_cover_prob": 0.4748755182988059,
+            "total_line": 5.5,
+            "spread_line": -1.5,
+            "n_games": 50,
+            "avg_similarity": 0.7555565858396623,
+            "confidence": 0.48073345150820057,
+            "raw_confidence": 0.3939003263290698,
+            "raw_home_win_prob": 0.5355086170306356,
+            "raw_over_prob": 0.5603978339490271,
+            "goal_distribution": {
+              "3": 0.1,
+              "4": 0.08,
+              "5": 0.3,
+              "6": 0.08,
+              "7": 0.22,
+              "8": 0.08,
+              "9": 0.1,
+              "11": 0.04
+            }
+          },
+          "market_probs": {
+            "home_win_prob": 0.5019894176330894,
+            "away_win_prob": 0.4980105823669106,
+            "over_prob": 0.5006972221765192,
+            "under_prob": 0.49930277782348076,
+            "spread_home_cover_prob": 0.44101497872169043,
+            "total_line": 5.5,
+            "spread_line": 1.5,
+            "n_books_ml": 14,
+            "n_books_total": 14,
+            "n_books_spread": 14
+          },
+          "blended_probs": {
+            "home_win_prob": 0.5022984906064059,
+            "away_win_prob": 0.49770150939359414,
+            "over_prob": 0.5221025679277516,
+            "under_prob": 0.47789743207224844,
+            "home_cover_prob": 0.47527727961033006,
+            "away_cover_prob": 0.49770150939359414,
+            "expected_total": 5.51933865177312,
+            "model_confidence": 0.48073345150820057,
+            "effective_model_weight": 0.5091918819355783
+          },
+          "n_similar": 50,
+          "n_bets": 0,
+          "context_indicators": {
+            "fatigue": [],
+            "goalie": [],
+            "injuries": [],
+            "splits": [],
+            "advanced": []
+          },
+          "goalie_matchup": {
+            "home": null,
+            "away": null
+          },
+          "team_splits": {
+            "home": {
+              "games": 10,
+              "wins": 6,
+              "losses": 3,
+              "ot_losses": 1,
+              "win_pct": 0.6,
+              "goals_for": 31,
+              "goals_against": 24,
+              "gf_pg": 3.1,
+              "ga_pg": 2.4,
+              "goal_diff": 0.7
+            },
+            "away": {
+              "games": 10,
+              "wins": 5,
+              "losses": 3,
+              "ot_losses": 2,
+              "win_pct": 0.5,
+              "goals_for": 26,
+              "goals_against": 31,
+              "gf_pg": 2.6,
+              "ga_pg": 3.1,
+              "goal_diff": -0.5
+            }
+          },
+          "injuries": {
+            "home": {
+              "impact_score": 0,
+              "key_injuries": [],
+              "total_injuries": 0,
+              "positions_affected": {},
+              "injury_details": []
+            },
+            "away": {
+              "impact_score": 1.1,
+              "key_injuries": [],
+              "total_injuries": 2,
+              "positions_affected": {
+                "F": 0,
+                "D": 2,
+                "G": 0
+              },
+              "injury_details": [
+                {
+                  "player": "Colin Miller",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 16",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Colin Miller",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 16",
+                  "found_in_roster": false
+                }
+              ]
+            }
+          },
+          "advanced_stats": {
+            "home": {
+              "xGF_per_60": 2.5415584415584416,
+              "xGA_per_60": 2.9733766233766232,
+              "xGF_pct": 46.085011185682326,
+              "corsi_pct": 46.085011185682326,
+              "fenwick_pct": 46.085011185682326,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            },
+            "away": {
+              "xGF_per_60": 2.7266233766233765,
+              "xGA_per_60": 2.887012987012987,
+              "xGF_pct": 48.57142857142857,
+              "corsi_pct": 48.57142857142857,
+              "fenwick_pct": 48.57142857142857,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            }
+          }
+        },
+        {
+          "game": "CAR @ CHI",
+          "home": "CHI",
+          "away": "CAR",
+          "model_probs": {
+            "home_win_prob": 0.3380051224620694,
+            "away_win_prob": 0.661994884690488,
+            "expected_total": 6.559128024507539,
+            "over_prob": 0.45052524809641287,
+            "under_prob": 0.5494747519035872,
+            "home_cover_prob": 0.5421879507776166,
+            "away_cover_prob": 0.4578120492223834,
+            "total_line": 6.5,
+            "spread_line": 1.5,
+            "n_games": 50,
+            "avg_similarity": 0.7240407102549296,
+            "confidence": 0.4154427040210448,
+            "raw_confidence": 0.2881663223012872,
+            "raw_home_win_prob": 0.563415111002311,
+            "raw_over_prob": 0.4256316833136538,
+            "goal_distribution": {
+              "1": 0.02,
+              "2": 0.06,
+              "3": 0.1,
+              "4": 0.08,
+              "5": 0.2,
+              "6": 0.1,
+              "7": 0.14,
+              "8": 0.04,
+              "9": 0.18,
+              "10": 0.02,
+              "11": 0.04,
+              "12": 0.02
+            }
+          },
+          "market_probs": {
+            "home_win_prob": 0.34080300775110467,
+            "away_win_prob": 0.6591969922488953,
+            "over_prob": 0.4922062052822998,
+            "under_prob": 0.5077937947177003,
+            "spread_home_cover_prob": 0.5550637639652237,
+            "total_line": 6.0,
+            "spread_line": 1.5,
+            "n_books_ml": 14,
+            "n_books_total": 14,
+            "n_books_spread": 14
+          },
+          "blended_probs": {
+            "home_win_prob": 0.3394460063161844,
+            "away_win_prob": 0.6605539936838156,
+            "over_prob": 0.47199053778093325,
+            "under_prob": 0.5280094622190667,
+            "home_cover_prob": 0.3394460063161844,
+            "away_cover_prob": 0.4499321512110911,
+            "expected_total": 6.559128024507539,
+            "model_confidence": 0.4154427040210448,
+            "effective_model_weight": 0.4850096750707909
+          },
+          "n_similar": 50,
+          "n_bets": 0,
+          "context_indicators": {
+            "fatigue": [],
+            "goalie": [
+              {
+                "team": "CAR",
+                "type": "cold",
+                "value": 0.846,
+                "severity": "negative"
+              }
+            ],
+            "injuries": [],
+            "splits": [
+              {
+                "team": "CHI",
+                "type": "weak_home",
+                "value": 0.2,
+                "severity": "negative"
+              }
+            ],
+            "advanced": []
+          },
+          "goalie_matchup": {
+            "home": null,
+            "away": {
+              "name": "Brandon Bussi",
+              "quality_score": 48.5,
+              "recent_save_pct": 0.846,
+              "recent_gaa": 3.51,
+              "recent_quality_starts": 1
+            }
+          },
+          "team_splits": {
+            "home": {
+              "games": 10,
+              "wins": 2,
+              "losses": 6,
+              "ot_losses": 2,
+              "win_pct": 0.2,
+              "goals_for": 25,
+              "goals_against": 37,
+              "gf_pg": 2.5,
+              "ga_pg": 3.7,
+              "goal_diff": -1.2
+            },
+            "away": {
+              "games": 10,
+              "wins": 6,
+              "losses": 3,
+              "ot_losses": 1,
+              "win_pct": 0.6,
+              "goals_for": 40,
+              "goals_against": 36,
+              "gf_pg": 4.0,
+              "ga_pg": 3.6,
+              "goal_diff": 0.4
+            }
+          },
+          "injuries": {
+            "home": {
+              "impact_score": 3.1,
+              "key_injuries": [],
+              "total_injuries": 6,
+              "positions_affected": {
+                "F": 2,
+                "D": 4,
+                "G": 0
+              },
+              "injury_details": [
+                {
+                  "player": "Ryan Ellis",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Jul 1",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Shea Weber",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Jul 1",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Ryan Ellis",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Jul 1",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Shea Weber",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Jul 1",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Radek Faksa",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 11",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Tyler Seguin",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                }
+              ]
+            },
+            "away": {
+              "impact_score": 3.5,
+              "key_injuries": [],
+              "total_injuries": 6,
+              "positions_affected": {
+                "F": 0,
+                "D": 4,
+                "G": 2
+              },
+              "injury_details": [
+                {
+                  "player": "Pyotr Kochetkov",
+                  "position": "G",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.5,
+                  "impact": 0.67,
+                  "status": "Apr 11",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Pyotr Kochetkov",
+                  "position": "G",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.5,
+                  "impact": 0.67,
+                  "status": "Apr 11",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Jalen Chatfield",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Jalen Chatfield",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Ryan Ellis",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Jul 1",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Shea Weber",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Jul 1",
+                  "found_in_roster": false
+                }
+              ]
+            }
+          },
+          "advanced_stats": {
+            "home": {
+              "xGF_per_60": 2.46025641025641,
+              "xGA_per_60": 3.117948717948718,
+              "xGF_pct": 44.10480349344978,
+              "corsi_pct": 44.10480349344978,
+              "fenwick_pct": 44.10480349344978,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            },
+            "away": {
+              "xGF_per_60": 3.4224358974358973,
+              "xGA_per_60": 2.837820512820513,
+              "xGF_pct": 54.66926070038911,
+              "corsi_pct": 54.6692607003891,
+              "fenwick_pct": 54.6692607003891,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            }
+          }
+        },
+        {
+          "game": "CGY @ COL",
+          "home": "COL",
+          "away": "CGY",
+          "model_probs": {
+            "home_win_prob": 0.5565158802897459,
+            "away_win_prob": 0.4434841197102541,
+            "expected_total": 8.112007828441572,
+            "over_prob": 0.521156211061958,
+            "under_prob": 0.478843788938042,
+            "home_cover_prob": 0.5319264956450473,
+            "away_cover_prob": 0.46807350435495265,
+            "total_line": 6.5,
+            "spread_line": -1.5,
+            "n_games": 50,
+            "avg_similarity": 0.7411939506037999,
+            "confidence": 0.49824074220113795,
+            "raw_confidence": 0.42225221409091174,
+            "raw_home_win_prob": 0.5444101492750093,
+            "raw_over_prob": 0.5294285505619188,
+            "goal_distribution": {
+              "3": 0.08,
+              "4": 0.08,
+              "5": 0.16,
+              "6": 0.16,
+              "7": 0.18,
+              "8": 0.1,
+              "9": 0.12,
+              "10": 0.02,
+              "11": 0.08,
+              "15": 0.02
+            }
+          },
+          "market_probs": {
+            "home_win_prob": 0.7383633349989897,
+            "away_win_prob": 0.26163666500101035,
+            "over_prob": 0.4837774909045871,
+            "under_prob": 0.5162225090954129,
+            "spread_home_cover_prob": 0.5347816761610912,
+            "total_line": 6.0,
+            "spread_line": -1.5,
+            "n_books_ml": 14,
+            "n_books_total": 14,
+            "n_books_spread": 14
+          },
+          "blended_probs": {
+            "home_win_prob": 0.6446574221127548,
+            "away_win_prob": 0.3553425778872452,
+            "over_prob": 0.5030387288496871,
+            "under_prob": 0.49696127115031286,
+            "home_cover_prob": 0.5336046575566189,
+            "away_cover_prob": 0.3553425778872452,
+            "expected_total": 8.112007828441572,
+            "model_confidence": 0.49824074220113795,
+            "effective_model_weight": 0.5152995571813829
+          },
+          "n_similar": 50,
+          "n_bets": 0,
+          "context_indicators": {
+            "fatigue": [],
+            "goalie": [
+              {
+                "team": "COL",
+                "type": "hot",
+                "value": 0.935,
+                "severity": "positive"
+              }
+            ],
+            "injuries": [],
+            "splits": [
+              {
+                "team": "CGY",
+                "type": "weak_road",
+                "value": 0.2,
+                "severity": "negative"
+              }
+            ],
+            "advanced": []
+          },
+          "goalie_matchup": {
+            "home": {
+              "name": "Scott Wedgewood",
+              "quality_score": 65.9,
+              "recent_save_pct": 0.935,
+              "recent_gaa": 1.54,
+              "recent_quality_starts": 8
+            },
+            "away": null
+          },
+          "team_splits": {
+            "home": {
+              "games": 10,
+              "wins": 3,
+              "losses": 6,
+              "ot_losses": 1,
+              "win_pct": 0.3,
+              "goals_for": 33,
+              "goals_against": 38,
+              "gf_pg": 3.3,
+              "ga_pg": 3.8,
+              "goal_diff": -0.5
+            },
+            "away": {
+              "games": 10,
+              "wins": 2,
+              "losses": 7,
+              "ot_losses": 1,
+              "win_pct": 0.2,
+              "goals_for": 27,
+              "goals_against": 48,
+              "gf_pg": 2.7,
+              "ga_pg": 4.8,
+              "goal_diff": -2.1
+            }
+          },
+          "injuries": {
+            "home": {
+              "impact_score": 0,
+              "key_injuries": [],
+              "total_injuries": 0,
+              "positions_affected": {},
+              "injury_details": []
+            },
+            "away": {
+              "impact_score": 3.0,
+              "key_injuries": [],
+              "total_injuries": 6,
+              "positions_affected": {
+                "F": 4,
+                "D": 1,
+                "G": 1
+              },
+              "injury_details": [
+                {
+                  "player": "Pyotr Kochetkov",
+                  "position": "G",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.5,
+                  "impact": 0.67,
+                  "status": "Apr 11",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Jalen Chatfield",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Samuel Honzek",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Jonathan Huberdeau",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Samuel Honzek",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Jonathan Huberdeau",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                }
+              ]
+            }
+          },
+          "advanced_stats": {
+            "home": {
+              "xGF_per_60": 3.5779220779220777,
+              "xGA_per_60": 2.43051948051948,
+              "xGF_pct": 59.54825462012321,
+              "corsi_pct": 59.54825462012321,
+              "fenwick_pct": 59.54825462012321,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            },
+            "away": {
+              "xGF_per_60": 2.492207792207792,
+              "xGA_per_60": 3.047402597402597,
+              "xGF_pct": 44.98886414253897,
+              "corsi_pct": 44.98886414253897,
+              "fenwick_pct": 44.98886414253897,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            }
+          }
+        },
+        {
+          "game": "MIN @ DAL",
+          "home": "DAL",
+          "away": "MIN",
+          "model_probs": {
+            "home_win_prob": 0.5291985198303713,
+            "away_win_prob": 0.47080148016962875,
+            "expected_total": 6.349522837145458,
+            "over_prob": 0.4142635867508163,
+            "under_prob": 0.5857364132491837,
+            "home_cover_prob": 0.5039053094013863,
+            "away_cover_prob": 0.49609469059861366,
+            "total_line": 6.5,
+            "spread_line": -1.5,
+            "n_games": 50,
+            "avg_similarity": 0.7541208056489441,
+            "confidence": 0.46695961293191235,
+            "raw_confidence": 0.3715945148694937,
+            "raw_home_win_prob": 0.5055898913115477,
+            "raw_over_prob": 0.37728059873188435,
+            "goal_distribution": {
+              "1": 0.02,
+              "2": 0.02,
+              "3": 0.14,
+              "4": 0.06,
+              "5": 0.3,
+              "6": 0.1,
+              "7": 0.08,
+              "8": 0.08,
+              "9": 0.14,
+              "10": 0.04,
+              "11": 0.02
+            }
+          },
+          "market_probs": {
+            "home_win_prob": 0.5316411389515653,
+            "away_win_prob": 0.4683588610484347,
+            "over_prob": 0.5000391781199421,
+            "under_prob": 0.49996082188005786,
+            "spread_home_cover_prob": 0.32457756478234345,
+            "total_line": 6.0,
+            "spread_line": -1.5,
+            "n_books_ml": 15,
+            "n_books_total": 15,
+            "n_books_spread": 15
+          },
+          "blended_probs": {
+            "home_win_prob": 0.5304093710503254,
+            "away_win_prob": 0.4695906289496746,
+            "over_prob": 0.4567841248692688,
+            "under_prob": 0.5432158751307312,
+            "home_cover_prob": 0.3969229116952123,
+            "away_cover_prob": 0.4695906289496746,
+            "expected_total": 6.349522837145458,
+            "model_confidence": 0.46695961293191235,
+            "effective_model_weight": 0.5042816092579303
+          },
+          "n_similar": 50,
+          "n_bets": 0,
+          "context_indicators": {
+            "fatigue": [],
+            "goalie": [],
+            "injuries": [],
+            "splits": [],
+            "advanced": []
+          },
+          "goalie_matchup": {
+            "home": {
+              "name": "Jake Oettinger",
+              "quality_score": 51.7,
+              "recent_save_pct": 0.899,
+              "recent_gaa": 2.43,
+              "recent_quality_starts": 6
+            },
+            "away": null
+          },
+          "team_splits": {
+            "home": {
+              "games": 10,
+              "wins": 6,
+              "losses": 4,
+              "ot_losses": 0,
+              "win_pct": 0.6,
+              "goals_for": 32,
+              "goals_against": 28,
+              "gf_pg": 3.2,
+              "ga_pg": 2.8,
+              "goal_diff": 0.4
+            },
+            "away": {
+              "games": 10,
+              "wins": 6,
+              "losses": 4,
+              "ot_losses": 0,
+              "win_pct": 0.6,
+              "goals_for": 35,
+              "goals_against": 34,
+              "gf_pg": 3.5,
+              "ga_pg": 3.4,
+              "goal_diff": 0.1
+            }
+          },
+          "injuries": {
+            "home": {
+              "impact_score": 3.8,
+              "key_injuries": [],
+              "total_injuries": 8,
+              "positions_affected": {
+                "F": 7,
+                "D": 0,
+                "G": 1
+              },
+              "injury_details": [
+                {
+                  "player": "Connor Ingram",
+                  "position": "G",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.5,
+                  "impact": 0.67,
+                  "status": "Apr 11",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Radek Faksa",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 11",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Tyler Seguin",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Radek Faksa",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 11",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Tyler Seguin",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Jason Dickinson",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 11",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Leon Draisaitl",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 18",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Mattias Janmark",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                }
+              ]
+            },
+            "away": {
+              "impact_score": 2.0,
+              "key_injuries": [],
+              "total_injuries": 4,
+              "positions_affected": {
+                "F": 2,
+                "D": 2,
+                "G": 0
+              },
+              "injury_details": [
+                {
+                  "player": "Zach Bogosian",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Zach Bogosian",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Joe Veleno",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Patrik Laine",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 12",
+                  "found_in_roster": false
+                }
+              ]
+            }
+          },
+          "advanced_stats": {
+            "home": {
+              "xGF_per_60": 3.191025641025641,
+              "xGA_per_60": 2.606410256410256,
+              "xGF_pct": 55.04201680672269,
+              "corsi_pct": 55.04201680672269,
+              "fenwick_pct": 55.04201680672269,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            },
+            "away": {
+              "xGF_per_60": 3.1788461538461537,
+              "xGA_per_60": 2.7403846153846154,
+              "xGF_pct": 53.703703703703695,
+              "corsi_pct": 53.70370370370371,
+              "fenwick_pct": 53.70370370370371,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            }
+          }
+        },
+        {
+          "game": "SJS @ ANA",
+          "home": "ANA",
+          "away": "SJS",
+          "model_probs": {
+            "home_win_prob": 0.5307457785664386,
+            "away_win_prob": 0.46925422143356144,
+            "expected_total": 7.607671887167053,
+            "over_prob": 0.5267256246614271,
+            "under_prob": 0.47327437533857286,
+            "home_cover_prob": 0.527382347228127,
+            "away_cover_prob": 0.47261765277187295,
+            "total_line": 6.5,
+            "spread_line": -1.5,
+            "n_games": 50,
+            "avg_similarity": 0.7485468911687205,
+            "confidence": 0.48511631111079906,
+            "raw_confidence": 0.4009980746733589,
+            "raw_home_win_prob": 0.5385450125462033,
+            "raw_over_prob": 0.5376205709940627,
+            "goal_distribution": {
+              "3": 0.04,
+              "4": 0.12,
+              "5": 0.26,
+              "6": 0.02,
+              "7": 0.18,
+              "8": 0.14,
+              "9": 0.12,
+              "10": 0.04,
+              "11": 0.04,
+              "13": 0.04
+            }
+          },
+          "market_probs": {
+            "home_win_prob": 0.5956889938237355,
+            "away_win_prob": 0.4043110061762645,
+            "over_prob": 0.5404379396490862,
+            "under_prob": 0.45956206035091385,
+            "spread_home_cover_prob": 0.3926901705329335,
+            "total_line": 6.5,
+            "spread_line": -1.5,
+            "n_books_ml": 15,
+            "n_books_total": 15,
+            "n_books_spread": 15
+          },
+          "blended_probs": {
+            "home_win_prob": 0.56252024405798,
+            "away_win_prob": 0.43747975594202004,
+            "over_prob": 0.5334345853689979,
+            "under_prob": 0.4665654146310021,
+            "home_cover_prob": 0.4477237390004982,
+            "away_cover_prob": 0.43747975594202004,
+            "expected_total": 7.607671887167053,
+            "model_confidence": 0.48511631111079906,
+            "effective_model_weight": 0.5107346415533184
+          },
+          "n_similar": 50,
+          "n_bets": 0,
+          "context_indicators": {
+            "fatigue": [],
+            "goalie": [
+              {
+                "team": "ANA",
+                "type": "cold",
+                "value": 0.872,
+                "severity": "negative"
+              }
+            ],
+            "injuries": [],
+            "splits": [],
+            "advanced": []
+          },
+          "goalie_matchup": {
+            "home": {
+              "name": "Lukas Dostal",
+              "quality_score": 43.0,
+              "recent_save_pct": 0.872,
+              "recent_gaa": 3.42,
+              "recent_quality_starts": 3
+            },
+            "away": null
+          },
+          "team_splits": {
+            "home": {
+              "games": 10,
+              "wins": 3,
+              "losses": 6,
+              "ot_losses": 1,
+              "win_pct": 0.3,
+              "goals_for": 29,
+              "goals_against": 44,
+              "gf_pg": 2.9,
+              "ga_pg": 4.4,
+              "goal_diff": -1.5
+            },
+            "away": {
+              "games": 10,
+              "wins": 3,
+              "losses": 7,
+              "ot_losses": 0,
+              "win_pct": 0.3,
+              "goals_for": 30,
+              "goals_against": 42,
+              "gf_pg": 3.0,
+              "ga_pg": 4.2,
+              "goal_diff": -1.2
+            }
+          },
+          "injuries": {
+            "home": {
+              "impact_score": 3.4,
+              "key_injuries": [],
+              "total_injuries": 6,
+              "positions_affected": {
+                "F": 3,
+                "D": 0,
+                "G": 3
+              },
+              "injury_details": [
+                {
+                  "player": "Petr Mrazek",
+                  "position": "G",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.5,
+                  "impact": 0.67,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Petr Mrazek",
+                  "position": "G",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.5,
+                  "impact": 0.67,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Alex Lyon",
+                  "position": "G",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.5,
+                  "impact": 0.67,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Noah Ostlund",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Jiri Kulich",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Justin Danforth",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 13",
+                  "found_in_roster": false
+                }
+              ]
+            },
+            "away": {
+              "impact_score": 1.3,
+              "key_injuries": [],
+              "total_injuries": 3,
+              "positions_affected": {
+                "F": 3,
+                "D": 0,
+                "G": 0
+              },
+              "injury_details": [
+                {
+                  "player": "Logan Couture",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Logan Couture",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Shane Wright",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                }
+              ]
+            }
+          },
+          "advanced_stats": {
+            "home": {
+              "xGF_per_60": 3.1301282051282047,
+              "xGA_per_60": 3.3615384615384616,
+              "xGF_pct": 48.21763602251407,
+              "corsi_pct": 48.21763602251407,
+              "fenwick_pct": 48.21763602251407,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            },
+            "away": {
+              "xGF_per_60": 2.9116883116883114,
+              "xGA_per_60": 3.3805194805194807,
+              "xGF_pct": 46.27450980392157,
+              "corsi_pct": 46.27450980392157,
+              "fenwick_pct": 46.27450980392157,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            }
+          }
+        },
+        {
+          "game": "VGK @ SEA",
+          "home": "SEA",
+          "away": "VGK",
+          "model_probs": {
+            "home_win_prob": 0.3675781968899246,
+            "away_win_prob": 0.6324218174151901,
+            "expected_total": 6.14277969447329,
+            "over_prob": 0.4734254232307531,
+            "under_prob": 0.5265745767692469,
+            "home_cover_prob": 0.46926645202279016,
+            "away_cover_prob": 0.5307335479772098,
+            "total_line": 6.5,
+            "spread_line": 1.5,
+            "n_games": 50,
+            "avg_similarity": 0.7391875005370125,
+            "confidence": 0.45881990781895843,
+            "raw_confidence": 0.35841280618454807,
+            "raw_home_win_prob": 0.45567479963867047,
+            "raw_over_prob": 0.4616730407863134,
+            "goal_distribution": {
+              "2": 0.02,
+              "3": 0.16,
+              "4": 0.08,
+              "5": 0.2,
+              "6": 0.04,
+              "7": 0.2,
+              "8": 0.06,
+              "9": 0.16,
+              "10": 0.02,
+              "11": 0.04,
+              "13": 0.02
+            }
+          },
+          "market_probs": {
+            "home_win_prob": 0.37050992874082694,
+            "away_win_prob": 0.6294900712591731,
+            "over_prob": 0.4973227904174137,
+            "under_prob": 0.5026772095825863,
+            "spread_home_cover_prob": 0.5929210974787049,
+            "total_line": 6.0,
+            "spread_line": 1.5,
+            "n_books_ml": 15,
+            "n_books_total": 15,
+            "n_books_spread": 15
+          },
+          "blended_probs": {
+            "home_win_prob": 0.36904015093062403,
+            "away_win_prob": 0.630959849069376,
+            "over_prob": 0.48534221995616406,
+            "under_prob": 0.5146577800438359,
+            "home_cover_prob": 0.36904015093062403,
+            "away_cover_prob": 0.4566727571471676,
+            "expected_total": 6.14277969447329,
+            "model_confidence": 0.45881990781895843,
+            "effective_model_weight": 0.5013343255627389
+          },
+          "n_similar": 50,
+          "n_bets": 0,
+          "context_indicators": {
+            "fatigue": [],
+            "goalie": [],
+            "injuries": [],
+            "splits": [],
+            "advanced": []
+          },
+          "goalie_matchup": {
+            "home": null,
+            "away": null
+          },
+          "team_splits": {
+            "home": {
+              "games": 10,
+              "wins": 3,
+              "losses": 7,
+              "ot_losses": 0,
+              "win_pct": 0.3,
+              "goals_for": 28,
+              "goals_against": 39,
+              "gf_pg": 2.8,
+              "ga_pg": 3.9,
+              "goal_diff": -1.1
+            },
+            "away": {
+              "games": 10,
+              "wins": 4,
+              "losses": 6,
+              "ot_losses": 0,
+              "win_pct": 0.4,
+              "goals_for": 21,
+              "goals_against": 28,
+              "gf_pg": 2.1,
+              "ga_pg": 2.8,
+              "goal_diff": -0.7
+            }
+          },
+          "injuries": {
+            "home": {
+              "impact_score": 3.9,
+              "key_injuries": [],
+              "total_injuries": 8,
+              "positions_affected": {
+                "F": 5,
+                "D": 3,
+                "G": 0
+              },
+              "injury_details": [
+                {
+                  "player": "Victor Hedman",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Maxwell Crozier",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 29",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Declan Carlile",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 13",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Shane Wright",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Shane Wright",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Anthony Cirelli",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Brandon Hagel",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Dominic James",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 30",
+                  "found_in_roster": false
+                }
+              ]
+            },
+            "away": {
+              "impact_score": 0,
+              "key_injuries": [],
+              "total_injuries": 0,
+              "positions_affected": {},
+              "injury_details": []
+            }
+          },
+          "advanced_stats": {
+            "home": {
+              "xGF_per_60": 2.6402597402597405,
+              "xGA_per_60": 3.0597402597402596,
+              "xGF_pct": 46.32034632034632,
+              "corsi_pct": 46.320346320346324,
+              "fenwick_pct": 46.320346320346324,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            },
+            "away": {
+              "xGF_per_60": 3.0326923076923076,
+              "xGA_per_60": 2.93525641025641,
+              "xGF_pct": 50.816326530612244,
+              "corsi_pct": 50.816326530612244,
+              "fenwick_pct": 50.816326530612244,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            }
+          }
+        },
+        {
+          "game": "VAN @ LAK",
+          "home": "LAK",
+          "away": "VAN",
+          "model_probs": {
+            "home_win_prob": 0.6869763932811994,
+            "away_win_prob": 0.31302360671880064,
+            "expected_total": 7.7237773905200555,
+            "over_prob": 0.4923928397705664,
+            "under_prob": 0.5076071602294336,
+            "home_cover_prob": 0.5160520233763675,
+            "away_cover_prob": 0.48394797662363254,
+            "total_line": 6.5,
+            "spread_line": -1.5,
+            "n_games": 50,
+            "avg_similarity": 0.7253811486524507,
+            "confidence": 0.4390138473006569,
+            "raw_confidence": 0.3263382142520759,
+            "raw_home_win_prob": 0.5235873491259703,
+            "raw_over_prob": 0.48882179897314276,
+            "goal_distribution": {
+              "3": 0.04,
+              "4": 0.1,
+              "5": 0.22,
+              "6": 0.18,
+              "7": 0.16,
+              "8": 0.1,
+              "9": 0.1,
+              "10": 0.04,
+              "11": 0.02,
+              "13": 0.02,
+              "14": 0.02
+            }
+          },
+          "market_probs": {
+            "home_win_prob": 0.7071044296431326,
+            "away_win_prob": 0.2928955703568674,
+            "over_prob": 0.4986909310089842,
+            "under_prob": 0.5013090689910158,
+            "spread_home_cover_prob": 0.49625031889019566,
+            "total_line": 6.0,
+            "spread_line": -1.5,
+            "n_books_ml": 15,
+            "n_books_total": 15,
+            "n_books_spread": 15
+          },
+          "blended_probs": {
+            "home_win_prob": 0.6971608939286822,
+            "away_win_prob": 0.3028391060713178,
+            "over_prob": 0.495579584525106,
+            "under_prob": 0.504420415474894,
+            "home_cover_prob": 0.504076177398187,
+            "away_cover_prob": 0.3028391060713178,
+            "expected_total": 7.7237773905200555,
+            "model_confidence": 0.4390138473006569,
+            "effective_model_weight": 0.49401419669809443
+          },
+          "n_similar": 50,
+          "n_bets": 0,
+          "context_indicators": {
+            "fatigue": [],
+            "goalie": [],
+            "injuries": [
+              {
+                "team": "VAN",
+                "impact": 5.4,
+                "severity": "negative"
+              }
+            ],
+            "splits": [
+              {
+                "team": "VAN",
+                "type": "weak_road",
+                "value": 0.2,
+                "severity": "negative"
+              }
+            ],
+            "advanced": []
+          },
+          "goalie_matchup": {
+            "home": null,
+            "away": null
+          },
+          "team_splits": {
+            "home": {
+              "games": 10,
+              "wins": 4,
+              "losses": 3,
+              "ot_losses": 3,
+              "win_pct": 0.4,
+              "goals_for": 32,
+              "goals_against": 39,
+              "gf_pg": 3.2,
+              "ga_pg": 3.9,
+              "goal_diff": -0.7
+            },
+            "away": {
+              "games": 10,
+              "wins": 2,
+              "losses": 8,
+              "ot_losses": 0,
+              "win_pct": 0.2,
+              "goals_for": 29,
+              "goals_against": 48,
+              "gf_pg": 2.9,
+              "ga_pg": 4.8,
+              "goal_diff": -1.9
+            }
+          },
+          "injuries": {
+            "home": {
+              "impact_score": 2.3,
+              "key_injuries": [],
+              "total_injuries": 5,
+              "positions_affected": {
+                "F": 4,
+                "D": 1,
+                "G": 0
+              },
+              "injury_details": [
+                {
+                  "player": "Zach Bogosian",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Andrei Kuzmenko",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 16",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Kevin Fiala",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Andrei Kuzmenko",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 16",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Kevin Fiala",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                }
+              ]
+            },
+            "away": {
+              "impact_score": 5.4,
+              "key_injuries": [],
+              "total_injuries": 9,
+              "positions_affected": {
+                "F": 2,
+                "D": 2,
+                "G": 5
+              },
+              "injury_details": [
+                {
+                  "player": "Kevin Lankinen",
+                  "position": "G",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.5,
+                  "impact": 0.67,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Thatcher Demko",
+                  "position": "G",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.5,
+                  "impact": 0.67,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Kevin Lankinen",
+                  "position": "G",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.5,
+                  "impact": 0.67,
+                  "status": "Apr 9",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Thatcher Demko",
+                  "position": "G",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.5,
+                  "impact": 0.67,
+                  "status": "Sep 15",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Charlie Lindgren",
+                  "position": "G",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.5,
+                  "impact": 0.67,
+                  "status": "Apr 11",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Derek Forbort",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 16",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Derek Forbort",
+                  "position": "D",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.2,
+                  "impact": 0.54,
+                  "status": "Apr 16",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Filip Chytil",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 16",
+                  "found_in_roster": false
+                },
+                {
+                  "player": "Filip Chytil",
+                  "position": "F",
+                  "importance": 1.5,
+                  "severity": 0.3,
+                  "pos_mult": 1.0,
+                  "impact": 0.45,
+                  "status": "Apr 16",
+                  "found_in_roster": false
+                }
+              ]
+            }
+          },
+          "advanced_stats": {
+            "home": {
+              "xGF_per_60": 2.603246753246753,
+              "xGA_per_60": 2.9116883116883114,
+              "xGF_pct": 47.20357941834452,
+              "corsi_pct": 47.20357941834452,
+              "fenwick_pct": 47.20357941834452,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            },
+            "away": {
+              "xGF_per_60": 2.492207792207792,
+              "xGA_per_60": 3.664285714285714,
+              "xGF_pct": 40.480961923847694,
+              "corsi_pct": 40.480961923847694,
+              "fenwick_pct": 40.480961923847694,
+              "shooting_pct": 33.33333333333333,
+              "save_pct": 0.6666666666666667,
+              "pdo": 100.0
+            }
+          }
+        }
+      ],
+      "recommendations": [],
+      "parlays": [],
+      "quota_info": {
+        "total_keys": 3,
+        "total_remaining": 1350,
+        "total_used": 150,
+        "keys": [
+          {
+            "index": 0,
+            "used": 150,
+            "remaining": 350,
+            "last_updated": "2026-04-09T21:07:59.969110"
+          },
+          {
+            "index": 1,
+            "used": 0,
+            "remaining": 500,
+            "last_updated": "Never"
+          },
+          {
+            "index": 2,
+            "used": 0,
+            "remaining": 500,
+            "last_updated": "Never"
+          }
+        ]
+      }
+    },
+    {
       "timestamp": "2026-04-09T16:02:05.033339-04:00",
       "stake": 0.5,
       "days_back": 90,
@@ -75075,6 +78490,6 @@
       }
     }
   ],
-  "last_updated": "2026-04-09T16:02:05.058065-04:00",
-  "total_analyses": 43
+  "last_updated": "2026-04-09T17:08:05.506607-04:00",
+  "total_analyses": 44
 }
