@@ -396,9 +396,16 @@ def get_parlay_performance(stake: float = 1.00):
 
         for n_legs in range(2, min(4, len(day_bets) + 1)):
             for combo in combinations(day_bets, n_legs):
-                # Skip same-game combos
-                games = [r["bet"]["game"] for r in combo]
-                if len(set(games)) < len(games):
+                # Allow same-game parlays but only with different bet types
+                seen_game_types = set()
+                skip = False
+                for r in combo:
+                    key = (r["bet"]["game"], r["bet"]["bet_type"])
+                    if key in seen_game_types:
+                        skip = True
+                        break
+                    seen_game_types.add(key)
+                if skip:
                     continue
 
                 # Check if all legs hit

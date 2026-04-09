@@ -536,9 +536,17 @@ def generate_parlays(recommendations: list, max_legs: int = 3, stake: float = 1.
 
     for n_legs in range(2, min(max_legs + 1, len(eligible) + 1)):
         for combo in combinations(eligible, n_legs):
-            # Skip parlays with bets from the same game
-            games = [leg["game"] for leg in combo]
-            if len(set(games)) < len(games):
+            # Allow same-game parlays but only with different bet types
+            # (e.g. ML + Over is fine, but not two MLs from the same game)
+            seen_game_types = set()
+            skip = False
+            for leg in combo:
+                key = (leg["game"], leg["bet_type"])
+                if key in seen_game_types:
+                    skip = True
+                    break
+                seen_game_types.add(key)
+            if skip:
                 continue
 
             # Combined decimal odds = product of individual decimal odds
