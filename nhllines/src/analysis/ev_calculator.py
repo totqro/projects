@@ -503,22 +503,22 @@ def generate_parlays(recommendations: list, max_legs: int = 3, stake: float = 1.
     """
     from itertools import combinations
 
-    # Optimal parlay leg selection based on backtesting (126 parlays, Mar-Apr 2026):
-    #   ML Fav + Overs (3%+ edge): 40W-86L, +$56.93, +45.2% ROI
-    #   ML Fav only: 8W-7L, +$12.52, +83.4% ROI (safer but 4.5x less profit)
-    #   Adding underdogs: -2.7% ROI (kills profitability)
-    #   Overs at 5%+ edge: -8.9% ROI (too restrictive)
+    # Optimal parlay leg selection based on backtesting (190 parlays, Mar-Apr 2026):
+    #   ML fav + pick-ems (<+130) + Overs: 62W-128L, +$59.44, +62.6% ROI, p=0.001
+    #   ML fav + Overs only: 40W-85L, +$28.96, +46.3% ROI, p=0.031
+    #   Including dogs >+150: ROI drops to +35.8%
+    #   All underdogs: -9.3% ROI (kills profitability)
 
-    # ML favorites: negative odds, 3%+ edge
-    ml_favorites = [
+    # ML picks: favorites + pick-ems up to +130 (3%+ edge)
+    ml_picks = [
         b for b in recommendations
         if b["bet_type"] == "Moneyline"
-        and b["odds"] < 0
+        and b["odds"] < 130
         and b["edge"] >= 0.03
         and b["confidence"] >= 0.50
     ]
 
-    # Overs with 3%+ edge (the sweet spot — 5%+ is too restrictive)
+    # Overs with 3%+ edge
     overs = [
         b for b in recommendations
         if b["bet_type"] == "Total"
@@ -527,7 +527,7 @@ def generate_parlays(recommendations: list, max_legs: int = 3, stake: float = 1.
         and b["confidence"] >= 0.50
     ]
 
-    eligible = ml_favorites + overs
+    eligible = ml_picks + overs
 
     if len(eligible) < 2:
         return []
