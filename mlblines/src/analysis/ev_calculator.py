@@ -297,6 +297,93 @@ def format_recommendations(all_bets, top_n=15, quota_info=None):
     return "\n".join(lines)
 
 
+def generate_parlays(recommendations: list, max_legs: int = 3, stake: float = 0.50) -> list:
+    """
+    Generate parlay combinations from the day's best straight bets.
+    MLB parlays: ML picks (<+130 odds) + Overs (3%+ edge).
+    Same-game parlays allowed with different bet types.
+    """
+    from itertools import combinations
+
+    ml_picks = [
+        b for b in recommendations
+        if b["bet_type"] == "Moneyline"
+        and b["odds"] < 130
+        and b["edge"] >= 0.03
+        and b["confidence"] >= 0.30
+    ]
+
+    overs = [
+        b for b in recommendations
+        if b["bet_type"] == "Total"
+        and "Over" in b.get("pick", "")
+        and b["edge"] >= 0.03
+        and b["confidence"] >= 0.30
+    ]
+
+    eligible = ml_picks + overs
+    if len(eligible) < 2:
+        return []
+
+    parlays = []
+    for n_legs in range(2, min(max_legs + 1, len(eligible) + 1)):
+        for combo in combinations(eligible, n_legs):
+            # Allow same-game but not duplicate bet types from same game
+            seen_game_types = set()
+            skip = False
+            for leg in combo:
+                key = (leg["game"], leg["bet_type"])
+                if key in seen_game_types:
+                    skip = True
+                    break
+                seen_game_types.add(key)
+            if skip:
+                continue
+
+            combined_decimal = 1.0
+            combined_true_prob = 1.0
+            combined_implied_prob = 1.0
+            for leg in combo:
+                combined_decimal *= leg["decimal_odds"]
+                combined_true_prob *= leg["true_prob"]
+                combined_implied_prob *= leg["implied_prob"]
+
+            payout = stake * (combined_decimal - 1)
+            ev = (combined_true_prob * payout) - ((1 - combined_true_prob) * stake)
+            roi = ev / stake
+            edge = combined_true_prob - combined_implied_prob
+
+            if combined_decimal >= 2.0:
+                combined_american = int(round((combined_decimal - 1) * 100))
+            else:
+                combined_american = int(round(-100 / (combined_decimal - 1)))
+
+            parlays.append({
+                "legs": [
+                    {
+                        "pick": leg["pick"], "game": leg["game"],
+                        "odds": leg["odds"], "decimal_odds": leg["decimal_odds"],
+                        "true_prob": leg["true_prob"], "implied_prob": leg["implied_prob"],
+                        "edge": leg["edge"], "bet_type": leg["bet_type"], "book": leg["book"],
+                    }
+                    for leg in combo
+                ],
+                "n_legs": n_legs,
+                "combined_odds": combined_american,
+                "combined_decimal": round(combined_decimal, 3),
+                "combined_true_prob": round(combined_true_prob, 4),
+                "combined_implied_prob": round(combined_implied_prob, 4),
+                "ev": round(ev, 4),
+                "roi": round(roi, 4),
+                "edge": round(edge, 4),
+                "payout": round(stake * combined_decimal, 2),
+                "stake": stake,
+            })
+
+    parlays.sort(key=lambda p: p["ev"], reverse=True)
+    return parlays[:10]
+
+
 def kelly_criterion(true_prob, decimal_odds, fraction=0.25):
     """
     Kelly criterion for optimal bet sizing.

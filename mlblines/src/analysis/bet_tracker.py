@@ -203,6 +203,159 @@ def get_performance_stats():
     }
 
 
+def get_parlay_performance(stake: float = 0.50):
+    """
+    Reconstruct parlay performance from historical straight bet results.
+
+    Groups resolved ML + Over bets by date, forms 2-3 leg parlay combos,
+    and checks if all legs hit.
+
+    Returns:
+        dict with parlay performance stats and individual parlay results
+    """
+    from itertools import combinations
+    from src.data.odds_fetcher import american_to_decimal
+    from collections import defaultdict
+
+    if not BET_LOG_PATH.exists():
+        return None
+
+    results_log = json.loads(BET_LOG_PATH.read_text())
+    results = results_log.get("results", {})
+
+    if not results:
+        return None
+
+    # Group resolved parlay-eligible bets by date
+    # Strategy: ML favorites + pick-ems (<+130) + Overs, all 3%+ edge
+    by_date = defaultdict(list)
+    for bet_id, r in results.items():
+        if r["result"] == "push":
+            continue
+        bet = r["bet"]
+        edge = bet.get("edge", 0)
+        if edge < 0.03:
+            continue
+
+        bt = bet.get("bet_type", "")
+        odds = bet.get("odds", 0)
+        pick = bet.get("pick", "")
+
+        # ML favorites + pick-ems up to +130, or Overs
+        is_ml = bt == "Moneyline" and odds < 130
+        is_over = bt == "Total" and "Over" in pick
+        if not (is_ml or is_over):
+            continue
+
+        # Extract date
+        ts = bet.get("analysis_timestamp", "")
+        date = ts[:10] if ts else bet_id[:10]
+        if not date or len(date) < 10:
+            continue
+
+        by_date[date].append(r)
+
+    # Build parlays for each date that had 2+ qualifying bets
+    all_parlays = []
+    for date in sorted(by_date.keys()):
+        day_bets = by_date[date]
+        if len(day_bets) < 2:
+            continue
+
+        for n_legs in range(2, min(4, len(day_bets) + 1)):
+            for combo in combinations(day_bets, n_legs):
+                # Allow same-game parlays but only with different bet types
+                seen_game_types = set()
+                skip = False
+                for r in combo:
+                    key = (r["bet"]["game"], r["bet"]["bet_type"])
+                    if key in seen_game_types:
+                        skip = True
+                        break
+                    seen_game_types.add(key)
+                if skip:
+                    continue
+
+                # Check if all legs hit
+                all_won = all(r["result"] == "won" for r in combo)
+
+                # Calculate combined odds
+                combined_decimal = 1.0
+                for r in combo:
+                    combined_decimal *= american_to_decimal(r["bet"]["odds"])
+
+                if all_won:
+                    profit = stake * (combined_decimal - 1)
+                    result = "won"
+                else:
+                    profit = -stake
+                    result = "lost"
+
+                # Combined American odds
+                if combined_decimal >= 2.0:
+                    combined_american = int(round((combined_decimal - 1) * 100))
+                else:
+                    combined_american = int(round(-100 / (combined_decimal - 1)))
+
+                all_parlays.append({
+                    "date": date,
+                    "n_legs": n_legs,
+                    "legs": [
+                        {
+                            "pick": r["bet"]["pick"],
+                            "game": r["bet"]["game"],
+                            "odds": r["bet"]["odds"],
+                            "result": r["result"],
+                        }
+                        for r in combo
+                    ],
+                    "combined_odds": combined_american,
+                    "combined_decimal": round(combined_decimal, 3),
+                    "payout": round(stake * combined_decimal, 2),
+                    "result": result,
+                    "profit": round(profit, 2),
+                    "stake": stake,
+                })
+
+    if not all_parlays:
+        return None
+
+    # Summary stats
+    won = [p for p in all_parlays if p["result"] == "won"]
+    total_staked = sum(p["stake"] for p in all_parlays)
+    total_profit = sum(p["profit"] for p in all_parlays)
+
+    # Stats by leg count
+    by_legs = {}
+    for n in [2, 3]:
+        leg_parlays = [p for p in all_parlays if p["n_legs"] == n]
+        if not leg_parlays:
+            continue
+        leg_won = [p for p in leg_parlays if p["result"] == "won"]
+        leg_staked = sum(p["stake"] for p in leg_parlays)
+        leg_profit = sum(p["profit"] for p in leg_parlays)
+        by_legs[n] = {
+            "total": len(leg_parlays),
+            "won": len(leg_won),
+            "win_rate": len(leg_won) / len(leg_parlays),
+            "staked": round(leg_staked, 2),
+            "profit": round(leg_profit, 2),
+            "roi": round(leg_profit / leg_staked, 4) if leg_staked > 0 else 0,
+        }
+
+    return {
+        "total_parlays": len(all_parlays),
+        "won": len(won),
+        "lost": len(all_parlays) - len(won),
+        "win_rate": round(len(won) / len(all_parlays), 4),
+        "total_staked": round(total_staked, 2),
+        "total_profit": round(total_profit, 2),
+        "roi": round(total_profit / total_staked, 4) if total_staked > 0 else 0,
+        "by_legs": by_legs,
+        "parlays": sorted(all_parlays, key=lambda p: p["date"], reverse=True),
+    }
+
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="MLB Bet Tracker")

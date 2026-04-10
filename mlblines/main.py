@@ -49,7 +49,9 @@ from src.analysis import (
     format_recommendations,
     kelly_criterion,
     calculate_ev,
+    generate_parlays,
     get_performance_stats,
+    get_parlay_performance,
     save_analysis,
     get_history_stats,
 )
@@ -485,6 +487,14 @@ def run_analysis(
                           f"Win: {wr:.1%} | ROI: {roi:+.1%}")
         print("=" * 75)
 
+    # Generate parlays from recommendations
+    parlays = generate_parlays(all_bets, max_legs=3, stake=stake)
+    if parlays:
+        print(f"\n  Generated {len(parlays)} parlay recommendations")
+        for i, p in enumerate(parlays[:3], 1):
+            legs_str = " + ".join(leg["pick"] for leg in p["legs"])
+            print(f"    {i}. {legs_str} | {p['combined_odds']:+d} | EV: ${p['ev']:.4f}")
+
     # Save results
     output = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -497,6 +507,7 @@ def run_analysis(
             {k: v for k, v in bet.items() if not callable(v)}
             for bet in all_bets
         ],
+        "parlays": parlays,
         "quota_info": quota_info,
     }
 
@@ -506,6 +517,17 @@ def run_analysis(
     print(f"Full analysis saved to: {output_path}")
 
     save_analysis(output)
+
+    # Generate parlay performance data
+    try:
+        parlay_perf = get_parlay_performance(stake=stake)
+        if parlay_perf:
+            parlay_perf_path = Path(__file__).parent / "mlbdata" / "parlay_results.json"
+            parlay_perf_path.write_text(json.dumps(parlay_perf, indent=2, default=str))
+            print(f"  Parlay performance: {parlay_perf['won']}W-{parlay_perf['lost']}L, "
+                  f"ROI: {parlay_perf['roi']:.1%}")
+    except Exception as e:
+        print(f"  Warning: Could not generate parlay performance: {e}")
 
     hist_stats = get_history_stats(days_back=7)
     if hist_stats:

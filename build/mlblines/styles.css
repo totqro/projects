@@ -29,8 +29,15 @@ header::before { content:''; position:absolute; top:0; left:0; right:0; height:2
 header h1 { font-size:1.9rem; margin-bottom:6px; font-weight:700; letter-spacing:-.02em; }
 .subtitle { font-size:.9rem; color:var(--t2); font-weight:500; letter-spacing:.04em; text-transform:uppercase; }
 
+/* Mode Switch */
+.mode-switch { display:flex; gap:4px; margin:12px 0 8px; background:var(--bg-s); border-radius:var(--r); border:1px solid var(--bd); padding:4px; }
+.mode-btn { flex:1; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:.88rem; background:transparent; color:var(--t3); transition:all .2s; }
+.mode-btn.active[data-mode="espn"] { background:linear-gradient(135deg,#c8102e,#e4002b); color:#fff; box-shadow:0 2px 8px rgba(228,0,43,.3); }
+.mode-btn.active[data-mode="all"] { background:linear-gradient(135deg,var(--mlb-navy),var(--mlb-navy-bright)); color:#fff; box-shadow:0 2px 8px rgba(30,91,198,.3); }
+.mode-btn:not(.active):hover { color:var(--t1); background:var(--bg-i); }
+
 /* Tabs */
-.tabs { display:flex; margin:16px 0; background:var(--bg-s); border-radius:var(--r); border:1px solid var(--bd); padding:4px; gap:4px; position:sticky; top:0; z-index:100; }
+.tabs { display:flex; margin:8px 0 16px; background:var(--bg-s); border-radius:var(--r); border:1px solid var(--bd); padding:4px; gap:4px; position:sticky; top:0; z-index:100; }
 .tab-button { background:transparent; border:none; padding:10px 20px; font-size:.88rem; font-weight:600; color:var(--t2); cursor:pointer; transition:all .2s; flex:1; text-transform:uppercase; letter-spacing:.06em; border-radius:7px; min-height:44px; }
 .tab-button:hover { color:var(--t1); background:var(--bg-i); }
 .tab-button.active { background:var(--mlb-navy-dim); color:var(--mlb-navy-bright); box-shadow:0 0 12px rgba(30,91,198,.2); }
@@ -207,6 +214,38 @@ header h1 { font-size:1.9rem; margin-bottom:6px; font-weight:700; letter-spacing
 .no-data { text-align:center; padding:40px; color:var(--t3); }
 .no-data-icon { font-size:2.5rem; margin-bottom:12px; opacity:.5; }
 .no-data code { background:var(--bg-i); padding:4px 8px; border-radius:4px; font-family:'SF Mono','Fira Code',monospace; color:var(--mlb-navy-bright); font-size:.82rem; border:1px solid var(--bd); }
+/* Parlay Cards */
+.parlay-filter-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+.parlay-filter-buttons { display:flex; gap:4px; background:var(--bg-s); border-radius:8px; padding:3px; }
+.parlay-filter-btn { background:transparent; color:var(--t3); border:none; padding:6px 16px; border-radius:6px; font-size:.82rem; font-weight:600; cursor:pointer; transition:all .2s; min-height:36px; }
+.parlay-filter-btn:hover { color:var(--t1); background:var(--bg-i); }
+.parlay-filter-btn.active { background:var(--mlb-navy); color:#fff; }
+
+.parlay-card { background:var(--bg-c); border-radius:var(--r); box-shadow:var(--sh); border:1px solid var(--bd); margin-bottom:12px; overflow:hidden; cursor:pointer; transition:all .2s; }
+.parlay-card:hover { border-color:rgba(228,0,43,.25); box-shadow:var(--shh); }
+.parlay-card.parlay-top { border-color:rgba(228,0,43,.4); box-shadow:0 0 20px rgba(228,0,43,.15); }
+.parlay-header { display:flex; justify-content:space-between; align-items:center; padding:14px 20px; background:var(--bg-i); }
+.parlay-header > div { display:flex; align-items:center; gap:10px; }
+.parlay-badge { background:linear-gradient(135deg,#c8102e,#e4002b); color:#fff; padding:2px 8px; border-radius:4px; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+.parlay-legs-count { font-weight:700; font-size:.95rem; }
+.parlay-header-stats { display:flex; gap:16px; align-items:center; }
+.parlay-odds { font-weight:700; font-size:1.1rem; color:var(--mlb-red); }
+.parlay-ev { font-size:.82rem; color:var(--grn); font-weight:600; }
+.parlay-body { max-height:0; overflow:hidden; transition:max-height .3s ease; }
+.parlay-card.expanded .parlay-body { max-height:600px; }
+.parlay-legs-group { padding:12px 20px; border-bottom:1px solid var(--bd); }
+.parlay-leg { padding:10px 0; border-bottom:1px solid var(--bd); }
+.parlay-leg:last-child { border-bottom:none; }
+.parlay-leg-pick { font-weight:700; font-size:.95rem; margin-bottom:4px; }
+.parlay-leg-details { display:flex; flex-direction:column; gap:2px; font-size:.78rem; color:var(--t3); }
+.parlay-summary { display:flex; flex-wrap:wrap; padding:12px 20px; background:var(--bg-i); }
+.parlay-summary-stat { display:flex; flex-direction:column; align-items:center; padding:6px 14px; flex:1; min-width:80px; border-right:1px solid var(--bd); }
+.parlay-summary-stat:last-child { border-right:none; }
+.parlay-summary-stat span:first-child { font-size:.68rem; color:var(--t3); text-transform:uppercase; letter-spacing:.06em; font-weight:600; }
+.parlay-summary-stat span:last-child { font-size:.92rem; font-weight:700; font-variant-numeric:tabular-nums; }
+.parlay-summary-stat .edge-val { color:var(--mlb-red); }
+.parlay-summary-stat .roi-val { color:var(--grn); }
+
 @keyframes fadeIn { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:translateY(0) } }
 
 /* Scroll to Top */

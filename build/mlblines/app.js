@@ -1,9 +1,37 @@
 let allRecommendations = [], allOddsData = {}, currentStake = 0.5, filtersSetUp = false;
 let currentFilters = { grade:'all', type:'all', book:'all', sortBy:'edge' };
+let currentMode = 'espn'; // 'espn' or 'all'
+let rawPerformanceData = null;
 let profitChartInstance = null, allSortedBets = [], pinnedTooltipIndex = -1;
+let allParlays = [], currentParlayFilter = 'all', currentParlaySort = 'ev', parlayChartInstance = null;
 
-// Model changes — dates when the +EV calculation logic was materially changed
-const MODEL_CHANGES = [];
+const MODE_CONFIG = {
+    espn: {
+        label: 'ESPN Bet',
+        minEdge: 0.03,
+        bookFilter: book => book.toLowerCase() === 'espnbet',
+        description: 'ESPN Bet Only — 3%+ Edge, Conservative Mode',
+    },
+    all: {
+        label: 'All Books',
+        minEdge: 0.03,
+        bookFilter: book => !['fanduel','betparx','lowvig','fliff','pinnacle','betcris'].includes(book.toLowerCase()),
+        description: 'Soft Books — 3%+ Edge, Conservative Mode',
+    }
+};
+
+// Filter performance bets by current mode
+function filterBetsByMode(bets) {
+    const cfg = MODE_CONFIG[currentMode];
+    if (currentMode === 'espn') {
+        return bets.filter(r => cfg.bookFilter(r.bet.book||''));
+    }
+    return bets.filter(r => {
+        if (!cfg.bookFilter(r.bet.book||'')) return false;
+        if ((r.bet.edge||0) < cfg.minEdge) return false;
+        return true;
+    });
+}
 
 // Helpers
 const $ = id => document.getElementById(id);
@@ -21,10 +49,11 @@ function getGradeClass(g) { return {A:'grade-a','B+':'grade-b-plus',B:'grade-b',
 
 // Tabs
 function showTab(t) {
-    $('today-tab').style.display = $('performance-tab').style.display = 'none';
+    $('today-tab').style.display = $('parlays-tab').style.display = $('performance-tab').style.display = 'none';
     $$('.tab-button').forEach(b => b.classList.remove('active'));
     if (t==='today') { $('today-tab').style.display='block'; $$('.tab-button')[0].classList.add('active'); }
-    else { $('performance-tab').style.display='block'; $$('.tab-button')[1].classList.add('active'); loadPerformanceData(); }
+    else if (t==='parlays') { $('parlays-tab').style.display='block'; $$('.tab-button')[1].classList.add('active'); displayParlays(); loadParlayPerformance(); }
+    else { $('performance-tab').style.display='block'; $$('.tab-button')[2].classList.add('active'); loadPerformanceData(); }
 }
 
 // Data loading
@@ -47,13 +76,16 @@ async function loadPerformanceData() {
     try {
         const ts=Date.now();
         const [rr,hr] = await Promise.all([fetch(`bet_results.json?v=${ts}`),fetch(`analysis_history.json?v=${ts}`)]);
-        displayPerformance(rr.ok?await rr.json():null, hr.ok?await hr.json():null);
+        rawPerformanceData = rr.ok ? await rr.json() : null;
+        displayPerformance(rawPerformanceData, hr.ok?await hr.json():null);
     } catch(e) { console.error(e); displayNoPerformanceData(); }
 }
 
 function displayPerformance(results) {
     if (!results?.results || !Object.keys(results.results).length) { displayNoPerformanceData(); return; }
-    const bets = Object.values(results.results).filter(r=>r.result!=='push');
+    let bets = Object.values(results.results).filter(r=>r.result!=='push');
+    bets = filterBetsByMode(bets);
+    if (!bets.length) { displayNoPerformanceData(); return; }
     const won = bets.filter(r=>r.result==='won');
     const staked = bets.reduce((s,r)=>s+r.bet.stake,0);
     const profit = bets.reduce((s,r)=>s+r.profit,0);
@@ -148,22 +180,6 @@ function showPinnedTooltip(chart,idx,chartBets) {
     cont.appendChild(tt);
 }
 
-function showModelChangeTooltip(chart,mc) {
-    dismissPinnedTooltip(); pinnedTooltipIndex=-2;
-    const cont=chart.canvas.parentElement;
-    const x=chart.scales.x.getPixelForValue(mc.idx);
-    const tt=document.createElement('div'); tt.className='chart-tooltip-pinned';
-    tt.style.borderColor='var(--mlb-red)';
-    tt.innerHTML=`<button class="tooltip-close" onclick="dismissPinnedTooltip()">&times;</button>
-        <div class="tooltip-title" style="color:var(--mlb-red)">Model Change — ${mc.date}</div>
-        <div class="tooltip-line" style="font-weight:700">${mc.label}</div>
-        <div class="tooltip-line" style="color:var(--text-secondary);font-size:.78rem">${mc.desc}</div>`;
-    let l=x-120, t=40;
-    if(l<0) l=x+10; if(l+240>cont.offsetWidth) l=x-250;
-    tt.style.left=l+'px'; tt.style.top=t+'px';
-    cont.appendChild(tt);
-}
-
 function renderProfitChart(bets,sp=0,se=0) {
     const canvas=$('profit-chart'); if(!canvas||typeof Chart==='undefined') return;
     dismissPinnedTooltip();
@@ -183,37 +199,6 @@ function renderProfitChart(bets,sp=0,se=0) {
         colors.push(r.result==='won'?'#22C55E':'#EF4444');
     });
 
-    // Find which bet indices correspond to model change dates
-    const changeIndices = [];
-    MODEL_CHANGES.forEach(mc => {
-        const idx = betDates.findIndex(d => d >= mc.date);
-        if (idx >= 0) changeIndices.push({idx, ...mc});
-    });
-
-    // Custom plugin to draw vertical lines at model change points
-    const modelChangePlugin = {
-        id:'modelChanges',
-        afterDraw(chart) {
-            const ctx=chart.ctx, xScale=chart.scales.x, yScale=chart.scales.y;
-            changeIndices.forEach((mc,i) => {
-                const x = xScale.getPixelForValue(mc.idx);
-                if (x < xScale.left || x > xScale.right) return;
-                ctx.save();
-                ctx.beginPath(); ctx.setLineDash([4,4]);
-                ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=1;
-                ctx.moveTo(x, yScale.top); ctx.lineTo(x, yScale.bottom);
-                ctx.stroke(); ctx.setLineDash([]);
-                const yOff = yScale.top + 8 + (i % 3) * 14;
-                ctx.fillStyle='#E4002B'; ctx.beginPath();
-                ctx.moveTo(x,yOff); ctx.lineTo(x+4,yOff+4); ctx.lineTo(x,yOff+8); ctx.lineTo(x-4,yOff+4); ctx.closePath(); ctx.fill();
-                ctx.fillStyle='rgba(255,255,255,0.6)';
-                ctx.font='bold 9px sans-serif'; ctx.textAlign='center';
-                ctx.fillText(mc.label, x, yOff+18);
-                ctx.restore();
-            });
-        }
-    };
-
     if(profitChartInstance) profitChartInstance.destroy();
     const mob=window.innerWidth<768, chartBets=bets;
     profitChartInstance = new Chart(canvas.getContext('2d'), {
@@ -222,18 +207,10 @@ function renderProfitChart(bets,sp=0,se=0) {
             {label:'Actual Profit',data:pd,borderColor:'#C41E3A',backgroundColor:'rgba(196,30,58,.1)',fill:true,tension:.3,borderWidth:2.5,pointRadius:mob?3:4,pointHitRadius:mob?20:8,pointBackgroundColor:colors,pointBorderColor:colors,pointBorderWidth:0},
             {label:'Expected (EV)',data:ed,borderColor:'#F4901E',borderDash:[6,3],borderWidth:1.5,pointRadius:0,fill:false,tension:.3}
         ]},
-        plugins:[modelChangePlugin],
         options:{
             responsive:true, maintainAspectRatio:false,
             interaction:{intersect:false,mode:'index'},
             onClick(ev,els) {
-                const rect=canvas.getBoundingClientRect();
-                const cx=ev.native.clientX-rect.left;
-                const xScale=this.scales.x;
-                for(const mc of changeIndices) {
-                    const mx=xScale.getPixelForValue(mc.idx);
-                    if(Math.abs(cx-mx)<15) { showModelChangeTooltip(this,mc); return; }
-                }
                 if(els.length) { const i=els[0].index; pinnedTooltipIndex===i?dismissPinnedTooltip():showPinnedTooltip(this,i,chartBets); }
                 else dismissPinnedTooltip();
             },
@@ -271,9 +248,28 @@ function displayAnalysis(data) {
     } else $('expected-roi').textContent='N/A';
 
     allRecommendations=data.recommendations; currentStake=data.stake||0.5; allOddsData=data.all_odds||{};
+    allParlays = data.parlays || [];
+    $('parlays-stake').textContent = usd(currentStake);
     populateBookFilter(allRecommendations); setupFilters();
     displayRecommendations(allRecommendations,currentStake);
     displayGames(data.games_analyzed);
+}
+
+// Mode switch
+function setMode(mode) {
+    currentMode = mode;
+    $$('.mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.mode-btn[data-mode="${mode}"]`).classList.add('active');
+    const sub = document.querySelector('.subtitle');
+    if (sub) sub.textContent = MODE_CONFIG[mode].description;
+    populateBookFilter(allRecommendations);
+    currentFilters.book = 'all';
+    const bookSel = $('filter-book');
+    if (bookSel) bookSel.value = 'all';
+    applyFilters();
+    if ($('performance-tab').style.display !== 'none' && rawPerformanceData) {
+        displayPerformance(rawPerformanceData);
+    }
 }
 
 // Filters
@@ -285,18 +281,24 @@ function setupFilters() {
 }
 
 function applyFilters() {
+    const cfg = MODE_CONFIG[currentMode];
     let f=[...allRecommendations];
+    f = f.filter(b => cfg.bookFilter(b.book));
+    f = f.filter(b => b.edge >= cfg.minEdge);
     if(currentFilters.grade!=='all') f=f.filter(b=>getGrade(b.edge)===currentFilters.grade);
     if(currentFilters.type!=='all') f=f.filter(b=>b.bet_type===currentFilters.type);
     if(currentFilters.book!=='all') f=f.filter(b=>b.book===currentFilters.book);
     const sorts={edge:(a,b)=>b.edge-a.edge,roi:(a,b)=>b.roi-a.roi,confidence:(a,b)=>b.confidence-a.confidence,
         book:(a,b)=>a.book==='thescore'?-1:b.book==='thescore'?1:a.book.localeCompare(b.book)};
     f.sort(sorts[currentFilters.sortBy]||sorts.edge);
+    const betsFound = $('bets-found');
+    if (betsFound) betsFound.textContent = f.length;
     displayRecommendations(f,currentStake);
 }
 
 function populateBookFilter(recs) {
-    const sel=$('filter-book'), books=[...new Set(recs.map(b=>b.book))].sort();
+    const cfg = MODE_CONFIG[currentMode];
+    const sel=$('filter-book'), books=[...new Set(recs.filter(b => cfg.bookFilter(b.book)).map(b=>b.book))].sort();
     sel.innerHTML='<option value="all">All Books</option>';
     if(books.includes('thescore')) sel.innerHTML+=`<option value="thescore">theScore Bet</option>`;
     books.filter(b=>b!=='thescore').forEach(b => { sel.innerHTML+=`<option value="${b}">${fmtBook(b)}</option>`; });
@@ -406,6 +408,169 @@ function renderGameDetails(g) {
 }
 
 function toggleGameDetails(i) { $$('.game-card')[i].classList.toggle('expanded'); }
+
+// --- PARLAY FUNCTIONS ---
+function filterParlays(f) {
+    currentParlayFilter = f;
+    $$('.parlay-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+    displayParlays();
+}
+
+function sortParlays(s) { currentParlaySort = s; displayParlays(); }
+
+function displayParlays() {
+    if (!allParlays.length) {
+        $('parlays-list').innerHTML = `<div class="no-data"><div class="no-data-icon">🎰</div><p>No parlays available for today's games.</p><p style="font-size:.82rem;margin-top:6px;color:var(--t3)">Need 2+ eligible bets (ML <+130 or Overs with 3%+ edge)</p></div>`;
+        $('parlays-count').textContent = '0';
+        $('parlays-best-ev').textContent = '-';
+        $('parlays-best-odds').textContent = '-';
+        return;
+    }
+
+    let filtered = [...allParlays];
+    if (currentParlayFilter !== 'all') filtered = filtered.filter(p => p.n_legs === parseInt(currentParlayFilter));
+
+    const sorts = {
+        ev: (a, b) => b.ev - a.ev,
+        odds: (a, b) => b.combined_odds - a.combined_odds,
+        edge: (a, b) => b.edge - a.edge,
+        prob: (a, b) => b.combined_true_prob - a.combined_true_prob,
+    };
+    filtered.sort(sorts[currentParlaySort] || sorts.ev);
+
+    $('parlays-count').textContent = filtered.length;
+    if (filtered.length) {
+        $('parlays-best-ev').textContent = '$' + filtered.reduce((best, p) => Math.max(best, p.ev), 0).toFixed(4);
+        const bestOdds = filtered.reduce((best, p) => p.combined_odds > best ? p.combined_odds : best, -9999);
+        $('parlays-best-odds').textContent = (bestOdds > 0 ? '+' : '') + bestOdds;
+    }
+
+    $('parlays-list').innerHTML = filtered.map((p, i) => {
+        const isTop = i === 0 && currentParlaySort === 'ev';
+        return `<div class="parlay-card ${isTop ? 'parlay-top' : ''}" onclick="this.classList.toggle('expanded')">
+            <div class="parlay-header">
+                <div>
+                    ${isTop ? '<span class="parlay-badge">⭐ BEST</span>' : ''}
+                    <span class="parlay-legs-count">${p.n_legs}-Leg Parlay</span>
+                </div>
+                <div class="parlay-header-stats">
+                    <span class="parlay-odds">${p.combined_odds > 0 ? '+' : ''}${p.combined_odds}</span>
+                    <span class="parlay-ev">EV: $${p.ev.toFixed(4)}</span>
+                </div>
+            </div>
+            <div class="parlay-body">
+                <div class="parlay-legs-group">${p.legs.map(leg => `
+                    <div class="parlay-leg">
+                        <div class="parlay-leg-pick">${leg.pick}</div>
+                        <div class="parlay-leg-details">
+                            <span>${leg.game}</span>
+                            <span>${leg.bet_type} · ${fmtBook(leg.book)} · ${leg.odds > 0 ? '+' : ''}${leg.odds}</span>
+                            <span>Edge: ${pct(leg.edge)} · Model: ${pct(leg.true_prob)}</span>
+                        </div>
+                    </div>`).join('')}
+                </div>
+                <div class="parlay-summary">
+                    <div class="parlay-summary-stat"><span>Win Prob</span><span>${pct(p.combined_true_prob)}</span></div>
+                    <div class="parlay-summary-stat"><span>Implied Prob</span><span>${pct(p.combined_implied_prob)}</span></div>
+                    <div class="parlay-summary-stat"><span>Edge</span><span class="edge-val">${pct(p.edge)}</span></div>
+                    <div class="parlay-summary-stat"><span>Payout</span><span class="roi-val">$${p.payout.toFixed(2)}</span></div>
+                    <div class="parlay-summary-stat"><span>ROI</span><span class="roi-val">${pct(p.roi)}</span></div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function loadParlayPerformance() {
+    try {
+        const r = await fetch(`parlay_results.json?v=${Date.now()}`);
+        if (!r.ok) { hideParlayPerf(); return; }
+        const data = await r.json();
+        displayParlayPerformance(data);
+    } catch (e) { hideParlayPerf(); }
+}
+
+function hideParlayPerf() { $('parlay-perf-section').style.display = 'none'; }
+
+function displayParlayPerformance(data) {
+    if (!data || !data.total_parlays) { hideParlayPerf(); return; }
+    $('parlay-perf-section').style.display = 'block';
+
+    const profitClass = data.total_profit >= 0 ? 'positive' : 'negative';
+    $('parlay-perf-stats').innerHTML = `
+        <div class="stat"><span class="stat-label">Total Parlays</span><span class="stat-value">${data.total_parlays}</span></div>
+        <div class="stat"><span class="stat-label">Win Rate</span><span class="stat-value">${pct(data.win_rate)}</span></div>
+        <div class="stat"><span class="stat-label">ROI</span><span class="stat-value ${profitClass}">${pct(data.roi)}</span></div>
+        <div class="stat"><span class="stat-label">Profit</span><span class="stat-value ${profitClass}">${signUsd(data.total_profit)}</span></div>`;
+
+    // Legs breakdown
+    if (data.by_legs) {
+        $('parlay-legs-breakdown').innerHTML = '<h3 style="color:var(--t2);font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">By Leg Count</h3>' +
+            Object.entries(data.by_legs).map(([n, d]) => {
+                const pc = d.profit >= 0 ? 'positive' : 'negative';
+                return `<div class="grade-performance-item"><div class="grade-performance-badge grade-b">${n}L</div><div class="grade-performance-stats">
+                    <div class="grade-stat"><span class="grade-stat-label">Parlays</span><span class="grade-stat-value">${d.total}</span></div>
+                    <div class="grade-stat"><span class="grade-stat-label">Win Rate</span><span class="grade-stat-value">${pct(d.win_rate)}</span></div>
+                    <div class="grade-stat"><span class="grade-stat-label">ROI</span><span class="grade-stat-value ${pc}">${pct(d.roi)}</span></div>
+                    <div class="grade-stat"><span class="grade-stat-label">Profit</span><span class="grade-stat-value ${pc}">${signUsd(d.profit)}</span></div>
+                </div></div>`;
+            }).join('');
+    }
+
+    // Recent parlay results
+    if (data.parlays?.length) {
+        const recent = data.parlays.slice(0, 15);
+        $('parlay-recent-results').innerHTML = '<h3 style="color:var(--t2);font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Recent Parlays</h3>' +
+            recent.map(p => {
+                const icon = p.result === 'won' ? '✅' : '❌';
+                const legs = p.legs.map(l => l.pick).join(' + ');
+                return `<div class="result-item" style="grid-template-columns:36px 1fr auto auto;">
+                    <div class="result-icon">${icon}</div>
+                    <div class="result-details"><div class="result-pick">${legs}</div><div class="result-game">${p.date} · ${p.n_legs}-leg · ${p.combined_odds > 0 ? '+' : ''}${p.combined_odds}</div></div>
+                    <div class="result-profit ${p.profit >= 0 ? 'positive' : 'negative'}">${signUsd(p.profit)}</div>
+                </div>`;
+            }).join('');
+
+        // Cumulative profit chart
+        renderParlayProfitChart(data.parlays);
+    }
+}
+
+function renderParlayProfitChart(parlays) {
+    const canvas = $('parlay-profit-chart');
+    if (!canvas || typeof Chart === 'undefined') return;
+    const sorted = [...parlays].sort((a, b) => a.date.localeCompare(b.date));
+    if (!sorted.length) return;
+
+    let cp = 0;
+    const labels = [], pd = [], colors = [];
+    sorted.forEach(p => {
+        cp += p.profit;
+        labels.push(p.date);
+        pd.push(+cp.toFixed(2));
+        colors.push(p.result === 'won' ? '#22C55E' : '#EF4444');
+    });
+
+    if (parlayChartInstance) parlayChartInstance.destroy();
+    parlayChartInstance = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: { labels, datasets: [{
+            label: 'Parlay Profit', data: pd,
+            borderColor: '#C41E3A', backgroundColor: 'rgba(196,30,58,.1)',
+            fill: true, tension: .3, borderWidth: 2.5,
+            pointRadius: 4, pointBackgroundColor: colors, pointBorderColor: colors, pointBorderWidth: 0,
+        }]},
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false },
+                tooltip: { backgroundColor: 'rgba(20,25,35,.95)', titleColor: '#E8EDF2', bodyColor: '#B8C4D0' }},
+            scales: {
+                x: { ticks: { color: '#6B7A8D', font: { size: 10 }, maxRotation: 45, maxTicksLimit: 15 }, grid: { color: 'rgba(255,255,255,.05)' }},
+                y: { ticks: { color: '#6B7A8D', callback: v => usd(v) }, grid: { color: 'rgba(255,255,255,.05)' }, title: { display: true, text: 'Cumulative Profit ($)', color: '#6B7A8D' }}
+            }
+        }
+    });
+}
 
 // Scroll-to-top
 (function(){

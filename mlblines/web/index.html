@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MLB +EV Betting Finder</title>
-    <link rel="stylesheet" href="styles.css?v=2.0">
+    <link rel="stylesheet" href="styles.css?v=3.0">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -24,6 +24,7 @@
 
         <div class="tabs">
             <button class="tab-button active" onclick="showTab('today')">Today's Picks</button>
+            <button class="tab-button" onclick="showTab('parlays')">Parlays</button>
             <button class="tab-button" onclick="showTab('performance')">Performance History</button>
         </div>
 
@@ -104,6 +105,58 @@
             </section>
         </div>
 
+        <!-- Parlays Tab -->
+        <div id="parlays-tab" class="tab-content" style="display: none;">
+            <section class="summary-card">
+                <h2>Today's Parlays</h2>
+                <div class="stats-grid">
+                    <div class="stat">
+                        <span class="stat-label">Parlays Available</span>
+                        <span class="stat-value" id="parlays-count">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Best EV</span>
+                        <span class="stat-value" id="parlays-best-ev">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Best Odds</span>
+                        <span class="stat-value" id="parlays-best-odds">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Stake</span>
+                        <span class="stat-value" id="parlays-stake">-</span>
+                    </div>
+                </div>
+            </section>
+
+            <div class="parlay-filter-bar">
+                <div class="parlay-filter-buttons">
+                    <button class="parlay-filter-btn active" data-filter="all" onclick="filterParlays('all')">All</button>
+                    <button class="parlay-filter-btn" data-filter="2" onclick="filterParlays('2')">2-Leg</button>
+                    <button class="parlay-filter-btn" data-filter="3" onclick="filterParlays('3')">3-Leg</button>
+                </div>
+                <select id="parlay-sort" class="filter-select" onchange="sortParlays(this.value)">
+                    <option value="ev">Sort by EV</option>
+                    <option value="odds">Sort by Odds</option>
+                    <option value="edge">Sort by Edge</option>
+                    <option value="prob">Sort by Win Prob</option>
+                </select>
+            </div>
+
+            <div id="parlays-list"></div>
+
+            <!-- Parlay Performance History -->
+            <section id="parlay-perf-section" class="summary-card" style="display:none; margin-top:24px;">
+                <h2>Parlay Performance History</h2>
+                <div class="stats-grid" id="parlay-perf-stats"></div>
+                <div class="chart-container" style="margin-top:16px;">
+                    <canvas id="parlay-profit-chart"></canvas>
+                </div>
+                <div id="parlay-legs-breakdown" style="margin-top:16px;"></div>
+                <div id="parlay-recent-results" style="margin-top:16px;"></div>
+            </section>
+        </div>
+
         <!-- Performance History Tab -->
         <div id="performance-tab" class="tab-content" style="display: none;">
             <section class="summary-card">
@@ -173,6 +226,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=2.0"></script>
+    <script src="app.js?v=3.0"></script>
 </body>
 </html>
