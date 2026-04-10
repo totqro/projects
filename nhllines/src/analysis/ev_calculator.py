@@ -92,10 +92,11 @@ def evaluate_all_bets(
     if confidence < min_confidence:
         return bets
 
-    # In conservative mode, raise the bar further
+    # In conservative mode, raise edge bar but NOT confidence
+    # Backtesting showed soft book filter is the real edge driver,
+    # not confidence (model rarely exceeds 55% confidence anyway)
     if conservative:
         min_edge = max(min_edge, 0.04)  # At least 4% edge in conservative mode
-        min_confidence = max(min_confidence, 0.75)  # 75%+ confidence in conservative mode
 
     # Book filter helper — skip bets on sharp books where model has no edge
     def _book_allowed(book_key: str) -> bool:

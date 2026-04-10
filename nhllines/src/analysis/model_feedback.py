@@ -338,16 +338,11 @@ class ModelFeedback:
             if edge < edge_threshold:
                 return False
         
-        # Check confidence level performance
-        conf_bin = str(int(confidence * 10) * 10)
-        conf_data = self.feedback_data["confidence_accuracy"].get(conf_bin, {})
-        if conf_data.get("total", 0) >= 10:
-            conf_win_rate = conf_data["correct"] / conf_data["total"]
-            
-            # If low confidence bets historically lose, skip them
-            if confidence < 0.60 and conf_win_rate < 0.45:
-                return False
-        
+        # Note: confidence-based blocking removed — backtesting showed
+        # the soft book filter + edge threshold is what drives profitability,
+        # not confidence level. Low-confidence games (40-50%) with real edge
+        # are still profitable on soft books.
+
         return True
 
 
