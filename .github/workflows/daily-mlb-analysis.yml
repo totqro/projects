@@ -7,7 +7,7 @@ on:
   workflow_dispatch: # Allow manual trigger
 
 jobs:
-  analyze-and-deploy:
+  analyze:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -47,7 +47,7 @@ jobs:
         continue-on-error: true
 
       - name: Create required directories
-        run: mkdir -p mlblines/mlbdata mlblines/ml_models mlblines/cache build/mlblines build/nhllines
+        run: mkdir -p mlblines/mlbdata mlblines/ml_models mlblines/cache
 
       - name: Run MLB analysis
         working-directory: mlblines
@@ -89,7 +89,7 @@ jobs:
           "
         continue-on-error: true
 
-      - name: Commit updated data back to repo
+      - name: Commit updated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -107,44 +107,6 @@ jobs:
             echo "✅ MLB data committed and pushed"
           fi
         continue-on-error: true
-
-      - name: Pull latest repo (get fresh NHL data too)
-        run: git pull origin main
-
-      - name: Build deploy folder
-        run: |
-          rm -rf build/nhllines build/mlblines
-          mkdir -p build/mlblines build/nhllines
-          # Root hub page
-          cp mlblines/web/hub.html build/index.html
-          # MLB app files
-          cp mlblines/web/index.html build/mlblines/
-          cp mlblines/web/app.js build/mlblines/
-          cp mlblines/web/styles.css build/mlblines/
-          # MLB data files (fresh from this run)
-          cp mlblines/mlbdata/latest_analysis.json build/mlblines/ 2>/dev/null || echo '{"recommendations":[],"games_analyzed":[],"timestamp":""}' > build/mlblines/latest_analysis.json
-          cp mlblines/mlbdata/bet_results.json build/mlblines/ 2>/dev/null || echo '{"results":{}}' > build/mlblines/bet_results.json
-          cp mlblines/mlbdata/analysis_history.json build/mlblines/ 2>/dev/null || true
-          cp mlblines/mlbdata/parlay_results.json build/mlblines/ 2>/dev/null || true
-          # NHL app + data files (from latest repo pull)
-          cp nhllines/web/index.html build/nhllines/
-          cp nhllines/web/app.js build/nhllines/
-          cp nhllines/web/styles.css build/nhllines/
-          cp nhllines/data/latest_analysis.json build/nhllines/ 2>/dev/null || echo '{"recommendations":[],"games_analyzed":[],"timestamp":""}' > build/nhllines/latest_analysis.json
-          cp nhllines/data/bet_results.json build/nhllines/ 2>/dev/null || echo '{"results":{}}' > build/nhllines/bet_results.json
-          cp nhllines/data/analysis_history.json build/nhllines/ 2>/dev/null || true
-          cp nhllines/data/parlay_results.json build/nhllines/ 2>/dev/null || true
-
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
-
-      - name: Deploy to Firebase
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: |
-          echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > /tmp/sa.json
-          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json
-          firebase deploy --only hosting --project projects-brawlstars --non-interactive
 
       - name: Save ML models
         uses: actions/upload-artifact@v4
