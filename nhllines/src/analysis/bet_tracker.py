@@ -20,32 +20,31 @@ BET_LOG_PATH = Path(__file__).parent.parent.parent / "data" / "bet_results.json"
 def check_results(days_back: int = 7):
     """
     Check results of past bets from analysis history and calculate actual performance.
-    
+
+    Always rebuilds from scratch to ensure correctness — never trusts cached results.
+
     Args:
         days_back: How many days back to check results for
     """
     # Get all bets from analysis history
     print(f"Loading bets from analysis history (last {days_back} days)...")
     all_bets = get_all_bets_from_history(days_back=days_back)
-    
+
     if not all_bets:
         print("No bets found in analysis history.")
         return
-    
+
     print(f"Found {len(all_bets)} bets to check")
-    
-    # Load existing results
-    if BET_LOG_PATH.exists():
-        results_log = json.loads(BET_LOG_PATH.read_text())
-    else:
-        results_log = {"results": {}}
-    
+
+    # Always rebuild from scratch to fix any past matching errors
+    results_log = {"results": {}}
+
     # Fetch recent game results
     print(f"Fetching game results from last {days_back} days...")
     games = fetch_season_games(days_back=days_back)
-    
+
     # Create lookup dict: (date, game_key) -> result
-    # Use date+matchup as key to handle rematches correctly
+    # STRICT matching: only exact (date, matchup) pairs — no fallbacks
     game_results = {}
     for game in games:
         date = game["date"][:10]
@@ -64,29 +63,29 @@ def check_results(days_back: int = 7):
 
     # Check each bet
     updated = 0
+    skipped_no_date = 0
+    skipped_no_game = 0
     for bet in all_bets:
-        # Extract the date from the analysis timestamp
+        # Extract bet date from the analysis timestamp (the date the bet was made)
         analysis_ts = bet.get("analysis_timestamp", "")
         bet_date = analysis_ts[:10] if analysis_ts else ""
 
-        # Create unique bet ID including date to handle rematches
+        if not bet_date or len(bet_date) < 10:
+            skipped_no_date += 1
+            continue
+
+        # Create unique bet ID: date + game + pick
         bet_id = f"{bet_date}_{bet['game']}_{bet['pick']}"
 
-        # Skip if already resolved
-        if bet_id in results_log["results"]:
-            continue
-
         game_key = bet["game"]
-        # Look up by (date, game_key) first, fall back to any matching game
+
+        # STRICT: only match the exact game on the exact date
+        # No fallback to other dates — that caused wrong-game matching
         result = game_results.get((bet_date, game_key))
         if result is None:
-            # Try matching without date (for bets without timestamps)
-            for (d, gk), r in game_results.items():
-                if gk == game_key:
-                    result = r
-                    break
-        if result is None:
+            skipped_no_game += 1
             continue
+
         outcome = _check_bet_result(bet, result)
 
         if outcome is None:
@@ -113,14 +112,18 @@ def check_results(days_back: int = 7):
             "game_result": result,
             "checked_at": datetime.now(EST).isoformat(),
         }
-        
+
         updated += 1
-    
+
     # Save updated results
     BET_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     BET_LOG_PATH.write_text(json.dumps(results_log, indent=2, default=str))
-    
-    print(f"✅ Updated {updated} bet results")
+
+    if skipped_no_date:
+        print(f"  ⚠️  Skipped {skipped_no_date} bets (no timestamp)")
+    if skipped_no_game:
+        print(f"  ⏳ {skipped_no_game} bets awaiting game results")
+    print(f"✅ Resolved {updated} bet results")
     
     # Update model feedback system with new results
     if updated > 0:
