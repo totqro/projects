@@ -1,6 +1,6 @@
 let allRecommendations = [], allOddsData = {}, currentStake = 0.5, filtersSetUp = false;
 let currentFilters = { grade:'all', type:'all', book:'all', sortBy:'edge' };
-let currentMode = 'espn'; // 'espn' or 'all'
+let currentMode = 'all'; // 'espn' or 'all'
 let rawPerformanceData = null;
 let profitChartInstance = null, allSortedBets = [], pinnedTooltipIndex = -1;
 let allParlays = [], currentParlayFilter = 'all', currentParlaySort = 'ev', parlayChartInstance = null;

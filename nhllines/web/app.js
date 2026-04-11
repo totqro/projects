@@ -1,6 +1,6 @@
 let allRecommendations = [], allOddsData = {}, currentStake = 1, filtersSetUp = false, allParlays = [], currentParlayFilter = 'all', currentParlaySort = 'ev';
 let currentFilters = { grade:'all', type:'all', book:'all', sortBy:'edge' };
-let currentMode = 'espn'; // 'espn' or 'all'
+let currentMode = 'all'; // 'espn' or 'all'
 let rawPerformanceData = null; // Store raw bet_results for mode filtering
 
 // Mode-specific configurations derived from optimization analysis (144 bets, Mar-Apr 2026)

@@ -113,8 +113,30 @@ jobs:
               print('No feedback data yet')
           "
 
+      - name: Commit updated data back to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add nhllines/data/bet_results.json nhllines/data/analysis_history.json nhllines/data/latest_analysis.json nhllines/data/model_feedback.json nhllines/data/parlay_results.json
+          if git diff --cached --quiet; then
+            echo "No data changes to commit"
+          else
+            git commit -m "chore: update NHL data [$(date +'%Y-%m-%d %H:%M')]"
+            git pull --rebase origin main || {
+              echo "::warning::Rebase failed, trying merge strategy"
+              git rebase --abort 2>/dev/null || true
+              git pull --no-rebase -X ours origin main
+            }
+            git push
+            echo "✅ NHL data committed and pushed"
+          fi
+
+      - name: Pull latest repo (get fresh MLB data too)
+        run: git pull origin main
+
       - name: Build deploy folder
         run: |
+          rm -rf build/nhllines build/mlblines
           mkdir -p build/nhllines build/mlblines
           # Root hub page
           cp nhllines/web/hub.html build/index.html
@@ -122,18 +144,19 @@ jobs:
           cp nhllines/web/index.html build/nhllines/
           cp nhllines/web/app.js build/nhllines/
           cp nhllines/web/styles.css build/nhllines/
-          # NHL data files
+          # NHL data files (fresh from this run)
           cp nhllines/data/latest_analysis.json build/nhllines/ 2>/dev/null || echo '{"recommendations":[],"games_analyzed":[],"timestamp":""}' > build/nhllines/latest_analysis.json
           cp nhllines/data/bet_results.json build/nhllines/ 2>/dev/null || echo '{"results":{}}' > build/nhllines/bet_results.json
           cp nhllines/data/analysis_history.json build/nhllines/ 2>/dev/null || true
           cp nhllines/data/parlay_results.json build/nhllines/ 2>/dev/null || true
-          # MLB app + data files (same repo now)
+          # MLB app + data files (from latest repo pull)
           cp mlblines/web/index.html build/mlblines/
           cp mlblines/web/app.js build/mlblines/
           cp mlblines/web/styles.css build/mlblines/
           cp mlblines/mlbdata/latest_analysis.json build/mlblines/ 2>/dev/null || echo '{"recommendations":[],"games_analyzed":[],"timestamp":""}' > build/mlblines/latest_analysis.json
           cp mlblines/mlbdata/bet_results.json build/mlblines/ 2>/dev/null || echo '{"results":{}}' > build/mlblines/bet_results.json
           cp mlblines/mlbdata/analysis_history.json build/mlblines/ 2>/dev/null || true
+          cp mlblines/mlbdata/parlay_results.json build/mlblines/ 2>/dev/null || true
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
@@ -145,26 +168,6 @@ jobs:
           echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > /tmp/sa.json
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json
           firebase deploy --only hosting --project projects-brawlstars --non-interactive
-
-      - name: Commit updated data back to repo
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add nhllines/data/bet_results.json nhllines/data/analysis_history.json nhllines/data/latest_analysis.json nhllines/data/model_feedback.json nhllines/data/parlay_results.json
-          if git diff --cached --quiet; then
-            echo "No data changes to commit"
-          else
-            git commit -m "chore: update NHL data [$(date +'%Y-%m-%d %H:%M')]"
-            git stash --include-untracked
-            git pull --rebase origin main || {
-              echo "::warning::Rebase failed, trying merge strategy"
-              git rebase --abort 2>/dev/null || true
-              git pull --no-rebase -X ours origin main
-            }
-            git stash pop 2>/dev/null || true
-            git push
-            echo "✅ Data committed and pushed to repo"
-          fi
 
       - name: Save ML models
         uses: actions/upload-artifact@v4

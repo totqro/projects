@@ -89,8 +89,31 @@ jobs:
           "
         continue-on-error: true
 
+      - name: Commit updated data back to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add mlblines/mlbdata/bet_results.json mlblines/mlbdata/analysis_history.json mlblines/mlbdata/latest_analysis.json mlblines/mlbdata/parlay_results.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "No data changes to commit"
+          else
+            git commit -m "chore: update MLB data [$(date +'%Y-%m-%d %H:%M')]"
+            git pull --rebase origin main || {
+              echo "::warning::Rebase failed, trying merge strategy"
+              git rebase --abort 2>/dev/null || true
+              git pull --no-rebase -X ours origin main
+            }
+            git push
+            echo "✅ MLB data committed and pushed"
+          fi
+        continue-on-error: true
+
+      - name: Pull latest repo (get fresh NHL data too)
+        run: git pull origin main
+
       - name: Build deploy folder
         run: |
+          rm -rf build/nhllines build/mlblines
           mkdir -p build/mlblines build/nhllines
           # Root hub page
           cp mlblines/web/hub.html build/index.html
@@ -98,12 +121,12 @@ jobs:
           cp mlblines/web/index.html build/mlblines/
           cp mlblines/web/app.js build/mlblines/
           cp mlblines/web/styles.css build/mlblines/
-          # MLB data files
+          # MLB data files (fresh from this run)
           cp mlblines/mlbdata/latest_analysis.json build/mlblines/ 2>/dev/null || echo '{"recommendations":[],"games_analyzed":[],"timestamp":""}' > build/mlblines/latest_analysis.json
           cp mlblines/mlbdata/bet_results.json build/mlblines/ 2>/dev/null || echo '{"results":{}}' > build/mlblines/bet_results.json
           cp mlblines/mlbdata/analysis_history.json build/mlblines/ 2>/dev/null || true
           cp mlblines/mlbdata/parlay_results.json build/mlblines/ 2>/dev/null || true
-          # NHL app + data files (same repo now)
+          # NHL app + data files (from latest repo pull)
           cp nhllines/web/index.html build/nhllines/
           cp nhllines/web/app.js build/nhllines/
           cp nhllines/web/styles.css build/nhllines/
@@ -122,25 +145,6 @@ jobs:
           echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > /tmp/sa.json
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json
           firebase deploy --only hosting --project projects-brawlstars --non-interactive
-
-      - name: Commit updated data back to repo
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add mlblines/mlbdata/bet_results.json mlblines/mlbdata/analysis_history.json mlblines/mlbdata/latest_analysis.json mlblines/mlbdata/parlay_results.json 2>/dev/null || true
-          if git diff --cached --quiet; then
-            echo "No data changes to commit"
-          else
-            git commit -m "chore: update MLB data [$(date +'%Y-%m-%d %H:%M')]"
-            git pull --rebase origin main || {
-              echo "::warning::Rebase failed, trying merge strategy"
-              git rebase --abort 2>/dev/null || true
-              git pull --no-rebase -X ours origin main
-            }
-            git push
-            echo "✅ Data committed and pushed to repo"
-          fi
-        continue-on-error: true
 
       - name: Save ML models
         uses: actions/upload-artifact@v4
