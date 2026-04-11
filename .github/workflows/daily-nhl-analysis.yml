@@ -44,7 +44,7 @@ jobs:
         with:
           name: nhl-ml-models
           path: nhllines/ml_models/
-        continue-on-error: true
+        continue-on-error: true  # OK: first run won't have models
 
       - name: Create required directories
         run: mkdir -p nhllines/data nhllines/ml_models nhllines/cache
@@ -52,16 +52,14 @@ jobs:
       - name: Run NHL analysis
         working-directory: nhllines
         run: python main.py --stake 0.50 --conservative
-        continue-on-error: true
 
-      - name: Check and update bet results
+      - name: Check and update bet results (30-day lookback)
         working-directory: nhllines
         run: |
           python -c "
           from src.analysis.bet_tracker import check_results
-          check_results(days_back=14)
+          check_results(days_back=30)
           "
-        continue-on-error: true
 
       - name: Update model feedback system
         working-directory: nhllines
@@ -71,7 +69,6 @@ jobs:
           print('Updating model feedback with latest results...')
           update_model_from_results()
           "
-        continue-on-error: true
 
       - name: Generate parlay performance data
         working-directory: nhllines
@@ -87,7 +84,6 @@ jobs:
           else:
               print('No parlay data available yet')
           "
-        continue-on-error: true
 
       - name: Commit updated data
         run: |
@@ -114,3 +110,22 @@ jobs:
           path: nhllines/ml_models/
           retention-days: 90
           overwrite: true
+
+      - name: Notify on failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "❌ NHL Analysis Failed"
+          to: lucknox@icloud.com
+          from: ${{ secrets.EMAIL_USERNAME }}
+          body: |
+            The Daily NHL Analysis workflow failed.
+
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Trigger: ${{ github.event_name }}
+            Time: ${{ github.event.head_commit.timestamp || 'manual' }}
+        continue-on-error: true  # Don't fail the whole job if email fails

@@ -73,7 +73,7 @@ def evaluate_all_bets(
     best_odds: dict,
     stake: float = 1.00,
     min_edge: float = 0.03,  # Minimum 3% edge (optimized: soft books + edge ≥3% = 65% WR)
-    min_confidence: float = 0.50,  # Minimum 50% confidence (soft book filter is the real edge)
+    min_confidence: float = 0.35,  # Lowered from 0.50: confidence scaling already reduces values, and backtesting showed soft book filter is the real edge
     conservative: bool = False,
     max_edge: float = 1.0,  # No practical cap - high-edge bets are the most profitable
     book_filter: str = "soft",  # "soft" = exclude sharp books, "all" = no filter

@@ -26,6 +26,9 @@ class ModelFeedback:
     
     def __init__(self):
         self.feedback_data = self._load_feedback()
+        # Build calibration map from existing data on startup
+        if self.feedback_data.get("calibration_bins"):
+            self._build_calibration_map()
     
     def _load_feedback(self) -> dict:
         """Load existing feedback data or create new structure."""
@@ -149,12 +152,17 @@ class ModelFeedback:
             print("[Feedback] No new results to process")
     
     def _recalculate_optimal_weights(self):
-        """Recalculate optimal model/market blend based on performance."""
+        """
+        Recalculate optimal model/market blend based on performance.
+
+        Uses proportional adjustments instead of fixed ±0.02 steps so the
+        system converges faster when calibration error is large.
+        """
         recent = self.feedback_data["recent_performance"]
-        
+
         if len(recent) < 20:
             return  # Need more data
-        
+
         # Calculate Brier score (lower is better)
         # Brier = avg((predicted_prob - actual_outcome)^2)
         brier_scores = []
@@ -162,32 +170,42 @@ class ModelFeedback:
             predicted = pred["true_prob"]
             actual = 1.0 if pred["won"] else 0.0
             brier_scores.append((predicted - actual) ** 2)
-        
+
         avg_brier = sum(brier_scores) / len(brier_scores)
-        
-        # If Brier score is good (< 0.20), trust model more
-        # If Brier score is poor (> 0.25), trust market more
+
+        # Proportional weight adjustment based on Brier score
+        # Target Brier: 0.22 (slightly better than coin-flip 0.25)
+        # Adjustment is proportional to how far off we are
+        current_weight = self.feedback_data["optimal_weights"]["model_weight"]
         if avg_brier < 0.20:
-            # Model is well-calibrated, increase weight
-            current_weight = self.feedback_data["optimal_weights"]["model_weight"]
-            new_weight = min(0.75, current_weight + 0.02)
-            self.feedback_data["optimal_weights"]["model_weight"] = new_weight
+            # Model is well-calibrated — increase weight proportionally
+            adjustment = min(0.05, (0.20 - avg_brier) * 0.5)
+            new_weight = min(0.75, current_weight + adjustment)
         elif avg_brier > 0.25:
-            # Model is poorly calibrated, decrease weight
-            current_weight = self.feedback_data["optimal_weights"]["model_weight"]
-            new_weight = max(0.50, current_weight - 0.02)
-            self.feedback_data["optimal_weights"]["model_weight"] = new_weight
-        
-        # Adjust confidence scaling based on calibration
-        # If model is overconfident, scale down confidence
-        # If model is underconfident, scale up confidence
+            # Model is poorly calibrated — decrease weight proportionally
+            adjustment = min(0.08, (avg_brier - 0.25) * 0.8)
+            new_weight = max(0.35, current_weight - adjustment)
+        else:
+            new_weight = current_weight
+
+        self.feedback_data["optimal_weights"]["model_weight"] = round(new_weight, 3)
+
+        # Proportional confidence scaling based on calibration error
         calibration_error = self._calculate_calibration_error()
-        if calibration_error > 0.05:  # Overconfident
-            self.feedback_data["optimal_weights"]["confidence_scaling"] = \
-                max(0.7, self.feedback_data["optimal_weights"]["confidence_scaling"] - 0.05)
-        elif calibration_error < -0.05:  # Underconfident
-            self.feedback_data["optimal_weights"]["confidence_scaling"] = \
-                min(1.3, self.feedback_data["optimal_weights"]["confidence_scaling"] + 0.05)
+        current_scaling = self.feedback_data["optimal_weights"]["confidence_scaling"]
+
+        if abs(calibration_error) > 0.03:
+            # Scale adjustment proportionally to error magnitude
+            # Larger errors get larger corrections (up to 0.15 per update)
+            adjustment = min(0.15, abs(calibration_error) * 1.5)
+            if calibration_error > 0:  # Overconfident
+                new_scaling = max(0.5, current_scaling - adjustment)
+            else:  # Underconfident
+                new_scaling = min(1.3, current_scaling + adjustment)
+            self.feedback_data["optimal_weights"]["confidence_scaling"] = round(new_scaling, 3)
+
+        # Build calibration map for direct probability recalibration
+        self._build_calibration_map()
     
     def _calculate_calibration_error(self) -> float:
         """
@@ -217,21 +235,125 @@ class ModelFeedback:
         
         return total_error / total_weight if total_weight > 0 else 0.0
     
+    def _build_calibration_map(self):
+        """
+        Build a calibration map: for each predicted probability bin,
+        store what the actual win rate is. This allows direct recalibration
+        of future predictions instead of just scaling.
+
+        Uses Bayesian shrinkage: blend observed rate with prior (predicted)
+        to avoid extreme corrections from small samples.
+        """
+        bins = self.feedback_data["calibration_bins"]
+        cal_map = {}
+
+        for prob_bin, data in bins.items():
+            if data["total"] >= 10:  # Require at least 10 samples
+                predicted = int(prob_bin) / 100.0
+                raw_actual = data["correct"] / data["total"]
+
+                # Bayesian shrinkage: blend observed rate with prior (predicted)
+                # strength=20 means 20 "virtual" observations at the prior rate
+                # With n=10, we're 33% observed, 67% prior
+                # With n=40, we're 67% observed, 33% prior
+                # With n=100, we're 83% observed, 17% prior
+                shrinkage_strength = 20
+                actual = (data["correct"] + shrinkage_strength * predicted) / \
+                         (data["total"] + shrinkage_strength)
+
+                cal_map[prob_bin] = {
+                    "predicted": predicted,
+                    "actual": round(actual, 4),
+                    "raw_actual": round(raw_actual, 4),
+                    "n": data["total"],
+                    "error": round(predicted - actual, 4)
+                }
+
+        self.feedback_data["optimal_weights"]["calibration_map"] = cal_map
+
+    def recalibrate_probability(self, raw_prob: float) -> float:
+        """
+        Recalibrate a predicted probability using the calibration map.
+
+        Uses linear interpolation between calibration bins. Falls back to
+        scaling-based adjustment if calibration map is not available.
+
+        Args:
+            raw_prob: Model's raw predicted probability (0.0 to 1.0)
+
+        Returns:
+            Recalibrated probability
+        """
+        cal_map = self.feedback_data["optimal_weights"].get("calibration_map", {})
+
+        if len(cal_map) < 3:
+            # Not enough data for calibration map — fall back to scaling
+            return self.get_adjusted_confidence(raw_prob)
+
+        # Find the two nearest bins for interpolation
+        prob_pct = raw_prob * 100
+        bins_sorted = sorted(cal_map.keys(), key=int)
+
+        # Find bracketing bins
+        lower_bin = None
+        upper_bin = None
+        for b in bins_sorted:
+            b_val = int(b)
+            if b_val <= prob_pct:
+                lower_bin = b
+            if b_val >= prob_pct and upper_bin is None:
+                upper_bin = b
+
+        if lower_bin is None and upper_bin is None:
+            return raw_prob  # No data at all
+
+        if lower_bin is None:
+            # Below all bins — use the lowest bin's correction
+            error = cal_map[upper_bin]["error"]
+            return max(0.05, min(0.95, raw_prob - error))
+
+        if upper_bin is None:
+            # Above all bins — use the highest bin's correction
+            error = cal_map[lower_bin]["error"]
+            return max(0.05, min(0.95, raw_prob - error))
+
+        if lower_bin == upper_bin:
+            # Exact match
+            error = cal_map[lower_bin]["error"]
+            return max(0.05, min(0.95, raw_prob - error))
+
+        # Linear interpolation between bins
+        low_val = int(lower_bin)
+        high_val = int(upper_bin)
+        low_error = cal_map[lower_bin]["error"]
+        high_error = cal_map[upper_bin]["error"]
+
+        # Interpolation factor
+        if high_val == low_val:
+            t = 0.5
+        else:
+            t = (prob_pct - low_val) / (high_val - low_val)
+
+        interpolated_error = low_error + t * (high_error - low_error)
+        calibrated = raw_prob - interpolated_error
+
+        return max(0.05, min(0.95, calibrated))
+
     def get_adjusted_confidence(self, raw_confidence: float) -> float:
         """
         Adjust confidence based on historical calibration.
-        
+
         Args:
             raw_confidence: Model's raw confidence score
-            
+
         Returns:
             Calibrated confidence score
         """
         scaling = self.feedback_data["optimal_weights"]["confidence_scaling"]
-        
+
         # Apply scaling but keep in valid range
         adjusted = raw_confidence * scaling
-        
+
         # Ensure stays in [0.3, 0.95] range
         return max(0.3, min(0.95, adjusted))
     

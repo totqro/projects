@@ -44,7 +44,7 @@ jobs:
         with:
           name: mlb-ml-models
           path: mlblines/ml_models/
-        continue-on-error: true
+        continue-on-error: true  # OK: first run won't have models
 
       - name: Create required directories
         run: mkdir -p mlblines/mlbdata mlblines/ml_models mlblines/cache
@@ -53,41 +53,29 @@ jobs:
         working-directory: mlblines
         run: python main.py --stake 0.50
 
-      - name: Check and update bet results
+      - name: Check and update bet results (21-day lookback)
         working-directory: mlblines
         run: |
           python -c "
-          try:
-              from src.analysis.bet_tracker import check_results
-              check_results(days_back=7)
-          except Exception as e:
-              print(f'::warning::Bet result check failed: {e}')
-              import traceback
-              traceback.print_exc()
+          from src.analysis.bet_tracker import check_results
+          check_results(days_back=21)
           "
-        continue-on-error: true
 
       - name: Generate parlay performance data
         working-directory: mlblines
         run: |
           python -c "
-          try:
-              from src.analysis.bet_tracker import get_parlay_performance
-              import json
-              from pathlib import Path
-              perf = get_parlay_performance(stake=0.50)
-              if perf:
-                  path = Path('mlbdata/parlay_results.json')
-                  path.write_text(json.dumps(perf, indent=2, default=str))
-                  print(f'Parlay performance: {perf[\"won\"]}W-{perf[\"lost\"]}L, ROI: {perf[\"roi\"]:.1%}')
-              else:
-                  print('No parlay data yet')
-          except Exception as e:
-              print(f'::warning::Parlay performance failed: {e}')
-              import traceback
-              traceback.print_exc()
+          from src.analysis.bet_tracker import get_parlay_performance
+          import json
+          from pathlib import Path
+          perf = get_parlay_performance(stake=0.50)
+          if perf:
+              path = Path('mlbdata/parlay_results.json')
+              path.write_text(json.dumps(perf, indent=2, default=str))
+              print(f'Parlay performance: {perf[\"won\"]}W-{perf[\"lost\"]}L, ROI: {perf[\"roi\"]:.1%}')
+          else:
+              print('No parlay data yet')
           "
-        continue-on-error: true
 
       - name: Commit updated data
         run: |
@@ -115,3 +103,22 @@ jobs:
           path: mlblines/ml_models/
           retention-days: 90
           overwrite: true
+
+      - name: Notify on failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "❌ MLB Analysis Failed"
+          to: lucknox@icloud.com
+          from: ${{ secrets.EMAIL_USERNAME }}
+          body: |
+            The Daily MLB Analysis workflow failed.
+
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Trigger: ${{ github.event_name }}
+            Time: ${{ github.event.head_commit.timestamp || 'manual' }}
+        continue-on-error: true  # Don't fail the whole job if email fails

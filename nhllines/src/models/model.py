@@ -491,23 +491,25 @@ def _goal_distribution(totals: list) -> dict:
 def blend_model_and_market(
     model_probs: dict,
     market_probs: dict,
-    model_weight: float = 0.65,
+    model_weight: float = 0.55,
 ) -> dict:
     """
     Blend our model's probabilities with market consensus.
 
-    Model weight increased to 0.65 (from 0.55) to give the model more say.
-    With recency-weighted training and daily retrains, the model should be
-    more responsive to current conditions.
+    Default weight lowered to 0.55 (from 0.65) based on calibration analysis
+    showing persistent model overconfidence (-11.2% calibration error).
+    The feedback system can raise this back up as calibration improves.
 
-    Confidence scaling uses cbrt for gentler curve.
+    Confidence scaling uses sqrt for steeper penalty on low confidence.
     """
     confidence = model_probs.get("confidence", 0)
 
-    # Scale model weight by confidence using cube root for gentler scaling
-    # At confidence 0.65: sqrt=0.81 vs cbrt=0.87 — less penalty
+    # Scale model weight by confidence using square root for steeper scaling
+    # At confidence 0.40: sqrt=0.63 vs cbrt=0.74 — stronger penalty
+    # At confidence 0.65: sqrt=0.81 vs cbrt=0.87 — meaningful difference
     # At confidence 0.95: sqrt=0.97 vs cbrt=0.98 — nearly identical
-    effective_weight = model_weight * (confidence ** (1/3))
+    # This ensures low-confidence predictions defer more to the market
+    effective_weight = model_weight * (confidence ** 0.5)
 
     blended = {}
 

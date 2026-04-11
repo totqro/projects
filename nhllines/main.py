@@ -71,7 +71,7 @@ from src.analysis import (
 
 def run_analysis(
     stake: float = 1.00,
-    days_back: int = 90,
+    days_back: int = 60,
     min_edge: float = 0.04,
     use_odds: bool = True,
     n_similar: int = 50,
@@ -92,7 +92,11 @@ def run_analysis(
     from src.analysis.model_feedback import get_feedback_system
     feedback = get_feedback_system()
     optimal_model_weight = feedback.get_optimal_model_weight()
+    conf_scaling = feedback.feedback_data["optimal_weights"]["confidence_scaling"]
+    cal_map = feedback.feedback_data["optimal_weights"].get("calibration_map", {})
     print(f"[Feedback] Using learned model weight: {optimal_model_weight:.2f}")
+    print(f"[Feedback] Confidence scaling: {conf_scaling:.2f}")
+    print(f"[Feedback] Calibration map: {len(cal_map)} bins active")
     print()
 
     # Step 1: Fetch current standings
@@ -483,7 +487,15 @@ def run_analysis(
             # Adjust confidence based on historical calibration
             adjusted_confidence = feedback.get_adjusted_confidence(model_probs["confidence"])
             model_probs["confidence"] = adjusted_confidence
-            
+
+            # NOTE: Probability recalibration is NOT applied before blending.
+            # The calibration map learned that model predictions converge to market odds
+            # (e.g., model 65% -> actual 57% ≈ market 56%), so applying it pre-blend
+            # would collapse all edges to zero. Instead, the calibration map is used
+            # post-blend via should_take_bet() to filter out bad bets.
+            # The model weight + confidence scaling already controls how much we trust
+            # the model vs market.
+
             blended = blend_model_and_market(model_probs, market_probs, model_weight=optimal_model_weight)
 
             # Print analysis

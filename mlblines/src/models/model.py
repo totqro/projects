@@ -369,13 +369,16 @@ def _run_distribution(totals):
     return dict(sorted(dist.items()))
 
 
-def blend_model_and_market(model_probs, market_probs, model_weight=0.65):
+def blend_model_and_market(model_probs, market_probs, model_weight=0.55):
     """
     Blend model probabilities with market consensus.
-    Confidence scaling uses cube root for gentler curve.
+
+    Default weight lowered to 0.55 (from 0.65) to be more conservative.
+    MLB model has no feedback system yet, so start cautious.
+    Uses sqrt for confidence scaling (steeper penalty on low confidence).
     """
     confidence = model_probs.get("confidence", 0)
-    effective_weight = model_weight * (confidence ** (1/3))
+    effective_weight = model_weight * (confidence ** 0.5)
 
     blended = {}
     blended["home_win_prob"] = (

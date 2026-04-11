@@ -59,7 +59,7 @@ from src.analysis import (
 
 def run_analysis(
     stake=0.50,
-    days_back=90,
+    days_back=60,
     min_edge=0.03,
     use_odds=True,
     n_similar=50,
