@@ -447,11 +447,13 @@ function displayParlays() {
 
     $('parlays-list').innerHTML = filtered.map((p, i) => {
         const isTop = i === 0 && currentParlaySort === 'ev';
+        const ts = p.datetime ? new Date(p.datetime).toLocaleString('en-US', {month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true}) : (p.date || '');
         return `<div class="parlay-card ${isTop ? 'parlay-top' : ''}" onclick="this.classList.toggle('expanded')">
             <div class="parlay-header">
                 <div>
                     ${isTop ? '<span class="parlay-badge">⭐ BEST</span>' : ''}
                     <span class="parlay-legs-count">${p.n_legs}-Leg Parlay</span>
+                    <span style="font-size:.72rem;color:var(--t3);margin-left:8px;">${ts}</span>
                 </div>
                 <div class="parlay-header-stats">
                     <span class="parlay-odds">${p.combined_odds > 0 ? '+' : ''}${p.combined_odds}</span>
@@ -524,9 +526,17 @@ function displayParlayPerformance(data) {
             recent.map(p => {
                 const icon = p.result === 'won' ? '✅' : '❌';
                 const legs = p.legs.map(l => l.pick).join(' + ');
-                return `<div class="result-item" style="grid-template-columns:36px 1fr auto auto;">
-                    <div class="result-icon">${icon}</div>
-                    <div class="result-details"><div class="result-pick">${legs}</div><div class="result-game">${p.date} · ${p.n_legs}-leg · ${p.combined_odds > 0 ? '+' : ''}${p.combined_odds}</div></div>
+                const ts = p.datetime ? new Date(p.datetime).toLocaleString('en-US', {month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true}) : p.date;
+                const legDetail = p.legs.map(l => {
+                    const res = l.result === 'won' ? '✓' : '✗';
+                    return `<span style="color:${l.result==='won'?'#22C55E':'#EF4444'}">${res} ${l.pick} (${l.odds>0?'+':''}${l.odds})</span>`;
+                }).join('<span style="color:var(--t3)"> + </span>');
+                return `<div class="result-item" style="grid-template-columns:36px 1fr auto;gap:8px;align-items:start;">
+                    <div class="result-icon" style="padding-top:2px;">${icon}</div>
+                    <div class="result-details">
+                        <div class="result-pick" style="font-size:.82rem;line-height:1.4;">${legDetail}</div>
+                        <div class="result-game" style="margin-top:3px;">${ts} · ${p.n_legs}-leg · ${p.combined_odds > 0 ? '+' : ''}${p.combined_odds}${p.ev != null ? ' · EV: $'+p.ev.toFixed(3) : ''}</div>
+                    </div>
                     <div class="result-profit ${p.profit >= 0 ? 'positive' : 'negative'}">${signUsd(p.profit)}</div>
                 </div>`;
             }).join('');
@@ -543,12 +553,19 @@ function renderParlayProfitChart(parlays) {
     if (!sorted.length) return;
 
     let cp = 0;
-    const labels = [], pd = [], colors = [];
+    const labels = [], pd = [], colors = [], parlayMeta = [];
     sorted.forEach(p => {
         cp += p.profit;
-        labels.push(p.date);
+        const ts = p.datetime ? new Date(p.datetime).toLocaleString('en-US', {month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true}) : p.date;
+        labels.push(ts);
         pd.push(+cp.toFixed(2));
         colors.push(p.result === 'won' ? '#22C55E' : '#EF4444');
+        parlayMeta.push({
+            result: p.result,
+            profit: p.profit,
+            odds: p.combined_odds,
+            legs: p.legs.map(l => `${l.result==='won'?'✓':'✗'} ${l.pick} (${l.odds>0?'+':''}${l.odds})`),
+        });
     });
 
     if (parlayChartInstance) parlayChartInstance.destroy();
@@ -562,8 +579,24 @@ function renderParlayProfitChart(parlays) {
         }]},
         options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false },
-                tooltip: { backgroundColor: 'rgba(20,25,35,.95)', titleColor: '#E8EDF2', bodyColor: '#B8C4D0' }},
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(20,25,35,.95)', titleColor: '#E8EDF2', bodyColor: '#B8C4D0',
+                    callbacks: {
+                        title: ctx => labels[ctx[0].dataIndex],
+                        afterTitle: ctx => {
+                            const m = parlayMeta[ctx[0].dataIndex];
+                            return `${m.result === 'won' ? '✅ WON' : '❌ LOST'} · ${m.odds > 0 ? '+' : ''}${m.odds}`;
+                        },
+                        label: ctx => `Cumulative: ${usd(ctx.parsed.y)}`,
+                        afterLabel: ctx => {
+                            const m = parlayMeta[ctx.dataIndex];
+                            return [`Bet: ${signUsd(m.profit)}`, ...m.legs];
+                        },
+                    }
+                }
+            },
             scales: {
                 x: { ticks: { color: '#6B7A8D', font: { size: 10 }, maxRotation: 45, maxTicksLimit: 15 }, grid: { color: 'rgba(255,255,255,.05)' }},
                 y: { ticks: { color: '#6B7A8D', callback: v => usd(v) }, grid: { color: 'rgba(255,255,255,.05)' }, title: { display: true, text: 'Cumulative Profit ($)', color: '#6B7A8D' }}

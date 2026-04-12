@@ -1,12 +1,16 @@
 name: Deploy to Firebase
 
 on:
-  # Trigger after either analysis workflow commits data
+  # Trigger after either analysis workflow completes
+  # NOTE: GitHub Actions GITHUB_TOKEN pushes don't trigger push events in other
+  # workflows — workflow_run is the correct way to chain workflows.
+  workflow_run:
+    workflows: ["Daily NHL Analysis", "Daily MLB Analysis"]
+    types: [completed]
+  # Also trigger on direct pushes (manual deploys, code changes)
   push:
     branches: [main]
     paths:
-      - 'nhllines/data/**'
-      - 'mlblines/mlbdata/**'
       - 'nhllines/web/**'
       - 'mlblines/web/**'
       - 'firebase.json'
@@ -20,6 +24,8 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Skip if triggered by a failed analysis workflow
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Checkout repository

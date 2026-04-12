@@ -256,12 +256,22 @@ def get_parlay_performance(stake: float = 0.50):
         by_date[date].append(r)
 
     # Build parlays for each date that had 2+ qualifying bets
+    # Cap to top 10 per day by EV to match generate_parlays() output
+    TOP_N_PER_DAY = 10
     all_parlays = []
     for date in sorted(by_date.keys()):
         day_bets = by_date[date]
         if len(day_bets) < 2:
             continue
 
+        # Get a representative timestamp for this date from the bets
+        day_timestamps = [
+            r["bet"].get("analysis_timestamp", "")
+            for r in day_bets if r["bet"].get("analysis_timestamp")
+        ]
+        day_datetime = day_timestamps[0] if day_timestamps else f"{date}T12:00:00"
+
+        day_parlays = []
         for n_legs in range(2, min(4, len(day_bets) + 1)):
             for combo in combinations(day_bets, n_legs):
                 # Allow same-game parlays but only with different bet types
@@ -279,13 +289,20 @@ def get_parlay_performance(stake: float = 0.50):
                 # Check if all legs hit
                 all_won = all(r["result"] == "won" for r in combo)
 
-                # Calculate combined odds
+                # Calculate combined odds and EV
                 combined_decimal = 1.0
+                combined_true_prob = 1.0
+                combined_implied_prob = 1.0
                 for r in combo:
                     combined_decimal *= american_to_decimal(r["bet"]["odds"])
+                    combined_true_prob *= r["bet"].get("true_prob", 0.5)
+                    combined_implied_prob *= r["bet"].get("implied_prob", 0.5)
+
+                payout = stake * (combined_decimal - 1)
+                ev = (combined_true_prob * payout) - ((1 - combined_true_prob) * stake)
 
                 if all_won:
-                    profit = stake * (combined_decimal - 1)
+                    profit = payout
                     result = "won"
                 else:
                     profit = -stake
@@ -297,8 +314,9 @@ def get_parlay_performance(stake: float = 0.50):
                 else:
                     combined_american = int(round(-100 / (combined_decimal - 1)))
 
-                all_parlays.append({
+                day_parlays.append({
                     "date": date,
+                    "datetime": day_datetime,
                     "n_legs": n_legs,
                     "legs": [
                         {
@@ -311,11 +329,18 @@ def get_parlay_performance(stake: float = 0.50):
                     ],
                     "combined_odds": combined_american,
                     "combined_decimal": round(combined_decimal, 3),
+                    "combined_true_prob": round(combined_true_prob, 4),
+                    "combined_implied_prob": round(combined_implied_prob, 4),
+                    "ev": round(ev, 4),
                     "payout": round(stake * combined_decimal, 2),
                     "result": result,
                     "profit": round(profit, 2),
                     "stake": stake,
                 })
+
+        # Keep only top N per day by EV (matches generate_parlays behavior)
+        day_parlays.sort(key=lambda p: p["ev"], reverse=True)
+        all_parlays.extend(day_parlays[:TOP_N_PER_DAY])
 
     if not all_parlays:
         return None

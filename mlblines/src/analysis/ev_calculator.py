@@ -358,6 +358,7 @@ def generate_parlays(recommendations: list, max_legs: int = 3, stake: float = 0.
             else:
                 combined_american = int(round(-100 / (combined_decimal - 1)))
 
+            from datetime import datetime
             parlays.append({
                 "legs": [
                     {
@@ -369,6 +370,8 @@ def generate_parlays(recommendations: list, max_legs: int = 3, stake: float = 0.
                     for leg in combo
                 ],
                 "n_legs": n_legs,
+                "date": datetime.now().strftime("%Y-%m-%d"),
+                "datetime": datetime.now().isoformat(timespec="seconds"),
                 "combined_odds": combined_american,
                 "combined_decimal": round(combined_decimal, 3),
                 "combined_true_prob": round(combined_true_prob, 4),
