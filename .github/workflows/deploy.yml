@@ -47,6 +47,7 @@ jobs:
           cp nhllines/data/bet_results.json build/nhllines/ 2>/dev/null || echo '{"results":{}}' > build/nhllines/bet_results.json
           cp nhllines/data/analysis_history.json build/nhllines/ 2>/dev/null || true
           cp nhllines/data/parlay_results.json build/nhllines/ 2>/dev/null || true
+          cp nhllines/data/backtest_results.json build/nhllines/ 2>/dev/null || true
           # MLB
           cp mlblines/web/index.html build/mlblines/
           cp mlblines/web/app.js build/mlblines/
