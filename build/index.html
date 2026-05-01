@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Luc Knox</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:           #080b10;
+      --surface:      #0e1117;
+      --card:         #111520;
+      --border:       rgba(255,255,255,0.07);
+      --border-md:    rgba(255,255,255,0.12);
+      --accent:       #6366f1;
+      --accent-lt:    #818cf8;
+      --accent-glow:  rgba(99,102,241,0.15);
+      --text-1:       #f1f5f9;
+      --text-2:       #94a3b8;
+      --text-3:       #4b5563;
+      --green:        #22c55e;
+      --green-dim:    rgba(34,197,94,0.1);
+      --radius:       12px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text-1);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      height: 58px;
+      background: rgba(8,11,16,0.8);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-brand {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-1);
+      letter-spacing: -0.02em;
+      text-decoration: none;
+    }
+
+    .github-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 14px;
+      border: 1px solid var(--border-md);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.03);
+      color: var(--text-2);
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 500;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .github-btn:hover {
+      color: var(--text-1);
+      border-color: var(--border-md);
+      background: rgba(255,255,255,0.06);
+    }
+    .github-btn svg { width: 15px; height: 15px; fill: currentColor; flex-shrink: 0; }
+
+    /* ── Hero ── */
+    .hero {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 100px 40px 64px;
+      position: relative;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -40px; left: 50%;
+      transform: translateX(-50%);
+      width: 700px; height: 500px;
+      background: radial-gradient(ellipse at 50% 10%, rgba(99,102,241,0.08) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.6rem, 6vw, 4rem);
+      font-weight: 700;
+      letter-spacing: -0.045em;
+      line-height: 1.04;
+      color: var(--text-1);
+      margin-bottom: 22px;
+    }
+
+    .hero-sub {
+      font-size: 1rem;
+      color: var(--text-2);
+      max-width: 440px;
+      line-height: 1.7;
+    }
+
+    /* ── Projects Section ── */
+    .projects-section {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 40px 80px;
+    }
+
+    /* Tab bar */
+    .tab-bar {
+      display: inline-flex;
+      gap: 2px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 3px;
+      margin-bottom: 36px;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      padding: 7px 16px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-3);
+      cursor: pointer;
+      border-radius: 7px;
+      transition: all 0.15s;
+      font-family: inherit;
+      letter-spacing: -0.01em;
+    }
+    .tab-btn:hover { color: var(--text-2); background: rgba(255,255,255,0.03); }
+    .tab-btn.active {
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* Grid */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 14px;
+      animation: fadeUp 0.25s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards */
+    .project-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 24px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+      cursor: pointer;
+    }
+
+    .project-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--card-accent, var(--accent)), transparent);
+      opacity: 0.6;
+    }
+
+    .project-card:hover {
+      border-color: rgba(99,102,241,0.3);
+      box-shadow: 0 0 0 1px rgba(99,102,241,0.1), 0 12px 40px rgba(0,0,0,0.5);
+      transform: translateY(-1px);
+    }
+
+    .project-card[data-disabled] {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    /* Card internals */
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-1);
+      letter-spacing: -0.015em;
+    }
+
+    .badge {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      letter-spacing: 0.01em;
+    }
+    .badge.live {
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid rgba(34,197,94,0.2);
+    }
+    .badge.placeholder {
+      background: rgba(255,255,255,0.04);
+      color: var(--text-3);
+      border: 1px solid var(--border);
+    }
+    .badge.archived {
+      background: rgba(255,255,255,0.03);
+      color: var(--text-3);
+      border: 1px solid var(--border);
+    }
+
+    .live-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2.2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    .card-desc {
+      font-size: 0.83rem;
+      color: var(--text-2);
+      line-height: 1.65;
+      flex: 1;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 2px;
+    }
+
+    .tags {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      font-size: 0.68rem;
+      font-weight: 500;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: rgba(255,255,255,0.04);
+      color: var(--text-3);
+      border: 1px solid var(--border);
+      letter-spacing: 0.01em;
+    }
+
+    .card-arrow {
+      color: var(--accent-lt);
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: transform 0.2s;
+      flex-shrink: 0;
+      margin-left: 8px;
+      opacity: 0.7;
+    }
+    .project-card:hover .card-arrow {
+      transform: translateX(4px);
+      opacity: 1;
+    }
+
+    .project-card[hidden] { display: none; }
+
+    /* ── Footer ── */
+    footer {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px 40px 40px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-name {
+      font-size: 0.78rem;
+      color: var(--text-3);
+      font-weight: 500;
+      letter-spacing: -0.01em;
+    }
+
+    .footer-gh {
+      font-size: 0.78rem;
+      color: var(--text-3);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+    .footer-gh:hover { color: var(--text-2); }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      nav { padding: 0 20px; }
+      .hero { padding: 72px 20px 48px; }
+      .projects-section { padding: 0 20px 60px; }
+      footer { padding: 20px 20px 36px; }
+      .projects-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-brand" href="/">LK</a>
+    <a class="github-btn" href="https://github.com/totqro" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+      </svg>
+      github.com/totqro
+    </a>
+  </nav>
+
+  <section class="hero">
+    <h1>Luc Knox</h1>
+  </section>
+
+  <section class="projects-section">
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="filterCards('active')">Active</button>
+      <button class="tab-btn" onclick="filterCards('completed')">Completed</button>
+      <button class="tab-btn" onclick="filterCards('old')">Old</button>
+    </div>
+
+    <div class="projects-grid" id="grid">
+
+      <!-- ACTIVE -->
+      <a href="/nhllines" class="project-card" data-category="active" style="--card-accent:#00b4c5;">
+        <div class="card-header">
+          <span class="card-title">NHL Predictions</span>
+          <span class="badge live"><span class="live-dot"></span>Live</span>
+        </div>
+        <p class="card-desc">AI model predicting game winners and total goals using historical similarity and XGBoost. Updated daily throughout the NHL season.</p>
+        <div class="card-footer">
+          <div class="tags">
+            <span class="tag">XGBoost</span>
+            <span class="tag">Python</span>
+            <span class="tag">Firebase</span>
+          </div>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+      <a href="/mlblines" class="project-card" data-category="active" style="--card-accent:#e4002b;">
+        <div class="card-header">
+          <span class="card-title">MLB Predictions</span>
+          <span class="badge live"><span class="live-dot"></span>Live</span>
+        </div>
+        <p class="card-desc">62-feature XGBoost model predicting game winners and total runs. Factors in pitcher matchups, park factors, bullpen quality, and L/R splits.</p>
+        <div class="card-footer">
+          <div class="tags">
+            <span class="tag">XGBoost</span>
+            <span class="tag">Python</span>
+            <span class="tag">Firebase</span>
+          </div>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+      <!-- COMPLETED -->
+      <div class="project-card" data-category="completed" data-disabled>
+        <div class="card-header">
+          <span class="card-title">Placeholder</span>
+          <span class="badge placeholder">Completed</span>
+        </div>
+        <p class="card-desc">Add a completed project here.</p>
+        <div class="card-footer">
+          <div class="tags"><span class="tag">—</span></div>
+        </div>
+      </div>
+
+      <!-- OLD -->
+      <div class="project-card" data-category="old" data-disabled>
+        <div class="card-header">
+          <span class="card-title">Placeholder</span>
+          <span class="badge archived">Archived</span>
+        </div>
+        <p class="card-desc">Add an old project here.</p>
+        <div class="card-footer">
+          <div class="tags"><span class="tag">—</span></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>
+    <span class="footer-name">Luc Knox &middot; 2026</span>
+    <a class="footer-gh" href="https://github.com/totqro" target="_blank" rel="noopener">GitHub</a>
+  </footer>
+
+  <script>
+    function filterCards(category) {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase() === category);
+      });
+      document.querySelectorAll('.project-card').forEach(card => {
+        card.dataset.category === category
+          ? card.removeAttribute('hidden')
+          : card.setAttribute('hidden', '');
+      });
+      const grid = document.getElementById('grid');
+      grid.style.animation = 'none';
+      grid.offsetHeight;
+      grid.style.animation = '';
+    }
+    filterCards('active');
+  </script>
+</body>
+</html>
