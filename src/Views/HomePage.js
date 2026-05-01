@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { fetchRepos, getStatus } from "../services/github";
 import "./HomePage.css";
+
+const DETAIL_PAGES = {
+  swingai: "/swingai",
+};
 
 const STATUS_META = {
   "in-progress": { label: "In Progress", className: "badge--progress" },
@@ -41,6 +46,7 @@ function LanguageDot({ language }) {
 
 function ProjectCard({ repo }) {
   const status = getStatus(repo);
+  const detailPath = DETAIL_PAGES[repo.name.toLowerCase()];
 
   return (
     <div className="card">
@@ -78,6 +84,11 @@ function ProjectCard({ repo }) {
           >
             Live &rarr;
           </a>
+        )}
+        {detailPath && (
+          <Link to={detailPath} className="card__link card__link--detail">
+            Details &rarr;
+          </Link>
         )}
       </div>
     </div>
