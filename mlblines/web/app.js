@@ -155,41 +155,39 @@ function displayRecentResults(bets) {
 
     const sorted = Object.values(gameMap).sort((a,b) => new Date(b.ts||b.date+'T12:00:00') - new Date(a.ts||a.date+'T12:00:00'));
 
-    $('recent-results-list').innerHTML = sorted.slice(0,20).map(g => {
-        const gr = g.ml;
-        const gt = g.total;
+    $('recent-results-list').innerHTML = sorted.slice(0,30).map(g => {
+        const gr = g.ml, gt = g.total;
         const d = new Date(g.ts || (g.date+'T12:00:00'));
         const dateStr = d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
 
-        let winnerRow = '';
+        let winnerHtml = '<span class="pred-result-winner" style="color:var(--t3)">—</span>';
         if (gr) {
             const icon = gr.result === 'won' ? '✅' : '❌';
             const pick = gr.bet.pick.replace(/ ML$/i,'');
-            const gameResult = gr.game_result;
+            const gr2 = gr.game_result;
             const parts = gr.bet.game.split(' @ ');
             const away = parts[0], home = parts[1]||'';
-            const scoreStr = gameResult?.home_score != null
-                ? `${away} ${gameResult.away_score} – ${home} ${gameResult.home_score}`
-                : '';
-            winnerRow = `<div class="pred-row"><span class="pred-label">Winner</span><span>${icon} ${pick}</span>${scoreStr?`<span class="pred-actual">${scoreStr}</span>`:''}</div>`;
+            const score = gr2?.home_score != null ? `${gr2.away_score}–${gr2.home_score}` : '';
+            winnerHtml = `<span class="pred-result-winner">${icon} ${pick}${score?`<span class="score">${score}</span>`:''}</span>`;
         }
 
-        let totalRow = '';
+        let totalHtml = '<span class="pred-result-total" style="color:var(--t3)">—</span>';
         if (gt) {
             const diff = getTotalDiff(gt);
             const dot = getTotalDot(diff);
             const cls = getTotalColor(diff);
-            const pickStr = gt.bet.pick;
-            const actualTotal = gt.game_result?.total != null ? `actual: ${gt.game_result.total}` : '';
-            totalRow = `<div class="pred-row"><span class="pred-label">Total</span><span class="${cls}">${dot} ${pickStr}</span>${actualTotal?`<span class="pred-actual">${actualTotal}</span>`:''}</div>`;
+            const match = (gt.bet.pick||'').match(/(?:Over|Under)\s+([\d.]+)/i);
+            const line = match ? match[1] : '';
+            const dir = (gt.bet.pick||'').toLowerCase().startsWith('over') ? 'O' : 'U';
+            const actual = gt.game_result?.total != null ? `· ${gt.game_result.total}` : '';
+            totalHtml = `<span class="pred-result-total ${cls}">${dot} ${dir}${line}<span class="actual">${actual}</span></span>`;
         }
 
-        return `<div class="result-item prediction-item">
-            <div class="result-details">
-                <div class="result-game">${g.game}</div>
-                ${winnerRow}${totalRow}
-            </div>
-            <div class="result-date">${dateStr}</div>
+        return `<div class="pred-result-row">
+            <span class="pred-result-date">${dateStr}</span>
+            <span class="pred-result-matchup">${g.game}</span>
+            ${winnerHtml}
+            ${totalHtml}
         </div>`;
     }).join('');
 }

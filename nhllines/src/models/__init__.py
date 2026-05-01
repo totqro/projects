@@ -1,5 +1,8 @@
 """Model modules"""
-from .ml_model_streamlined import StreamlinedNHLMLModel
+try:
+    from .ml_model_streamlined import StreamlinedNHLMLModel
+except Exception:
+    StreamlinedNHLMLModel = None
 from .model import find_similar_games, estimate_probabilities, blend_model_and_market
 
 __all__ = [
