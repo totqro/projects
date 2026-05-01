@@ -55,6 +55,7 @@ from src.analysis import (
     save_analysis,
     get_history_stats,
 )
+from src.analysis.model_feedback import MLBModelFeedback
 
 
 def run_analysis(
@@ -70,7 +71,7 @@ def run_analysis(
     print("=" * 60)
     print("  MLB +EV Betting Finder")
     if conservative:
-        print("  MODE: Conservative (moneylines + totals only, 3%+ edge)")
+        print("  MODE: Totals only (MLs disabled — 33% WR, no demonstrable edge)")
     print(f"  {datetime.now().strftime('%A, %B %d %Y %H:%M')}")
     print("=" * 60)
     print()
@@ -324,6 +325,7 @@ def run_analysis(
                 blended, best_odds,
                 stake=stake, min_edge=min_edge,
                 conservative=conservative,
+                totals_only=True,
                 book_filter=book_filter,
             )
 
@@ -350,6 +352,17 @@ def run_analysis(
                             })
                 book_odds_list.sort(key=lambda x: x["odds"], reverse=True)
                 bet["all_book_odds"] = book_odds_list
+
+            # Filter using historical bet-type performance
+            feedback = MLBModelFeedback()
+            filtered = [b for b in game_bets
+                        if feedback.should_take_bet(b.get("edge", 0),
+                                                    b.get("confidence", 0),
+                                                    b.get("bet_type", ""))]
+            if len(filtered) < len(game_bets):
+                dropped = len(game_bets) - len(filtered)
+                print(f"    [Feedback] Filtered {dropped} bet(s) below historical thresholds")
+            game_bets = filtered
 
             if game_bets:
                 print(f"    >>> Found {len(game_bets)} +EV bets!")

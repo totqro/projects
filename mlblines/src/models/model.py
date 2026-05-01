@@ -369,6 +369,20 @@ def _run_distribution(totals):
     return dict(sorted(dist.items()))
 
 
+def _shrink_toward_market(model_prob, market_prob, shrinkage=0.35):
+    """
+    Pull the model's probability partway back toward the market implied prob.
+    Shrinks the MAGNITUDE of the model's deviation from market, not its direction.
+
+    Observed MLB overconfidence: ML bets at 10%+ edge went 0/6, and the overall
+    33% ML win rate indicates the model's divergence from market is systematically
+    too aggressive. A 35% shrinkage is applied AFTER the blend to tame extreme
+    edges without discarding the model's lean entirely.
+    """
+    deviation = model_prob - market_prob
+    return market_prob + deviation * (1 - shrinkage)
+
+
 def blend_model_and_market(model_probs, market_probs, model_weight=0.55):
     """
     Blend model probabilities with market consensus.
@@ -376,21 +390,36 @@ def blend_model_and_market(model_probs, market_probs, model_weight=0.55):
     Default weight lowered to 0.55 (from 0.65) to be more conservative.
     MLB model has no feedback system yet, so start cautious.
     Uses sqrt for confidence scaling (steeper penalty on low confidence).
+    Post-blend overconfidence shrinkage corrects for the fact that backtesting
+    shows the MLB model's edges were systematically inflated.
     """
     confidence = model_probs.get("confidence", 0)
     effective_weight = model_weight * (confidence ** 0.5)
 
     blended = {}
-    blended["home_win_prob"] = (
+    raw_home_win = (
         effective_weight * model_probs["home_win_prob"] +
         (1 - effective_weight) * market_probs.get("home_win_prob", 0.5)
     )
-    blended["away_win_prob"] = 1 - blended["home_win_prob"]
-
-    blended["over_prob"] = (
+    raw_over = (
         effective_weight * model_probs["over_prob"] +
         (1 - effective_weight) * market_probs.get("over_prob", 0.5)
     )
+
+    # Shrink toward market to correct the overconfidence observed in results.
+    # Win-side gets strong shrinkage (ML was 33% WR); totals get light shrinkage
+    # (totals were 54.5% WR and don't need the same correction).
+    market_home = market_probs.get("home_win_prob", 0.5)
+    market_over = market_probs.get("over_prob", 0.5)
+    # Win-side shrinkage reduced from 0.35 -> 0.15. 0.35 was eliminating
+    # essentially every +EV moneyline (it scales the model's deviation from
+    # market down by 35%, which combined with a 5%/7% edge floor left the
+    # pipeline generating zero bets). A 0.15 pull keeps a modest overconfidence
+    # correction without flattening every edge.
+    blended["home_win_prob"] = _shrink_toward_market(raw_home_win, market_home, shrinkage=0.15)
+    blended["away_win_prob"] = 1 - blended["home_win_prob"]
+
+    blended["over_prob"] = _shrink_toward_market(raw_over, market_over, shrinkage=0.10)
     blended["under_prob"] = 1 - blended["over_prob"]
 
     spread_weight = effective_weight * 0.8

@@ -349,3 +349,20 @@ header h1 { font-size:1.9rem; margin-bottom:6px; font-weight:700; letter-spacing
     .stats-grid { grid-template-columns:1fr; }
     .grade-performance-stats { grid-template-columns:repeat(2,1fr); }
 }
+
+/* Accuracy Breakdown */
+.accuracy-breakdown { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+.accuracy-item { display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--bg-i); border-radius:var(--rs); border:1px solid var(--bd); }
+.accuracy-dot { width:14px; height:14px; border-radius:50%; flex-shrink:0; }
+.accuracy-label { flex:1; font-size:.88rem; color:var(--t2); font-weight:500; }
+.accuracy-count { font-size:1.3rem; font-weight:700; color:var(--t1); min-width:36px; text-align:right; }
+.accuracy-pct { font-size:.82rem; color:var(--t3); min-width:48px; text-align:right; }
+
+/* Prediction result rows */
+.prediction-item { flex-direction:column; align-items:flex-start; gap:6px; }
+.pred-row { display:flex; align-items:center; gap:8px; font-size:.84rem; flex-wrap:wrap; }
+.pred-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--t3); background:var(--bg-i); border:1px solid var(--bd); border-radius:4px; padding:2px 6px; }
+.pred-actual { font-size:.78rem; color:var(--t3); margin-left:4px; }
+.total-green { color:#00C896; font-weight:600; }
+.total-yellow { color:#F4901E; font-weight:600; }
+.total-red { color:#FF4D6A; font-weight:600; }

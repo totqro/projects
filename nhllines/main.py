@@ -488,15 +488,28 @@ def run_analysis(
             adjusted_confidence = feedback.get_adjusted_confidence(model_probs["confidence"])
             model_probs["confidence"] = adjusted_confidence
 
-            # NOTE: Probability recalibration is NOT applied before blending.
-            # The calibration map learned that model predictions converge to market odds
-            # (e.g., model 65% -> actual 57% ≈ market 56%), so applying it pre-blend
-            # would collapse all edges to zero. Instead, the calibration map is used
-            # post-blend via should_take_bet() to filter out bad bets.
-            # The model weight + confidence scaling already controls how much we trust
-            # the model vs market.
-
             blended = blend_model_and_market(model_probs, market_probs, model_weight=optimal_model_weight)
+
+            # Apply learned probability recalibration POST-blend.
+            # The calibration map tracks true_prob in bet records, which is the
+            # BLENDED probability at bet time. Overconfidence at 65% bin (actual 47%)
+            # means the blended probability was itself miscalibrated, so correcting
+            # it post-blend both preserves the model's lean vs market AND shrinks
+            # the fake edges that were producing losing bets.
+            if len(cal_map) >= 3:
+                blended["home_win_prob"] = feedback.recalibrate_probability(blended["home_win_prob"])
+                blended["away_win_prob"] = 1 - blended["home_win_prob"]
+                blended["over_prob"] = feedback.recalibrate_probability(blended["over_prob"])
+                blended["under_prob"] = 1 - blended["over_prob"]
+                # Covers must stay consistent: can't cover more than you win
+                blended["home_cover_prob"] = min(
+                    feedback.recalibrate_probability(blended["home_cover_prob"]),
+                    blended["home_win_prob"],
+                )
+                blended["away_cover_prob"] = min(
+                    1 - blended["home_cover_prob"],
+                    blended["away_win_prob"],
+                )
 
             # Print analysis
             line_source = "theScore" if thescore_odds.get("total_over") else "best available"

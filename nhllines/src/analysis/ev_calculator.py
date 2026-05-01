@@ -75,7 +75,10 @@ def evaluate_all_bets(
     min_edge: float = 0.03,  # Minimum 3% edge (optimized: soft books + edge ≥3% = 65% WR)
     min_confidence: float = 0.35,  # Lowered from 0.50: confidence scaling already reduces values, and backtesting showed soft book filter is the real edge
     conservative: bool = False,
-    max_edge: float = 1.0,  # No practical cap - high-edge bets are the most profitable
+    # Cap edges at 15%. Anything higher is almost always a model error (stale
+    # line, bad matchup data, unusual circumstances the model didn't see).
+    # Real edges vs soft books rarely exceed 10%; 15%+ edges underperformed.
+    max_edge: float = 0.15,
     book_filter: str = "soft",  # "soft" = exclude sharp books, "all" = no filter
     espn_only: bool = False,  # ESPN Bet only mode
 ) -> list:
@@ -98,13 +101,16 @@ def evaluate_all_bets(
     if conservative:
         min_edge = max(min_edge, 0.04)  # At least 4% edge in conservative mode
 
-    # Book filter helper — skip bets on sharp books where model has no edge
+    # Book filter helper — only allow books with a known edge.
+    # Previous logic ("not in SHARP_BOOKS") silently let unknown offshore books
+    # through (betonlineag, betus, mybookieag) which had systematically negative
+    # ROI. Require an explicit soft-book allowlist instead.
     def _book_allowed(book_key: str) -> bool:
         if espn_only:
             return book_key.lower() == "espnbet"
         if book_filter == "all":
-            return True
-        return book_key.lower() not in SHARP_BOOKS
+            return book_key.lower() not in SHARP_BOOKS
+        return book_key.lower() in SOFT_BOOKS
 
     # ESPN-only mode: rebuild best_odds using ESPN's actual prices
     # so edge is calculated against ESPN's lines, not best-available

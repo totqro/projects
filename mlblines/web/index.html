@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MLB +EV Betting Finder</title>
-    <link rel="stylesheet" href="styles.css?v=3.0">
+    <title>MLB Game Predictions</title>
+    <link rel="stylesheet" href="styles.css?v=4.0">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -13,34 +13,28 @@
             <div class="header-nav">
                 <a href="/" class="back-link">&larr; Back to Projects</a>
             </div>
-            <h1>&#9918; MLB +EV Betting Finder</h1>
-            <p class="subtitle">Soft Books — 3%+ Edge, Conservative Mode</p>
+            <h1>&#9918; MLB Game Predictions</h1>
+            <p class="subtitle">AI-Powered Win &amp; Total Run Predictions</p>
         </header>
 
-        <div class="mode-switch">
-            <button class="mode-btn" data-mode="espn" onclick="setMode('espn')">ESPN Bet</button>
-            <button class="mode-btn active" data-mode="all" onclick="setMode('all')">All Books</button>
-        </div>
-
         <div class="tabs">
-            <button class="tab-button active" onclick="showTab('today')">Today's Picks</button>
-            <button class="tab-button" onclick="showTab('parlays')">Parlays</button>
+            <button class="tab-button active" onclick="showTab('today')">Today's Predictions</button>
             <button class="tab-button" onclick="showTab('performance')">Performance History</button>
         </div>
 
         <div id="loading" class="loading">
             <div class="spinner"></div>
-            <p>Loading analysis...</p>
+            <p>Loading predictions...</p>
         </div>
 
         <div id="error" class="error" style="display: none;">
-            <p>Could not load analysis data.</p>
+            <p>Could not load prediction data.</p>
         </div>
 
-        <!-- Today's Picks Tab -->
+        <!-- Today's Predictions Tab -->
         <div id="today-tab" class="tab-content" style="display: none;">
             <section class="summary-card">
-                <h2>Analysis Summary</h2>
+                <h2>Prediction Summary</h2>
                 <div class="stats-grid">
                     <div class="stat">
                         <span class="stat-label">Last Updated</span>
@@ -51,11 +45,11 @@
                         <span class="stat-value" id="games-analyzed">-</span>
                     </div>
                     <div class="stat">
-                        <span class="stat-label">+EV Bets Found</span>
+                        <span class="stat-label">Strong Predictions</span>
                         <span class="stat-value" id="bets-found">-</span>
                     </div>
                     <div class="stat">
-                        <span class="stat-label">Expected ROI</span>
+                        <span class="stat-label">Avg Confidence</span>
                         <span class="stat-value" id="expected-roi">-</span>
                     </div>
                 </div>
@@ -63,7 +57,7 @@
 
             <section class="recommendations">
                 <div class="section-header">
-                    <h2>Top Betting Recommendations</h2>
+                    <h2>Top Predictions</h2>
                     <div class="filter-controls">
                         <button id="view-toggle" class="view-toggle-btn" data-view="full" onclick="toggleView()">Compact View</button>
                         <select id="filter-grade" class="filter-select">
@@ -75,26 +69,20 @@
                         </select>
                         <select id="filter-type" class="filter-select">
                             <option value="all">All Types</option>
-                            <option value="Moneyline">Moneyline</option>
-                            <option value="Total">Total</option>
-                            <option value="Run Line">Run Line</option>
-                        </select>
-                        <select id="filter-book" class="filter-select">
-                            <option value="all">All Books</option>
+                            <option value="Moneyline">Winner Prediction</option>
+                            <option value="Total">Total Runs</option>
                         </select>
                         <select id="sort-by" class="filter-select">
-                            <option value="edge">Sort by Edge</option>
-                            <option value="roi">Sort by ROI</option>
                             <option value="confidence">Sort by Confidence</option>
-                            <option value="book">Sort by Book</option>
+                            <option value="prob">Sort by Win Prob</option>
                         </select>
                     </div>
                 </div>
                 <div class="grade-legend">
-                    <span class="grade-item"><span class="grade grade-a">A</span> 7%+ exceptional</span>
-                    <span class="grade-item"><span class="grade grade-b-plus">B+</span> 4-7% very good</span>
-                    <span class="grade-item"><span class="grade grade-b">B</span> 3-4% solid</span>
-                    <span class="grade-item"><span class="grade grade-c-plus">C+</span> 2-3% playable</span>
+                    <span class="grade-item"><span class="grade grade-a">A</span> 75%+ confidence</span>
+                    <span class="grade-item"><span class="grade grade-b-plus">B+</span> 60–75%</span>
+                    <span class="grade-item"><span class="grade grade-b">B</span> 50–60%</span>
+                    <span class="grade-item"><span class="grade grade-c-plus">C+</span> &lt;50%</span>
                 </div>
                 <div id="recommendations-list"></div>
             </section>
@@ -105,127 +93,64 @@
             </section>
         </div>
 
-        <!-- Parlays Tab -->
-        <div id="parlays-tab" class="tab-content" style="display: none;">
-            <section class="summary-card">
-                <h2>Today's Parlays</h2>
-                <div class="stats-grid">
-                    <div class="stat">
-                        <span class="stat-label">Parlays Available</span>
-                        <span class="stat-value" id="parlays-count">-</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Best EV</span>
-                        <span class="stat-value" id="parlays-best-ev">-</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Best Odds</span>
-                        <span class="stat-value" id="parlays-best-odds">-</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Stake</span>
-                        <span class="stat-value" id="parlays-stake">-</span>
-                    </div>
-                </div>
-            </section>
-
-            <div class="parlay-filter-bar">
-                <div class="parlay-filter-buttons">
-                    <button class="parlay-filter-btn active" data-filter="all" onclick="filterParlays('all')">All</button>
-                    <button class="parlay-filter-btn" data-filter="2" onclick="filterParlays('2')">2-Leg</button>
-                    <button class="parlay-filter-btn" data-filter="3" onclick="filterParlays('3')">3-Leg</button>
-                </div>
-                <select id="parlay-sort" class="filter-select" onchange="sortParlays(this.value)">
-                    <option value="ev">Sort by EV</option>
-                    <option value="odds">Sort by Odds</option>
-                    <option value="edge">Sort by Edge</option>
-                    <option value="prob">Sort by Win Prob</option>
-                </select>
-            </div>
-
-            <div id="parlays-list"></div>
-
-            <!-- Parlay Performance History -->
-            <section id="parlay-perf-section" class="summary-card" style="display:none; margin-top:24px;">
-                <h2>Parlay Performance History</h2>
-                <div class="stats-grid" id="parlay-perf-stats"></div>
-                <div class="chart-container" style="margin-top:16px;">
-                    <canvas id="parlay-profit-chart"></canvas>
-                </div>
-                <div id="parlay-legs-breakdown" style="margin-top:16px;"></div>
-                <div id="parlay-recent-results" style="margin-top:16px;"></div>
-            </section>
-        </div>
-
         <!-- Performance History Tab -->
         <div id="performance-tab" class="tab-content" style="display: none;">
             <section class="summary-card">
-                <h2>Overall Performance</h2>
+                <h2>Prediction Accuracy</h2>
                 <div class="stats-grid">
                     <div class="stat">
-                        <span class="stat-label">Total Bets</span>
+                        <span class="stat-label">Games Tracked</span>
                         <span class="stat-value" id="perf-total-bets">-</span>
                     </div>
                     <div class="stat">
-                        <span class="stat-label">Win Rate</span>
+                        <span class="stat-label">Winner Accuracy</span>
                         <span class="stat-value" id="perf-win-rate">-</span>
                     </div>
                     <div class="stat">
-                        <span class="stat-label">Actual ROI</span>
-                        <span class="stat-value" id="perf-roi">-</span>
+                        <span class="stat-label">Total Within ±1</span>
+                        <span class="stat-value" id="perf-total-within1">-</span>
                     </div>
                     <div class="stat">
-                        <span class="stat-label">Total Profit</span>
-                        <span class="stat-value" id="perf-profit">-</span>
+                        <span class="stat-label">Exact Total</span>
+                        <span class="stat-value" id="perf-total-exact">-</span>
                     </div>
                 </div>
             </section>
 
-            <section class="profit-chart-section">
-                <div class="chart-header">
-                    <h2>Cumulative Profit</h2>
-                    <div class="chart-range-buttons">
-                        <button class="range-btn active" data-range="all" onclick="setChartRange('all')">All Time</button>
-                        <button class="range-btn" data-range="month" onclick="setChartRange('month')">30D</button>
-                        <button class="range-btn" data-range="week" onclick="setChartRange('week')">7D</button>
-                        <button class="range-btn" data-range="day" onclick="setChartRange('day')">24H</button>
+            <!-- Total Runs Accuracy Breakdown -->
+            <section class="summary-card">
+                <h2>Total Runs Accuracy</h2>
+                <p class="parlay-subtitle">How close were the model's total run predictions vs actual game totals.</p>
+                <div class="accuracy-breakdown">
+                    <div class="accuracy-item">
+                        <span class="accuracy-dot" style="background:#22C55E"></span>
+                        <span class="accuracy-label">Exact (nearest int)</span>
+                        <span class="accuracy-count" id="total-green">-</span>
+                        <span class="accuracy-pct" id="total-green-pct"></span>
                     </div>
-                </div>
-                <div class="chart-container">
-                    <canvas id="profit-chart"></canvas>
-                </div>
-            </section>
-
-            <section class="performance-comparison">
-                <h2>Expected vs Actual Performance</h2>
-                <div class="comparison-grid">
-                    <div class="comparison-card">
-                        <h3>Expected Gain</h3>
-                        <div class="big-number" id="expected-gain">$0.00</div>
+                    <div class="accuracy-item">
+                        <span class="accuracy-dot" style="background:#F4901E"></span>
+                        <span class="accuracy-label">±1 run off</span>
+                        <span class="accuracy-count" id="total-yellow">-</span>
+                        <span class="accuracy-pct" id="total-yellow-pct"></span>
                     </div>
-                    <div class="comparison-card">
-                        <h3>Actual Gain</h3>
-                        <div class="big-number" id="actual-gain">$0.00</div>
-                    </div>
-                    <div class="comparison-card">
-                        <h3>Difference</h3>
-                        <div class="big-number" id="gain-difference">$0.00</div>
+                    <div class="accuracy-item">
+                        <span class="accuracy-dot" style="background:#EF4444"></span>
+                        <span class="accuracy-label">±2+ runs off</span>
+                        <span class="accuracy-count" id="total-red">-</span>
+                        <span class="accuracy-pct" id="total-red-pct"></span>
                     </div>
                 </div>
             </section>
 
-            <section class="grade-performance">
-                <h2>Performance by Grade</h2>
-                <div id="grade-performance-list"></div>
-            </section>
-
+            <!-- Recent Predictions -->
             <section class="recent-results">
-                <h2>Recent Bet Results</h2>
+                <h2>Recent Game Predictions</h2>
                 <div id="recent-results-list"></div>
             </section>
         </div>
     </div>
 
-    <script src="app.js?v=3.0"></script>
+    <script src="app.js?v=4.0"></script>
 </body>
 </html>

@@ -243,23 +243,29 @@ class ModelFeedback:
 
         Uses Bayesian shrinkage: blend observed rate with prior (predicted)
         to avoid extreme corrections from small samples.
+
+        Thresholds tuned for the current NHL/MLB volume:
+          - min samples lowered to 5 (from 10): include edge-of-distribution
+            bins (35%, 40%, 65%+) which are the most miscalibrated
+          - shrinkage strength lowered to 8 (from 20): let observed rates
+            drive the correction once we have 5-15 samples, instead of
+            being dominated by the prior
         """
         bins = self.feedback_data["calibration_bins"]
         cal_map = {}
 
+        MIN_SAMPLES = 5
+        SHRINKAGE = 8
+
         for prob_bin, data in bins.items():
-            if data["total"] >= 10:  # Require at least 10 samples
+            if data["total"] >= MIN_SAMPLES:
                 predicted = int(prob_bin) / 100.0
                 raw_actual = data["correct"] / data["total"]
 
-                # Bayesian shrinkage: blend observed rate with prior (predicted)
-                # strength=20 means 20 "virtual" observations at the prior rate
-                # With n=10, we're 33% observed, 67% prior
-                # With n=40, we're 67% observed, 33% prior
-                # With n=100, we're 83% observed, 17% prior
-                shrinkage_strength = 20
-                actual = (data["correct"] + shrinkage_strength * predicted) / \
-                         (data["total"] + shrinkage_strength)
+                # Bayesian shrinkage with lower strength, so observed rates
+                # dominate once n >= SHRINKAGE.
+                actual = (data["correct"] + SHRINKAGE * predicted) / \
+                         (data["total"] + SHRINKAGE)
 
                 cal_map[prob_bin] = {
                     "predicted": predicted,
@@ -270,6 +276,22 @@ class ModelFeedback:
                 }
 
         self.feedback_data["optimal_weights"]["calibration_map"] = cal_map
+
+    # Caps on recalibration magnitude. Corrections pulled from a thin 63-bet
+    # sample were over-collapsing edges (e.g. 65% -> 48%) and drying up the
+    # bet pipeline. We now:
+    #   1) scale each bin's correction by a sample-size confidence factor
+    #      n/(n+N_PRIOR) so small-sample bins barely move the estimate, and
+    #   2) hard-cap the final correction at ±MAX_CORRECTION points.
+    RECAL_N_PRIOR = 30
+    RECAL_MAX_CORRECTION = 0.06
+
+    def _bin_confidence(self, bin_key: str) -> float:
+        bin_data = self.feedback_data["optimal_weights"].get(
+            "calibration_map", {}
+        ).get(bin_key, {})
+        n = bin_data.get("n", 0)
+        return n / (n + self.RECAL_N_PRIOR) if n else 0.0
 
     def recalibrate_probability(self, raw_prob: float) -> float:
         """
@@ -309,24 +331,33 @@ class ModelFeedback:
 
         if lower_bin is None:
             # Below all bins — use the lowest bin's correction
-            error = cal_map[upper_bin]["error"]
+            error = cal_map[upper_bin]["error"] * self._bin_confidence(upper_bin)
+            error = max(-self.RECAL_MAX_CORRECTION,
+                        min(self.RECAL_MAX_CORRECTION, error))
             return max(0.05, min(0.95, raw_prob - error))
 
         if upper_bin is None:
             # Above all bins — use the highest bin's correction
-            error = cal_map[lower_bin]["error"]
+            error = cal_map[lower_bin]["error"] * self._bin_confidence(lower_bin)
+            error = max(-self.RECAL_MAX_CORRECTION,
+                        min(self.RECAL_MAX_CORRECTION, error))
             return max(0.05, min(0.95, raw_prob - error))
 
         if lower_bin == upper_bin:
             # Exact match
-            error = cal_map[lower_bin]["error"]
+            error = cal_map[lower_bin]["error"] * self._bin_confidence(lower_bin)
+            error = max(-self.RECAL_MAX_CORRECTION,
+                        min(self.RECAL_MAX_CORRECTION, error))
             return max(0.05, min(0.95, raw_prob - error))
 
-        # Linear interpolation between bins
+        # Linear interpolation between bins. Each bin's correction is first
+        # scaled by its own sample-size confidence, THEN interpolated, THEN
+        # hard-capped. This prevents a thin bin (e.g. 7 samples at 65%) from
+        # dragging a reliably-modelled 60% prediction down by 17 points.
         low_val = int(lower_bin)
         high_val = int(upper_bin)
-        low_error = cal_map[lower_bin]["error"]
-        high_error = cal_map[upper_bin]["error"]
+        low_error = cal_map[lower_bin]["error"] * self._bin_confidence(lower_bin)
+        high_error = cal_map[upper_bin]["error"] * self._bin_confidence(upper_bin)
 
         # Interpolation factor
         if high_val == low_val:
@@ -335,6 +366,9 @@ class ModelFeedback:
             t = (prob_pct - low_val) / (high_val - low_val)
 
         interpolated_error = low_error + t * (high_error - low_error)
+        interpolated_error = max(-self.RECAL_MAX_CORRECTION,
+                                 min(self.RECAL_MAX_CORRECTION,
+                                     interpolated_error))
         calibrated = raw_prob - interpolated_error
 
         return max(0.05, min(0.95, calibrated))
@@ -441,7 +475,7 @@ class ModelFeedback:
             True if bet meets learned criteria
         """
         # Hard floor: require minimum confidence
-        if confidence < 0.50:
+        if confidence < 0.42:
             return False
 
         # Check bet type historical performance
@@ -451,7 +485,7 @@ class ModelFeedback:
 
             # If this bet type historically underperforms, require higher edge
             if type_win_rate < 0.45:
-                edge_threshold = 0.06  # Require 6%+ edge for poorly performing types
+                edge_threshold = 0.05  # Require 5%+ edge for poorly performing types
             elif type_win_rate < 0.50:
                 edge_threshold = 0.05  # Require 5%+ edge for underperforming types
             else:

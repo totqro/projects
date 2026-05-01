@@ -1,4 +1,4 @@
-name: Daily MLB Analysis
+name: Daily MLB Game Predictions
 
 on:
   schedule:
@@ -53,7 +53,7 @@ jobs:
         working-directory: mlblines
         run: python main.py --stake 0.50
 
-      - name: Check and update bet results (21-day lookback)
+      - name: Check and update game results (21-day lookback)
         working-directory: mlblines
         run: |
           python -c "
@@ -61,27 +61,11 @@ jobs:
           check_results(days_back=21)
           "
 
-      - name: Generate parlay performance data
-        working-directory: mlblines
-        run: |
-          python -c "
-          from src.analysis.bet_tracker import get_parlay_performance
-          import json
-          from pathlib import Path
-          perf = get_parlay_performance(stake=0.50)
-          if perf:
-              path = Path('mlbdata/parlay_results.json')
-              path.write_text(json.dumps(perf, indent=2, default=str))
-              print(f'Parlay performance: {perf[\"won\"]}W-{perf[\"lost\"]}L, ROI: {perf[\"roi\"]:.1%}')
-          else:
-              print('No parlay data yet')
-          "
-
       - name: Commit updated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add mlblines/mlbdata/bet_results.json mlblines/mlbdata/analysis_history.json mlblines/mlbdata/latest_analysis.json mlblines/mlbdata/parlay_results.json 2>/dev/null || true
+          git add mlblines/mlbdata/bet_results.json mlblines/mlbdata/analysis_history.json mlblines/mlbdata/latest_analysis.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No data changes to commit"
           else
@@ -112,11 +96,11 @@ jobs:
           server_port: 587
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "❌ MLB Analysis Failed"
+          subject: "❌ MLB Predictions Failed"
           to: lucknox@icloud.com
           from: ${{ secrets.EMAIL_USERNAME }}
           body: |
-            The Daily MLB Analysis workflow failed.
+            The Daily MLB Game Predictions workflow failed.
 
             Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
             Trigger: ${{ github.event_name }}

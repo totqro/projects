@@ -226,24 +226,22 @@ def get_parlay_performance(stake: float = 0.50):
     if not results:
         return None
 
-    # Group resolved parlay-eligible bets by date
-    # Strategy: ML favorites + pick-ems (<+130) + Overs, all 3%+ edge
+    # Group resolved parlay-eligible bets by date.
+    # Matches the post-fix generate_parlays() filters:
+    #   - ML legs: <+130 odds AND edge >= 5% (raised because MLB ML WR is 33%)
+    #   - Over legs: edge >= 3%
     by_date = defaultdict(list)
     for bet_id, r in results.items():
         if r["result"] == "push":
             continue
         bet = r["bet"]
         edge = bet.get("edge", 0)
-        if edge < 0.03:
-            continue
-
         bt = bet.get("bet_type", "")
         odds = bet.get("odds", 0)
         pick = bet.get("pick", "")
 
-        # ML favorites + pick-ems up to +130, or Overs
-        is_ml = bt == "Moneyline" and odds < 130
-        is_over = bt == "Total" and "Over" in pick
+        is_ml = bt == "Moneyline" and odds < 130 and edge >= 0.05
+        is_over = bt == "Total" and "Over" in pick and edge >= 0.03
         if not (is_ml or is_over):
             continue
 
@@ -255,9 +253,10 @@ def get_parlay_performance(stake: float = 0.50):
 
         by_date[date].append(r)
 
-    # Build parlays for each date that had 2+ qualifying bets
-    # Cap to top 10 per day by EV to match generate_parlays() output
-    TOP_N_PER_DAY = 10
+    # Build parlays for each date that had 2+ qualifying bets.
+    # Cap to top 3 per day by EV — matches post-fix generate_parlays() output
+    # and reflects the 2-leg-only restriction (no 3-leg combos generated here).
+    TOP_N_PER_DAY = 3
     all_parlays = []
     for date in sorted(by_date.keys()):
         day_bets = by_date[date]
@@ -272,17 +271,18 @@ def get_parlay_performance(stake: float = 0.50):
         day_datetime = day_timestamps[0] if day_timestamps else f"{date}T12:00:00"
 
         day_parlays = []
-        for n_legs in range(2, min(4, len(day_bets) + 1)):
+        # 2-leg only — 3-leg MLB parlays went 6W/115L (5% WR) historically.
+        for n_legs in range(2, min(3, len(day_bets) + 1)):
             for combo in combinations(day_bets, n_legs):
-                # Allow same-game parlays but only with different bet types
-                seen_game_types = set()
+                # No same-game parlays: correlated MLB outcomes inflate
+                # the independent-legs parlay EV calculation.
+                seen_games = set()
                 skip = False
                 for r in combo:
-                    key = (r["bet"]["game"], r["bet"]["bet_type"])
-                    if key in seen_game_types:
+                    if r["bet"]["game"] in seen_games:
                         skip = True
                         break
-                    seen_game_types.add(key)
+                    seen_games.add(r["bet"]["game"])
                 if skip:
                     continue
 
