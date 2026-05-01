@@ -1,9 +1,9 @@
-name: Weekly NHL Game Predictions
+name: Daily NHL Game Predictions
 
 on:
   schedule:
-    # Run at 12:00 PM EST (17:00 UTC) on Saturdays and Sundays for weekend games
-    - cron: '0 17 * * 6,0'
+    # Run at 12:00 PM EST (17:00 UTC) every day
+    - cron: '0 17 * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
