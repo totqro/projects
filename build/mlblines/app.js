@@ -177,10 +177,12 @@ function displayRecentResults(bets) {
             const dot = getTotalDot(diff);
             const cls = getTotalColor(diff);
             const match = (gt.bet.pick||'').match(/(?:Over|Under)\s+([\d.]+)/i);
-            const line = match ? match[1] : '';
-            const dir = (gt.bet.pick||'').toLowerCase().startsWith('over') ? 'O' : 'U';
-            const actual = gt.game_result?.total != null ? `· ${gt.game_result.total}` : '';
-            totalHtml = `<span class="pred-result-total ${cls}">${dot} ${dir}${line}<span class="actual">${actual}</span></span>`;
+            const predicted = match ? Math.round(parseFloat(match[1])) : null;
+            const actual = gt.game_result?.total;
+            if (predicted != null) {
+                const actualStr = actual != null ? ` · ${actual}` : '';
+                totalHtml = `<span class="pred-result-total ${cls}">${dot} ${predicted}<span class="actual">${actualStr}</span></span>`;
+            }
         }
 
         return `<div class="pred-result-row">

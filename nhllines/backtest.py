@@ -30,11 +30,43 @@ def run_backtest(start_date: str = "2026-03-01"):
 
     print("Fetching season games (200-day lookback for training history)...")
     all_games = fetch_season_games(days_back=200)
-    standings = fetch_standings()
 
     if not all_games:
         print("No games found.")
         return None
+
+    # Try live standings; if empty (offseason/playoffs) build from game data
+    standings = fetch_standings()
+    if not standings:
+        print("Live standings empty — building from historical game data...")
+        from collections import defaultdict
+        team_stats = defaultdict(lambda: {"wins": 0, "losses": 0, "goals_for": 0, "goals_against": 0, "gp": 0})
+        for g in all_games:
+            h, a = g["home_team"], g["away_team"]
+            hs, as_ = g.get("home_score", 0) or 0, g.get("away_score", 0) or 0
+            for team in [h, a]:
+                team_stats[team]["gp"] += 1
+                team_stats[team]["goals_for"] += hs if team == h else as_
+                team_stats[team]["goals_against"] += as_ if team == h else hs
+                if (hs > as_ and team == h) or (as_ > hs and team == a):
+                    team_stats[team]["wins"] += 1
+                else:
+                    team_stats[team]["losses"] += 1
+        standings = {}
+        for team, s in team_stats.items():
+            gp = max(s["gp"], 1)
+            standings[team] = {
+                "team": team, "games_played": gp,
+                "wins": s["wins"], "losses": s["losses"], "ot_losses": 0,
+                "points": s["wins"] * 2, "points_pct": s["wins"] / gp,
+                "goals_for": s["goals_for"], "goals_against": s["goals_against"],
+                "goals_for_pg": s["goals_for"] / gp, "goals_against_pg": s["goals_against"] / gp,
+                "win_pct": s["wins"] / gp,
+                "home_wins": 0, "home_losses": 0, "road_wins": 0, "road_losses": 0,
+                "streak_code": "", "streak_count": 0, "l10_wins": 0, "l10_losses": 0,
+                "regulation_wins": s["wins"],
+            }
+        print(f"  Built standings for {len(standings)} teams from game history")
 
     print(f"Loaded {len(all_games)} total games, {len(standings)} teams in standings")
 
