@@ -34,9 +34,11 @@ jobs:
       - name: Build deploy folder
         run: |
           rm -rf build
-          mkdir -p build/nhllines build/mlblines
+          mkdir -p build/nhllines build/mlblines build/swingai
           # Root hub page
           cp nhllines/web/hub.html build/index.html 2>/dev/null || cp mlblines/web/hub.html build/index.html
+          # SwingAI
+          cp swingai/index.html build/swingai/
           # NHL
           cp nhllines/web/index.html build/nhllines/
           cp nhllines/web/app.js build/nhllines/

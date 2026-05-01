@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwingAI — Luc Knox</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:           #080b10;
+      --surface:      #0e1117;
+      --card:         #111520;
+      --border:       rgba(255,255,255,0.07);
+      --border-md:    rgba(255,255,255,0.12);
+      --accent:       #6366f1;
+      --accent-lt:    #818cf8;
+      --text-1:       #f1f5f9;
+      --text-2:       #94a3b8;
+      --text-3:       #4b5563;
+      --green:        #22c55e;
+      --green-dim:    rgba(34,197,94,0.1);
+      --radius:       12px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text-1);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      height: 58px;
+      background: rgba(8,11,16,0.8);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-brand {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-1);
+      letter-spacing: -0.02em;
+      text-decoration: none;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border: 1px solid var(--border-md);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.03);
+      color: var(--text-2);
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 500;
+      transition: color 0.15s, background 0.15s;
+    }
+    .back-btn:hover { color: var(--text-1); background: rgba(255,255,255,0.06); }
+
+    /* ── Page ── */
+    .page {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 64px 40px 80px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      margin-bottom: 56px;
+      position: relative;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px; left: 50%;
+      transform: translateX(-50%);
+      width: 600px; height: 400px;
+      background: radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .badge {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 20px;
+      letter-spacing: 0.01em;
+    }
+
+    .badge-ios {
+      background: rgba(99,102,241,0.12);
+      color: var(--accent-lt);
+      border: 1px solid rgba(99,102,241,0.25);
+    }
+
+    .badge-active {
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid rgba(34,197,94,0.2);
+    }
+
+    h1 {
+      font-size: clamp(2.4rem, 6vw, 3.6rem);
+      font-weight: 700;
+      letter-spacing: -0.045em;
+      line-height: 1.05;
+      color: var(--text-1);
+      margin-bottom: 16px;
+    }
+
+    .tagline {
+      font-size: 1.05rem;
+      color: var(--text-2);
+      max-width: 480px;
+      line-height: 1.7;
+      margin-bottom: 28px;
+    }
+
+    .hero-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .hero-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 18px;
+      border-radius: 9px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    .hero-link:hover { opacity: 0.85; transform: translateY(-1px); }
+
+    .hero-link-gh {
+      background: var(--surface);
+      color: var(--text-1);
+      border: 1px solid var(--border-md);
+    }
+
+    /* ── Sections ── */
+    section {
+      padding: 36px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    section:first-of-type { border-top: none; }
+
+    h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-1);
+      letter-spacing: -0.02em;
+      margin-bottom: 20px;
+    }
+
+    p, li {
+      font-size: 0.9rem;
+      color: var(--text-2);
+      line-height: 1.75;
+    }
+
+    /* ── Screenshot grid ── */
+    .screenshot-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .screenshot-slot {
+      aspect-ratio: 9 / 19;
+      background: var(--card);
+      border: 1px dashed rgba(255,255,255,0.1);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      color: var(--text-3);
+      font-weight: 500;
+    }
+
+    /* ── Tech grid ── */
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+    }
+
+    .tech-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .tech-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-1);
+    }
+
+    .tech-sub {
+      font-size: 0.75rem;
+      color: var(--text-3);
+    }
+
+    /* ── Steps ── */
+    ol.steps {
+      padding-left: 1.3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      list-style: decimal;
+    }
+
+    /* ── Metrics table ── */
+    .metrics-table {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .metrics-row {
+      display: grid;
+      grid-template-columns: 150px 1fr 64px;
+      gap: 12px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+      align-items: center;
+    }
+
+    .metrics-row:last-child { border-bottom: none; }
+
+    .metrics-row.header {
+      background: var(--surface);
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .metric-name {
+      font-weight: 600;
+      color: var(--accent-lt);
+    }
+
+    .metric-unit {
+      color: var(--text-3);
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.75rem;
+    }
+
+    /* ── Footer ── */
+    footer {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px 40px 40px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-name {
+      font-size: 0.78rem;
+      color: var(--text-3);
+      font-weight: 500;
+    }
+
+    .footer-gh {
+      font-size: 0.78rem;
+      color: var(--text-3);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+    .footer-gh:hover { color: var(--text-2); }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      nav { padding: 0 20px; }
+      .page { padding: 40px 20px 60px; }
+      footer { padding: 20px; }
+      .screenshot-grid { grid-template-columns: repeat(2, 1fr); }
+      .metrics-row { grid-template-columns: 120px 1fr 50px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-brand" href="/">LK</a>
+    <a class="back-btn" href="/">← All Projects</a>
+  </nav>
+
+  <div class="page">
+
+    <!-- ── Hero ── -->
+    <div class="hero">
+      <div class="badge-row">
+        <span class="badge badge-ios">iOS App</span>
+        <span class="badge badge-active">In Progress</span>
+      </div>
+      <h1>SwingAI</h1>
+      <!-- CONTENT: tagline -->
+      <p class="tagline">AI-powered golf swing analysis — record, measure, improve.</p>
+      <div class="hero-links">
+        <!-- CONTENT: update href to actual repo -->
+        <a href="https://github.com/totqro" class="hero-link hero-link-gh" target="_blank" rel="noopener">GitHub →</a>
+      </div>
+    </div>
+
+    <!-- ── Overview ── -->
+    <section>
+      <h2>Overview</h2>
+      <!-- CONTENT: project overview -->
+      <p>Placeholder — overview coming soon.</p>
+    </section>
+
+    <!-- ── Screenshots ── -->
+    <section>
+      <h2>Demo</h2>
+      <div class="screenshot-grid">
+        <!-- CONTENT: replace slots with <img> tags -->
+        <div class="screenshot-slot">Screenshot 1</div>
+        <div class="screenshot-slot">Screenshot 2</div>
+        <div class="screenshot-slot">Screenshot 3</div>
+      </div>
+    </section>
+
+    <!-- ── Tech Stack ── -->
+    <section>
+      <h2>Tech Stack</h2>
+      <div class="tech-grid">
+        <div class="tech-card"><span class="tech-label">Swift / SwiftUI</span><span class="tech-sub">iOS 17+</span></div>
+        <div class="tech-card"><span class="tech-label">Apple Vision</span><span class="tech-sub">Body pose estimation</span></div>
+        <div class="tech-card"><span class="tech-label">AVFoundation</span><span class="tech-sub">120fps rear camera</span></div>
+        <div class="tech-card"><span class="tech-label">Anthropic API</span><span class="tech-sub">claude-haiku-4-5 tips</span></div>
+      </div>
+    </section>
+
+    <!-- ── How It Works ── -->
+    <section>
+      <h2>How It Works</h2>
+      <ol class="steps">
+        <li>Record up to 3 swings at 120fps through the rear camera</li>
+        <li>Apple Vision extracts 15 body-pose keypoints per frame</li>
+        <li>Phase detection finds address, top of backswing, and impact</li>
+        <li>9 swing metrics are computed and compared against a Rory McIlroy reference</li>
+        <li>The Anthropic API generates plain-English coaching tips ranked by severity</li>
+      </ol>
+    </section>
+
+    <!-- ── Metrics ── -->
+    <section>
+      <h2>Metrics Tracked</h2>
+      <div class="metrics-table">
+        <div class="metrics-row header">
+          <span>Metric</span><span>What it measures</span><span>Unit</span>
+        </div>
+        <div class="metrics-row"><span class="metric-name">Tempo Ratio</span><span>Backswing ÷ downswing time</span><span class="metric-unit">:1</span></div>
+        <div class="metrics-row"><span class="metric-name">Spine Tilt</span><span>Forward lean angle at address</span><span class="metric-unit">°</span></div>
+        <div class="metrics-row"><span class="metric-name">Knee Flex</span><span>Knee bend at address</span><span class="metric-unit">°</span></div>
+        <div class="metrics-row"><span class="metric-name">Lead Arm</span><span>Elbow angle at top of backswing</span><span class="metric-unit">°</span></div>
+        <div class="metrics-row"><span class="metric-name">Hand Height</span><span>Wrist height at top (normalised)</span><span class="metric-unit">—</span></div>
+        <div class="metrics-row"><span class="metric-name">Head Drift</span><span>Max lateral head movement</span><span class="metric-unit">%</span></div>
+        <div class="metrics-row"><span class="metric-name">Shoulder Turn</span><span>Shoulder-line tilt from address to top</span><span class="metric-unit">°</span></div>
+        <div class="metrics-row"><span class="metric-name">Hip Turn</span><span>Hip-line tilt from address to top</span><span class="metric-unit">°</span></div>
+        <div class="metrics-row"><span class="metric-name">X-Factor</span><span>Shoulder turn − Hip turn</span><span class="metric-unit">°</span></div>
+      </div>
+    </section>
+
+    <!-- CONTENT: add more sections here (challenges, learnings, etc.) -->
+
+  </div>
+
+  <footer>
+    <span class="footer-name">Luc Knox · 2026</span>
+    <a class="footer-gh" href="https://github.com/totqro" target="_blank" rel="noopener">GitHub</a>
+  </footer>
+
+</body>
+</html>
