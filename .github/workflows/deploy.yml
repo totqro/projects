@@ -5,7 +5,7 @@ on:
   # NOTE: GitHub Actions GITHUB_TOKEN pushes don't trigger push events in other
   # workflows — workflow_run is the correct way to chain workflows.
   workflow_run:
-    workflows: ["Daily NHL Analysis", "Daily MLB Analysis"]
+    workflows: ["Daily NHL Game Predictions", "Daily MLB Game Predictions"]
     types: [completed]
   # Also trigger on direct pushes (manual deploys, code changes)
   push:
@@ -83,3 +83,4 @@ jobs:
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json
           firebase deploy --only hosting --project projects-brawlstars --non-interactive
           echo "✅ Deployed to Firebase"
+
