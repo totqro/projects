@@ -56,6 +56,7 @@ jobs:
           cp mlblines/mlbdata/bet_results.json build/mlblines/ 2>/dev/null || echo '{"results":{}}' > build/mlblines/bet_results.json
           cp mlblines/mlbdata/analysis_history.json build/mlblines/ 2>/dev/null || true
           cp mlblines/mlbdata/parlay_results.json build/mlblines/ 2>/dev/null || true
+          cp mlblines/mlbdata/backtest_results.json build/mlblines/ 2>/dev/null || true
 
       - name: Verify build
         run: |

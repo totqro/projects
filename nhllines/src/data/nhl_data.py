@@ -38,24 +38,8 @@ def _set_cache(key: str, data):
     path.write_text(json.dumps(data, default=str))
 
 
-def fetch_standings(date: str = None) -> dict:
-    """
-    Fetch NHL standings for a given date (YYYY-MM-DD).
-    Returns dict keyed by team abbreviation with stats.
-    """
-    if date is None:
-        date = datetime.now().strftime("%Y-%m-%d")
-
-    cache_key = f"standings_{date}"
-    cached = _get_cached(cache_key, max_age_hours=12)
-    if cached:
-        return cached
-
-    url = f"{BASE_URL}/standings/{date}"
-    resp = requests.get(url, timeout=15)
-    resp.raise_for_status()
-    raw = resp.json()
-
+def _parse_standings_raw(raw: dict) -> dict:
+    """Parse raw NHL standings API response into team dict."""
     standings = {}
     for team in raw.get("standings", []):
         abbrev = team.get("teamAbbrev", {}).get("default", "")
@@ -89,6 +73,52 @@ def fetch_standings(date: str = None) -> dict:
             "win_pct": team.get("wins", 0) / max(gp, 1),
             "regulation_wins": team.get("regulationWins", 0),
         }
+    return standings
+
+
+def fetch_standings(date: str = None) -> dict:
+    """
+    Fetch NHL standings for a given date (YYYY-MM-DD).
+    Returns dict keyed by team abbreviation with stats.
+    During playoffs the current-date endpoint returns empty; falls back to the
+    most recent date with available standings (up to 30 days back).
+    """
+    if date is None:
+        date = datetime.now().strftime("%Y-%m-%d")
+
+    cache_key = f"standings_{date}"
+    cached = _get_cached(cache_key, max_age_hours=12)
+    if cached:
+        return cached
+
+    url = f"{BASE_URL}/standings/{date}"
+    resp = requests.get(url, timeout=15)
+    resp.raise_for_status()
+    standings = _parse_standings_raw(resp.json())
+
+    # During NHL playoffs the standings endpoint returns an empty list for the
+    # current date. Walk back day-by-day until we find a date with data.
+    if not standings:
+        for days_back in range(1, 31):
+            fallback_date = (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%d")
+            fb_cache_key = f"standings_{fallback_date}"
+            fb_cached = _get_cached(fb_cache_key, max_age_hours=24 * 7)
+            if fb_cached:
+                standings = fb_cached
+                print(f"  [standings] Playoffs detected — using standings from {fallback_date} (cached)")
+                break
+            try:
+                fb_url = f"{BASE_URL}/standings/{fallback_date}"
+                fb_resp = requests.get(fb_url, timeout=15)
+                fb_resp.raise_for_status()
+                standings = _parse_standings_raw(fb_resp.json())
+                if standings:
+                    print(f"  [standings] Playoffs detected — using standings from {fallback_date}")
+                    _set_cache(fb_cache_key, standings)
+                    break
+                time.sleep(0.1)
+            except Exception:
+                continue
 
     _set_cache(cache_key, standings)
     return standings
