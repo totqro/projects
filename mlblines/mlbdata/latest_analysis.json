@@ -1,73 +1,480 @@
 {
-  "timestamp": "2026-05-15T17:17:56.377538+00:00",
+  "timestamp": "2026-05-16T16:41:12.916509+00:00",
   "stake": 0.5,
   "days_back": 90,
   "min_edge": 0.03,
-  "n_historical_games": 1301,
+  "n_historical_games": 1311,
   "games_analyzed": [
+    {
+      "game": "KC @ STL",
+      "home": "STL",
+      "away": "KC",
+      "model_probs": {
+        "home_win_prob": 0.6431489060385485,
+        "away_win_prob": 0.3568510939614516,
+        "expected_total": 9.182393418120999,
+        "over_prob": 0.4492331111140485,
+        "under_prob": 0.5507668888859515,
+        "home_cover_prob": 0.40140314890652407,
+        "away_cover_prob": 0.5985968510934759,
+        "total_line": 9.5,
+        "spread_line": -1.5,
+        "n_games": 50,
+        "avg_similarity": 0.757457531393319,
+        "confidence": 0.5529598106698558,
+        "raw_confidence": 0.46609201641516274,
+        "raw_home_win_prob": 0.44792654565919215,
+        "raw_over_prob": 0.4310641613329015,
+        "run_distribution": {
+          "0": 0.04,
+          "2": 0.04,
+          "3": 0.08,
+          "4": 0.02,
+          "5": 0.04,
+          "6": 0.06,
+          "7": 0.08,
+          "8": 0.04,
+          "9": 0.2,
+          "11": 0.08,
+          "12": 0.02,
+          "13": 0.1,
+          "14": 0.06,
+          "15": 0.06,
+          "17": 0.02,
+          "18": 0.02,
+          "20": 0.04
+        }
+      },
+      "market_probs": {
+        "home_win_prob": 0.5090255277551965,
+        "away_win_prob": 0.4909744722448035,
+        "over_prob": 0.49841114752055893,
+        "under_prob": 0.5015888524794411,
+        "spread_home_cover_prob": 0.5365698640033902,
+        "total_line": 9.0,
+        "spread_line": 1.5,
+        "n_books_ml": 16,
+        "n_books_total": 16
+      },
+      "blended_probs": {
+        "home_win_prob": 0.5556520348849402,
+        "away_win_prob": 0.4443479651150598,
+        "over_prob": 0.4803092889707511,
+        "under_prob": 0.5196907110292489,
+        "home_cover_prob": 0.4923447236564017,
+        "away_cover_prob": 0.4443479651150598,
+        "expected_total": 9.037298265835025,
+        "model_confidence": 0.5529598106698558,
+        "effective_model_weight": 0.4089869713421583
+      },
+      "n_similar": 50,
+      "n_bets": 0,
+      "context_indicators": {
+        "fatigue": [
+          {
+            "team": "STL",
+            "type": "B2B",
+            "severity": "medium"
+          },
+          {
+            "team": "KC",
+            "type": "B2B",
+            "severity": "medium"
+          }
+        ],
+        "pitcher": [],
+        "splits": [],
+        "park": []
+      },
+      "pitcher_matchup": {
+        "home": {
+          "name": "Kyle Leahy",
+          "era": 4.31,
+          "whip": 1.59,
+          "k_per_9": 7.26,
+          "fip": 4.74,
+          "quality_score": 48.7,
+          "handedness": "R"
+        },
+        "away": {
+          "name": "Noah Cameron",
+          "era": 5.55,
+          "whip": 1.63,
+          "k_per_9": 8.07,
+          "fip": 4.31,
+          "quality_score": 41.0,
+          "handedness": "L"
+        }
+      },
+      "team_splits": {
+        "home": {
+          "win_pct": 0.4,
+          "rs_pg": 2.9,
+          "ra_pg": 3.1,
+          "run_diff": -0.2,
+          "games": 10
+        },
+        "away": {
+          "win_pct": 0.4,
+          "rs_pg": 3.9,
+          "ra_pg": 4.4,
+          "run_diff": -0.5,
+          "games": 10
+        }
+      },
+      "bullpen": {
+        "home": {
+          "bullpen_era": 4.45,
+          "bullpen_whip": 1.41,
+          "bullpen_k9": 6.9,
+          "bullpen_quality": 56.3,
+          "team_era": 4.24
+        },
+        "away": {
+          "bullpen_era": 4.6,
+          "bullpen_whip": 1.42,
+          "bullpen_k9": 8.2,
+          "bullpen_quality": 58.5,
+          "team_era": 4.38
+        }
+      },
+      "park_factor": 100
+    },
+    {
+      "game": "ARI @ COL",
+      "home": "COL",
+      "away": "ARI",
+      "model_probs": {
+        "home_win_prob": 0.36645332999394586,
+        "away_win_prob": 0.6335466700060541,
+        "expected_total": 7.962337205864456,
+        "over_prob": 0.17615588982092997,
+        "under_prob": 0.82384411017907,
+        "home_cover_prob": 0.5048990435196821,
+        "away_cover_prob": 0.49510095648031793,
+        "total_line": 11.5,
+        "spread_line": 1.5,
+        "n_games": 50,
+        "avg_similarity": 0.7488474196793242,
+        "confidence": 0.586486129082741,
+        "raw_confidence": 0.5176709678196016,
+        "raw_home_win_prob": 0.5064710713100411,
+        "raw_over_prob": 0.07223929081536887,
+        "run_distribution": {
+          "0": 0.06,
+          "1": 0.04,
+          "2": 0.04,
+          "3": 0.02,
+          "4": 0.1,
+          "5": 0.16,
+          "6": 0.08,
+          "7": 0.14,
+          "8": 0.06,
+          "9": 0.02,
+          "10": 0.06,
+          "11": 0.1,
+          "13": 0.02,
+          "15": 0.06,
+          "16": 0.02,
+          "20": 0.02
+        }
+      },
+      "market_probs": {
+        "home_win_prob": 0.4322660582388428,
+        "away_win_prob": 0.5677339417611572,
+        "over_prob": 0.49258182609063816,
+        "under_prob": 0.5074181739093618,
+        "spread_home_cover_prob": 0.5310656254528446,
+        "total_line": 11.0,
+        "spread_line": 1.5,
+        "n_books_ml": 16,
+        "n_books_total": 16
+      },
+      "blended_probs": {
+        "home_win_prob": 0.40870361168354846,
+        "away_win_prob": 0.5912963883164515,
+        "over_prob": 0.37263019846290396,
+        "under_prob": 0.6273698015370961,
+        "home_cover_prob": 0.40870361168354846,
+        "away_cover_prob": 0.4777515309530337,
+        "expected_total": 10.360263502493758,
+        "model_confidence": 0.586486129082741,
+        "effective_model_weight": 0.42120310308392694
+      },
+      "n_similar": 50,
+      "n_bets": 1,
+      "context_indicators": {
+        "fatigue": [
+          {
+            "team": "COL",
+            "type": "B2B",
+            "severity": "medium"
+          },
+          {
+            "team": "ARI",
+            "type": "B2B",
+            "severity": "medium"
+          }
+        ],
+        "pitcher": [],
+        "splits": [],
+        "park": [
+          {
+            "team": "COL",
+            "type": "hitter-friendly",
+            "value": 115,
+            "severity": "medium"
+          }
+        ]
+      },
+      "pitcher_matchup": {
+        "home": {
+          "name": "Tomoyuki Sugano",
+          "era": 4.07,
+          "whip": 1.19,
+          "k_per_9": 5.14,
+          "fip": 5.6,
+          "quality_score": 55.3,
+          "handedness": "R"
+        },
+        "away": {
+          "name": "Eduardo Rodriguez",
+          "era": 2.25,
+          "whip": 1.21,
+          "k_per_9": 6.19,
+          "fip": 4.18,
+          "quality_score": 67.7,
+          "handedness": "L"
+        }
+      },
+      "team_splits": {
+        "home": {
+          "win_pct": 0.1,
+          "rs_pg": 4.1,
+          "ra_pg": 7.4,
+          "run_diff": -3.3,
+          "games": 10
+        },
+        "away": {
+          "win_pct": 0.3,
+          "rs_pg": 3.9,
+          "ra_pg": 5.3,
+          "run_diff": -1.4,
+          "games": 10
+        }
+      },
+      "bullpen": {
+        "home": {
+          "bullpen_era": 5.18,
+          "bullpen_whip": 1.48,
+          "bullpen_k9": 7.2,
+          "bullpen_quality": 50.2,
+          "team_era": 4.93
+        },
+        "away": {
+          "bullpen_era": 4.57,
+          "bullpen_whip": 1.31,
+          "bullpen_k9": 7.2,
+          "bullpen_quality": 57.7,
+          "team_era": 4.35
+        }
+      },
+      "park_factor": 115
+    },
+    {
+      "game": "BAL @ WSH",
+      "home": "WSH",
+      "away": "BAL",
+      "model_probs": {
+        "home_win_prob": 0.48244254908023176,
+        "away_win_prob": 0.5175574375087232,
+        "expected_total": 6.546446081537798,
+        "over_prob": 0.27068880549216146,
+        "under_prob": 0.7293111945078385,
+        "home_cover_prob": 0.44078667547645817,
+        "away_cover_prob": 0.5592133245235418,
+        "total_line": 10.5,
+        "spread_line": -1.5,
+        "n_games": 50,
+        "avg_similarity": 0.7375409013828738,
+        "confidence": 0.4940805715316673,
+        "raw_confidence": 0.3755085715871805,
+        "raw_home_win_prob": 0.5068398944943059,
+        "raw_over_prob": 0.17250775256141304,
+        "run_distribution": {
+          "0": 0.04,
+          "1": 0.02,
+          "3": 0.12,
+          "4": 0.02,
+          "5": 0.2,
+          "6": 0.04,
+          "7": 0.08,
+          "8": 0.16,
+          "9": 0.08,
+          "10": 0.04,
+          "11": 0.04,
+          "13": 0.02,
+          "14": 0.02,
+          "15": 0.04,
+          "18": 0.02,
+          "20": 0.06
+        }
+      },
+      "market_probs": {
+        "home_win_prob": 0.5003379057224682,
+        "away_win_prob": 0.4996620942775318,
+        "over_prob": 0.500010637450647,
+        "under_prob": 0.499989362549353,
+        "spread_home_cover_prob": 0.5908422282565747,
+        "total_line": 10.0,
+        "spread_line": 1.5,
+        "n_books_ml": 16,
+        "n_books_total": 16
+      },
+      "blended_probs": {
+        "home_win_prob": 0.49445731625728523,
+        "away_win_prob": 0.5055426837427148,
+        "over_prob": 0.4202204491845936,
+        "under_prob": 0.5797795508154064,
+        "home_cover_prob": 0.49445731625728523,
+        "away_cover_prob": 0.45556692405691934,
+        "expected_total": 9.332428445435315,
+        "model_confidence": 0.4940805715316673,
+        "effective_model_weight": 0.3865997580034542
+      },
+      "n_similar": 50,
+      "n_bets": 0,
+      "context_indicators": {
+        "fatigue": [
+          {
+            "team": "WSH",
+            "type": "B2B",
+            "severity": "medium"
+          },
+          {
+            "team": "BAL",
+            "type": "B2B",
+            "severity": "medium"
+          }
+        ],
+        "pitcher": [],
+        "splits": [],
+        "park": []
+      },
+      "pitcher_matchup": {
+        "home": {
+          "name": "Cade Cavalli",
+          "era": 4.02,
+          "whip": 1.59,
+          "k_per_9": 9.82,
+          "fip": 2.58,
+          "quality_score": 57.2,
+          "handedness": "R"
+        },
+        "away": {
+          "name": "Chris Bassitt",
+          "era": 5.21,
+          "whip": 1.74,
+          "k_per_9": 6.16,
+          "fip": 4.18,
+          "quality_score": 35.1,
+          "handedness": "R"
+        }
+      },
+      "team_splits": {
+        "home": {
+          "win_pct": 0.5,
+          "rs_pg": 4.4,
+          "ra_pg": 4.9,
+          "run_diff": -0.5,
+          "games": 10
+        },
+        "away": {
+          "win_pct": 0.3,
+          "rs_pg": 4.2,
+          "ra_pg": 7.4,
+          "run_diff": -3.2,
+          "games": 10
+        }
+      },
+      "bullpen": {
+        "home": {
+          "bullpen_era": 5.2,
+          "bullpen_whip": 1.47,
+          "bullpen_k9": 7.3,
+          "bullpen_quality": 50.5,
+          "team_era": 4.95
+        },
+        "away": {
+          "bullpen_era": 4.81,
+          "bullpen_whip": 1.46,
+          "bullpen_k9": 8.0,
+          "bullpen_quality": 55.5,
+          "team_era": 4.58
+        }
+      },
+      "park_factor": 100
+    },
     {
       "game": "PHI @ PIT",
       "home": "PIT",
       "away": "PHI",
       "model_probs": {
-        "home_win_prob": 0.4743819996254972,
-        "away_win_prob": 0.5256179869634577,
-        "expected_total": 12.425156476042947,
-        "over_prob": 0.40623847747290487,
-        "under_prob": 0.5937615225270951,
-        "home_cover_prob": 0.45790518784413203,
-        "away_cover_prob": 0.542094812155868,
+        "home_win_prob": 0.38490768198463615,
+        "away_win_prob": 0.6150923180153638,
+        "expected_total": 12.555596045398325,
+        "over_prob": 0.3884267780111241,
+        "under_prob": 0.6115732219888759,
+        "home_cover_prob": 0.4906596401296474,
+        "away_cover_prob": 0.5093403598703525,
         "total_line": 8.5,
-        "spread_line": -1.5,
+        "spread_line": 1.5,
         "n_games": 50,
-        "avg_similarity": 0.7118168974541483,
-        "confidence": 0.41023332893034176,
-        "raw_confidence": 0.2465128137389873,
-        "raw_home_win_prob": 0.48955156682481477,
-        "raw_over_prob": 0.3554412864754152,
+        "avg_similarity": 0.7137200184686359,
+        "confidence": 0.45183431366004745,
+        "raw_confidence": 0.31051432870776524,
+        "raw_home_win_prob": 0.4861461280523293,
+        "raw_over_prob": 0.3345116085806048,
         "run_distribution": {
-          "0": 0.06,
-          "1": 0.02,
-          "2": 0.02,
+          "0": 0.04,
+          "1": 0.06,
           "3": 0.02,
-          "4": 0.12,
-          "5": 0.14,
-          "6": 0.06,
-          "7": 0.14,
+          "4": 0.04,
+          "5": 0.18,
+          "6": 0.12,
+          "7": 0.16,
           "8": 0.04,
-          "9": 0.02,
-          "10": 0.14,
-          "11": 0.06,
-          "12": 0.02,
-          "13": 0.02,
+          "9": 0.12,
+          "10": 0.08,
+          "11": 0.02,
+          "14": 0.02,
           "15": 0.04,
           "16": 0.02,
-          "17": 0.02,
           "18": 0.02,
           "20": 0.02
         }
       },
       "market_probs": {
-        "home_win_prob": 0.5506086774256278,
-        "away_win_prob": 0.4493913225743722,
-        "over_prob": 0.5041213034359566,
-        "under_prob": 0.4958786965640434,
-        "spread_home_cover_prob": 0.37546895963184806,
-        "total_line": 8.0,
-        "spread_line": -1.5,
+        "home_win_prob": 0.39457093143190314,
+        "away_win_prob": 0.6054290685680969,
+        "over_prob": 0.48832364258307726,
+        "under_prob": 0.5116763574169227,
+        "spread_home_cover_prob": 0.517758796171449,
+        "total_line": 8.5,
+        "spread_line": 1.5,
         "n_books_ml": 16,
         "n_books_total": 16
       },
       "blended_probs": {
-        "home_win_prob": 0.5277840299790388,
-        "away_win_prob": 0.47221597002096116,
-        "over_prob": 0.47308805995213343,
-        "under_prob": 0.5269119400478666,
-        "home_cover_prob": 0.3987009414934215,
-        "away_cover_prob": 0.47221597002096116,
-        "expected_total": 8.779429423927834,
-        "model_confidence": 0.41023332893034176,
-        "effective_model_weight": 0.3522720284118914
+        "home_win_prob": 0.3915342837261739,
+        "away_win_prob": 0.6084657162738261,
+        "over_prob": 0.4550847411944412,
+        "under_prob": 0.5449152588055588,
+        "home_cover_prob": 0.3915342837261739,
+        "away_cover_prob": 0.4902561026989303,
+        "expected_total": 9.249681837711966,
+        "model_confidence": 0.45183431366004745,
+        "effective_model_weight": 0.3697024207145044
       },
       "n_similar": 50,
       "n_bets": 0,
@@ -86,9 +493,9 @@
         ],
         "pitcher": [
           {
-            "team": "PIT",
+            "team": "PHI",
             "type": "ace",
-            "value": 78.6,
+            "value": 85.0,
             "severity": "positive"
           }
         ],
@@ -97,135 +504,280 @@
       },
       "pitcher_matchup": {
         "home": {
-          "name": "Braxton Ashcraft",
-          "era": 2.77,
-          "whip": 1.05,
-          "k_per_9": 9.43,
-          "fip": 2.94,
-          "quality_score": 78.6,
+          "name": "Bubba Chandler",
+          "era": 4.62,
+          "whip": 1.46,
+          "k_per_9": 7.85,
+          "fip": 5.43,
+          "quality_score": 46.5,
           "handedness": "R"
         },
         "away": {
-          "name": "Aaron Nola",
-          "era": 5.14,
-          "whip": 1.48,
-          "k_per_9": 9.43,
-          "fip": 4.24,
-          "quality_score": 51.1,
-          "handedness": "R"
+          "name": "Cristopher S\u00e1nchez",
+          "era": 2.11,
+          "whip": 1.28,
+          "k_per_9": 10.9,
+          "fip": 2.14,
+          "quality_score": 85.0,
+          "handedness": "L"
         }
       },
       "team_splits": {
         "home": {
           "win_pct": 0.6,
-          "rs_pg": 7.4,
-          "ra_pg": 5.4,
-          "run_diff": 2.0,
+          "rs_pg": 6.0,
+          "ra_pg": 4.7,
+          "run_diff": 1.3,
           "games": 10
         },
         "away": {
-          "win_pct": 0.6,
-          "rs_pg": 3.0,
-          "ra_pg": 3.1,
-          "run_diff": -0.1,
+          "win_pct": 0.7,
+          "rs_pg": 4.0,
+          "ra_pg": 3.3,
+          "run_diff": 0.7,
           "games": 10
         }
       },
       "bullpen": {
         "home": {
-          "bullpen_era": 3.9,
+          "bullpen_era": 4.0,
           "bullpen_whip": 1.26,
           "bullpen_k9": 8.3,
-          "bullpen_quality": 66.9,
-          "team_era": 3.71
+          "bullpen_quality": 65.9,
+          "team_era": 3.81
         },
         "away": {
-          "bullpen_era": 4.58,
-          "bullpen_whip": 1.42,
+          "bullpen_era": 4.63,
+          "bullpen_whip": 1.43,
           "bullpen_k9": 9.1,
-          "bullpen_quality": 61.0,
-          "team_era": 4.36
+          "bullpen_quality": 60.5,
+          "team_era": 4.41
         }
       },
       "park_factor": 99
     },
     {
-      "game": "BAL @ WSH",
-      "home": "WSH",
-      "away": "BAL",
+      "game": "MIA @ TB",
+      "home": "TB",
+      "away": "MIA",
       "model_probs": {
-        "home_win_prob": 0.3651723808470141,
-        "away_win_prob": 0.6348276258585085,
-        "expected_total": 6.808431029638303,
-        "over_prob": 0.4116504849289372,
-        "under_prob": 0.5883495150710628,
-        "home_cover_prob": 0.48507656814885336,
-        "away_cover_prob": 0.5149234318511466,
-        "total_line": 9.5,
-        "spread_line": 1.5,
+        "home_win_prob": 0.6591026562810773,
+        "away_win_prob": 0.34089734371892266,
+        "expected_total": 8.705997761427122,
+        "over_prob": 0.6043382694776119,
+        "under_prob": 0.39566173052238807,
+        "home_cover_prob": 0.4236646647291538,
+        "away_cover_prob": 0.5763353352708462,
+        "total_line": 7.5,
+        "spread_line": -1.5,
         "n_games": 50,
-        "avg_similarity": 0.7181949735539328,
-        "confidence": 0.43407897964468933,
-        "raw_confidence": 0.283198430222599,
-        "raw_home_win_prob": 0.4775005337432033,
-        "raw_over_prob": 0.36679894055381146,
+        "avg_similarity": 0.7378467002625339,
+        "confidence": 0.5286201790550422,
+        "raw_confidence": 0.4286464293154495,
+        "raw_home_win_prob": 0.44570638710058547,
+        "raw_over_prob": 0.6446212902120901,
         "run_distribution": {
-          "0": 0.08,
-          "3": 0.08,
-          "4": 0.06,
-          "5": 0.12,
-          "6": 0.02,
-          "7": 0.06,
-          "8": 0.1,
-          "9": 0.1,
-          "10": 0.12,
+          "0": 0.04,
+          "2": 0.04,
+          "3": 0.06,
+          "4": 0.04,
+          "5": 0.08,
+          "6": 0.04,
+          "7": 0.08,
+          "8": 0.04,
+          "9": 0.24,
           "11": 0.06,
-          "13": 0.06,
-          "14": 0.02,
+          "12": 0.04,
+          "13": 0.1,
+          "14": 0.06,
           "15": 0.02,
-          "18": 0.04,
-          "20": 0.02,
-          "26": 0.02,
-          "33": 0.02
+          "16": 0.02,
+          "20": 0.04
         }
       },
       "market_probs": {
-        "home_win_prob": 0.4424911183294011,
-        "away_win_prob": 0.557508881670599,
-        "over_prob": 0.48979272563568976,
-        "under_prob": 0.5102072743643102,
-        "spread_home_cover_prob": 0.5560294507413203,
-        "total_line": 9.5,
-        "spread_line": 1.5,
+        "home_win_prob": 0.5632009750212169,
+        "away_win_prob": 0.4367990249787831,
+        "over_prob": 0.5128233449270235,
+        "under_prob": 0.48717665507297647,
+        "spread_home_cover_prob": 0.3809334617324945,
+        "total_line": 7.5,
+        "spread_line": -1.5,
         "n_books_ml": 16,
         "n_books_total": 16
       },
       "blended_probs": {
-        "home_win_prob": 0.4186761094968562,
-        "away_win_prob": 0.5813238905031438,
-        "over_prob": 0.46430826554993004,
-        "under_prob": 0.53569173445007,
-        "home_cover_prob": 0.4186761094968562,
-        "away_cover_prob": 0.4645392613127005,
-        "expected_total": 9.012333880050978,
-        "model_confidence": 0.43407897964468933,
-        "effective_model_weight": 0.36236568731395985
+        "home_win_prob": 0.595798130566738,
+        "away_win_prob": 0.404201869433262,
+        "over_prob": 0.5457592038438366,
+        "under_prob": 0.4542407961561634,
+        "home_cover_prob": 0.39460349793604954,
+        "away_cover_prob": 0.404201869433262,
+        "expected_total": 7.741129898996232,
+        "model_confidence": 0.5286201790550422,
+        "effective_model_weight": 0.3998844885265622
       },
       "n_similar": 50,
       "n_bets": 0,
       "context_indicators": {
         "fatigue": [
           {
-            "team": "WSH",
+            "team": "TB",
+            "type": "B2B",
+            "severity": "medium"
+          },
+          {
+            "team": "MIA",
             "type": "B2B",
             "severity": "medium"
           }
         ],
         "pitcher": [
           {
-            "team": "WSH",
+            "team": "TB",
+            "type": "ace",
+            "value": 77.8,
+            "severity": "positive"
+          }
+        ],
+        "splits": [],
+        "park": []
+      },
+      "pitcher_matchup": {
+        "home": {
+          "name": "Nick Martinez",
+          "era": 1.7,
+          "whip": 1.05,
+          "k_per_9": 5.85,
+          "fip": 3.25,
+          "quality_score": 77.8,
+          "handedness": "R"
+        },
+        "away": {
+          "name": "Sandy Alcantara",
+          "era": 3.9,
+          "whip": 1.27,
+          "k_per_9": 6.09,
+          "fip": 3.69,
+          "quality_score": 56.4,
+          "handedness": "R"
+        }
+      },
+      "team_splits": {
+        "home": {
+          "win_pct": 1.0,
+          "rs_pg": 3.9,
+          "ra_pg": 1.3,
+          "run_diff": 2.6,
+          "games": 10
+        },
+        "away": {
+          "win_pct": 0.3,
+          "rs_pg": 2.9,
+          "ra_pg": 5.0,
+          "run_diff": -2.1,
+          "games": 10
+        }
+      },
+      "bullpen": {
+        "home": {
+          "bullpen_era": 3.65,
+          "bullpen_whip": 1.19,
+          "bullpen_k9": 7.3,
+          "bullpen_quality": 67.2,
+          "team_era": 3.48
+        },
+        "away": {
+          "bullpen_era": 4.45,
+          "bullpen_whip": 1.32,
+          "bullpen_k9": 8.1,
+          "bullpen_quality": 61.0,
+          "team_era": 4.24
+        }
+      },
+      "park_factor": 97
+    },
+    {
+      "game": "CIN @ CLE",
+      "home": "CLE",
+      "away": "CIN",
+      "model_probs": {
+        "home_win_prob": 0.606056358842274,
+        "away_win_prob": 0.39394364115772607,
+        "expected_total": 8.826372231771218,
+        "over_prob": 0.4497733772628182,
+        "under_prob": 0.5502266227371818,
+        "home_cover_prob": 0.4342158018139881,
+        "away_cover_prob": 0.5657841981860119,
+        "total_line": 8.5,
+        "spread_line": -1.5,
+        "n_games": 50,
+        "avg_similarity": 0.750279491068193,
+        "confidence": 0.5804458209850573,
+        "raw_confidence": 0.5083781861308573,
+        "raw_home_win_prob": 0.47253664496908987,
+        "raw_over_prob": 0.43332907975274265,
+        "run_distribution": {
+          "0": 0.04,
+          "2": 0.02,
+          "3": 0.08,
+          "4": 0.08,
+          "5": 0.04,
+          "6": 0.1,
+          "7": 0.12,
+          "8": 0.04,
+          "9": 0.16,
+          "10": 0.08,
+          "11": 0.04,
+          "12": 0.06,
+          "13": 0.04,
+          "14": 0.04,
+          "17": 0.04,
+          "18": 0.02
+        }
+      },
+      "market_probs": {
+        "home_win_prob": 0.5860383416493253,
+        "away_win_prob": 0.4139616583506747,
+        "over_prob": 0.49494445277960086,
+        "under_prob": 0.5050555472203991,
+        "spread_home_cover_prob": 0.41373450068586276,
+        "total_line": 8.5,
+        "spread_line": -1.5,
+        "n_books_ml": 16,
+        "n_books_total": 16
+      },
+      "blended_probs": {
+        "home_win_prob": 0.5931682429428102,
+        "away_win_prob": 0.40683175705718977,
+        "over_prob": 0.47790928267812705,
+        "under_prob": 0.522090717321873,
+        "home_cover_prob": 0.42060029934869647,
+        "away_cover_prob": 0.40683175705718977,
+        "expected_total": 8.56837962888878,
+        "model_confidence": 0.5804458209850573,
+        "effective_model_weight": 0.4190284725981993
+      },
+      "n_similar": 50,
+      "n_bets": 0,
+      "context_indicators": {
+        "fatigue": [
+          {
+            "team": "CLE",
+            "type": "B2B",
+            "severity": "medium"
+          },
+          {
+            "team": "CIN",
+            "type": "B2B",
+            "severity": "medium"
+          }
+        ],
+        "pitcher": [
+          {
+            "team": "CIN",
             "type": "weak",
-            "value": 21.1,
+            "value": 30.0,
             "severity": "negative"
           }
         ],
@@ -234,140 +786,139 @@
       },
       "pitcher_matchup": {
         "home": {
-          "name": "Zack Littell",
-          "era": 6.94,
-          "whip": 1.6,
-          "k_per_9": 4.21,
-          "fip": 8.25,
-          "quality_score": 21.1,
-          "handedness": "R"
+          "name": "Joey Cantillo",
+          "era": 2.98,
+          "whip": 1.32,
+          "k_per_9": 8.14,
+          "fip": 4.05,
+          "quality_score": 65.7,
+          "handedness": "L"
         },
         "away": {
-          "name": "Shane Baz",
-          "era": 5.48,
-          "whip": 1.56,
-          "k_per_9": 7.71,
-          "fip": 4.14,
-          "quality_score": 41.0,
+          "name": "Chris Paddack",
+          "era": 7.63,
+          "whip": 1.66,
+          "k_per_9": 7.92,
+          "fip": 4.86,
+          "quality_score": 30.0,
           "handedness": "R"
         }
       },
       "team_splits": {
         "home": {
-          "win_pct": 0.4,
-          "rs_pg": 5.0,
-          "ra_pg": 5.3,
-          "run_diff": -0.3,
+          "win_pct": 0.5,
+          "rs_pg": 3.8,
+          "ra_pg": 3.1,
+          "run_diff": 0.7,
           "games": 10
         },
         "away": {
-          "win_pct": 0.3,
-          "rs_pg": 4.6,
-          "ra_pg": 7.5,
-          "run_diff": -2.9,
+          "win_pct": 0.1,
+          "rs_pg": 3.1,
+          "ra_pg": 6.3,
+          "run_diff": -3.2,
           "games": 10
         }
       },
       "bullpen": {
         "home": {
-          "bullpen_era": 5.26,
-          "bullpen_whip": 1.48,
-          "bullpen_k9": 7.2,
-          "bullpen_quality": 49.7,
-          "team_era": 5.01
+          "bullpen_era": 4.07,
+          "bullpen_whip": 1.32,
+          "bullpen_k9": 8.9,
+          "bullpen_quality": 66.1,
+          "team_era": 3.88
         },
         "away": {
-          "bullpen_era": 4.83,
-          "bullpen_whip": 1.47,
-          "bullpen_k9": 8.0,
-          "bullpen_quality": 55.3,
-          "team_era": 4.6
+          "bullpen_era": 4.87,
+          "bullpen_whip": 1.51,
+          "bullpen_k9": 7.4,
+          "bullpen_quality": 52.7,
+          "team_era": 4.64
         }
       },
-      "park_factor": 100
+      "park_factor": 101
     },
     {
-      "game": "TOR @ DET",
-      "home": "DET",
-      "away": "TOR",
+      "game": "CHC @ CWS",
+      "home": "CWS",
+      "away": "CHC",
       "model_probs": {
-        "home_win_prob": 0.40432146962707505,
-        "away_win_prob": 0.5956785303729251,
-        "expected_total": 7.258813082072834,
-        "over_prob": 0.32963427764215203,
-        "under_prob": 0.670365722357848,
-        "home_cover_prob": 0.4156939690081507,
-        "away_cover_prob": 0.5843060309918493,
+        "home_win_prob": 0.46503673788404276,
+        "away_win_prob": 0.5349632621159572,
+        "expected_total": 8.735191370304886,
+        "over_prob": 0.3776673069175391,
+        "under_prob": 0.6223326930824609,
+        "home_cover_prob": 0.35032719911535143,
+        "away_cover_prob": 0.6496728008846486,
         "total_line": 8.5,
-        "spread_line": 1.5,
+        "spread_line": -1.5,
         "n_games": 50,
-        "avg_similarity": 0.7698072221331946,
-        "confidence": 0.5811311242227433,
-        "raw_confidence": 0.5094324988042205,
-        "raw_home_win_prob": 0.3881546154540607,
-        "raw_over_prob": 0.27398272097043186,
+        "avg_similarity": 0.7225187213349789,
+        "confidence": 0.5617064766906732,
+        "raw_confidence": 0.47954842567795886,
+        "raw_home_win_prob": 0.3206342722292355,
+        "raw_over_prob": 0.3350909965619524,
         "run_distribution": {
-          "0": 0.12,
-          "1": 0.04,
-          "3": 0.1,
-          "4": 0.14,
-          "5": 0.08,
-          "6": 0.02,
+          "0": 0.04,
+          "1": 0.02,
+          "2": 0.02,
+          "3": 0.08,
+          "4": 0.1,
+          "5": 0.14,
+          "6": 0.06,
           "7": 0.06,
-          "8": 0.12,
-          "9": 0.02,
-          "10": 0.04,
+          "8": 0.1,
+          "9": 0.2,
+          "10": 0.02,
           "11": 0.04,
-          "12": 0.02,
-          "14": 0.02,
-          "15": 0.14,
-          "16": 0.02,
-          "17": 0.02
+          "14": 0.04,
+          "15": 0.04,
+          "18": 0.02,
+          "20": 0.02
         }
       },
       "market_probs": {
-        "home_win_prob": 0.4628679933150909,
-        "away_win_prob": 0.5371320066849091,
-        "over_prob": 0.5062906729128819,
-        "under_prob": 0.4937093270871181,
-        "spread_home_cover_prob": 0.5872209316506607,
-        "total_line": 8.0,
+        "home_win_prob": 0.5050005483929865,
+        "away_win_prob": 0.49499945160701353,
+        "over_prob": 0.505349306602917,
+        "under_prob": 0.494650693397083,
+        "spread_home_cover_prob": 0.5517633875088508,
+        "total_line": 8.5,
         "spread_line": 1.5,
         "n_books_ml": 16,
         "n_books_total": 16
       },
       "blended_probs": {
-        "home_win_prob": 0.4420029257048184,
-        "away_win_prob": 0.5579970742951816,
-        "over_prob": 0.4396297025571213,
-        "under_prob": 0.5603702974428787,
-        "home_cover_prob": 0.4420029257048184,
-        "away_cover_prob": 0.470312746799734,
-        "expected_total": 7.844619144890153,
-        "model_confidence": 0.5811311242227433,
-        "effective_model_weight": 0.4192757625684793
+        "home_win_prob": 0.49099812446187596,
+        "away_win_prob": 0.509001875538124,
+        "over_prob": 0.4579808111720227,
+        "under_prob": 0.5420191888279773,
+        "home_cover_prob": 0.48533634955138305,
+        "away_cover_prob": 0.509001875538124,
+        "expected_total": 8.548473992580197,
+        "model_confidence": 0.5617064766906732,
+        "effective_model_weight": 0.41220893876640846
       },
       "n_similar": 50,
       "n_bets": 0,
       "context_indicators": {
         "fatigue": [
           {
-            "team": "DET",
+            "team": "CWS",
+            "type": "B2B",
+            "severity": "medium"
+          },
+          {
+            "team": "CHC",
             "type": "B2B",
             "severity": "medium"
           }
         ],
         "pitcher": [
           {
-            "team": "DET",
+            "team": "CWS",
             "type": "ace",
-            "value": 73.2,
-            "severity": "positive"
-          },
-          {
-            "team": "TOR",
-            "type": "ace",
-            "value": 78.5,
+            "value": 87.6,
             "severity": "positive"
           }
         ],
@@ -376,378 +927,259 @@
       },
       "pitcher_matchup": {
         "home": {
-          "name": "Brenan Hanifee",
-          "era": 1.08,
-          "whip": 1.08,
-          "k_per_9": 4.32,
-          "fip": 4.06,
-          "quality_score": 73.2,
+          "name": "Davis Martin",
+          "era": 1.62,
+          "whip": 1.0,
+          "k_per_9": 9.36,
+          "fip": 2.14,
+          "quality_score": 87.6,
           "handedness": "R"
         },
         "away": {
-          "name": "Trey Yesavage",
-          "era": 0.68,
-          "whip": 1.35,
-          "k_per_9": 10.13,
-          "fip": 1.98,
-          "quality_score": 78.5,
+          "name": "Jameson Taillon",
+          "era": 3.94,
+          "whip": 1.14,
+          "k_per_9": 7.88,
+          "fip": 5.53,
+          "quality_score": 62.3,
           "handedness": "R"
         }
       },
       "team_splits": {
         "home": {
-          "win_pct": 0.5,
-          "rs_pg": 4.2,
-          "ra_pg": 4.5,
-          "run_diff": -0.3,
+          "win_pct": 0.8,
+          "rs_pg": 4.9,
+          "ra_pg": 4.1,
+          "run_diff": 0.8,
           "games": 10
         },
         "away": {
-          "win_pct": 0.4,
-          "rs_pg": 4.4,
-          "ra_pg": 4.3,
+          "win_pct": 0.5,
+          "rs_pg": 3.5,
+          "ra_pg": 3.4,
           "run_diff": 0.1,
           "games": 10
         }
       },
       "bullpen": {
         "home": {
-          "bullpen_era": 4.27,
-          "bullpen_whip": 1.37,
-          "bullpen_k9": 8.2,
-          "bullpen_quality": 61.8,
-          "team_era": 4.07
+          "bullpen_era": 4.57,
+          "bullpen_whip": 1.41,
+          "bullpen_k9": 7.7,
+          "bullpen_quality": 57.5,
+          "team_era": 4.35
         },
         "away": {
-          "bullpen_era": 4.34,
-          "bullpen_whip": 1.34,
-          "bullpen_k9": 8.6,
-          "bullpen_quality": 62.9,
-          "team_era": 4.13
+          "bullpen_era": 3.99,
+          "bullpen_whip": 1.23,
+          "bullpen_k9": 7.8,
+          "bullpen_quality": 65.3,
+          "team_era": 3.8
         }
       },
       "park_factor": 100
     },
     {
-      "game": "CIN @ CLE",
-      "home": "CLE",
-      "away": "CIN",
+      "game": "TEX @ HOU",
+      "home": "HOU",
+      "away": "TEX",
       "model_probs": {
-        "home_win_prob": 0.6434710410536266,
-        "away_win_prob": 0.3565289589463734,
-        "expected_total": 8.729854658664658,
-        "over_prob": 0.5231717836822255,
-        "under_prob": 0.4768282163177745,
-        "home_cover_prob": 0.4613040430796821,
-        "away_cover_prob": 0.5386959569203179,
-        "total_line": 8.5,
-        "spread_line": -1.5,
+        "home_win_prob": 0.5823567751755401,
+        "away_win_prob": 0.41764322482446004,
+        "expected_total": 6.40446822260006,
+        "over_prob": 0.35342023345990625,
+        "under_prob": 0.6465797665400937,
+        "home_cover_prob": 0.4959704991019285,
+        "away_cover_prob": 0.5040295008980715,
+        "total_line": 8.0,
+        "spread_line": 1.5,
         "n_games": 50,
-        "avg_similarity": 0.7502407286652238,
-        "confidence": 0.5776364496438873,
-        "raw_confidence": 0.5040560763752111,
-        "raw_home_win_prob": 0.5107488307862577,
-        "raw_over_prob": 0.5308290209823394,
+        "avg_similarity": 0.7303710345079698,
+        "confidence": 0.5146766704626853,
+        "raw_confidence": 0.4071948776349005,
+        "raw_home_win_prob": 0.4943475585237079,
+        "raw_over_prob": 0.2943830829339277,
         "run_distribution": {
           "0": 0.06,
-          "2": 0.02,
-          "3": 0.04,
-          "5": 0.04,
-          "6": 0.12,
-          "7": 0.1,
-          "8": 0.1,
-          "9": 0.14,
-          "10": 0.04,
-          "11": 0.06,
-          "12": 0.04,
-          "13": 0.06,
-          "14": 0.06,
-          "16": 0.02,
-          "17": 0.04,
-          "18": 0.02,
-          "20": 0.04
-        }
-      },
-      "market_probs": {
-        "home_win_prob": 0.5580809168947307,
-        "away_win_prob": 0.44191908310526934,
-        "over_prob": 0.5082879395458724,
-        "under_prob": 0.49171206045412763,
-        "spread_home_cover_prob": 0.37775412527024793,
-        "total_line": 8.0,
-        "spread_line": -1.5,
-        "n_books_ml": 16,
-        "n_books_total": 16
-      },
-      "blended_probs": {
-        "home_win_prob": 0.5884209852732325,
-        "away_win_prob": 0.4115790147267675,
-        "over_prob": 0.5138874183801122,
-        "under_prob": 0.4861125816198878,
-        "home_cover_prob": 0.40569409932476974,
-        "away_cover_prob": 0.4115790147267675,
-        "expected_total": 8.152544436617326,
-        "model_confidence": 0.5776364496438873,
-        "effective_model_weight": 0.4180131888078126
-      },
-      "n_similar": 50,
-      "n_bets": 1,
-      "context_indicators": {
-        "fatigue": [
-          {
-            "team": "CIN",
-            "type": "B2B",
-            "severity": "medium"
-          }
-        ],
-        "pitcher": [],
-        "splits": [],
-        "park": []
-      },
-      "pitcher_matchup": {
-        "home": {
-          "name": "Tanner Bibee",
-          "era": 4.17,
-          "whip": 1.35,
-          "k_per_9": 8.93,
-          "fip": 4.31,
-          "quality_score": 58.8,
-          "handedness": "R"
-        },
-        "away": {
-          "name": "Andrew Abbott",
-          "era": 4.47,
-          "whip": 1.51,
-          "k_per_9": 6.41,
-          "fip": 4.37,
-          "quality_score": 46.7,
-          "handedness": "L"
-        }
-      },
-      "team_splits": {
-        "home": {
-          "win_pct": 0.5,
-          "rs_pg": 3.1,
-          "ra_pg": 2.4,
-          "run_diff": 0.7,
-          "games": 10
-        },
-        "away": {
-          "win_pct": 0.1,
-          "rs_pg": 4.3,
-          "ra_pg": 7.9,
-          "run_diff": -3.6,
-          "games": 10
-        }
-      },
-      "bullpen": {
-        "home": {
-          "bullpen_era": 4.0,
-          "bullpen_whip": 1.31,
-          "bullpen_k9": 9.0,
-          "bullpen_quality": 67.1,
-          "team_era": 3.81
-        },
-        "away": {
-          "bullpen_era": 4.84,
-          "bullpen_whip": 1.5,
-          "bullpen_k9": 7.4,
-          "bullpen_quality": 53.2,
-          "team_era": 4.61
-        }
-      },
-      "park_factor": 101
-    },
-    {
-      "game": "MIA @ TB",
-      "home": "TB",
-      "away": "MIA",
-      "model_probs": {
-        "home_win_prob": 0.6107626188113242,
-        "away_win_prob": 0.3892373811886759,
-        "expected_total": 9.010206347109314,
-        "over_prob": 0.5345006252612485,
-        "under_prob": 0.46549937473875147,
-        "home_cover_prob": 0.4801636608751365,
-        "away_cover_prob": 0.5198363391248635,
-        "total_line": 8.0,
-        "spread_line": -1.5,
-        "n_games": 50,
-        "avg_similarity": 0.7323636262854558,
-        "confidence": 0.4607231126318659,
-        "raw_confidence": 0.3241894040490244,
-        "raw_home_win_prob": 0.5315893051061125,
-        "raw_over_prob": 0.5507604172598953,
-        "run_distribution": {
-          "0": 0.06,
+          "1": 0.06,
           "2": 0.04,
           "3": 0.04,
-          "4": 0.06,
-          "5": 0.06,
+          "4": 0.08,
+          "5": 0.16,
           "6": 0.1,
-          "7": 0.08,
-          "8": 0.1,
-          "9": 0.12,
-          "10": 0.04,
-          "13": 0.1,
-          "14": 0.06,
-          "16": 0.04,
-          "17": 0.04,
+          "7": 0.1,
+          "8": 0.06,
+          "9": 0.06,
+          "10": 0.06,
+          "11": 0.1,
+          "15": 0.04,
           "18": 0.02,
-          "20": 0.02,
-          "21": 0.02
+          "20": 0.02
         }
       },
       "market_probs": {
-        "home_win_prob": 0.5247549033116423,
-        "away_win_prob": 0.4752450966883577,
-        "over_prob": 0.49864148353257154,
-        "under_prob": 0.5013585164674285,
-        "spread_home_cover_prob": 0.48274817555373806,
+        "home_win_prob": 0.42866207127438277,
+        "away_win_prob": 0.5713379287256172,
+        "over_prob": 0.49818975962633577,
+        "under_prob": 0.5018102403736642,
+        "spread_home_cover_prob": 0.5541221583495293,
         "total_line": 8.0,
         "spread_line": 1.5,
         "n_books_ml": 16,
         "n_books_total": 16
       },
       "blended_probs": {
-        "home_win_prob": 0.5520471336090675,
-        "away_win_prob": 0.44795286639093246,
-        "over_prob": 0.5106897645744606,
-        "under_prob": 0.4893102354255394,
-        "home_cover_prob": 0.48197629219250104,
-        "away_cover_prob": 0.44795286639093246,
-        "expected_total": 8.18856573857117,
-        "model_confidence": 0.4607231126318659,
-        "effective_model_weight": 0.37332123107471327
+        "home_win_prob": 0.48020958930185087,
+        "away_win_prob": 0.5197904106981491,
+        "over_prob": 0.44677952412908556,
+        "under_prob": 0.5532204758709145,
+        "home_cover_prob": 0.48020958930185087,
+        "away_cover_prob": 0.46423400986497076,
+        "expected_total": 7.685221259413785,
+        "model_confidence": 0.5146766704626853,
+        "effective_model_weight": 0.3945753322433656
       },
       "n_similar": 50,
-      "n_bets": 1,
+      "n_bets": 0,
       "context_indicators": {
         "fatigue": [
           {
-            "team": "MIA",
+            "team": "HOU",
+            "type": "B2B",
+            "severity": "medium"
+          },
+          {
+            "team": "TEX",
             "type": "B2B",
             "severity": "medium"
           }
         ],
-        "pitcher": [],
+        "pitcher": [
+          {
+            "team": "TEX",
+            "type": "ace",
+            "value": 89.7,
+            "severity": "positive"
+          }
+        ],
         "splits": [],
         "park": []
       },
       "pitcher_matchup": {
         "home": {
-          "name": "Jesse Scholtens",
-          "era": 3.29,
-          "whip": 1.17,
-          "k_per_9": 6.91,
-          "fip": 4.56,
-          "quality_score": 63.0,
+          "name": "Kai-Wei Teng",
+          "era": 3.12,
+          "whip": 1.08,
+          "k_per_9": 7.96,
+          "fip": 3.75,
+          "quality_score": 69.9,
           "handedness": "R"
         },
         "away": {
-          "name": "Janson Junk",
-          "era": 3.25,
-          "whip": 1.11,
-          "k_per_9": 6.7,
-          "fip": 3.46,
-          "quality_score": 68.6,
+          "name": "Jacob deGrom",
+          "era": 2.62,
+          "whip": 0.92,
+          "k_per_9": 11.49,
+          "fip": 2.83,
+          "quality_score": 89.7,
           "handedness": "R"
         }
       },
       "team_splits": {
         "home": {
-          "win_pct": 1.0,
-          "rs_pg": 4.3,
-          "ra_pg": 1.1,
-          "run_diff": 3.2,
+          "win_pct": 0.5,
+          "rs_pg": 3.3,
+          "ra_pg": 5.3,
+          "run_diff": -2.0,
           "games": 10
         },
         "away": {
-          "win_pct": 0.4,
-          "rs_pg": 3.5,
-          "ra_pg": 4.7,
-          "run_diff": -1.2,
+          "win_pct": 0.2,
+          "rs_pg": 2.4,
+          "ra_pg": 5.2,
+          "run_diff": -2.8,
           "games": 10
         }
       },
       "bullpen": {
         "home": {
-          "bullpen_era": 3.66,
-          "bullpen_whip": 1.21,
-          "bullpen_k9": 7.4,
-          "bullpen_quality": 67.0,
-          "team_era": 3.49
+          "bullpen_era": 5.74,
+          "bullpen_whip": 1.61,
+          "bullpen_k9": 8.4,
+          "bullpen_quality": 47.0,
+          "team_era": 5.47
         },
         "away": {
-          "bullpen_era": 4.38,
-          "bullpen_whip": 1.31,
-          "bullpen_k9": 8.2,
-          "bullpen_quality": 61.8,
-          "team_era": 4.17
+          "bullpen_era": 3.78,
+          "bullpen_whip": 1.27,
+          "bullpen_k9": 8.3,
+          "bullpen_quality": 67.6,
+          "team_era": 3.6
         }
       },
-      "park_factor": 97
+      "park_factor": 100
     },
     {
       "game": "MIL @ MIN",
       "home": "MIN",
       "away": "MIL",
       "model_probs": {
-        "home_win_prob": 0.4323093342545748,
-        "away_win_prob": 0.5676906791564704,
-        "expected_total": 8.511174015902448,
-        "over_prob": 0.37903160100015665,
-        "under_prob": 0.6209683989998434,
-        "home_cover_prob": 0.4382442129278358,
-        "away_cover_prob": 0.5617557870721642,
-        "total_line": 9.0,
-        "spread_line": -1.5,
+        "home_win_prob": 0.40880373663948644,
+        "away_win_prob": 0.5911962499494685,
+        "expected_total": 7.346654109495686,
+        "over_prob": 0.3974738956878471,
+        "under_prob": 0.6025261043121529,
+        "home_cover_prob": 0.5101077032314406,
+        "away_cover_prob": 0.4898922967685594,
+        "total_line": 8.5,
+        "spread_line": 1.5,
         "n_games": 50,
-        "avg_similarity": 0.6971676109580239,
-        "confidence": 0.43606586477708603,
-        "raw_confidence": 0.28625517658013233,
-        "raw_home_win_prob": 0.5590483064433206,
-        "raw_over_prob": 0.31795632497460524,
+        "avg_similarity": 0.6941805399178709,
+        "confidence": 0.45763906715494096,
+        "raw_confidence": 0.3194447186999092,
+        "raw_home_win_prob": 0.5149130023539451,
+        "raw_over_prob": 0.3487320017279499,
         "run_distribution": {
           "0": 0.08,
           "1": 0.04,
+          "2": 0.02,
           "3": 0.04,
-          "4": 0.08,
-          "5": 0.16,
-          "6": 0.06,
-          "7": 0.06,
-          "8": 0.04,
-          "9": 0.02,
-          "10": 0.12,
-          "11": 0.14,
-          "12": 0.02,
-          "13": 0.04,
-          "15": 0.04,
-          "18": 0.04,
-          "19": 0.02
+          "4": 0.04,
+          "5": 0.04,
+          "6": 0.14,
+          "7": 0.12,
+          "8": 0.12,
+          "9": 0.06,
+          "10": 0.08,
+          "11": 0.06,
+          "14": 0.02,
+          "15": 0.06,
+          "16": 0.04,
+          "18": 0.02,
+          "20": 0.02
         }
       },
       "market_probs": {
-        "home_win_prob": 0.4990163590002345,
-        "away_win_prob": 0.5009836409997656,
-        "over_prob": 0.5125482002326046,
-        "under_prob": 0.4874517997673954,
-        "spread_home_cover_prob": 0.592328055282609,
-        "total_line": 9.0,
+        "home_win_prob": 0.4659754317650447,
+        "away_win_prob": 0.5340245682349554,
+        "over_prob": 0.48715671177667547,
+        "under_prob": 0.5128432882233245,
+        "spread_home_cover_prob": 0.585200928387987,
+        "total_line": 8.5,
         "spread_line": 1.5,
         "n_books_ml": 16,
         "n_books_total": 16
       },
       "blended_probs": {
-        "home_win_prob": 0.47842290321227726,
-        "away_win_prob": 0.5215770967877227,
-        "over_prob": 0.4689050082412181,
-        "under_prob": 0.5310949917587819,
-        "home_cover_prob": 0.47842290321227726,
-        "away_cover_prob": 0.4524418135547973,
-        "expected_total": 8.911230653479329,
-        "model_confidence": 0.43606586477708603,
-        "effective_model_weight": 0.36319405845232183
+        "home_win_prob": 0.44789435749247497,
+        "away_win_prob": 0.552105642507525,
+        "over_prob": 0.4571252839026777,
+        "under_prob": 0.5428747160973223,
+        "home_cover_prob": 0.44789435749247497,
+        "away_cover_prob": 0.4371509990773199,
+        "expected_total": 8.285437504238732,
+        "model_confidence": 0.45763906715494096,
+        "effective_model_weight": 0.372069641081303
       },
       "n_similar": 50,
       "n_bets": 0,
@@ -768,7 +1200,13 @@
           {
             "team": "MIN",
             "type": "ace",
-            "value": 72.8,
+            "value": 73.3,
+            "severity": "positive"
+          },
+          {
+            "team": "MIL",
+            "type": "ace",
+            "value": 75.8,
             "severity": "positive"
           }
         ],
@@ -777,54 +1215,54 @@
       },
       "pitcher_matchup": {
         "home": {
-          "name": "Joe Ryan",
-          "era": 3.43,
-          "whip": 1.03,
-          "k_per_9": 9.07,
-          "fip": 2.83,
-          "quality_score": 72.8,
-          "handedness": "R"
+          "name": "Connor Prielipp",
+          "era": 3.32,
+          "whip": 1.0,
+          "k_per_9": 9.95,
+          "fip": 4.05,
+          "quality_score": 73.3,
+          "handedness": "L"
         },
         "away": {
-          "name": "TBD",
-          "era": 4.5,
-          "whip": 1.3,
-          "k_per_9": 8.0,
-          "fip": 4.3,
-          "quality_score": 50,
+          "name": "Logan Henderson",
+          "era": 4.15,
+          "whip": 0.92,
+          "k_per_9": 11.08,
+          "fip": 2.1,
+          "quality_score": 75.8,
           "handedness": "R"
         }
       },
       "team_splits": {
         "home": {
-          "win_pct": 0.4,
-          "rs_pg": 4.3,
-          "ra_pg": 5.5,
-          "run_diff": -1.2,
+          "win_pct": 0.5,
+          "rs_pg": 4.4,
+          "ra_pg": 4.3,
+          "run_diff": 0.1,
           "games": 10
         },
         "away": {
-          "win_pct": 0.6,
-          "rs_pg": 4.3,
+          "win_pct": 0.5,
+          "rs_pg": 3.2,
           "ra_pg": 2.8,
-          "run_diff": 1.5,
+          "run_diff": 0.4,
           "games": 10
         }
       },
       "bullpen": {
         "home": {
-          "bullpen_era": 4.71,
-          "bullpen_whip": 1.4,
+          "bullpen_era": 4.65,
+          "bullpen_whip": 1.39,
           "bullpen_k9": 7.3,
-          "bullpen_quality": 55.5,
-          "team_era": 4.49
+          "bullpen_quality": 56.2,
+          "team_era": 4.43
         },
         "away": {
-          "bullpen_era": 3.52,
-          "bullpen_whip": 1.27,
-          "bullpen_k9": 9.4,
-          "bullpen_quality": 72.6,
-          "team_era": 3.35
+          "bullpen_era": 3.49,
+          "bullpen_whip": 1.26,
+          "bullpen_k9": 9.3,
+          "bullpen_quality": 72.8,
+          "team_era": 3.32
         }
       },
       "park_factor": 101
@@ -834,66 +1272,65 @@
       "home": "ATL",
       "away": "BOS",
       "model_probs": {
-        "home_win_prob": 0.7288025865734289,
-        "away_win_prob": 0.27119741342657117,
-        "expected_total": 11.536221635496924,
-        "over_prob": 0.5348215096518127,
-        "under_prob": 0.46517849034818726,
-        "home_cover_prob": 0.46229429078632767,
-        "away_cover_prob": 0.5377057092136723,
-        "total_line": 8.0,
+        "home_win_prob": 0.6937550712555287,
+        "away_win_prob": 0.3062449287444714,
+        "expected_total": 10.245158185900658,
+        "over_prob": 0.5508408916705851,
+        "under_prob": 0.44915910832941486,
+        "home_cover_prob": 0.4283838773654557,
+        "away_cover_prob": 0.5716161226345443,
+        "total_line": 7.5,
         "spread_line": -1.5,
         "n_games": 50,
-        "avg_similarity": 0.663429058520413,
-        "confidence": 0.49404781228091343,
-        "raw_confidence": 0.37545817273986687,
-        "raw_home_win_prob": 0.6009651938144029,
-        "raw_over_prob": 0.5497319933062285,
+        "avg_similarity": 0.6441382927124945,
+        "confidence": 0.39419617922560934,
+        "raw_confidence": 0.22184027573170662,
+        "raw_home_win_prob": 0.49640343314175456,
+        "raw_over_prob": 0.5795960817798272,
         "run_distribution": {
-          "0": 0.06,
+          "0": 0.04,
+          "1": 0.06,
           "2": 0.04,
           "3": 0.08,
-          "4": 0.06,
-          "5": 0.08,
-          "6": 0.08,
-          "7": 0.06,
-          "8": 0.04,
-          "9": 0.04,
+          "4": 0.04,
+          "5": 0.04,
+          "6": 0.06,
+          "7": 0.08,
+          "8": 0.08,
+          "9": 0.12,
           "10": 0.04,
-          "11": 0.14,
-          "12": 0.02,
-          "13": 0.04,
-          "14": 0.06,
-          "15": 0.06,
-          "16": 0.02,
+          "11": 0.08,
+          "13": 0.1,
+          "14": 0.04,
+          "15": 0.04,
           "19": 0.02,
-          "20": 0.06
+          "20": 0.04
         }
       },
       "market_probs": {
-        "home_win_prob": 0.5809503936135453,
-        "away_win_prob": 0.4190496063864547,
-        "over_prob": 0.49955861365155163,
-        "under_prob": 0.5004413863484484,
-        "spread_home_cover_prob": 0.4043134086940603,
-        "total_line": 8.0,
+        "home_win_prob": 0.5385935142294034,
+        "away_win_prob": 0.4614064857705966,
+        "over_prob": 0.5127025890129789,
+        "under_prob": 0.48729741098702106,
+        "spread_home_cover_prob": 0.37887654269905713,
+        "total_line": 7.5,
         "spread_line": -1.5,
         "n_books_ml": 16,
         "n_books_total": 16
       },
       "blended_probs": {
-        "home_win_prob": 0.6295344616033607,
-        "away_win_prob": 0.3704655383966393,
-        "over_prob": 0.5118275712483448,
-        "under_prob": 0.48817242875165523,
-        "home_cover_prob": 0.42224513018547777,
-        "away_cover_prob": 0.3704655383966393,
-        "expected_total": 8.683528552984367,
-        "model_confidence": 0.49404781228091343,
-        "effective_model_weight": 0.38658694134046523
+        "home_win_prob": 0.5841365472128767,
+        "away_win_prob": 0.41586345278712333,
+        "over_prob": 0.5245554383780779,
+        "under_prob": 0.47544456162192206,
+        "home_cover_prob": 0.3925531515877698,
+        "away_cover_prob": 0.41586345278712333,
+        "expected_total": 7.973975915629497,
+        "model_confidence": 0.39419617922560934,
+        "effective_model_weight": 0.34531774384723823
       },
       "n_similar": 50,
-      "n_bets": 1,
+      "n_bets": 0,
       "context_indicators": {
         "fatigue": [
           {
@@ -911,7 +1348,13 @@
           {
             "team": "ATL",
             "type": "ace",
-            "value": 72.2,
+            "value": 81.8,
+            "severity": "positive"
+          },
+          {
+            "team": "BOS",
+            "type": "ace",
+            "value": 90.1,
             "severity": "positive"
           }
         ],
@@ -920,54 +1363,54 @@
       },
       "pitcher_matchup": {
         "home": {
-          "name": "Spencer Strider",
-          "era": 2.89,
-          "whip": 1.29,
-          "k_per_9": 13.5,
-          "fip": 3.74,
-          "quality_score": 72.2,
+          "name": "Bryce Elder",
+          "era": 1.81,
+          "whip": 1.01,
+          "k_per_9": 8.73,
+          "fip": 2.97,
+          "quality_score": 81.8,
           "handedness": "R"
         },
         "away": {
-          "name": "Connelly Early",
-          "era": 3.16,
-          "whip": 1.22,
-          "k_per_9": 8.23,
-          "fip": 4.06,
-          "quality_score": 66.3,
+          "name": "Payton Tolle",
+          "era": 1.99,
+          "whip": 0.84,
+          "k_per_9": 10.72,
+          "fip": 2.66,
+          "quality_score": 90.1,
           "handedness": "L"
         }
       },
       "team_splits": {
         "home": {
-          "win_pct": 0.6,
-          "rs_pg": 4.1,
-          "ra_pg": 3.6,
-          "run_diff": 0.5,
+          "win_pct": 0.7,
+          "rs_pg": 4.0,
+          "ra_pg": 2.9,
+          "run_diff": 1.1,
           "games": 10
         },
         "away": {
           "win_pct": 0.7,
-          "rs_pg": 6.7,
-          "ra_pg": 3.3,
-          "run_diff": 3.4,
+          "rs_pg": 5.4,
+          "ra_pg": 2.8,
+          "run_diff": 2.6,
           "games": 10
         }
       },
       "bullpen": {
         "home": {
-          "bullpen_era": 3.17,
+          "bullpen_era": 3.14,
           "bullpen_whip": 1.17,
           "bullpen_k9": 8.5,
-          "bullpen_quality": 74.3,
-          "team_era": 3.02
+          "bullpen_quality": 74.5,
+          "team_era": 2.99
         },
         "away": {
-          "bullpen_era": 4.02,
-          "bullpen_whip": 1.3,
-          "bullpen_k9": 7.9,
-          "bullpen_quality": 64.1,
-          "team_era": 3.83
+          "bullpen_era": 3.93,
+          "bullpen_whip": 1.29,
+          "bullpen_k9": 8.0,
+          "bullpen_quality": 65.2,
+          "team_era": 3.74
         }
       },
       "park_factor": 102
@@ -977,69 +1420,73 @@
       "home": "NYM",
       "away": "NYY",
       "model_probs": {
-        "home_win_prob": 0.4726694645528615,
-        "away_win_prob": 0.5273305220360935,
-        "expected_total": 9.361846065948685,
-        "over_prob": 0.602571706855526,
-        "under_prob": 0.39742829314447403,
-        "home_cover_prob": 0.5075194649704695,
-        "away_cover_prob": 0.4924805350295305,
-        "total_line": 7.0,
+        "home_win_prob": 0.5364823510816249,
+        "away_win_prob": 0.46351764891837516,
+        "expected_total": 8.786037954494487,
+        "over_prob": 0.37983568922523325,
+        "under_prob": 0.6201643107747667,
+        "home_cover_prob": 0.547963341180222,
+        "away_cover_prob": 0.45203665881977795,
+        "total_line": 8.5,
         "spread_line": 1.5,
         "n_games": 50,
-        "avg_similarity": 0.7051465329607919,
-        "confidence": 0.44955353119698305,
-        "raw_confidence": 0.3070054326107431,
-        "raw_home_win_prob": 0.5111763387095578,
-        "raw_over_prob": 0.652454482112341,
+        "avg_similarity": 0.7006019476763425,
+        "confidence": 0.46887259085252453,
+        "raw_confidence": 0.3367270628500378,
+        "raw_home_win_prob": 0.5700510937479172,
+        "raw_over_prob": 0.32449843584482985,
         "run_distribution": {
-          "0": 0.06,
+          "0": 0.04,
+          "1": 0.02,
           "2": 0.04,
-          "3": 0.06,
+          "3": 0.08,
           "4": 0.06,
-          "5": 0.06,
-          "6": 0.04,
-          "7": 0.12,
-          "8": 0.08,
-          "9": 0.1,
-          "10": 0.02,
-          "11": 0.1,
+          "5": 0.1,
+          "6": 0.06,
+          "7": 0.08,
+          "8": 0.14,
+          "9": 0.14,
+          "10": 0.04,
+          "11": 0.08,
           "12": 0.06,
-          "13": 0.06,
           "14": 0.02,
-          "15": 0.04,
-          "17": 0.02,
-          "20": 0.06
+          "15": 0.02,
+          "18": 0.02
         }
       },
       "market_probs": {
-        "home_win_prob": 0.4170048618785136,
-        "away_win_prob": 0.5829951381214864,
-        "over_prob": 0.5065864824883575,
-        "under_prob": 0.49341351751164253,
-        "spread_home_cover_prob": 0.5602842404525549,
-        "total_line": 7.0,
+        "home_win_prob": 0.4666664023080451,
+        "away_win_prob": 0.533333597691955,
+        "over_prob": 0.491845622983359,
+        "under_prob": 0.508154377016641,
+        "spread_home_cover_prob": 0.5864807243676253,
+        "total_line": 8.5,
         "spread_line": 1.5,
         "n_books_ml": 16,
         "n_books_total": 16
       },
       "blended_probs": {
-        "home_win_prob": 0.43445309420699874,
-        "away_win_prob": 0.5655469057930013,
-        "over_prob": 0.5384431461268951,
-        "under_prob": 0.46155685387310486,
-        "home_cover_prob": 0.43445309420699874,
-        "away_cover_prob": 0.455282134157732,
-        "expected_total": 7.435486793728424,
-        "model_confidence": 0.44955353119698305,
-        "effective_model_weight": 0.36876814285820214
+        "home_win_prob": 0.4890156898113307,
+        "away_win_prob": 0.5109843101886693,
+        "over_prob": 0.45388011963308705,
+        "under_prob": 0.546119880366913,
+        "home_cover_prob": 0.4890156898113307,
+        "away_cover_prob": 0.4251240546124868,
+        "expected_total": 8.553862161820573,
+        "model_confidence": 0.46887259085252453,
+        "effective_model_weight": 0.3766084953010071
       },
       "n_similar": 50,
-      "n_bets": 1,
+      "n_bets": 0,
       "context_indicators": {
         "fatigue": [
           {
             "team": "NYM",
+            "type": "B2B",
+            "severity": "medium"
+          },
+          {
+            "team": "NYY",
             "type": "B2B",
             "severity": "medium"
           }
@@ -1048,14 +1495,14 @@
           {
             "team": "NYM",
             "type": "ace",
-            "value": 77.9,
+            "value": 75.1,
             "severity": "positive"
           },
           {
             "team": "NYY",
-            "type": "ace",
-            "value": 91.6,
-            "severity": "positive"
+            "type": "weak",
+            "value": 30.9,
+            "severity": "negative"
           }
         ],
         "splits": [],
@@ -1063,815 +1510,140 @@
       },
       "pitcher_matchup": {
         "home": {
-          "name": "Clay Holmes",
-          "era": 1.86,
-          "whip": 1.01,
-          "k_per_9": 6.89,
-          "fip": 3.37,
-          "quality_score": 77.9,
+          "name": "Huascar Brazob\u00e1n",
+          "era": 2.14,
+          "whip": 0.95,
+          "k_per_9": 6.86,
+          "fip": 3.34,
+          "quality_score": 75.1,
           "handedness": "R"
         },
         "away": {
-          "name": "Cam Schlittler",
-          "era": 1.35,
-          "whip": 0.81,
-          "k_per_9": 9.96,
-          "fip": 1.64,
-          "quality_score": 91.6,
-          "handedness": "R"
+          "name": "Carlos Rod\u00f3n",
+          "era": 6.23,
+          "whip": 1.62,
+          "k_per_9": 8.31,
+          "fip": 4.72,
+          "quality_score": 30.9,
+          "handedness": "L"
         }
       },
       "team_splits": {
         "home": {
           "win_pct": 0.4,
-          "rs_pg": 3.7,
-          "ra_pg": 3.3,
-          "run_diff": 0.4,
+          "rs_pg": 3.9,
+          "ra_pg": 3.8,
+          "run_diff": 0.1,
           "games": 10
         },
         "away": {
           "win_pct": 0.3,
-          "rs_pg": 2.4,
+          "rs_pg": 2.5,
           "ra_pg": 3.7,
-          "run_diff": -1.3,
+          "run_diff": -1.2,
           "games": 10
         }
       },
       "bullpen": {
         "home": {
-          "bullpen_era": 3.94,
-          "bullpen_whip": 1.3,
+          "bullpen_era": 3.97,
+          "bullpen_whip": 1.31,
           "bullpen_k9": 9.0,
-          "bullpen_quality": 67.7,
-          "team_era": 3.75
+          "bullpen_quality": 67.4,
+          "team_era": 3.78
         },
         "away": {
-          "bullpen_era": 3.38,
+          "bullpen_era": 3.35,
           "bullpen_whip": 1.18,
-          "bullpen_k9": 8.4,
-          "bullpen_quality": 72.4,
-          "team_era": 3.22
+          "bullpen_k9": 8.5,
+          "bullpen_quality": 72.7,
+          "team_era": 3.19
         }
       },
       "park_factor": 98
-    },
-    {
-      "game": "CHC @ CWS",
-      "home": "CWS",
-      "away": "CHC",
-      "model_probs": {
-        "home_win_prob": 0.6233745115094576,
-        "away_win_prob": 0.37662548849054245,
-        "expected_total": 8.49397910432656,
-        "over_prob": 0.45241152389638645,
-        "under_prob": 0.5475884761036136,
-        "home_cover_prob": 0.524262100836218,
-        "away_cover_prob": 0.47573789916378195,
-        "total_line": 8.5,
-        "spread_line": 1.5,
-        "n_games": 50,
-        "avg_similarity": 0.7314747478520494,
-        "confidence": 0.50963291498424,
-        "raw_confidence": 0.3994352538219077,
-        "raw_home_win_prob": 0.5341828488584756,
-        "raw_over_prob": 0.4329526450724054,
-        "run_distribution": {
-          "0": 0.06,
-          "2": 0.04,
-          "3": 0.02,
-          "4": 0.06,
-          "5": 0.1,
-          "6": 0.1,
-          "7": 0.12,
-          "8": 0.1,
-          "9": 0.08,
-          "10": 0.04,
-          "11": 0.06,
-          "12": 0.04,
-          "13": 0.02,
-          "14": 0.02,
-          "15": 0.04,
-          "17": 0.02,
-          "20": 0.08
-        }
-      },
-      "market_probs": {
-        "home_win_prob": 0.4308749310827849,
-        "away_win_prob": 0.569125068917215,
-        "over_prob": 0.4912138331929963,
-        "under_prob": 0.5087861668070037,
-        "spread_home_cover_prob": 0.5550957411383991,
-        "total_line": 8.5,
-        "spread_line": 1.5,
-        "n_books_ml": 16,
-        "n_books_total": 16
-      },
-      "blended_probs": {
-        "home_win_prob": 0.4951200499780107,
-        "away_win_prob": 0.5048799500219894,
-        "over_prob": 0.4775021267492415,
-        "under_prob": 0.5224978732507586,
-        "home_cover_prob": 0.4951200499780107,
-        "away_cover_prob": 0.4545894057757883,
-        "expected_total": 8.498817986244472,
-        "model_confidence": 0.50963291498424,
-        "effective_model_weight": 0.39263718211948884
-      },
-      "n_similar": 50,
-      "n_bets": 0,
-      "context_indicators": {
-        "fatigue": [
-          {
-            "team": "CWS",
-            "type": "B2B",
-            "severity": "medium"
-          },
-          {
-            "team": "CHC",
-            "type": "B2B",
-            "severity": "medium"
-          }
-        ],
-        "pitcher": [],
-        "splits": [],
-        "park": []
-      },
-      "pitcher_matchup": {
-        "home": {
-          "name": "Sean Burke",
-          "era": 3.68,
-          "whip": 1.09,
-          "k_per_9": 7.36,
-          "fip": 3.62,
-          "quality_score": 66.6,
-          "handedness": "R"
-        },
-        "away": {
-          "name": "Edward Cabrera",
-          "era": 3.88,
-          "whip": 1.32,
-          "k_per_9": 8.35,
-          "fip": 4.18,
-          "quality_score": 61.8,
-          "handedness": "R"
-        }
-      },
-      "team_splits": {
-        "home": {
-          "win_pct": 0.9,
-          "rs_pg": 5.6,
-          "ra_pg": 3.8,
-          "run_diff": 1.8,
-          "games": 10
-        },
-        "away": {
-          "win_pct": 0.4,
-          "rs_pg": 3.2,
-          "ra_pg": 4.1,
-          "run_diff": -0.9,
-          "games": 10
-        }
-      },
-      "bullpen": {
-        "home": {
-          "bullpen_era": 4.43,
-          "bullpen_whip": 1.39,
-          "bullpen_k9": 7.7,
-          "bullpen_quality": 58.8,
-          "team_era": 4.22
-        },
-        "away": {
-          "bullpen_era": 3.96,
-          "bullpen_whip": 1.23,
-          "bullpen_k9": 7.9,
-          "bullpen_quality": 65.8,
-          "team_era": 3.77
-        }
-      },
-      "park_factor": 100
-    },
-    {
-      "game": "TEX @ HOU",
-      "home": "HOU",
-      "away": "TEX",
-      "model_probs": {
-        "home_win_prob": 0.45948772342814304,
-        "away_win_prob": 0.540512289982902,
-        "expected_total": 7.744099432941626,
-        "over_prob": 0.3337206519546372,
-        "under_prob": 0.6662793480453628,
-        "home_cover_prob": 0.4980501001858945,
-        "away_cover_prob": 0.5019498998141054,
-        "total_line": 8.5,
-        "spread_line": 1.5,
-        "n_games": 50,
-        "avg_similarity": 0.7301517763404003,
-        "confidence": 0.46608008800573514,
-        "raw_confidence": 0.3324309046242079,
-        "raw_home_win_prob": 0.49714497990983914,
-        "raw_over_prob": 0.2565357584968283,
-        "run_distribution": {
-          "0": 0.1,
-          "1": 0.02,
-          "3": 0.1,
-          "4": 0.12,
-          "5": 0.08,
-          "6": 0.06,
-          "7": 0.14,
-          "8": 0.1,
-          "9": 0.02,
-          "10": 0.04,
-          "11": 0.04,
-          "14": 0.02,
-          "15": 0.12,
-          "17": 0.02,
-          "18": 0.02
-        }
-      },
-      "market_probs": {
-        "home_win_prob": 0.497691985073043,
-        "away_win_prob": 0.502308014926957,
-        "over_prob": 0.511191375426161,
-        "under_prob": 0.488808624573839,
-        "spread_home_cover_prob": 0.6139348036294916,
-        "total_line": 8.5,
-        "spread_line": 1.5,
-        "n_books_ml": 16,
-        "n_books_total": 16
-      },
-      "blended_probs": {
-        "home_win_prob": 0.48549861652833776,
-        "away_win_prob": 0.5145013834716623,
-        "over_prob": 0.4512174889411277,
-        "under_prob": 0.5487825110588723,
-        "home_cover_prob": 0.48549861652833776,
-        "away_cover_prob": 0.42087560046910377,
-        "expected_total": 8.35808521629827,
-        "model_confidence": 0.46608008800573514,
-        "effective_model_weight": 0.37548532144643804
-      },
-      "n_similar": 50,
-      "n_bets": 0,
-      "context_indicators": {
-        "fatigue": [
-          {
-            "team": "TEX",
-            "type": "well-rested",
-            "severity": "positive"
-          }
-        ],
-        "pitcher": [
-          {
-            "team": "HOU",
-            "type": "ace",
-            "value": 72.8,
-            "severity": "positive"
-          }
-        ],
-        "splits": [],
-        "park": []
-      },
-      "pitcher_matchup": {
-        "home": {
-          "name": "Spencer Arrighetti",
-          "era": 1.88,
-          "whip": 1.33,
-          "k_per_9": 9.42,
-          "fip": 3.24,
-          "quality_score": 72.8,
-          "handedness": "R"
-        },
-        "away": {
-          "name": "Jack Leiter",
-          "era": 4.85,
-          "whip": 1.43,
-          "k_per_9": 10.34,
-          "fip": 4.2,
-          "quality_score": 54.8,
-          "handedness": "R"
-        }
-      },
-      "team_splits": {
-        "home": {
-          "win_pct": 0.3,
-          "rs_pg": 3.0,
-          "ra_pg": 6.5,
-          "run_diff": -3.5,
-          "games": 10
-        },
-        "away": {
-          "win_pct": 0.2,
-          "rs_pg": 2.8,
-          "ra_pg": 5.7,
-          "run_diff": -2.9,
-          "games": 10
-        }
-      },
-      "bullpen": {
-        "home": {
-          "bullpen_era": 5.87,
-          "bullpen_whip": 1.63,
-          "bullpen_k9": 8.5,
-          "bullpen_quality": 45.9,
-          "team_era": 5.59
-        },
-        "away": {
-          "bullpen_era": 3.81,
-          "bullpen_whip": 1.27,
-          "bullpen_k9": 8.3,
-          "bullpen_quality": 67.2,
-          "team_era": 3.63
-        }
-      },
-      "park_factor": 100
-    },
-    {
-      "game": "KC @ STL",
-      "home": "STL",
-      "away": "KC",
-      "model_probs": {
-        "home_win_prob": 0.6497154749473619,
-        "away_win_prob": 0.35028452505263813,
-        "expected_total": 8.779471233423173,
-        "over_prob": 0.4963191894036206,
-        "under_prob": 0.5036808105963795,
-        "home_cover_prob": 0.44343369936616217,
-        "away_cover_prob": 0.5565663006338378,
-        "total_line": 8.5,
-        "spread_line": -1.5,
-        "n_games": 50,
-        "avg_similarity": 0.758962299008673,
-        "confidence": 0.5135804613984645,
-        "raw_confidence": 0.40550840215148376,
-        "raw_home_win_prob": 0.5222978479420676,
-        "raw_over_prob": 0.49483179833365054,
-        "run_distribution": {
-          "0": 0.06,
-          "2": 0.02,
-          "3": 0.04,
-          "4": 0.06,
-          "5": 0.06,
-          "6": 0.04,
-          "7": 0.12,
-          "8": 0.12,
-          "9": 0.08,
-          "10": 0.02,
-          "11": 0.06,
-          "12": 0.06,
-          "13": 0.06,
-          "14": 0.06,
-          "15": 0.08,
-          "17": 0.02,
-          "20": 0.04
-        }
-      },
-      "market_probs": {
-        "home_win_prob": 0.5070495897124456,
-        "away_win_prob": 0.49295041028755443,
-        "over_prob": 0.5046552206013182,
-        "under_prob": 0.4953447793986818,
-        "spread_home_cover_prob": 0.5371462725364567,
-        "total_line": 8.5,
-        "spread_line": 1.5,
-        "n_books_ml": 16,
-        "n_books_total": 16
-      },
-      "blended_probs": {
-        "home_win_prob": 0.5548471794550257,
-        "away_win_prob": 0.4451528205449743,
-        "over_prob": 0.5016981017708296,
-        "under_prob": 0.49830189822917037,
-        "home_cover_prob": 0.5075964561946573,
-        "away_cover_prob": 0.4451528205449743,
-        "expected_total": 8.555077478807618,
-        "model_confidence": 0.5135804613984645,
-        "effective_model_weight": 0.3941549055549551
-      },
-      "n_similar": 50,
-      "n_bets": 0,
-      "context_indicators": {
-        "fatigue": [],
-        "pitcher": [
-          {
-            "team": "KC",
-            "type": "ace",
-            "value": 74.3,
-            "severity": "positive"
-          }
-        ],
-        "splits": [],
-        "park": []
-      },
-      "pitcher_matchup": {
-        "home": {
-          "name": "Dustin May",
-          "era": 4.85,
-          "whip": 1.43,
-          "k_per_9": 6.75,
-          "fip": 3.59,
-          "quality_score": 50.0,
-          "handedness": "R"
-        },
-        "away": {
-          "name": "Michael Wacha",
-          "era": 2.63,
-          "whip": 0.99,
-          "k_per_9": 7.36,
-          "fip": 3.72,
-          "quality_score": 74.3,
-          "handedness": "R"
-        }
-      },
-      "team_splits": {
-        "home": {
-          "win_pct": 0.4,
-          "rs_pg": 4.2,
-          "ra_pg": 4.4,
-          "run_diff": -0.2,
-          "games": 10
-        },
-        "away": {
-          "win_pct": 0.5,
-          "rs_pg": 3.8,
-          "ra_pg": 4.1,
-          "run_diff": -0.3,
-          "games": 10
-        }
-      },
-      "bullpen": {
-        "home": {
-          "bullpen_era": 4.5,
-          "bullpen_whip": 1.42,
-          "bullpen_k9": 6.9,
-          "bullpen_quality": 55.8,
-          "team_era": 4.29
-        },
-        "away": {
-          "bullpen_era": 4.65,
-          "bullpen_whip": 1.42,
-          "bullpen_k9": 8.2,
-          "bullpen_quality": 58.0,
-          "team_era": 4.43
-        }
-      },
-      "park_factor": 100
-    },
-    {
-      "game": "ARI @ COL",
-      "home": "COL",
-      "away": "ARI",
-      "model_probs": {
-        "home_win_prob": 0.3386433762829723,
-        "away_win_prob": 0.6613566304225502,
-        "expected_total": 8.324344610657322,
-        "over_prob": 0.23806774451311274,
-        "under_prob": 0.7619322554868873,
-        "home_cover_prob": 0.45890425642714755,
-        "away_cover_prob": 0.5410957435728525,
-        "total_line": 11.5,
-        "spread_line": 1.5,
-        "n_games": 50,
-        "avg_similarity": 0.7589123989871648,
-        "confidence": 0.5802720948211223,
-        "raw_confidence": 0.5081109151094189,
-        "raw_home_win_prob": 0.44544168476334206,
-        "raw_over_prob": 0.15226124841447858,
-        "run_distribution": {
-          "0": 0.1,
-          "1": 0.02,
-          "3": 0.02,
-          "4": 0.04,
-          "5": 0.08,
-          "6": 0.08,
-          "7": 0.12,
-          "8": 0.08,
-          "9": 0.06,
-          "10": 0.08,
-          "11": 0.08,
-          "12": 0.02,
-          "13": 0.04,
-          "14": 0.04,
-          "15": 0.08,
-          "17": 0.04,
-          "18": 0.02
-        }
-      },
-      "market_probs": {
-        "home_win_prob": 0.46693617560518197,
-        "away_win_prob": 0.533063824394818,
-        "over_prob": 0.5044475380512853,
-        "under_prob": 0.4955524619487147,
-        "spread_home_cover_prob": 0.561316499393068,
-        "total_line": 11.5,
-        "spread_line": 1.5,
-        "n_books_ml": 16,
-        "n_books_total": 16
-      },
-      "blended_probs": {
-        "home_win_prob": 0.4212484288780883,
-        "away_win_prob": 0.5787515711219118,
-        "over_prob": 0.40400392648721833,
-        "under_prob": 0.5959960735127816,
-        "home_cover_prob": 0.4212484288780883,
-        "away_cover_prob": 0.4730092792346472,
-        "expected_total": 10.834754561957247,
-        "model_confidence": 0.5802720948211223,
-        "effective_model_weight": 0.4189657607530591
-      },
-      "n_similar": 50,
-      "n_bets": 1,
-      "context_indicators": {
-        "fatigue": [
-          {
-            "team": "ARI",
-            "type": "well-rested",
-            "severity": "positive"
-          }
-        ],
-        "pitcher": [
-          {
-            "team": "ARI",
-            "type": "weak",
-            "value": 17.4,
-            "severity": "negative"
-          }
-        ],
-        "splits": [],
-        "park": [
-          {
-            "team": "COL",
-            "type": "hitter-friendly",
-            "value": 115,
-            "severity": "medium"
-          }
-        ]
-      },
-      "pitcher_matchup": {
-        "home": {
-          "name": "Kyle Freeland",
-          "era": 6.0,
-          "whip": 1.47,
-          "k_per_9": 8.4,
-          "fip": 5.07,
-          "quality_score": 43.7,
-          "handedness": "L"
-        },
-        "away": {
-          "name": "Merrill Kelly",
-          "era": 7.62,
-          "whip": 1.92,
-          "k_per_9": 6.92,
-          "fip": 6.64,
-          "quality_score": 17.4,
-          "handedness": "R"
-        }
-      },
-      "team_splits": {
-        "home": {
-          "win_pct": 0.2,
-          "rs_pg": 4.3,
-          "ra_pg": 6.6,
-          "run_diff": -2.3,
-          "games": 10
-        },
-        "away": {
-          "win_pct": 0.2,
-          "rs_pg": 2.8,
-          "ra_pg": 5.9,
-          "run_diff": -3.1,
-          "games": 10
-        }
-      },
-      "bullpen": {
-        "home": {
-          "bullpen_era": 5.07,
-          "bullpen_whip": 1.46,
-          "bullpen_k9": 7.3,
-          "bullpen_quality": 51.5,
-          "team_era": 4.83
-        },
-        "away": {
-          "bullpen_era": 4.73,
-          "bullpen_whip": 1.33,
-          "bullpen_k9": 7.3,
-          "bullpen_quality": 56.4,
-          "team_era": 4.5
-        }
-      },
-      "park_factor": 115
-    },
-    {
-      "game": "LAD @ LAA",
-      "home": "LAA",
-      "away": "LAD",
-      "model_probs": {
-        "home_win_prob": 0.2727941170131163,
-        "away_win_prob": 0.7272058930451675,
-        "expected_total": 11.676016726654792,
-        "over_prob": 0.3941322931712074,
-        "under_prob": 0.6058677068287925,
-        "home_cover_prob": 0.41651387170318327,
-        "away_cover_prob": 0.5834861282968167,
-        "total_line": 9.0,
-        "spread_line": 1.5,
-        "n_games": 50,
-        "avg_similarity": 0.6745477115303786,
-        "confidence": 0.5311675141223089,
-        "raw_confidence": 0.4325654063420138,
-        "raw_home_win_prob": 0.3845323549511711,
-        "raw_over_prob": 0.3535769349516403,
-        "run_distribution": {
-          "0": 0.08,
-          "1": 0.02,
-          "3": 0.06,
-          "4": 0.1,
-          "5": 0.06,
-          "6": 0.04,
-          "7": 0.14,
-          "8": 0.08,
-          "9": 0.08,
-          "10": 0.04,
-          "11": 0.02,
-          "12": 0.04,
-          "14": 0.04,
-          "15": 0.14,
-          "17": 0.06
-        }
-      },
-      "market_probs": {
-        "home_win_prob": 0.33260014800808063,
-        "away_win_prob": 0.6673998519919193,
-        "over_prob": 0.510411016342309,
-        "under_prob": 0.489588983657691,
-        "spread_home_cover_prob": 0.47516484533928005,
-        "total_line": 9.0,
-        "spread_line": 1.5,
-        "n_books_ml": 16,
-        "n_books_total": 16
-      },
-      "blended_probs": {
-        "home_win_prob": 0.31222304927330746,
-        "away_win_prob": 0.6877769507266925,
-        "over_prob": 0.46846205557791115,
-        "under_prob": 0.5315379444220889,
-        "home_cover_prob": 0.31222304927330746,
-        "away_cover_prob": 0.5436431996734608,
-        "expected_total": 9.536336397436147,
-        "model_confidence": 0.5311675141223089,
-        "effective_model_weight": 0.4008468198975744
-      },
-      "n_similar": 50,
-      "n_bets": 1,
-      "context_indicators": {
-        "fatigue": [
-          {
-            "team": "LAA",
-            "type": "well-rested",
-            "severity": "positive"
-          }
-        ],
-        "pitcher": [
-          {
-            "team": "LAD",
-            "type": "weak",
-            "value": 20.2,
-            "severity": "negative"
-          }
-        ],
-        "splits": [],
-        "park": []
-      },
-      "pitcher_matchup": {
-        "home": {
-          "name": "Jack Kochanowicz",
-          "era": 3.97,
-          "whip": 1.35,
-          "k_per_9": 5.96,
-          "fip": 3.87,
-          "quality_score": 49.9,
-          "handedness": "R"
-        },
-        "away": {
-          "name": "Blake Snell",
-          "era": 12.0,
-          "whip": 2.67,
-          "k_per_9": 15.0,
-          "fip": 1.77,
-          "quality_score": 20.2,
-          "handedness": "L"
-        }
-      },
-      "team_splits": {
-        "home": {
-          "win_pct": 0.5,
-          "rs_pg": 3.5,
-          "ra_pg": 3.8,
-          "run_diff": -0.3,
-          "games": 10
-        },
-        "away": {
-          "win_pct": 0.4,
-          "rs_pg": 3.5,
-          "ra_pg": 2.7,
-          "run_diff": 0.8,
-          "games": 10
-        }
-      },
-      "bullpen": {
-        "home": {
-          "bullpen_era": 4.78,
-          "bullpen_whip": 1.47,
-          "bullpen_k9": 8.3,
-          "bullpen_quality": 56.4,
-          "team_era": 4.55
-        },
-        "away": {
-          "bullpen_era": 3.53,
-          "bullpen_whip": 1.15,
-          "bullpen_k9": 8.7,
-          "bullpen_quality": 72.3,
-          "team_era": 3.36
-        }
-      },
-      "park_factor": 100
     },
     {
       "game": "SD @ SEA",
       "home": "SEA",
       "away": "SD",
       "model_probs": {
-        "home_win_prob": 0.4365184362937399,
-        "away_win_prob": 0.5634815637062602,
-        "expected_total": 12.31453062914017,
-        "over_prob": 0.5163413888469166,
-        "under_prob": 0.4836586111530834,
-        "home_cover_prob": 0.4306368324961052,
-        "away_cover_prob": 0.5693631675038948,
+        "home_win_prob": 0.3766409292387992,
+        "away_win_prob": 0.6233590707612009,
+        "expected_total": 11.099164233246656,
+        "over_prob": 0.5030928716974644,
+        "under_prob": 0.4969071283025356,
+        "home_cover_prob": 0.3848737579939369,
+        "away_cover_prob": 0.615126242006063,
         "total_line": 7.5,
         "spread_line": -1.5,
         "n_games": 50,
-        "avg_similarity": 0.7649689033189162,
-        "confidence": 0.5819534453253978,
-        "raw_confidence": 0.5106976081929198,
-        "raw_home_win_prob": 0.5408839172173873,
-        "raw_over_prob": 0.5216649116697144,
+        "avg_similarity": 0.7633208460199558,
+        "confidence": 0.6246064404171203,
+        "raw_confidence": 0.5763176006417234,
+        "raw_home_win_prob": 0.4532388342293475,
+        "raw_over_prob": 0.5039625426640534,
         "run_distribution": {
-          "0": 0.06,
+          "0": 0.04,
           "1": 0.02,
-          "2": 0.02,
-          "3": 0.04,
+          "2": 0.06,
+          "3": 0.08,
           "4": 0.08,
-          "5": 0.04,
-          "6": 0.08,
-          "7": 0.16,
+          "5": 0.1,
+          "6": 0.04,
+          "7": 0.06,
           "8": 0.06,
-          "9": 0.08,
-          "10": 0.06,
-          "11": 0.12,
-          "12": 0.02,
-          "13": 0.04,
+          "9": 0.14,
+          "10": 0.04,
+          "11": 0.1,
+          "12": 0.04,
+          "13": 0.02,
           "14": 0.02,
-          "15": 0.06,
-          "20": 0.04
+          "15": 0.04,
+          "20": 0.06
         }
       },
       "market_probs": {
-        "home_win_prob": 0.5455294371610518,
-        "away_win_prob": 0.45447056283894816,
-        "over_prob": 0.49985687244785765,
-        "under_prob": 0.5001431275521424,
-        "spread_home_cover_prob": 0.3651001814261946,
-        "total_line": 7.0,
+        "home_win_prob": 0.6056533943492151,
+        "away_win_prob": 0.3943466056507849,
+        "over_prob": 0.49441784636938857,
+        "under_prob": 0.5055821536306114,
+        "spread_home_cover_prob": 0.417319231370457,
+        "total_line": 7.5,
         "spread_line": -1.5,
         "n_books_ml": 16,
         "n_books_total": 16
       },
       "blended_probs": {
-        "home_win_prob": 0.5066521400035692,
-        "away_win_prob": 0.4933478599964308,
-        "over_prob": 0.5060816743021792,
-        "under_prob": 0.4939183256978208,
-        "home_cover_prob": 0.38709807230783533,
-        "away_cover_prob": 0.4933478599964308,
-        "expected_total": 8.11491492697586,
-        "model_confidence": 0.5819534453253978,
-        "effective_model_weight": 0.4195723027213938
+        "home_win_prob": 0.521039055418573,
+        "away_win_prob": 0.478960944581427,
+        "over_prob": 0.49781159115292106,
+        "under_prob": 0.5021884088470789,
+        "home_cover_prob": 0.4060366098365137,
+        "away_cover_prob": 0.478960944581427,
+        "expected_total": 8.282235618259124,
+        "model_confidence": 0.6246064404171203,
+        "effective_model_weight": 0.43467625680059746
       },
       "n_similar": 50,
-      "n_bets": 1,
+      "n_bets": 0,
       "context_indicators": {
-        "fatigue": [],
+        "fatigue": [
+          {
+            "team": "SEA",
+            "type": "B2B",
+            "severity": "medium"
+          },
+          {
+            "team": "SD",
+            "type": "B2B",
+            "severity": "medium"
+          }
+        ],
         "pitcher": [
           {
             "team": "SEA",
             "type": "ace",
-            "value": 78.2,
-            "severity": "positive"
-          },
-          {
-            "team": "SD",
-            "type": "ace",
-            "value": 72.0,
+            "value": 71.0,
             "severity": "positive"
           }
         ],
@@ -1880,907 +1652,311 @@
       },
       "pitcher_matchup": {
         "home": {
-          "name": "Emerson Hancock",
-          "era": 3.21,
-          "whip": 1.01,
-          "k_per_9": 9.44,
-          "fip": 3.75,
-          "quality_score": 78.2,
+          "name": "Logan Gilbert",
+          "era": 3.78,
+          "whip": 1.16,
+          "k_per_9": 9.36,
+          "fip": 3.7,
+          "quality_score": 71.0,
           "handedness": "R"
         },
         "away": {
-          "name": "Randy V\u00e1squez",
-          "era": 3.05,
-          "whip": 1.17,
-          "k_per_9": 8.53,
-          "fip": 3.26,
-          "quality_score": 72.0,
+          "name": "Walker Buehler",
+          "era": 5.2,
+          "whip": 1.35,
+          "k_per_9": 7.68,
+          "fip": 3.46,
+          "quality_score": 49.0,
           "handedness": "R"
         }
       },
       "team_splits": {
         "home": {
           "win_pct": 0.3,
-          "rs_pg": 3.2,
-          "ra_pg": 4.0,
-          "run_diff": -0.8,
+          "rs_pg": 2.7,
+          "ra_pg": 3.7,
+          "run_diff": -1.0,
           "games": 10
         },
         "away": {
-          "win_pct": 0.6,
-          "rs_pg": 5.4,
+          "win_pct": 0.5,
+          "rs_pg": 4.7,
           "ra_pg": 5.1,
-          "run_diff": 0.3,
+          "run_diff": -0.4,
           "games": 10
         }
       },
       "bullpen": {
         "home": {
-          "bullpen_era": 3.8,
+          "bullpen_era": 3.76,
           "bullpen_whip": 1.27,
           "bullpen_k9": 8.2,
-          "bullpen_quality": 67.1,
-          "team_era": 3.62
+          "bullpen_quality": 67.4,
+          "team_era": 3.58
         },
         "away": {
-          "bullpen_era": 4.35,
+          "bullpen_era": 4.24,
           "bullpen_whip": 1.3,
           "bullpen_k9": 8.4,
-          "bullpen_quality": 62.9,
-          "team_era": 4.14
+          "bullpen_quality": 63.7,
+          "team_era": 4.04
         }
       },
       "park_factor": 97
+    },
+    {
+      "game": "LAD @ LAA",
+      "home": "LAA",
+      "away": "LAD",
+      "model_probs": {
+        "home_win_prob": 0.3288890607367758,
+        "away_win_prob": 0.6711109459687468,
+        "expected_total": 10.484245980695743,
+        "over_prob": 0.36227316768299794,
+        "under_prob": 0.637726832317002,
+        "home_cover_prob": 0.5024617097072175,
+        "away_cover_prob": 0.4975382902927825,
+        "total_line": 8.5,
+        "spread_line": 1.5,
+        "n_games": 50,
+        "avg_similarity": 0.6783072924294341,
+        "confidence": 0.466977968474986,
+        "raw_confidence": 0.3338122591922862,
+        "raw_home_win_prob": 0.5036014923435491,
+        "raw_over_prob": 0.2985050265526212,
+        "run_distribution": {
+          "0": 0.04,
+          "1": 0.04,
+          "2": 0.02,
+          "3": 0.04,
+          "4": 0.1,
+          "5": 0.22,
+          "6": 0.06,
+          "7": 0.14,
+          "8": 0.02,
+          "9": 0.08,
+          "10": 0.02,
+          "11": 0.06,
+          "14": 0.04,
+          "15": 0.06,
+          "16": 0.02,
+          "17": 0.02,
+          "20": 0.02
+        }
+      },
+      "market_probs": {
+        "home_win_prob": 0.4417450624574838,
+        "away_win_prob": 0.5582549375425162,
+        "over_prob": 0.4964067515437077,
+        "under_prob": 0.5035932484562923,
+        "spread_home_cover_prob": 0.5606815056555386,
+        "total_line": 8.5,
+        "spread_line": 1.5,
+        "n_books_ml": 16,
+        "n_books_total": 16
+      },
+      "blended_probs": {
+        "home_win_prob": 0.405690978068805,
+        "away_win_prob": 0.5943090219311951,
+        "over_prob": 0.4510344381498426,
+        "under_prob": 0.5489655618501574,
+        "home_cover_prob": 0.405690978068805,
+        "away_cover_prob": 0.45682387468720465,
+        "expected_total": 8.872886275405268,
+        "model_confidence": 0.466977968474986,
+        "effective_model_weight": 0.3758468244693352
+      },
+      "n_similar": 50,
+      "n_bets": 0,
+      "context_indicators": {
+        "fatigue": [],
+        "pitcher": [
+          {
+            "team": "LAA",
+            "type": "ace",
+            "value": 84.5,
+            "severity": "positive"
+          },
+          {
+            "team": "LAD",
+            "type": "ace",
+            "value": 70.4,
+            "severity": "positive"
+          }
+        ],
+        "splits": [],
+        "park": []
+      },
+      "pitcher_matchup": {
+        "home": {
+          "name": "Jos\u00e9 Soriano",
+          "era": 1.66,
+          "whip": 1.05,
+          "k_per_9": 10.1,
+          "fip": 3.16,
+          "quality_score": 84.5,
+          "handedness": "R"
+        },
+        "away": {
+          "name": "Justin Wrobleski",
+          "era": 2.42,
+          "whip": 0.99,
+          "k_per_9": 4.43,
+          "fip": 3.44,
+          "quality_score": 70.4,
+          "handedness": "L"
+        }
+      },
+      "team_splits": {
+        "home": {
+          "win_pct": 0.4,
+          "rs_pg": 3.0,
+          "ra_pg": 4.1,
+          "run_diff": -1.1,
+          "games": 10
+        },
+        "away": {
+          "win_pct": 0.6,
+          "rs_pg": 4.2,
+          "ra_pg": 2.2,
+          "run_diff": 2.0,
+          "games": 10
+        }
+      },
+      "bullpen": {
+        "home": {
+          "bullpen_era": 4.82,
+          "bullpen_whip": 1.47,
+          "bullpen_k9": 8.2,
+          "bullpen_quality": 56.0,
+          "team_era": 4.59
+        },
+        "away": {
+          "bullpen_era": 3.45,
+          "bullpen_whip": 1.14,
+          "bullpen_k9": 8.7,
+          "bullpen_quality": 73.2,
+          "team_era": 3.29
+        }
+      },
+      "park_factor": 100
     }
   ],
   "recommendations": [
     {
-      "game": "BOS @ ATL",
+      "game": "ARI @ COL",
       "bet_type": "Total",
-      "pick": "Over 7.5",
-      "book": "hardrockbet",
-      "odds": -120,
-      "ev": 0.08461520307958853,
-      "roi": 0.16923040615917706,
-      "edge": 0.09230749426864204,
-      "true_prob": 0.6377620397231875,
-      "implied_prob": 0.5454545454545454,
-      "american_odds": -120,
-      "decimal_odds": 1.8333333333333335,
+      "pick": "Under 11.5",
+      "book": "draftkings",
+      "odds": -118,
+      "ev": 0.07951956243680908,
+      "roi": 0.15903912487361815,
+      "edge": 0.08608539786737135,
+      "true_prob": 0.6273698015370961,
+      "implied_prob": 0.5412844036697247,
+      "american_odds": -118,
+      "decimal_odds": 1.847457627118644,
       "stake": 0.5,
-      "profit_if_win": 0.41666666666666674,
+      "profit_if_win": 0.423728813559322,
       "loss_if_lose": 0.5,
       "is_positive_ev": true,
-      "confidence": 0.49404781228091343,
-      "kelly_fraction": 0.05076912184775311,
-      "kelly_stake": 5.08,
+      "confidence": 0.586486129082741,
+      "kelly_fraction": 0.04691654183771736,
+      "kelly_stake": 4.69,
       "all_book_odds": [
         {
           "book": "lowvig",
           "odds": 103,
-          "point": 8.0
+          "point": 11.0
         },
         {
           "book": "betonlineag",
           "odds": 100,
-          "point": 8.0
-        },
-        {
-          "book": "betmgm",
-          "odds": 100,
-          "point": 8.0
-        },
-        {
-          "book": "bovada",
-          "odds": 100,
-          "point": 8.0
-        },
-        {
-          "book": "betanysports",
-          "odds": 100,
-          "point": 8.0
+          "point": 11.0
         },
         {
           "book": "betus",
           "odds": 100,
-          "point": 8.0
+          "point": 11.0
         },
         {
           "book": "fanduel",
           "odds": -102,
-          "point": 8.0
-        },
-        {
-          "book": "draftkings",
-          "odds": -102,
-          "point": 8.0
+          "point": 11.0
         },
         {
           "book": "mybookieag",
-          "odds": -119,
-          "point": 7.5
+          "odds": -102,
+          "point": 11.0
         },
         {
-          "book": "fliff",
-          "odds": -120,
-          "point": 7.5
+          "book": "draftkings",
+          "odds": -118,
+          "point": 11.5
+        },
+        {
+          "book": "betparx",
+          "odds": -118,
+          "point": 11.5
+        },
+        {
+          "book": "ballybet",
+          "odds": -118,
+          "point": 11.5
         },
         {
           "book": "hardrockbet",
           "odds": -120,
-          "point": 7.5
-        },
-        {
-          "book": "betparx",
-          "odds": -120,
-          "point": 7.5
-        },
-        {
-          "book": "ballybet",
-          "odds": -120,
-          "point": 7.5
+          "point": 11.5
         },
         {
           "book": "hardrockbet_oh",
           "odds": -120,
-          "point": 7.5
+          "point": 11.5
+        },
+        {
+          "book": "betmgm",
+          "odds": -120,
+          "point": 11.5
+        },
+        {
+          "book": "espnbet",
+          "odds": -120,
+          "point": 11.5
+        },
+        {
+          "book": "bovada",
+          "odds": -120,
+          "point": 11.5
+        },
+        {
+          "book": "betanysports",
+          "odds": -120,
+          "point": 11.5
         },
         {
           "book": "betrivers",
           "odds": -121,
-          "point": 7.5
-        },
-        {
-          "book": "espnbet",
-          "odds": -125,
-          "point": 7.5
-        }
-      ]
-    },
-    {
-      "game": "ARI @ COL",
-      "bet_type": "Total",
-      "pick": "Under 11.5",
-      "book": "hardrockbet",
-      "odds": -105,
-      "ev": 0.08180569081009631,
-      "roi": 0.16361138162019262,
-      "edge": 0.08380095156156209,
-      "true_prob": 0.5959960735127816,
-      "implied_prob": 0.5121951219512195,
-      "american_odds": -105,
-      "decimal_odds": 1.9523809523809523,
-      "stake": 0.5,
-      "profit_if_win": 0.47619047619047616,
-      "loss_if_lose": 0.5,
-      "is_positive_ev": true,
-      "confidence": 0.5802720948211223,
-      "kelly_fraction": 0.042947987675300565,
-      "kelly_stake": 4.29,
-      "all_book_odds": [
-        {
-          "book": "fanduel",
-          "odds": -105,
           "point": 11.5
         },
         {
           "book": "fliff",
-          "odds": -105,
-          "point": 11.5
-        },
-        {
-          "book": "lowvig",
-          "odds": -105,
-          "point": 11.5
-        },
-        {
-          "book": "hardrockbet",
-          "odds": -105,
-          "point": 11.5
-        },
-        {
-          "book": "bovada",
-          "odds": -105,
-          "point": 11.5
-        },
-        {
-          "book": "betanysports",
-          "odds": -105,
-          "point": 11.5
-        },
-        {
-          "book": "betonlineag",
-          "odds": -108,
-          "point": 11.5
-        },
-        {
-          "book": "draftkings",
-          "odds": -108,
-          "point": 11.5
-        },
-        {
-          "book": "hardrockbet_oh",
-          "odds": -110,
-          "point": 11.5
-        },
-        {
-          "book": "betmgm",
-          "odds": -110,
-          "point": 11.5
-        },
-        {
-          "book": "espnbet",
-          "odds": -110,
-          "point": 11.5
-        },
-        {
-          "book": "betus",
-          "odds": -110,
-          "point": 11.5
-        },
-        {
-          "book": "ballybet",
-          "odds": -110,
-          "point": 11.5
-        },
-        {
-          "book": "betparx",
-          "odds": -110,
-          "point": 11.5
-        },
-        {
-          "book": "mybookieag",
-          "odds": -111,
-          "point": 11.5
-        },
-        {
-          "book": "betrivers",
-          "odds": -112,
-          "point": 11.5
-        }
-      ]
-    },
-    {
-      "game": "SD @ SEA",
-      "bet_type": "Total",
-      "pick": "Over 7.5",
-      "book": "espnbet",
-      "odds": 115,
-      "ev": 0.04403779987484263,
-      "roi": 0.08807559974968526,
-      "edge": 0.04096539523241177,
-      "true_prob": 0.5060816743021792,
-      "implied_prob": 0.46511627906976744,
-      "american_odds": 115,
-      "decimal_odds": 2.15,
-      "stake": 0.5,
-      "profit_if_win": 0.575,
-      "loss_if_lose": 0.5,
-      "is_positive_ev": true,
-      "confidence": 0.5819534453253978,
-      "kelly_fraction": 0.019146869510801145,
-      "kelly_stake": 1.91,
-      "all_book_odds": [
-        {
-          "book": "espnbet",
-          "odds": 115,
-          "point": 7.5
-        },
-        {
-          "book": "hardrockbet",
-          "odds": 110,
-          "point": 7.5
-        },
-        {
-          "book": "fliff",
-          "odds": 105,
-          "point": 7.5
-        },
-        {
-          "book": "hardrockbet_oh",
-          "odds": 105,
-          "point": 7.5
-        },
-        {
-          "book": "lowvig",
-          "odds": -113,
-          "point": 7.0
-        },
-        {
-          "book": "betonlineag",
-          "odds": -115,
-          "point": 7.0
-        },
-        {
-          "book": "draftkings",
-          "odds": -115,
-          "point": 7.0
-        },
-        {
-          "book": "betmgm",
-          "odds": -115,
-          "point": 7.0
-        },
-        {
-          "book": "betus",
-          "odds": -115,
-          "point": 7.0
-        },
-        {
-          "book": "betanysports",
-          "odds": -115,
-          "point": 7.0
-        },
-        {
-          "book": "betparx",
-          "odds": -118,
-          "point": 7.0
-        },
-        {
-          "book": "ballybet",
-          "odds": -118,
-          "point": 7.0
-        },
-        {
-          "book": "fanduel",
-          "odds": -120,
-          "point": 7.0
-        },
-        {
-          "book": "betrivers",
-          "odds": -120,
-          "point": 7.0
-        },
-        {
-          "book": "bovada",
-          "odds": -120,
-          "point": 7.0
-        },
-        {
-          "book": "mybookieag",
-          "odds": -122,
-          "point": 7.0
-        }
-      ]
-    },
-    {
-      "game": "CIN @ CLE",
-      "bet_type": "Total",
-      "pick": "Over 8.5",
-      "book": "espnbet",
-      "odds": 110,
-      "ev": 0.03958178929911782,
-      "roi": 0.07916357859823564,
-      "edge": 0.03769694218963604,
-      "true_prob": 0.5138874183801122,
-      "implied_prob": 0.47619047619047616,
-      "american_odds": 110,
-      "decimal_odds": 2.1,
-      "stake": 0.5,
-      "profit_if_win": 0.55,
-      "loss_if_lose": 0.5,
-      "is_positive_ev": true,
-      "confidence": 0.5776364496438873,
-      "kelly_fraction": 0.017991722408689917,
-      "kelly_stake": 1.8,
-      "all_book_odds": [
-        {
-          "book": "espnbet",
-          "odds": 110,
-          "point": 8.5
-        },
-        {
-          "book": "draftkings",
-          "odds": -105,
-          "point": 8.0
-        },
-        {
-          "book": "betmgm",
-          "odds": -105,
-          "point": 8.0
-        },
-        {
-          "book": "mybookieag",
-          "odds": -106,
-          "point": 8.0
-        },
-        {
-          "book": "fanduel",
-          "odds": -108,
-          "point": 8.0
-        },
-        {
-          "book": "ballybet",
-          "odds": -110,
-          "point": 8.0
-        },
-        {
-          "book": "betparx",
-          "odds": -110,
-          "point": 8.0
-        },
-        {
-          "book": "bovada",
-          "odds": -110,
-          "point": 8.0
-        },
-        {
-          "book": "betrivers",
-          "odds": -112,
-          "point": 8.0
-        },
-        {
-          "book": "hardrockbet_oh",
-          "odds": -120,
-          "point": 7.5
-        },
-        {
-          "book": "lowvig",
-          "odds": -123,
-          "point": 7.5
-        },
-        {
-          "book": "fliff",
           "odds": -125,
-          "point": 7.5
-        },
-        {
-          "book": "betonlineag",
-          "odds": -125,
-          "point": 7.5
-        },
-        {
-          "book": "hardrockbet",
-          "odds": -125,
-          "point": 7.5
-        },
-        {
-          "book": "betus",
-          "odds": -125,
-          "point": 7.5
-        },
-        {
-          "book": "betanysports",
-          "odds": -125,
-          "point": 7.5
-        }
-      ]
-    },
-    {
-      "game": "NYY @ NYM",
-      "bet_type": "Total",
-      "pick": "Over 6.5",
-      "book": "espnbet",
-      "odds": -135,
-      "ev": 0.03350978415783873,
-      "roi": 0.06701956831567746,
-      "edge": 0.03850060307496361,
-      "true_prob": 0.6129686881813466,
-      "implied_prob": 0.574468085106383,
-      "american_odds": -135,
-      "decimal_odds": 1.7407407407407407,
-      "stake": 0.5,
-      "profit_if_win": 0.37037037037037035,
-      "loss_if_lose": 0.5,
-      "is_positive_ev": true,
-      "confidence": 0.44955353119698305,
-      "kelly_fraction": 0.022619104306541144,
-      "kelly_stake": 2.26,
-      "all_book_odds": [
-        {
-          "book": "lowvig",
-          "odds": -102,
-          "point": 7.0
-        },
-        {
-          "book": "fanduel",
-          "odds": -105,
-          "point": 7.0
-        },
-        {
-          "book": "betonlineag",
-          "odds": -105,
-          "point": 7.0
-        },
-        {
-          "book": "draftkings",
-          "odds": -105,
-          "point": 7.0
-        },
-        {
-          "book": "betmgm",
-          "odds": -105,
-          "point": 7.0
-        },
-        {
-          "book": "betus",
-          "odds": -105,
-          "point": 7.0
-        },
-        {
-          "book": "bovada",
-          "odds": -105,
-          "point": 7.0
-        },
-        {
-          "book": "betanysports",
-          "odds": -105,
-          "point": 7.0
-        },
-        {
-          "book": "mybookieag",
-          "odds": -107,
-          "point": 7.0
-        },
-        {
-          "book": "ballybet",
-          "odds": -109,
-          "point": 7.0
-        },
-        {
-          "book": "betparx",
-          "odds": -109,
-          "point": 7.0
-        },
-        {
-          "book": "betrivers",
-          "odds": -110,
-          "point": 7.0
-        },
-        {
-          "book": "fliff",
-          "odds": -135,
-          "point": 6.5
-        },
-        {
-          "book": "espnbet",
-          "odds": -135,
-          "point": 6.5
-        },
-        {
-          "book": "hardrockbet",
-          "odds": -140,
-          "point": 6.5
-        },
-        {
-          "book": "hardrockbet_oh",
-          "odds": -145,
-          "point": 6.5
-        }
-      ]
-    },
-    {
-      "game": "LAD @ LAA",
-      "bet_type": "Total",
-      "pick": "Over 8.5",
-      "book": "espnbet",
-      "odds": -135,
-      "ev": 0.03322267580549257,
-      "roi": 0.06644535161098514,
-      "edge": 0.03817073390418291,
-      "true_prob": 0.6126388190105659,
-      "implied_prob": 0.574468085106383,
-      "american_odds": -135,
-      "decimal_odds": 1.7407407407407407,
-      "stake": 0.5,
-      "profit_if_win": 0.37037037037037035,
-      "loss_if_lose": 0.5,
-      "is_positive_ev": true,
-      "confidence": 0.5311675141223089,
-      "kelly_fraction": 0.022425306168707484,
-      "kelly_stake": 2.24,
-      "all_book_odds": [
-        {
-          "book": "bovada",
-          "odds": -105,
-          "point": 9.0
-        },
-        {
-          "book": "lowvig",
-          "odds": -107,
-          "point": 9.0
-        },
-        {
-          "book": "mybookieag",
-          "odds": -108,
-          "point": 9.0
-        },
-        {
-          "book": "fanduel",
-          "odds": -110,
-          "point": 9.0
-        },
-        {
-          "book": "betonlineag",
-          "odds": -110,
-          "point": 9.0
-        },
-        {
-          "book": "draftkings",
-          "odds": -110,
-          "point": 9.0
-        },
-        {
-          "book": "betmgm",
-          "odds": -110,
-          "point": 9.0
-        },
-        {
-          "book": "betanysports",
-          "odds": -110,
-          "point": 9.0
-        },
-        {
-          "book": "betus",
-          "odds": -110,
-          "point": 9.0
-        },
-        {
-          "book": "betparx",
-          "odds": -113,
-          "point": 9.0
-        },
-        {
-          "book": "ballybet",
-          "odds": -113,
-          "point": 9.0
-        },
-        {
-          "book": "betrivers",
-          "odds": -114,
-          "point": 9.0
-        },
-        {
-          "book": "fliff",
-          "odds": -130,
-          "point": 8.5
-        },
-        {
-          "book": "hardrockbet_oh",
-          "odds": -130,
-          "point": 8.5
-        },
-        {
-          "book": "espnbet",
-          "odds": -135,
-          "point": 8.5
-        },
-        {
-          "book": "hardrockbet",
-          "odds": -135,
-          "point": 8.5
-        }
-      ]
-    },
-    {
-      "game": "MIA @ TB",
-      "bet_type": "Total",
-      "pick": "Over 7.5",
-      "book": "hardrockbet",
-      "odds": -120,
-      "ev": 0.025283080497163712,
-      "roi": 0.050566160994327425,
-      "edge": 0.02758154236054222,
-      "true_prob": 0.5730360878150876,
-      "implied_prob": 0.5454545454545454,
-      "american_odds": -120,
-      "decimal_odds": 1.8333333333333335,
-      "stake": 0.5,
-      "profit_if_win": 0.41666666666666674,
-      "loss_if_lose": 0.5,
-      "is_positive_ev": true,
-      "confidence": 0.4607231126318659,
-      "kelly_fraction": 0.015169848298298224,
-      "kelly_stake": 1.52,
-      "all_book_odds": [
-        {
-          "book": "bovada",
-          "odds": 100,
-          "point": 8.0
-        },
-        {
-          "book": "lowvig",
-          "odds": -102,
-          "point": 8.0
-        },
-        {
-          "book": "fanduel",
-          "odds": -104,
-          "point": 8.0
-        },
-        {
-          "book": "betonlineag",
-          "odds": -105,
-          "point": 8.0
-        },
-        {
-          "book": "draftkings",
-          "odds": -105,
-          "point": 8.0
-        },
-        {
-          "book": "betmgm",
-          "odds": -105,
-          "point": 8.0
-        },
-        {
-          "book": "betus",
-          "odds": -105,
-          "point": 8.0
-        },
-        {
-          "book": "mybookieag",
-          "odds": -105,
-          "point": 8.0
-        },
-        {
-          "book": "betanysports",
-          "odds": -105,
-          "point": 8.0
-        },
-        {
-          "book": "ballybet",
-          "odds": -109,
-          "point": 8.0
-        },
-        {
-          "book": "betparx",
-          "odds": -109,
-          "point": 8.0
-        },
-        {
-          "book": "betrivers",
-          "odds": -110,
-          "point": 8.0
-        },
-        {
-          "book": "fliff",
-          "odds": -120,
-          "point": 7.5
-        },
-        {
-          "book": "hardrockbet_oh",
-          "odds": -120,
-          "point": 7.5
-        },
-        {
-          "book": "hardrockbet",
-          "odds": -120,
-          "point": 7.5
-        },
-        {
-          "book": "espnbet",
-          "odds": -130,
-          "point": 7.5
+          "point": 11.5
         }
       ]
     }
   ],
-  "parlays": [
-    {
-      "legs": [
-        {
-          "pick": "Over 7.5",
-          "game": "BOS @ ATL",
-          "odds": -120,
-          "decimal_odds": 1.8333333333333335,
-          "true_prob": 0.6377620397231875,
-          "implied_prob": 0.5454545454545454,
-          "edge": 0.09230749426864204,
-          "bet_type": "Total",
-          "book": "hardrockbet"
-        },
-        {
-          "pick": "Under 11.5",
-          "game": "ARI @ COL",
-          "odds": -105,
-          "decimal_odds": 1.9523809523809523,
-          "true_prob": 0.5959960735127816,
-          "implied_prob": 0.5121951219512195,
-          "edge": 0.08380095156156209,
-          "bet_type": "Total",
-          "book": "hardrockbet"
-        }
-      ],
-      "n_legs": 2,
-      "date": "2026-05-15",
-      "datetime": "2026-05-15T17:17:56",
-      "combined_odds": 258,
-      "combined_decimal": 3.579,
-      "combined_true_prob": 0.3801,
-      "combined_implied_prob": 0.2794,
-      "ev": 0.1803,
-      "roi": 0.3605,
-      "edge": 0.1007,
-      "payout": 1.79,
-      "stake": 0.5
-    },
-    {
-      "legs": [
-        {
-          "pick": "Over 7.5",
-          "game": "BOS @ ATL",
-          "odds": -120,
-          "decimal_odds": 1.8333333333333335,
-          "true_prob": 0.6377620397231875,
-          "implied_prob": 0.5454545454545454,
-          "edge": 0.09230749426864204,
-          "bet_type": "Total",
-          "book": "hardrockbet"
-        },
-        {
-          "pick": "Over 7.5",
-          "game": "SD @ SEA",
-          "odds": 115,
-          "decimal_odds": 2.15,
-          "true_prob": 0.5060816743021792,
-          "implied_prob": 0.46511627906976744,
-          "edge": 0.04096539523241177,
-          "bet_type": "Total",
-          "book": "espnbet"
-        }
-      ],
-      "n_legs": 2,
-      "date": "2026-05-15",
-      "datetime": "2026-05-15T17:17:56",
-      "combined_odds": 294,
-      "combined_decimal": 3.942,
-      "combined_true_prob": 0.3228,
-      "combined_implied_prob": 0.2537,
-      "ev": 0.1361,
-      "roi": 0.2722,
-      "edge": 0.0691,
-      "payout": 1.97,
-      "stake": 0.5
-    },
-    {
-      "legs": [
-        {
-          "pick": "Over 7.5",
-          "game": "SD @ SEA",
-          "odds": 115,
-          "decimal_odds": 2.15,
-          "true_prob": 0.5060816743021792,
-          "implied_prob": 0.46511627906976744,
-          "edge": 0.04096539523241177,
-          "bet_type": "Total",
-          "book": "espnbet"
-        },
-        {
-          "pick": "Under 11.5",
-          "game": "ARI @ COL",
-          "odds": -105,
-          "decimal_odds": 1.9523809523809523,
-          "true_prob": 0.5959960735127816,
-          "implied_prob": 0.5121951219512195,
-          "edge": 0.08380095156156209,
-          "bet_type": "Total",
-          "book": "hardrockbet"
-        }
-      ],
-      "n_legs": 2,
-      "date": "2026-05-15",
-      "datetime": "2026-05-15T17:17:56",
-      "combined_odds": 320,
-      "combined_decimal": 4.198,
-      "combined_true_prob": 0.3016,
-      "combined_implied_prob": 0.2382,
-      "ev": 0.133,
-      "roi": 0.2661,
-      "edge": 0.0634,
-      "payout": 2.1,
-      "stake": 0.5
-    }
-  ],
+  "parlays": [],
   "quota_info": {
     "total_keys": 3,
-    "total_remaining": 1332,
-    "total_used": 168,
+    "total_remaining": 1320,
+    "total_used": 180,
     "keys": [
       {
         "index": 0,
-        "used": 168,
-        "remaining": 332
+        "used": 180,
+        "remaining": 320
       },
       {
         "index": 1,
