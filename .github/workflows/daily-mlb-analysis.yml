@@ -49,11 +49,29 @@ jobs:
       - name: Create required directories
         run: mkdir -p mlblines/mlbdata mlblines/ml_models mlblines/cache
 
+      - name: Check for games today
+        id: check-games
+        working-directory: mlblines
+        run: |
+          GAME_COUNT=$(python -c "
+          from src.data import fetch_todays_games
+          print(len(fetch_todays_games()))
+          ")
+          echo "Games today: $GAME_COUNT"
+          if [ "$GAME_COUNT" -gt "0" ]; then
+            echo "has_games=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_games=false" >> $GITHUB_OUTPUT
+            echo "No MLB games scheduled today, skipping analysis"
+          fi
+
       - name: Run MLB analysis
+        if: steps.check-games.outputs.has_games == 'true'
         working-directory: mlblines
         run: python main.py --stake 0.50
 
       - name: Check and update game results (21-day lookback)
+        if: steps.check-games.outputs.has_games == 'true'
         working-directory: mlblines
         run: |
           python -c "
@@ -62,6 +80,7 @@ jobs:
           "
 
       - name: Commit updated data
+        if: steps.check-games.outputs.has_games == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -81,6 +100,7 @@ jobs:
         continue-on-error: true
 
       - name: Save ML models
+        if: steps.check-games.outputs.has_games == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: mlb-ml-models
