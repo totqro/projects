@@ -89,12 +89,20 @@ jobs:
           update_model_from_results()
           "
 
+      - name: Refresh backtest results (weekly)
+        working-directory: nhllines
+        run: |
+          if [ "$(date +%u)" == "7" ]; then
+            python backtest.py
+          else
+            echo "Skipping backtest refresh (runs weekly on Sundays)"
+          fi
+
       - name: Commit updated data
-        if: steps.check-games.outputs.has_games == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add nhllines/data/bet_results.json nhllines/data/analysis_history.json nhllines/data/latest_analysis.json nhllines/data/model_feedback.json
+          git add nhllines/data/bet_results.json nhllines/data/analysis_history.json nhllines/data/latest_analysis.json nhllines/data/model_feedback.json nhllines/data/backtest_results.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No data changes to commit"
           else

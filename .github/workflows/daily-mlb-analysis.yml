@@ -79,12 +79,20 @@ jobs:
           check_results(days_back=21)
           "
 
+      - name: Refresh backtest results (weekly)
+        working-directory: mlblines
+        run: |
+          if [ "$(date +%u)" == "7" ]; then
+            python backtest.py
+          else
+            echo "Skipping backtest refresh (runs weekly on Sundays)"
+          fi
+
       - name: Commit updated data
-        if: steps.check-games.outputs.has_games == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add mlblines/mlbdata/bet_results.json mlblines/mlbdata/analysis_history.json mlblines/mlbdata/latest_analysis.json 2>/dev/null || true
+          git add mlblines/mlbdata/bet_results.json mlblines/mlbdata/analysis_history.json mlblines/mlbdata/latest_analysis.json mlblines/mlbdata/backtest_results.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No data changes to commit"
           else
