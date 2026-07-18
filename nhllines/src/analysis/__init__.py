@@ -13,6 +13,7 @@ from .injury_tracker import get_todays_injuries, get_injury_impact_for_game
 from .advanced_stats import get_team_advanced_stats
 from .team_splits import get_team_splits
 from .model_feedback import get_feedback_system, update_model_from_results
+from .prediction_log import log_predictions
 
 __all__ = [
     'evaluate_all_bets',
@@ -32,4 +33,5 @@ __all__ = [
     'get_team_splits',
     'get_feedback_system',
     'update_model_from_results',
+    'log_predictions',
 ]

@@ -2,6 +2,15 @@
 Machine Learning Model for NHL Predictions
 Uses XGBoost to predict game outcomes based on team statistics.
 Blends with similarity-based model for improved accuracy.
+
+QUARANTINED (not deleted): main.py's production path no longer imports this
+module. It trains on current-values-stamped-onto-history features (see
+README.md "Root causes" #1 — train-serve skew) and XGBoost is broken in the
+deploy venv (missing libomp) besides. Superseded by the model-gate winner,
+Elo + home-ice logistic with Platt calibration (src/models/elo_baseline.py,
+src/models/calibration.py, src/models/elo_production.py). Left in place only
+because backtest_*.py / retrain_models.py / src/utils/*.py still import it;
+do not reintroduce an xgboost import into main.py's live path.
 """
 
 import pickle
@@ -11,10 +20,15 @@ import numpy as np
 try:
     import xgboost as xgb
     HAS_XGBOOST = True
-except ImportError:
+except Exception:
+    # ImportError if not installed, XGBoostError if libxgboost.dylib can't
+    # load (missing libomp on macOS — `brew install libomp`). Either way this
+    # module must stay importable: main.py uses StreamlinedNHLMLModel's
+    # pure-Python static helpers (_calculate_streaks/_calculate_h2h), which
+    # don't need xgboost.
     HAS_XGBOOST = False
-    print("Warning: XGBoost not installed. ML features disabled.")
-    print("Install with: pip install xgboost")
+    print("Warning: XGBoost unavailable. ML features disabled.")
+    print("Install with: pip install xgboost (macOS: brew install libomp)")
 
 
 class NHLMLModel:

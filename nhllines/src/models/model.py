@@ -3,6 +3,25 @@ NHL Betting Model
 Compares current matchups to similar historical games to estimate
 true win probabilities, expected total goals, and spread coverage.
 Uses these to find +EV bets.
+
+QUARANTINED (not deleted) — moneyline win probability:
+`estimate_probabilities()`'s confidence-scoring block below (quality_conf /
+volume_conf / consistency_conf / exact_conf / decisive_conf / depth_conf /
+calibrated_confidence / regression_strength) is the "stack of numbers fitted
+to a 35-bet sample" described in src/models/calibration.py's module docstring.
+main.py no longer uses this module's home_win_prob for moneyline predictions —
+that's now the calibrated Elo + home-ice logistic (src/models/elo_baseline.py
++ src/models/calibration.py, wired via src/models/elo_production.py). This
+module is still called for its totals/spread estimation (expected_total,
+over/under, cover probabilities), which the Elo baseline does not predict, so
+it stays live for that purpose only. See README.md "Fix roadmap" step 4.
+
+`expected_total` was gated against a Poisson regression and a Poisson-loss
+gradient-boosting model on the 44-feature point-in-time set
+(`model_gate.py --totals`); both lost to a trivial league-average-Poisson
+baseline on held-out RMSE and Poisson NLL, so this module's similarity-based
+expected_total remains the production source — nothing else has earned the
+right to replace it yet.
 """
 
 import math
@@ -351,6 +370,12 @@ def estimate_probabilities(
 
     home_cover_prob = weighted_home_covers / total_weight if spread_line is not None else 0.5
 
+    # --- QUARANTINED: hand-tuned confidence stack, fit to a 35-bet sample ---
+    # Superseded for moneyline purposes by the Platt-calibrated Elo model
+    # (src/models/calibration.py). Kept live only because blend_model_and_market()
+    # still uses `confidence` below to scale its totals/spread blend weight, and
+    # because home_win_prob computed here still feeds the Poisson total/cover
+    # calculations above. Do not use this block's home_win_prob for moneyline.
     # Confidence from multiple independent signals, designed for meaningful spread.
     # Target range: ~0.45 to ~0.92, with most games spread across 0.55-0.85.
     avg_similarity = sum(s for _, s in similar_games) / len(similar_games)

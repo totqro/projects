@@ -13,6 +13,16 @@ Factor impact analysis (575 games) showed:
 
 All factors are fed as ML features so XGBoost learns optimal weights.
 NO manual post-model probability adjustments.
+
+QUARANTINED (not deleted): this is the "leaky 52-feature XGBoost path"
+described in README.md "Root causes" #1 — it trains on historical games but
+stamps them with CURRENT standings/goalie/advanced-stats values (the 575-game
+factor analysis above shares that same leakage), and XGBoost is broken in the
+deploy venv (missing libomp). main.py's production path no longer trains,
+loads, or imports StreamlinedNHLMLModel; it uses the calibrated Elo + home-ice
+model instead (src/models/elo_production.py). This file is left importable
+only because retrain_models.py / backtest_*.py / src/utils/*.py still
+reference it — do not reintroduce it into main.py's live path.
 """
 
 from .ml_model import NHLMLModel
@@ -21,7 +31,9 @@ import numpy as np
 try:
     import xgboost as xgb
     HAS_XGBOOST = True
-except ImportError:
+except Exception:
+    # Also catches XGBoostError from a broken native lib (missing libomp) —
+    # the class must stay importable for its pure-Python static helpers.
     HAS_XGBOOST = False
 
 

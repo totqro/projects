@@ -49,7 +49,13 @@ from src.models import (
     blend_model_and_market,
     StreamlinedNHLMLModel,
 )
-from src.models.ml_model import NHLMLModel, blend_ml_and_similarity
+from src.models.elo_production import (
+    load_production_model,
+    get_live_elo_ratings,
+    predict_calibrated,
+    production_model_exists,
+    fit_and_persist,
+)
 from src.analysis import (
     evaluate_all_bets,
     format_recommendations,
@@ -66,6 +72,7 @@ from src.analysis import (
     get_injury_impact_for_game,
     get_team_advanced_stats,
     get_team_splits,
+    log_predictions,
 )
 
 
@@ -115,76 +122,71 @@ def run_analysis(
     for team in standings:
         team_forms[team] = get_team_recent_form(team, all_games, n=10)
     
-    # Step 3.5: Train/load ML model
-    print("\n[3.5/5] Initializing enhanced ML model (52 features: base + contextual + advanced)...")
-    ml_model = StreamlinedNHLMLModel()
+    # Step 3.5: Load the shipped model-gate winner — Elo + home-ice logistic,
+    # Platt-calibrated (see src/models/elo_production.py). Coefficients and
+    # calibrator are fit weekly by build_training_set.py; if they're missing
+    # (first run), fit them now from whatever data/training_set.csv has.
+    print("\n[3.5/5] Loading calibrated Elo + home-ice model...")
+    if not production_model_exists():
+        print("  No persisted calibrator found, fitting one now "
+              "(normally done weekly by build_training_set.py)...")
+        fit_and_persist()
+    elo_coefs, elo_calibrator = load_production_model()
+    print(f"  Loaded Elo coefficients + {elo_calibrator.method} calibrator")
 
-    # Check if models exist and their age
-    model_path = Path(__file__).parent / "ml_models" / "win_model.pkl"
-    should_retrain = False
-
-    if model_path.exists():
-        import time
-        age_days = (time.time() - model_path.stat().st_mtime) / 86400
-        print(f"  Found existing models (age: {age_days:.1f} days)")
-
-        # Retrain daily — stale models miss form changes, injuries, roster moves
-        if age_days > 1:
-            print(f"  ⚠️  Models are stale (>{age_days:.1f} days old), retraining with latest data...")
-            should_retrain = True
-        else:
-            # Try loading and check feature count matches (30 features expected)
-            try:
-                ml_model.load_models()
-                # Verify model expects 30 features
-                n_features = ml_model.model_win.n_features_in_
-                if n_features != 30:
-                    print(f"  ⚠️  Model has {n_features} features, need 30. Retraining...")
-                    should_retrain = True
-                else:
-                    print(f"  ✅ Models are fresh ({n_features} features), loaded from disk")
-            except Exception:
-                print("  ⚠️  Could not load models, retraining...")
-                should_retrain = True
-    else:
-        print("  No existing models found, training new ones...")
-        should_retrain = True
-
-    # Run ML training, goalie fetch, and injury fetch in parallel
-    # These are independent operations that together take ~8-10s sequentially
+    # Run goalie fetch, injury fetch, and live Elo rating computation in
+    # parallel — independent operations that together take several seconds.
     goalie_starters = {}
     all_injuries = {}
+    elo_ratings = {}
 
-    def _train_model():
-        if should_retrain:
-            print("  Training enhanced ML model with contextual features...")
-            ml_model.train(all_games, standings, team_forms)
-        if not ml_model.is_trained:
-            try:
-                ml_model.load_models()
-            except Exception:
-                print("  ⚠️  ML model unavailable, falling back to similarity-only")
+    def _load_elo_ratings():
+        nonlocal elo_ratings
+        print("\n[3.6/5] Computing live Elo ratings...")
+        elo_ratings = get_live_elo_ratings()
+        print(f"  Computed live Elo ratings for {len(elo_ratings)} teams")
 
     def _fetch_goalies():
-        print("\n[3.6/5] Fetching goalie data...")
+        print("\n[3.7/5] Fetching goalie data...")
         result = get_todays_starters()
         print(f"  Loaded goalie data for {len(result)} teams")
         return result
 
     def _fetch_injuries():
-        print("\n[3.7/5] Fetching injury data...")
+        print("\n[3.8/5] Fetching injury data...")
         result = get_todays_injuries()
         print(f"  Loaded injury data for {len(result)} teams")
         return result
 
     with ThreadPoolExecutor(max_workers=3) as executor:
-        model_future = executor.submit(_train_model)
+        elo_future = executor.submit(_load_elo_ratings)
         goalie_future = executor.submit(_fetch_goalies)
         injury_future = executor.submit(_fetch_injuries)
 
         goalie_starters = goalie_future.result()
         all_injuries = injury_future.result()
-        model_future.result()  # Wait for training to complete
+        elo_future.result()  # Wait for live ratings to finish computing
+
+    def _elo_win_prob(home: str, away: str, home_rest_days: float, away_rest_days: float,
+                      home_b2b: bool, away_b2b: bool) -> float:
+        """Calibrated P(home win) from the shipped Elo + home-ice model."""
+        elo_home = elo_ratings.get(home, 1500.0)
+        elo_away = elo_ratings.get(away, 1500.0)
+        # Serving convention (scraper.calculate_rest_days) is days-between - 1
+        # and uncapped; the model was trained on days-between capped at 7
+        # (historical_dataset._TeamState.snapshot). Convert before predicting,
+        # or off-season/long-break games feed rest_diff values the coefficients
+        # never saw.
+        home_rest = min(home_rest_days + 1, 7)
+        away_rest = min(away_rest_days + 1, 7)
+        p_cal, _ = predict_calibrated(
+            elo_coefs, elo_calibrator,
+            elo_diff=elo_home - elo_away,
+            rest_diff=home_rest - away_rest,
+            home_b2b=1.0 if home_b2b else 0.0,
+            away_b2b=1.0 if away_b2b else 0.0,
+        )
+        return p_cal
 
     # Step 4: Fetch odds (if enabled)
     odds_games = []
@@ -247,6 +249,7 @@ def run_analysis(
 
     all_bets = []
     game_analyses = []
+    predictions_to_log = []
 
     if use_odds and odds_games:
         # Pre-compute team data for all unique teams (avoids redundant per-game fetches)
@@ -344,7 +347,15 @@ def run_analysis(
             
             # Get ML predictions and blend with similarity model
             # Fetch player data (rest days, back-to-back, etc.)
-            game_date = game_data["commence_time"][:10]
+            # commence_time is UTC — [:10] would shift every 8 PM ET or later
+            # start to the next day's date, which mislabels the prediction log
+            # AND breaks rest-day/B2B detection (the Elo model's largest
+            # coefficients) for those games. Convert to Eastern first: NHL
+            # schedule dates are Eastern, and no NHL game starts in the one
+            # late-night window where the fixed -4 offset differs from true ET.
+            commence_utc = datetime.fromisoformat(
+                game_data["commence_time"].replace("Z", "+00:00"))
+            game_date = commence_utc.astimezone(EST).strftime("%Y-%m-%d")
             player_data = get_player_data_nhl_api_only(home, away, game_date)
             
             # Add goalie data to player_data
@@ -405,85 +416,71 @@ def run_analysis(
             
             player_data['home_team_splits'] = home_splits['home_recent']  # Home team at home
             player_data['away_team_splits'] = away_splits['road_recent']  # Away team on road
-            
-            home_stats_blend = {**standings[home], **{"win_pct": standings[home].get("win_pct", 0.5)}}
-            away_stats_blend = {**standings[away], **{"win_pct": standings[away].get("win_pct", 0.5)}}
-            
-            # Try enhanced prediction with player data first
-            ml_pred = ml_model.predict_with_context(
-                home_stats_blend, away_stats_blend, 
-                team_forms[home], team_forms[away],
-                player_data
-            )
-            
-            if ml_pred:
-                # Blend ML with similarity model (52% similarity, 48% ML)
-                # OPTIMIZED: Increased ML weight from 45% to 48% based on calibration analysis
-                # Analysis showed model was underconfident - actual win rate 60% vs predicted 52.9%
-                # 48% weight should find 10-25% more +EV bets and improve calibration
-                model_probs_enhanced = blend_ml_and_similarity(ml_pred, model_probs, ml_weight=0.48)
-                model_probs["home_win_prob"] = model_probs_enhanced["home_win_prob"]
-                model_probs["away_win_prob"] = model_probs_enhanced["away_win_prob"]
-                model_probs["expected_total"] = model_probs_enhanced["expected_total"]
-                
-                # Show adjustments if any were applied
-                adjustments = ml_pred.get('adjustments_applied', {})
-                adjustment_text = ""
-                if adjustments.get('factors'):
-                    factors_str = ', '.join(adjustments['factors'])
-                    win_adj = adjustments.get('win_prob_adjustment', 0)
-                    total_adj = adjustments.get('total_adjustment', 0)
-                    adjustment_text = f" [Adj: {win_adj:+.1%} win, {total_adj:+.1f} goals | {factors_str}]"
-                
-                # Add player context indicators
-                player_indicators = []
-                if player_data.get('home_back_to_back'):
-                    player_indicators.append(f"{home} B2B")
-                if player_data.get('away_back_to_back'):
-                    player_indicators.append(f"{away} B2B")
-                if player_data.get('home_rest_days', 1) >= 3:
-                    player_indicators.append(f"{home} well-rested")
-                if player_data.get('away_rest_days', 1) >= 3:
-                    player_indicators.append(f"{away} well-rested")
-                
-                # Add home/road split indicators
-                home_home_splits = player_data.get('home_team_splits', {})
-                away_road_splits = player_data.get('away_team_splits', {})
-                
-                if home_home_splits.get('win_pct', 0.5) > 0.7:
-                    player_indicators.append(f"{home} strong at home")
-                elif home_home_splits.get('win_pct', 0.5) < 0.3:
-                    player_indicators.append(f"{home} weak at home")
-                
-                if away_road_splits.get('win_pct', 0.5) > 0.7:
-                    player_indicators.append(f"{away} strong on road")
-                elif away_road_splits.get('win_pct', 0.5) < 0.3:
-                    player_indicators.append(f"{away} weak on road")
-                
-                # Add goalie recent form indicators
-                home_goalie_stats = player_data.get('home_goalie_stats', {})
-                away_goalie_stats = player_data.get('away_goalie_stats', {})
-                
-                if home_goalie_stats.get('recent_save_pct', 0.910) > 0.930:
-                    player_indicators.append(f"{home} G hot")
-                elif home_goalie_stats.get('recent_save_pct', 0.910) < 0.890:
-                    player_indicators.append(f"{home} G cold")
-                
-                if away_goalie_stats.get('recent_save_pct', 0.910) > 0.930:
-                    player_indicators.append(f"{away} G hot")
-                elif away_goalie_stats.get('recent_save_pct', 0.910) < 0.890:
-                    player_indicators.append(f"{away} G cold")
-                
-                player_context = f" [{', '.join(player_indicators)}]" if player_indicators else ""
-            else:
-                player_context = ""
 
-            # Blend model with market using learned optimal weight
-            # No post-blend manual adjustments — all contextual factors (B2B, goalie,
-            # splits, rest) are incorporated as ML features so XGBoost learns optimal
-            # weights. Analysis of 575 games showed manual adjustments hurt performance.
-            # Model weight is dynamically adjusted based on recent calibration performance.
-            
+            # Win probability: calibrated Elo + home-ice model (model-gate
+            # winner). Overrides the similarity model's home_win_prob; the
+            # similarity model's expected_total/over/under/cover outputs are
+            # kept as-is since Elo doesn't predict totals or spreads.
+            elo_home_win_prob = _elo_win_prob(
+                home, away,
+                player_data.get('home_rest_days', 1), player_data.get('away_rest_days', 1),
+                player_data.get('home_back_to_back', False), player_data.get('away_back_to_back', False),
+            )
+            model_probs["home_win_prob"] = elo_home_win_prob
+            model_probs["away_win_prob"] = 1 - elo_home_win_prob
+
+            predictions_to_log.append({
+                "game_id": game_data.get("game_id"),
+                "date": game_date,
+                "home_team": home,
+                "away_team": away,
+                "home_win_prob": elo_home_win_prob,
+                "expected_total": model_probs["expected_total"],
+            })
+
+            # Player/context indicators for display only (not fed into a
+            # model — the Elo model only uses elo_diff/rest_diff/b2b).
+            player_indicators = []
+            if player_data.get('home_back_to_back'):
+                player_indicators.append(f"{home} B2B")
+            if player_data.get('away_back_to_back'):
+                player_indicators.append(f"{away} B2B")
+            if player_data.get('home_rest_days', 1) >= 3:
+                player_indicators.append(f"{home} well-rested")
+            if player_data.get('away_rest_days', 1) >= 3:
+                player_indicators.append(f"{away} well-rested")
+
+            # Add home/road split indicators
+            home_home_splits = player_data.get('home_team_splits', {})
+            away_road_splits = player_data.get('away_team_splits', {})
+
+            if home_home_splits.get('win_pct', 0.5) > 0.7:
+                player_indicators.append(f"{home} strong at home")
+            elif home_home_splits.get('win_pct', 0.5) < 0.3:
+                player_indicators.append(f"{home} weak at home")
+
+            if away_road_splits.get('win_pct', 0.5) > 0.7:
+                player_indicators.append(f"{away} strong on road")
+            elif away_road_splits.get('win_pct', 0.5) < 0.3:
+                player_indicators.append(f"{away} weak on road")
+
+            # Add goalie recent form indicators
+            home_goalie_stats = player_data.get('home_goalie_stats', {})
+            away_goalie_stats = player_data.get('away_goalie_stats', {})
+
+            if home_goalie_stats.get('recent_save_pct', 0.910) > 0.930:
+                player_indicators.append(f"{home} G hot")
+            elif home_goalie_stats.get('recent_save_pct', 0.910) < 0.890:
+                player_indicators.append(f"{home} G cold")
+
+            if away_goalie_stats.get('recent_save_pct', 0.910) > 0.930:
+                player_indicators.append(f"{away} G hot")
+            elif away_goalie_stats.get('recent_save_pct', 0.910) < 0.890:
+                player_indicators.append(f"{away} G cold")
+
+            player_context = f" [{', '.join(player_indicators)}]" if player_indicators else ""
+
+            # Blend model with market using learned optimal weight.
             # Adjust confidence based on historical calibration
             adjusted_confidence = feedback.get_adjusted_confidence(model_probs["confidence"])
             model_probs["confidence"] = adjusted_confidence
@@ -513,7 +510,7 @@ def run_analysis(
 
             # Print analysis
             line_source = "theScore" if thescore_odds.get("total_over") else "best available"
-            ml_indicator = " (ML+Context)" if ml_pred else ""
+            ml_indicator = " (Elo+Platt)"
             
             # Add goalie context with confirmation status
             goalie_context = ""
@@ -551,12 +548,7 @@ def run_analysis(
                 if injury_parts:
                     injury_context = f" [Injuries: {', '.join(injury_parts)}]"
             
-            # Build context factors text from ML model
             context_factors_text = ""
-            if ml_pred:
-                factors = ml_pred.get('adjustments_applied', {}).get('factors', [])
-                if factors:
-                    context_factors_text = f" [Context: {', '.join(factors)}]"
 
             print(f"    Model{ml_indicator}: {home} {model_probs['home_win_prob']:.1%} / "
                   f"{away} {model_probs['away_win_prob']:.1%} "
@@ -799,7 +791,28 @@ def run_analysis(
 
             model_probs = estimate_probabilities(similar, home, away)
 
-            print(f"    Model: {home} {model_probs['home_win_prob']:.1%} / "
+            # Win probability: calibrated Elo + home-ice model (model-gate
+            # winner), same as the with-odds path. Similarity model keeps
+            # supplying expected_total (Elo doesn't predict totals).
+            player_data = get_player_data_nhl_api_only(home, away, game.get("date", ""))
+            elo_home_win_prob = _elo_win_prob(
+                home, away,
+                player_data.get('home_rest_days', 1), player_data.get('away_rest_days', 1),
+                player_data.get('home_back_to_back', False), player_data.get('away_back_to_back', False),
+            )
+            model_probs["home_win_prob"] = elo_home_win_prob
+            model_probs["away_win_prob"] = 1 - elo_home_win_prob
+
+            predictions_to_log.append({
+                "game_id": game.get("game_id"),
+                "date": game.get("date", ""),
+                "home_team": home,
+                "away_team": away,
+                "home_win_prob": elo_home_win_prob,
+                "expected_total": model_probs["expected_total"],
+            })
+
+            print(f"    Model (Elo+Platt): {home} {model_probs['home_win_prob']:.1%} / "
                   f"{away} {model_probs['away_win_prob']:.1%}")
             print(f"    Expected total: {model_probs['expected_total']:.1f} goals")
             print(f"    Confidence: {model_probs['confidence']:.0%}")
@@ -871,6 +884,13 @@ def run_analysis(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(output, indent=2, default=str))
     print(f"Full analysis saved to: {output_path}")
+
+    # Append-only prediction log (README philosophy #5: "predictions count
+    # only if logged first"). Deduped by (game_id, run date) so re-running
+    # main.py the same day doesn't double-log a game.
+    if predictions_to_log:
+        n_logged = log_predictions(predictions_to_log)
+        print(f"Logged {n_logged} new prediction(s) to data/predictions_log.jsonl")
 
     # Generate parlay performance data from historical results
     parlay_perf = get_parlay_performance(stake=stake)

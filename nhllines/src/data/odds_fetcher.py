@@ -179,18 +179,22 @@ def _cache_key(name: str) -> str:
     return f"odds_{name}_{datetime.now().strftime('%Y%m%d_%H')}"
 
 
-def fetch_nhl_odds(markets: str = MARKETS):
+def fetch_nhl_odds(markets: str = MARKETS, sport: str = "icehockey_nhl"):
     """
-    Fetch current NHL odds for all available games.
+    Fetch current odds for all available games in `sport` (default: NHL).
     Returns tuple of (games, quota_info).
     Automatically rotates between multiple API keys.
+
+    `sport` is exposed mainly so scripts/snapshot_market.py can smoke-test
+    against a sport that's actually in season (e.g. "baseball_mlb") during
+    the NHL off-season, without needing a second copy of this function.
     """
     # Get API key with available quota
     api_key, key_index = get_api_key_with_quota()
 
-    cache_key = _cache_key(f"nhl_{markets.replace(',', '_')}")
+    cache_key = _cache_key(f"{sport}_{markets.replace(',', '_')}")
     cached_path = CACHE_DIR / f"{cache_key}.json"
-    
+
     if cached_path.exists():
         age = time.time() - cached_path.stat().st_mtime
         if age < 1800:  # 30 min cache for odds
@@ -198,7 +202,7 @@ def fetch_nhl_odds(markets: str = MARKETS):
             quota_summary = get_quota_summary()
             return json.loads(cached_path.read_text()), quota_summary
 
-    url = f"{ODDS_API_BASE}/sports/icehockey_nhl/odds"
+    url = f"{ODDS_API_BASE}/sports/{sport}/odds"
     params = {
         "apiKey": api_key,
         "regions": "us,us2",  # covers most Ontario books
