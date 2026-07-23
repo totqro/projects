@@ -35,7 +35,7 @@ warnings.filterwarnings("ignore", message=".*matmul.*", category=RuntimeWarning)
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--model", choices=["elo", "logreg"], default="elo",
+    parser.add_argument("--model", choices=["elo", "logreg", "xg"], default="elo",
                         help="Which model's probabilities to calibrate (default: elo)")
     parser.add_argument("--training-set", default="data/training_set.csv")
     parser.add_argument("--bins", type=int, default=10,
@@ -52,6 +52,7 @@ def main():
     model_label = {
         "elo": "Elo + home-ice logistic (the shipped baseline)",
         "logreg": "44-feature point-in-time logistic (candidate)",
+        "xg": "44-feature drop-goalie logistic (shipped production model)",
     }[args.model]
     print(f"  Model:            {model_label}")
     print(f"  Train seasons:    {', '.join(result['train_seasons'])} "

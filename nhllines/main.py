@@ -49,13 +49,7 @@ from src.models import (
     blend_model_and_market,
     StreamlinedNHLMLModel,
 )
-from src.models.elo_production import (
-    load_production_model,
-    get_live_elo_ratings,
-    predict_calibrated,
-    production_model_exists,
-    fit_and_persist,
-)
+from src.models import elo_production, xg_production
 from src.analysis import (
     evaluate_all_bets,
     format_recommendations,
@@ -122,29 +116,49 @@ def run_analysis(
     for team in standings:
         team_forms[team] = get_team_recent_form(team, all_games, n=10)
     
-    # Step 3.5: Load the shipped model-gate winner — Elo + home-ice logistic,
-    # Platt-calibrated (see src/models/elo_production.py). Coefficients and
-    # calibrator are fit weekly by build_training_set.py; if they're missing
-    # (first run), fit them now from whatever data/training_set.csv has.
-    print("\n[3.5/5] Loading calibrated Elo + home-ice model...")
-    if not production_model_exists():
-        print("  No persisted calibrator found, fitting one now "
-              "(normally done weekly by build_training_set.py)...")
-        fit_and_persist()
-    elo_coefs, elo_calibrator = load_production_model()
-    print(f"  Loaded Elo coefficients + {elo_calibrator.method} calibrator")
+    # Step 3.5: Load the shipped model-gate winner. The ablation winner is the
+    # 44-feature drop-goalie logistic (xG in, goalie out — see
+    # src/models/xg_production.py); Elo + home-ice logistic
+    # (src/models/elo_production.py) is the documented fallback if the xG
+    # artifacts aren't on disk. Both are Platt-calibrated. Coefficients and
+    # calibrator are fit weekly by build_training_set.py; if Elo's are
+    # missing too (first run), fit them now from whatever
+    # data/training_set.csv has.
+    print("\n[3.5/5] Loading calibrated win model...")
+    use_xg = xg_production.production_model_exists()
+    xg_coefs = xg_calibrator = elo_coefs = elo_calibrator = None
+    if use_xg:
+        xg_coefs, xg_calibrator = xg_production.load_production_model()
+        print(f"  Loaded xG drop-goalie coefficients + {xg_calibrator.method} calibrator")
+    else:
+        print("  No persisted xG model found — falling back to Elo + home-ice "
+              "(documented fallback).")
+        if not elo_production.production_model_exists():
+            print("  No persisted Elo calibrator found either, fitting one now "
+                  "(normally done weekly by build_training_set.py)...")
+            elo_production.fit_and_persist()
+        elo_coefs, elo_calibrator = elo_production.load_production_model()
+        print(f"  Loaded Elo coefficients + {elo_calibrator.method} calibrator")
 
-    # Run goalie fetch, injury fetch, and live Elo rating computation in
+    # Run goalie fetch, injury fetch, and live rating/feature computation in
     # parallel — independent operations that together take several seconds.
     goalie_starters = {}
     all_injuries = {}
     elo_ratings = {}
+    xg_state = {}
 
     def _load_elo_ratings():
         nonlocal elo_ratings
         print("\n[3.6/5] Computing live Elo ratings...")
-        elo_ratings = get_live_elo_ratings()
+        elo_ratings = elo_production.get_live_elo_ratings()
         print(f"  Computed live Elo ratings for {len(elo_ratings)} teams")
+
+    def _load_xg_state():
+        nonlocal xg_state
+        print("\n[3.6/5] Computing live point-in-time feature state...")
+        xg_state = xg_production.get_live_feature_state()
+        print(f"  Computed live feature state for "
+              f"{len(xg_state['team_states'])} team-seasons")
 
     def _fetch_goalies():
         print("\n[3.7/5] Fetching goalie data...")
@@ -158,14 +172,14 @@ def run_analysis(
         print(f"  Loaded injury data for {len(result)} teams")
         return result
 
-    with ThreadPoolExecutor(max_workers=3) as executor:
-        elo_future = executor.submit(_load_elo_ratings)
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        rating_future = executor.submit(_load_xg_state if use_xg else _load_elo_ratings)
         goalie_future = executor.submit(_fetch_goalies)
         injury_future = executor.submit(_fetch_injuries)
 
         goalie_starters = goalie_future.result()
         all_injuries = injury_future.result()
-        elo_future.result()  # Wait for live ratings to finish computing
+        rating_future.result()  # Wait for live ratings/state to finish computing
 
     def _elo_win_prob(home: str, away: str, home_rest_days: float, away_rest_days: float,
                       home_b2b: bool, away_b2b: bool) -> float:
@@ -179,7 +193,7 @@ def run_analysis(
         # never saw.
         home_rest = min(home_rest_days + 1, 7)
         away_rest = min(away_rest_days + 1, 7)
-        p_cal, _ = predict_calibrated(
+        p_cal, _ = elo_production.predict_calibrated(
             elo_coefs, elo_calibrator,
             elo_diff=elo_home - elo_away,
             rest_diff=home_rest - away_rest,
@@ -187,6 +201,21 @@ def run_analysis(
             away_b2b=1.0 if away_b2b else 0.0,
         )
         return p_cal
+
+    def _xg_win_prob(home: str, away: str, home_rest_days: float, away_rest_days: float,
+                     home_b2b: bool, away_b2b: bool) -> float:
+        """Calibrated P(home win) from the shipped 44-feature drop-goalie
+        model. Same rest-day conversion as _elo_win_prob, so both shipped
+        models read the live rest-day feed identically."""
+        home_rest = min(home_rest_days + 1, 7)
+        away_rest = min(away_rest_days + 1, 7)
+        features = xg_production.compute_serving_features(
+            xg_state, home, away, home_rest, away_rest, home_b2b, away_b2b)
+        p_cal, _ = xg_production.predict_calibrated(xg_coefs, xg_calibrator, features)
+        return p_cal
+
+    _win_prob = _xg_win_prob if use_xg else _elo_win_prob
+    ml_indicator = " (xG+Platt)" if use_xg else " (Elo+Platt)"
 
     # Step 4: Fetch odds (if enabled)
     odds_games = []
@@ -417,11 +446,12 @@ def run_analysis(
             player_data['home_team_splits'] = home_splits['home_recent']  # Home team at home
             player_data['away_team_splits'] = away_splits['road_recent']  # Away team on road
 
-            # Win probability: calibrated Elo + home-ice model (model-gate
-            # winner). Overrides the similarity model's home_win_prob; the
+            # Win probability: calibrated production model (model-gate
+            # winner — xG drop-goalie, or Elo + home-ice if xG artifacts are
+            # missing). Overrides the similarity model's home_win_prob; the
             # similarity model's expected_total/over/under/cover outputs are
-            # kept as-is since Elo doesn't predict totals or spreads.
-            elo_home_win_prob = _elo_win_prob(
+            # kept as-is since neither shipped model predicts totals or spreads.
+            elo_home_win_prob = _win_prob(
                 home, away,
                 player_data.get('home_rest_days', 1), player_data.get('away_rest_days', 1),
                 player_data.get('home_back_to_back', False), player_data.get('away_back_to_back', False),
@@ -510,7 +540,6 @@ def run_analysis(
 
             # Print analysis
             line_source = "theScore" if thescore_odds.get("total_over") else "best available"
-            ml_indicator = " (Elo+Platt)"
             
             # Add goalie context with confirmation status
             goalie_context = ""
@@ -791,11 +820,11 @@ def run_analysis(
 
             model_probs = estimate_probabilities(similar, home, away)
 
-            # Win probability: calibrated Elo + home-ice model (model-gate
+            # Win probability: calibrated production model (model-gate
             # winner), same as the with-odds path. Similarity model keeps
-            # supplying expected_total (Elo doesn't predict totals).
+            # supplying expected_total (neither shipped model predicts totals).
             player_data = get_player_data_nhl_api_only(home, away, game.get("date", ""))
-            elo_home_win_prob = _elo_win_prob(
+            elo_home_win_prob = _win_prob(
                 home, away,
                 player_data.get('home_rest_days', 1), player_data.get('away_rest_days', 1),
                 player_data.get('home_back_to_back', False), player_data.get('away_back_to_back', False),
@@ -812,7 +841,7 @@ def run_analysis(
                 "expected_total": model_probs["expected_total"],
             })
 
-            print(f"    Model (Elo+Platt): {home} {model_probs['home_win_prob']:.1%} / "
+            print(f"    Model{ml_indicator}: {home} {model_probs['home_win_prob']:.1%} / "
                   f"{away} {model_probs['away_win_prob']:.1%}")
             print(f"    Expected total: {model_probs['expected_total']:.1f} goals")
             print(f"    Confidence: {model_probs['confidence']:.0%}")

@@ -164,6 +164,21 @@ def main():
         print(f"  Wrote {CALIBRATOR_PATH}")
         print(f"  Wrote {COEFFICIENTS_PATH}")
 
+        print("\n" + "=" * 72)
+        print("  REFITTING PRODUCTION MODEL (44-feature drop-goalie xG, Platt)")
+        print("=" * 72)
+        from src.models.xg_production import (
+            fit_and_persist as fit_and_persist_xg,
+            CALIBRATOR_PATH as XG_CALIBRATOR_PATH,
+            COEFFICIENTS_PATH as XG_COEFFICIENTS_PATH,
+        )
+        xg_summary = fit_and_persist_xg(args.seasons, csv_path=args.out)
+        print(f"  Trained on: {', '.join(xg_summary['seasons'])}")
+        print(f"  Calibrator: {xg_summary['calibrator_method']} "
+              f"(fit on held-out {xg_summary['held_out_calibration_season']})")
+        print(f"  Wrote {XG_CALIBRATOR_PATH}")
+        print(f"  Wrote {XG_COEFFICIENTS_PATH}")
+
 
 if __name__ == "__main__":
     main()
