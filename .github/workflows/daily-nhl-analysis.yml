@@ -5,6 +5,11 @@ on:
     # Run at 12:00 PM EST (17:00 UTC) every day
     - cron: '0 17 * * *'
   workflow_dispatch: # Allow manual trigger
+    inputs:
+      force_weekly_refit:
+        description: 'Run the weekly training-set rebuild + model refit regardless of day (manual catch-up / testing)'
+        type: boolean
+        default: false
 
 jobs:
   analyze:
@@ -75,7 +80,7 @@ jobs:
           fi
 
       - name: Rebuild training set + refit production models (weekly)
-        if: steps.check-day.outputs.is_sunday == 'true'
+        if: steps.check-day.outputs.is_sunday == 'true' || github.event.inputs.force_weekly_refit == 'true'
         working-directory: nhllines
         run: python build_training_set.py
 
@@ -104,7 +109,7 @@ jobs:
           "
 
       - name: Refresh backtest results (weekly)
-        if: steps.check-day.outputs.is_sunday == 'true'
+        if: steps.check-day.outputs.is_sunday == 'true' || github.event.inputs.force_weekly_refit == 'true'
         working-directory: nhllines
         run: python backtest.py
 
@@ -127,7 +132,7 @@ jobs:
           fi
 
       - name: Save ML models
-        if: steps.check-games.outputs.has_games == 'true' || steps.check-day.outputs.is_sunday == 'true'
+        if: steps.check-games.outputs.has_games == 'true' || steps.check-day.outputs.is_sunday == 'true' || github.event.inputs.force_weekly_refit == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: nhl-ml-models
