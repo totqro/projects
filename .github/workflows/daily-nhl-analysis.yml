@@ -65,6 +65,20 @@ jobs:
             echo "No NHL games scheduled today, skipping analysis"
           fi
 
+      - name: Check day of week
+        id: check-day
+        run: |
+          if [ "$(date +%u)" == "7" ]; then
+            echo "is_sunday=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_sunday=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Rebuild training set + refit production models (weekly)
+        if: steps.check-day.outputs.is_sunday == 'true'
+        working-directory: nhllines
+        run: python build_training_set.py
+
       - name: Run NHL analysis
         if: steps.check-games.outputs.has_games == 'true'
         working-directory: nhllines
@@ -90,13 +104,9 @@ jobs:
           "
 
       - name: Refresh backtest results (weekly)
+        if: steps.check-day.outputs.is_sunday == 'true'
         working-directory: nhllines
-        run: |
-          if [ "$(date +%u)" == "7" ]; then
-            python backtest.py
-          else
-            echo "Skipping backtest refresh (runs weekly on Sundays)"
-          fi
+        run: python backtest.py
 
       - name: Commit updated data
         run: |
@@ -117,7 +127,7 @@ jobs:
           fi
 
       - name: Save ML models
-        if: steps.check-games.outputs.has_games == 'true'
+        if: steps.check-games.outputs.has_games == 'true' || steps.check-day.outputs.is_sunday == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: nhl-ml-models
