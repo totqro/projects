@@ -132,6 +132,23 @@ admission.
     served it (`xg-dropgoalie-platt-v1` or `elo-platt-v1`), so a fallback run
     can never be pooled with an xG run in the scorecard.
 
+11. ✅ **Season scorecard** (`scorecard.py`) — scores the logged predictions
+    against actual results and against the market's closing consensus: log
+    loss, Brier, accuracy, ECE, a reliability table, and totals RMSE/MAE/
+    Poisson NLL (the same NLL definition the totals gate uses, imported
+    rather than reimplemented). Three rules keep it honest: only rows logged
+    before the game date count; the market is scored on the latest snapshot
+    taken *strictly before* commence time, so the benchmark can't peek; and
+    the model-vs-market table is restricted to games where both have a
+    pre-game number. Mixed model versions are reported rather than pooled,
+    and a head-to-head gap on fewer than 200 games is labelled as noise
+    rather than reported as a result. Built before the data exists on
+    purpose — verified against a synthetic season with known answers (16
+    checks: dedup to the last pre-game row, post-game rows dropped,
+    late-evening games keyed to the right date, post-puck-drop snapshots
+    excluded, metrics matched against sklearn) and against the real
+    snapshots already archived.
+
 The leaky XGBoost path stays quarantined. The similarity model still supplies
 **expected total goals** — the totals gate found nothing that beats a constant
 league-average Poisson mean, so there's nothing better to wire in yet. The
@@ -145,7 +162,7 @@ season list rolls forward automatically each July.
 | ✅ Done (Jul 2026) | Totals gate (`model_gate.py --totals`, baseline wins — nothing shipped), prediction log, market-consensus snapshot job — all verified |
 | ✅ Done (Jul 2026) | MoneyPuck xG features added to the point-in-time dataset; win-model gate now **passes** (item 8) — first model to beat Elo out-of-sample |
 | ✅ Done (Jul 2026) | xG model wired into production serving (item 9); prediction log + market snapshots made durable and the snapshot job put on a schedule (item 10) |
-| ⬜ Before Oct 2026 | Season scorecard script: running log loss / Brier / calibration from `predictions_log.jsonl` vs actuals and vs the market snapshots. Nothing scores logged predictions today — build it before the data starts arriving, not in January |
+| ✅ Done (Jul 2026) | Season scorecard (`scorecard.py`, item 11) — logged predictions vs actuals vs market closing consensus. Verified on a synthetic season; reports "nothing to score" until the real data arrives |
 | Oct 2026 (season start) | Publish predictions pre-game daily; score vs actuals and vs market benchmark |
 | Jan 2027 (mid-season) | Interim scorecard (~600 games): log loss / Brier / calibration vs market consensus |
 | Apr 2027 (season end) | Full-season evaluation: is the model within striking distance of the market's log loss (~0.66)? Publish the scorecard either way |
@@ -175,7 +192,8 @@ service:
 2. **Live accuracy scorecard** — running log loss / Brier / calibration plot
    for the season, shown next to the market benchmark. Publishing the
    scorecard *especially when it's unflattering* is the differentiator; most
-   prediction sites don't dare.
+   prediction sites don't dare. The numbers exist as of item 11
+   (`scorecard.py --json`); rendering them on the site is the open part.
 3. **Goalie-news reactivity** — DailyFaceoff starter scraping already exists;
    confirmed-starter updates are the one input that moves NHL win
    probabilities intraday. "Prediction updated: starter confirmed" is a
@@ -208,6 +226,10 @@ python model_gate.py --totals         # total-goals candidate vs league-average 
 
 # Calibration: Platt/isotonic on a held-out season vs raw probabilities
 python calibrate.py
+
+# Season scorecard: logged predictions vs actual results vs the market
+python scorecard.py                      # current season to date
+python scorecard.py --json data/scorecard.json
 
 # Snapshot the market's devigged consensus (runs 3x daily in CI via
 # .github/workflows/market-snapshot.yml; this is the manual equivalent)
@@ -250,6 +272,7 @@ nhllines/
 ├── build_training_set.py          # CLI: build dataset + refit production model
 ├── model_gate.py                  # CLI: candidate vs baseline gate (+ ablation, + totals)
 ├── calibrate.py                   # CLI: held-out-season calibration
+├── scorecard.py                   # CLI: logged predictions vs actuals vs market
 ├── scripts/
 │   └── snapshot_market.py         # CLI: devigged market-consensus snapshot (cron job)
 ├── docs/                          # Documentation
