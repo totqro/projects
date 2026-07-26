@@ -26,12 +26,30 @@ log never changes.
 
 import csv
 import io
+import time
 import zipfile
+from datetime import datetime
 from pathlib import Path
 
 import requests
 
 from .nhl_data import CACHE_DIR
+
+# A season's shots zip is downloaded once and cached forever — EXCEPT for the
+# season currently in progress, whose zip MoneyPuck keeps appending to. That
+# season's cache is treated as stale after this many hours so serving picks
+# up newly published games instead of freezing on whatever was cached first
+# (which would otherwise make the in-season xG lag permanent, not just a
+# lag). Mirrors historical_dataset.py's _CURRENT_SEASON_CACHE_HOURS pattern.
+_CURRENT_SEASON_SHOTS_CACHE_HOURS = 12
+
+
+def _current_season_start_year() -> int:
+    # Duplicated from historical_dataset.current_season() rather than
+    # imported: historical_dataset.py imports load_moneypuck_xg from this
+    # module, so importing back would be circular.
+    now = datetime.now()
+    return now.year if now.month >= 7 else now.year - 1
 
 MONEYPUCK_SHOTS_URL = "https://moneypuck.com/moneypuck/playerData/shots/shots_{year}.zip"
 
@@ -77,7 +95,11 @@ def download_season_shots(year: int) -> Path:
     log doesn't change."""
     csv_path = _cache_csv_path(year)
     if csv_path.exists():
-        return csv_path
+        if year != _current_season_start_year():
+            return csv_path
+        age_hours = (time.time() - csv_path.stat().st_mtime) / 3600
+        if age_hours < _CURRENT_SEASON_SHOTS_CACHE_HOURS:
+            return csv_path
 
     url = MONEYPUCK_SHOTS_URL.format(year=year)
     resp = requests.get(url, headers=_HEADERS, timeout=180)

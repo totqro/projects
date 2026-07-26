@@ -49,7 +49,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, brier_score_loss, log_loss
 from sklearn.preprocessing import StandardScaler
 
-from src.data.historical_dataset import FEATURE_COLUMNS, seasons_through_current
+from src.data.historical_dataset import FEATURE_COLUMNS, XG_FEATURE_COLUMNS, seasons_through_current
 from src.models.elo_baseline import ELO_FEATURE_COLUMNS, build_elo_rows
 
 # Rolling: automatically includes a new season once it starts (July 1), so
@@ -258,6 +258,14 @@ def _model_rows(model_name: str, seasons: list, csv_path: str):
         # 44-feature point-in-time logistic candidate (the overconfident one).
         rows = _load_csv_rows(csv_path)
         return rows, FEATURE_COLUMNS, 0.1
+    if model_name == "xg":
+        # Ablation winner shipped by src/models/xg_production.py: the 44-feature
+        # point-in-time logistic with the goalie block dropped (xG in, goalie
+        # out) — the only ablation variant to beat Elo on both log loss and
+        # Brier when gated (see model_gate.py --ablation). Same C as "logreg":
+        # it's the identical model family on a column subset.
+        rows = _load_csv_rows(csv_path)
+        return rows, XG_FEATURE_COLUMNS, 0.1
     raise ValueError(f"Unknown model: {model_name}")
 
 

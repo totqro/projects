@@ -22,9 +22,21 @@ from pathlib import Path
 
 LOG_PATH = Path(__file__).resolve().parents[2] / "data" / "predictions_log.jsonl"
 
-# Bump this whenever the win or totals model changes in a way that would
-# make old log rows non-comparable to new ones.
-MODEL_VERSION = "elo-platt-v1+similarity-totals-v1"
+# Bump these whenever the win or totals model changes in a way that would
+# make old log rows non-comparable to new ones. main.py passes the version of
+# the win model that actually served each run — the gated xG model when its
+# artifacts are on disk, Elo when serving falls back — because a log row that
+# misreports which model produced it is worse than no log row at all: the
+# season scorecard would pool two different models under one label.
+WIN_MODEL_VERSIONS = {
+    "xg": "xg-dropgoalie-platt-v1",
+    "elo": "elo-platt-v1",
+}
+TOTALS_MODEL_VERSION = "similarity-totals-v1"
+
+# Retained as the fallback for callers that don't declare a model (and as the
+# exact string every row written before the xG model shipped carries).
+MODEL_VERSION = f"{WIN_MODEL_VERSIONS['elo']}+{TOTALS_MODEL_VERSION}"
 
 
 def _existing_keys(path: Path) -> set:
@@ -45,7 +57,8 @@ def _existing_keys(path: Path) -> set:
     return keys
 
 
-def log_predictions(games: list, path: Path = LOG_PATH) -> int:
+def log_predictions(games: list, path: Path = LOG_PATH,
+                    model_version: str = MODEL_VERSION) -> int:
     """
     Append one JSON line per game to the prediction log.
 
@@ -53,6 +66,10 @@ def log_predictions(games: list, path: Path = LOG_PATH) -> int:
     away_team, home_win_prob, expected_total. Skips any (date, home, away,
     run_date) tuple already present in the file. Returns the number of new
     lines written.
+
+    `model_version` should name the win model that actually served this run
+    (see WIN_MODEL_VERSIONS); it defaults to the Elo string for callers
+    predating the xG model.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     existing = _existing_keys(path)
@@ -75,7 +92,7 @@ def log_predictions(games: list, path: Path = LOG_PATH) -> int:
                 "away_team": g["away_team"],
                 "home_win_prob": g["home_win_prob"],
                 "expected_total": g["expected_total"],
-                "model_version": MODEL_VERSION,
+                "model_version": model_version,
             }
             f.write(json.dumps(record, default=str) + "\n")
             written += 1

@@ -29,7 +29,7 @@ from sklearn.linear_model import LogisticRegression, PoissonRegressor
 from sklearn.metrics import accuracy_score, brier_score_loss, log_loss, mean_squared_error
 from sklearn.preprocessing import StandardScaler
 
-from src.data.historical_dataset import FEATURE_COLUMNS
+from src.data.historical_dataset import FEATURE_COLUMNS, GOALIE_FEATURE_COLUMNS
 from src.models.elo_baseline import evaluate as evaluate_elo
 
 # Spurious "divide by zero encountered in matmul" RuntimeWarning under this
@@ -100,11 +100,7 @@ def evaluate_candidate(rows: list, candidate: str, columns: list = None) -> dict
 # resulting reduced logistic regression is gated against Elo exactly like any
 # other candidate — held-out log loss / Brier only, never accuracy.
 FEATURE_BLOCKS = {
-    "goalie": [
-        "home_goalie_starts", "home_goalie_sv_pct", "home_goalie_gaa", "home_goalie_recent_sv_pct",
-        "away_goalie_starts", "away_goalie_sv_pct", "away_goalie_gaa", "away_goalie_recent_sv_pct",
-        "goalie_sv_pct_diff", "goalie_recent_sv_pct_diff", "goalie_experience_diff",
-    ],
+    "goalie": GOALIE_FEATURE_COLUMNS,
     "form": [
         "home_form_win_pct", "home_form_gf", "home_form_ga",
         "away_form_win_pct", "away_form_gf", "away_form_ga", "form_diff",

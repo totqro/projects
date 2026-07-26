@@ -441,6 +441,18 @@ LABEL_COLUMNS = ["home_win", "total_goals", "goal_diff", "went_ot"]
 
 META_COLUMNS = ["game_id", "season", "date", "home_team", "away_team"]
 
+# The goalie block within FEATURE_COLUMNS — split out so model_gate.py's
+# ablation and the production xG model (src/models/xg_production.py, the
+# ablation winner: xG in, goalie block out) share one definition instead of
+# two lists that can drift apart.
+GOALIE_FEATURE_COLUMNS = [
+    "home_goalie_starts", "home_goalie_sv_pct", "home_goalie_gaa", "home_goalie_recent_sv_pct",
+    "away_goalie_starts", "away_goalie_sv_pct", "away_goalie_gaa", "away_goalie_recent_sv_pct",
+    "goalie_sv_pct_diff", "goalie_recent_sv_pct_diff", "goalie_experience_diff",
+]
+
+XG_FEATURE_COLUMNS = [c for c in FEATURE_COLUMNS if c not in GOALIE_FEATURE_COLUMNS]
+
 
 def build_point_in_time_rows(games: list, min_gp: int = 5, starters: dict = None,
                               xg_data: dict = None) -> list:
@@ -590,6 +602,69 @@ def build_point_in_time_rows(games: list, min_gp: int = 5, starters: dict = None
                             away_starter["goals_against"], away_starter["minutes"])
 
     return rows
+
+
+def build_live_state(games: list, xg_data: dict = None) -> tuple:
+    """
+    Serving-time counterpart to build_point_in_time_rows(): replay every game
+    in `games` chronologically and return the resulting point-in-time state,
+    for predicting a game that hasn't been played yet — no rows are emitted
+    and no min_gp filtering happens (state must reflect every game played,
+    even a team's first few).
+
+    Unlike build_point_in_time_rows() — where a season in MONEYPUCK_SEASONS
+    must have total xG coverage, and a missing join is a hard error — a
+    missing per-game xG join here is NOT an error. MoneyPuck publishes with a
+    delay, so the current season's most recent games may not be covered yet.
+    A missing join simply means that game contributes no xG update; each
+    team's xG state carries forward from its last covered game rather than
+    resetting to the neutral default (see _TeamState.snapshot()), so the
+    in-season lag never silently looks like "no signal".
+
+    Returns (team_states, h2h_results):
+      team_states: {(season, team_abbrev): _TeamState} — pass to
+        snapshot_team_state() rather than touching _TeamState directly.
+      h2h_results: {frozenset({a, b}): [(date, winner_abbrev), ...]}
+    """
+    games = sorted(games, key=lambda g: (g["date"], g["id"]))
+    xg_data = xg_data or {}
+
+    team_states = {}
+    h2h_results = defaultdict(list)
+
+    for g in games:
+        season = g["season"]
+        home, away = g["home_team"], g["away_team"]
+        date = g["date"]
+
+        hs = team_states.setdefault((season, home), _TeamState())
+        as_ = team_states.setdefault((season, away), _TeamState())
+
+        game_xg = xg_data.get(g["id"])
+        home_xg = game_xg.get(home) if game_xg else None
+        away_xg = game_xg.get(away) if game_xg else None
+
+        lost_in_extra = g["last_period_type"] in ("OT", "SO")
+        hs.record(date, g["home_win"], g["home_score"], g["away_score"],
+                  is_home=True, lost_in_extra=(not g["home_win"]) and lost_in_extra,
+                  xg=home_xg)
+        as_.record(date, not g["home_win"], g["away_score"], g["home_score"],
+                   is_home=False, lost_in_extra=g["home_win"] and lost_in_extra,
+                   xg=away_xg)
+        h2h_results[frozenset((home, away))].append(
+            (date, home if g["home_win"] else away))
+
+    return team_states, h2h_results
+
+
+def snapshot_team_state(team_states: dict, season: str, team: str, as_of_date: str) -> dict:
+    """Public accessor for a team's point-in-time snapshot out of the
+    (season, team) -> _TeamState mapping returned by build_live_state(), using
+    the identical _TeamState.snapshot() logic training rows are built from.
+    A team with no state yet this season (hasn't played, or a new season with
+    no games) gets the same neutral-prior snapshot an early training row would."""
+    state = team_states.get((season, team))
+    return (state or _TeamState()).snapshot(as_of_date)
 
 
 def write_csv(rows: list, out_path: str):

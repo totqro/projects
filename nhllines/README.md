@@ -1,9 +1,10 @@
 # NHL Game Prediction Model
 
-Predicts, for every NHL game: **win probability** (calibrated Elo + home-ice
-model) and **expected total goals**. Predictions are logged before puck drop
-and evaluated after — against actual results and against the strongest
-available benchmark, the betting market's implied probabilities.
+Predicts, for every NHL game: **win probability** (calibrated xG + form
+logistic — the first model to pass the gate) and **expected total goals**.
+Predictions are logged before puck drop and evaluated after — against actual
+results and against the strongest available benchmark, the betting market's
+implied probabilities.
 
 **Status:** Rebuilt July 2026 — leak-free pipeline, gated models, calibrated output
 **Deployment:** https://projects-brawlstars.web.app/nhllines/
@@ -103,25 +104,48 @@ admission.
    features carry win-probability signal, not total-goals signal, in this
    feature set.
 
-**Production wiring (⚠️ pending, July 2026):** `main.py` still uses the
-calibrated Elo + home-ice model (`src/models/elo_production.py`) for win
-probability — the xG-augmented logistic regression in item 8 passes the gate
-but has not yet been wired into production serving (calibration, live
-feature computation, and `elo_production.py`-equivalent artifact persistence
-for the new model are unbuilt). The leaky XGBoost path stays quarantined.
-The similarity model still supplies **expected total goals** — the totals
-gate found nothing that beats a constant league-average Poisson mean, so
-there's nothing better to wire in yet. Serving features are converted to the
-exact training conventions (rest days capped at 7), and the season list
-rolls forward automatically each July.
+9. ✅ **xG model wired into production serving** (`src/models/xg_production.py`)
+   — the ablation winner (the 44-feature drop-goalie logistic: xG in, goalie
+   out; 0.6881/0.2473 vs Elo's 0.6929/0.2496 on held-out 2025-26) now serves
+   win probability in `main.py`, replacing Elo. Coefficients and the Platt
+   calibrator are persisted to `ml_models/` and refit weekly by
+   `build_training_set.py`; `main.py` falls back to the calibrated Elo model
+   when those artifacts are absent. Train/serve skew guards:
+   `compute_serving_features()` asserts its output keys exactly match the
+   training feature list, live xG state carries a team's last covered value
+   forward rather than resetting to a neutral default when MoneyPuck
+   publishes late, and both serving paths apply the identical "+1, capped at
+   7" rest-day conversion. Verified: persisted coefficients reproduce the
+   calibrator's fitting distribution exactly (max delta 0.0).
 
-### Timeline (updated July 18, 2026)
+10. ✅ **Season-validation record is durable** (`.gitignore`,
+    `.github/workflows/`) — the prediction log and the market snapshots are
+    committed, not left on the CI runner that wrote them. Both are
+    perishable: a prediction not logged before puck drop, or a market price
+    not captured before it, cannot be reconstructed afterwards, and the
+    Jan/Apr 2027 scorecards have nothing to score without them.
+    `market-snapshot.yml` runs `scripts/snapshot_market.py` 3x daily
+    (opening / midday / near puck drop) and commits each snapshot;
+    `daily-nhl-analysis.yml` commits `data/predictions_log.jsonl` — which
+    also makes the log's same-day dedup work, since checkout restores prior
+    runs' lines. Each logged row is stamped with the win model that actually
+    served it (`xg-dropgoalie-platt-v1` or `elo-platt-v1`), so a fallback run
+    can never be pooled with an xG run in the scorecard.
+
+The leaky XGBoost path stays quarantined. The similarity model still supplies
+**expected total goals** — the totals gate found nothing that beats a constant
+league-average Poisson mean, so there's nothing better to wire in yet. The
+season list rolls forward automatically each July.
+
+### Timeline (updated July 26, 2026)
 
 | When | Milestone |
 |------|-----------|
 | ✅ Done (Jul 2026) | Point-in-time dataset, goalie starters, Elo baseline + gate, Platt calibration, production wiring — all verified |
 | ✅ Done (Jul 2026) | Totals gate (`model_gate.py --totals`, baseline wins — nothing shipped), prediction log, market-consensus snapshot job — all verified |
-| ✅ Done (Jul 2026) | MoneyPuck xG features added to the point-in-time dataset; win-model gate now **passes** (item 8) — first model to beat Elo out-of-sample. Not yet wired into production serving. |
+| ✅ Done (Jul 2026) | MoneyPuck xG features added to the point-in-time dataset; win-model gate now **passes** (item 8) — first model to beat Elo out-of-sample |
+| ✅ Done (Jul 2026) | xG model wired into production serving (item 9); prediction log + market snapshots made durable and the snapshot job put on a schedule (item 10) |
+| ⬜ Before Oct 2026 | Season scorecard script: running log loss / Brier / calibration from `predictions_log.jsonl` vs actuals and vs the market snapshots. Nothing scores logged predictions today — build it before the data starts arriving, not in January |
 | Oct 2026 (season start) | Publish predictions pre-game daily; score vs actuals and vs market benchmark |
 | Jan 2027 (mid-season) | Interim scorecard (~600 games): log loss / Brier / calibration vs market consensus |
 | Apr 2027 (season end) | Full-season evaluation: is the model within striking distance of the market's log loss (~0.66)? Publish the scorecard either way |
@@ -185,8 +209,8 @@ python model_gate.py --totals         # total-goals candidate vs league-average 
 # Calibration: Platt/isotonic on a held-out season vs raw probabilities
 python calibrate.py
 
-# Snapshot the market's devigged consensus (cron-friendly; see the script's
-# docstring for a suggested schedule)
+# Snapshot the market's devigged consensus (runs 3x daily in CI via
+# .github/workflows/market-snapshot.yml; this is the manual equivalent)
 python scripts/snapshot_market.py
 
 # System status
@@ -207,9 +231,10 @@ nhllines/
 │   │   ├── odds_fetcher.py        # Market data (evaluation benchmark)
 │   │   └── player_data.py
 │   ├── models/
-│   │   ├── elo_baseline.py        # Elo + home-ice logistic (shipped model)
+│   │   ├── xg_production.py       # Shipped win model: xG drop-goalie logistic + Platt
+│   │   ├── elo_baseline.py        # Elo + home-ice logistic (gate baseline)
 │   │   ├── calibration.py         # Platt/isotonic probability calibration
-│   │   ├── elo_production.py      # Production wiring + persisted artifacts
+│   │   ├── elo_production.py      # Elo serving path (fallback) + persisted artifacts
 │   │   ├── model.py               # Similarity model (totals only; being replaced)
 │   │   ├── ml_model.py            # Quarantined (leaky training)
 │   │   └── ml_model_streamlined.py  # Quarantined (leaky training)
@@ -228,8 +253,9 @@ nhllines/
 ├── scripts/
 │   └── snapshot_market.py         # CLI: devigged market-consensus snapshot (cron job)
 ├── docs/                          # Documentation
-├── data/                          # Data files (gitignored)
-│   └── market_snapshots/          # One devigged odds snapshot per run (gitignored)
+├── data/                          # Data files (gitignored except the records below)
+│   ├── predictions_log.jsonl      # Append-only prediction record (committed)
+│   └── market_snapshots/          # One devigged odds snapshot per run (committed)
 ├── cache/                         # API cache (gitignored)
 ├── ml_models/                     # Model artifacts (gitignored)
 ├── web/                           # Web interface
@@ -288,4 +314,4 @@ they conflict with this README, this README wins.
 
 Private project — not for distribution.
 
-Last Updated: July 16, 2026
+Last Updated: July 26, 2026

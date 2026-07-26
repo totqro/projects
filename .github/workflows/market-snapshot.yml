@@ -1,0 +1,111 @@
+name: NHL Market Benchmark Snapshot
+
+# Archives the betting market's devigged consensus probabilities before puck
+# drop. This is the benchmark the prediction model is scored against in the
+# Jan/Apr 2027 scorecards — and it is strictly perishable: a snapshot not
+# taken before a game cannot be reconstructed afterwards.
+on:
+  schedule:
+    # 3x daily, US/Eastern (offsets are EST; the NHL season is EST except
+    # mid-March onward, when these land an hour later in local time):
+    #   14:00 UTC =  9:00 ET  — opening lines
+    #   20:00 UTC = 15:00 ET  — midday move
+    #   23:30 UTC = 18:30 ET  — closest to puck drop (most games 19:00-19:30 ET)
+    - cron: '0 14 * * *'
+    - cron: '0 20 * * *'
+    - cron: '30 23 * * *'
+  workflow_dispatch:
+    inputs:
+      sport:
+        description: 'Odds API sport key (use baseball_mlb to smoke-test in the NHL off-season)'
+        type: string
+        default: 'icehockey_nhl'
+
+# Never let two snapshot runs race each other to push; a queued run still
+# takes its own snapshot afterwards.
+concurrency:
+  group: nhl-market-snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+          cache-dependency-path: nhllines/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r nhllines/requirements.txt
+
+      - name: Create config from secrets
+        working-directory: nhllines
+        run: |
+          cat > config.json << 'EOF'
+          {
+            "odds_api_key": "${{ secrets.ODDS_API_KEY }}",
+            "odds_api_key_two": "${{ secrets.ODDS_API_KEY_TWO }}",
+            "odds_api_key_three": "${{ secrets.ODDS_API_KEY_THREE }}"
+          }
+          EOF
+
+      - name: Take market snapshot
+        working-directory: nhllines
+        # --skip-empty: the schedule runs year-round, so off-season days would
+        # otherwise commit ~90 zero-game files before the season starts.
+        run: python scripts/snapshot_market.py --sport "${{ inputs.sport || 'icehockey_nhl' }}" --skip-empty
+
+      - name: Commit snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add nhllines/data/market_snapshots/ 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "No new snapshot to commit (empty odds board — expected off-season)"
+            exit 0
+          fi
+          git commit -m "chore: NHL market snapshot [$(date -u +'%Y-%m-%d %H:%M UTC')]"
+          # Snapshots are new files only — never edits to existing ones — so a
+          # rebase onto concurrent data commits from the daily analysis job
+          # cannot conflict. Retry a few times in case of a push race.
+          for attempt in 1 2 3; do
+            git pull --rebase origin main && git push && {
+              echo "✅ Snapshot committed and pushed"
+              exit 0
+            }
+            echo "::warning::Push attempt $attempt failed, retrying"
+            git rebase --abort 2>/dev/null || true
+            sleep 5
+          done
+          echo "::error::Could not push market snapshot after 3 attempts"
+          exit 1
+
+      - name: Notify on failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "❌ NHL Market Snapshot Failed"
+          to: lucknox@icloud.com
+          from: ${{ secrets.EMAIL_USERNAME }}
+          body: |
+            The NHL market benchmark snapshot failed — this data is perishable,
+            so a missed run is a permanent gap in the season benchmark.
+
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Trigger: ${{ github.event_name }}
+        continue-on-error: true
