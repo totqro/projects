@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NHL Game Predictions</title>
-    <link rel="stylesheet" href="styles.css?v=15.0">
+    <link rel="stylesheet" href="styles.css?v=16.0">
 </head>
 <body>
     <div class="container">
@@ -19,6 +19,7 @@
         <div class="tabs">
             <button class="tab-button active" onclick="showTab('today')">Today's Predictions</button>
             <button class="tab-button" onclick="showTab('performance')">Performance History</button>
+            <button class="tab-button" onclick="showTab('bracket')">Stanley Cup Bracket</button>
         </div>
 
         <div id="loading" class="loading">
@@ -120,8 +121,48 @@
                 <div id="recent-results-list"></div>
             </section>
         </div>
+
+        <!-- Stanley Cup Bracket Tab -->
+        <div id="bracket-tab" class="tab-content" style="display: none;">
+            <section class="summary-card">
+                <h2>Projected Bracket</h2>
+                <p class="parlay-subtitle" id="bracket-method">
+                    Projected forward from the first round with the shipped model, using
+                    team form frozen at the end of the regular season.
+                </p>
+                <div class="stats-grid">
+                    <div class="stat">
+                        <span class="stat-label">Season</span>
+                        <span class="stat-value" id="bracket-season">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Series Called</span>
+                        <span class="stat-value" id="bracket-correct">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Hit Rate</span>
+                        <span class="stat-value" id="bracket-rate">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Form Frozen At</span>
+                        <span class="stat-value" id="bracket-asof">-</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="summary-card bracket-card">
+                <h2>Western Conference &nbsp;·&nbsp; Stanley Cup &nbsp;·&nbsp; Eastern Conference</h2>
+                <div id="bracket-board" class="bracket-board"></div>
+            </section>
+
+            <section class="summary-card">
+                <h2>Stanley Cup Final — Total Goals</h2>
+                <p class="parlay-subtitle" id="totals-basis"></p>
+                <div class="totals-compare" id="bracket-totals"></div>
+            </section>
+        </div>
     </div>
 
-    <script src="app.js?v=15.0"></script>
+    <script src="app.js?v=16.0"></script>
 </body>
 </html>

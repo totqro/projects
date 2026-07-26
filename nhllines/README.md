@@ -198,7 +198,14 @@ service:
    confirmed-starter updates are the one input that moves NHL win
    probabilities intraday. "Prediction updated: starter confirmed" is a
    genuinely useful, NHL-specific feature.
-4. **Multi-sport** — the sibling `mlblines` project covers the NHL off-season
+4. **Projected Stanley Cup bracket** (`playoff_bracket.py`, site tab) — the
+   whole bracket projected forward from the actual first-round matchups with
+   team form frozen at the end of the regular season, each slot marked ✅/❌
+   against what happened. It went 5/15 on the 2025-26 playoffs. Publishing a
+   miss rate that plain is the same discipline as the scorecard: an NHL
+   playoff bracket is close to a coin-flip tournament, and a model that
+   claimed otherwise would be lying.
+5. **Multi-sport** — the sibling `mlblines` project covers the NHL off-season
    with the same architecture.
 
 Audience-building follows the same transparency logic: publish daily, show the
@@ -230,6 +237,10 @@ python calibrate.py
 # Season scorecard: logged predictions vs actual results vs the market
 python scorecard.py                      # current season to date
 python scorecard.py --json data/scorecard.json
+
+# Projected playoff bracket (annual; writes data/playoff_bracket.json for the site)
+python playoff_bracket.py                # most recent completed playoffs
+python playoff_bracket.py --season 20252026
 
 # Snapshot the market's devigged consensus (runs 3x daily in CI via
 # .github/workflows/market-snapshot.yml; this is the manual equivalent)
@@ -273,6 +284,7 @@ nhllines/
 ├── model_gate.py                  # CLI: candidate vs baseline gate (+ ablation, + totals)
 ├── calibrate.py                   # CLI: held-out-season calibration
 ├── scorecard.py                   # CLI: logged predictions vs actuals vs market
+├── playoff_bracket.py             # CLI: projected Stanley Cup bracket vs actual
 ├── scripts/
 │   └── snapshot_market.py         # CLI: devigged market-consensus snapshot (cron job)
 ├── docs/                          # Documentation

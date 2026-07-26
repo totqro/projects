@@ -7,17 +7,20 @@ const pct = (v, d=1) => (v*100).toFixed(d) + '%';
 function getGrade(conf) { return conf>=.75?'A':conf>=.60?'B+':conf>=.50?'B':'C+'; }
 function getGradeClass(g) { return {A:'grade-a','B+':'grade-b-plus',B:'grade-b','C+':'grade-c-plus'}[g]||'grade-c-plus'; }
 
+const TABS = ['today', 'performance', 'bracket'];
+
 function showTab(t) {
-    ['today-tab','performance-tab'].forEach(id => { if($(id)) $(id).style.display='none'; });
+    TABS.forEach(name => { const el = $(`${name}-tab`); if (el) el.style.display = 'none'; });
     $$('.tab-button').forEach(b => b.classList.remove('active'));
-    if (t === 'today') {
-        $('today-tab').style.display = 'block';
-        $$('.tab-button')[0].classList.add('active');
-    } else {
-        $('performance-tab').style.display = 'block';
-        $$('.tab-button')[1].classList.add('active');
-        loadPerformanceData();
-    }
+
+    const idx = Math.max(0, TABS.indexOf(t));
+    const el = $(`${TABS[idx]}-tab`);
+    if (el) el.style.display = 'block';
+    const btn = $$('.tab-button')[idx];
+    if (btn) btn.classList.add('active');
+
+    if (TABS[idx] === 'performance') loadPerformanceData();
+    if (TABS[idx] === 'bracket') loadBracketData();
 }
 
 async function loadAnalysis() {
@@ -278,6 +281,136 @@ function displayPerformance(data) {
             <span class="pred-result-total ${cls}">${dot} ${predicted}<span class="actual"> · ${r.actual_total}</span></span>
         </div>`;
     }).join('');
+}
+
+// ---------------------------------------------------------------------------
+// Stanley Cup bracket — projected forward from round 1, scored against reality
+// ---------------------------------------------------------------------------
+let bracketLoaded = false;
+
+async function loadBracketData() {
+    if (bracketLoaded) return;
+    try {
+        const r = await fetch(`playoff_bracket.json?v=${Date.now()}`);
+        if (!r.ok) { displayNoBracket(); return; }
+        displayBracket(await r.json());
+        bracketLoaded = true;
+    } catch(e) { console.error(e); displayNoBracket(); }
+}
+
+function displayNoBracket() {
+    $('bracket-board').innerHTML = `<div class="no-data"><div class="no-data-icon">🏆</div><p>No bracket yet. Run playoff_bracket.py to generate.</p></div>`;
+    $('bracket-totals').innerHTML = '';
+    ['bracket-season','bracket-correct','bracket-rate','bracket-asof'].forEach(id => $(id).textContent = '-');
+}
+
+function seasonLabel(s) {
+    return s && s.length === 8 ? `${s.slice(0,4)}–${s.slice(6)}` : (s || '-');
+}
+
+function displayBracket(data) {
+    const slots = data.slots || [];
+    const summary = data.summary || {};
+
+    $('bracket-season').textContent = seasonLabel(data.season);
+    $('bracket-correct').textContent = summary.scored ? `${summary.correct}/${summary.scored}` : '-';
+    $('bracket-rate').textContent = summary.scored ? pct(summary.correct / summary.scored, 0) : '-';
+    $('bracket-asof').textContent = data.state_as_of
+        ? new Date(data.state_as_of + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})
+        : '-';
+    if (data.methodology) $('bracket-method').textContent = data.methodology;
+
+    const west = slots.filter(s => s.conference === 'Western');
+    const east = slots.filter(s => s.conference === 'Eastern');
+    const final = slots.find(s => s.round === 4);
+
+    // West runs inward left-to-right (R1→R3); East mirrors it, so its rounds
+    // are laid out R3→R1 and every card is flipped to face the middle.
+    const westCols = [1,2,3].map(r => renderRound(west.filter(s => s.round === r), r, 'west'));
+    const eastCols = [3,2,1].map(r => renderRound(east.filter(s => s.round === r), r, 'east'));
+
+    $('bracket-board').innerHTML =
+        westCols.join('') +
+        `<div class="bracket-col bracket-final-col">
+            <div class="bracket-round-label"><span class="brl-conf">&nbsp;</span>Stanley Cup Final</div>
+            <div class="bracket-col-body">
+                <div class="bracket-cup">🏆</div>
+                ${final ? renderSeries(final, 'final') : ''}
+            </div>
+        </div>` +
+        eastCols.join('');
+
+    renderTotals(data.final_totals || {});
+}
+
+function renderRound(series, round, side) {
+    const labels = {1:'First Round', 2:'Second Round', 3:'Conference Final'};
+    // The conference sits on its own line in every column header: once the
+    // board wraps on a narrow screen, the left/right split that carries this
+    // information on desktop is gone.
+    const conf = side === 'west' ? 'West' : 'East';
+    return `<div class="bracket-col bracket-col-r${round} ${side}">
+        <div class="bracket-round-label"><span class="brl-conf ${side}">${conf}</span>${labels[round] || `Round ${round}`}</div>
+        <div class="bracket-col-body">${series.map(s => renderSeries(s, side)).join('')}</div>
+    </div>`;
+}
+
+function renderSeries(s, side) {
+    const correct = !!s.correct;
+    const mark = correct ? '✅' : '❌';
+    const cls = correct ? 'bs-correct' : 'bs-wrong';
+    const [a, b] = s.projected_matchup || ['?','?'];
+    const prob = s.projected_winner_prob != null ? pct(s.projected_winner_prob, 0) : '';
+
+    // Our projected matchup may never have happened — in later rounds the
+    // teams we sent forward can differ from the teams that actually got there.
+    const actualMatchup = (s.actual_matchup || []).join(' vs ');
+    const projectedMatchup = [a, b].join(' vs ');
+    const matchupDiffers = actualMatchup !== projectedMatchup;
+
+    const teamRow = t => `<span class="bs-team${t === s.projected_winner ? ' bs-team-pick' : ''}">${t}</span>`;
+
+    return `<div class="bracket-series ${side} ${cls}">
+        <div class="bs-matchup">${teamRow(a)}<span class="bs-vs">vs</span>${teamRow(b)}</div>
+        <div class="bs-verdict ${cls}">
+            <span class="bs-mark">${mark}</span>
+            <span class="bs-winner">${s.projected_winner || '—'}</span>
+            <span class="bs-prob">${prob}</span>
+        </div>
+        <div class="bs-actual">
+            ${s.actual_winner
+                ? `Actual: <strong>${s.actual_winner}</strong> ${s.actual_result || ''}${matchupDiffers ? ` <span class="bs-actual-matchup">(${actualMatchup})</span>` : ''}`
+                : 'Not played'}
+        </div>
+    </div>`;
+}
+
+function renderTotals(t) {
+    if (!t || t.projected_series_total == null) {
+        $('bracket-totals').innerHTML = `<div class="no-data"><p>No Final totals available.</p></div>`;
+        return;
+    }
+    if (t.basis) $('totals-basis').textContent = `Projection basis: ${t.basis}.`;
+
+    const diff = t.actual_series_total != null ? t.actual_series_total - t.projected_series_total : null;
+    const diffCls = diff == null ? '' : Math.abs(diff) <= 4 ? 'total-green' : Math.abs(diff) <= 8 ? 'total-yellow' : 'total-red';
+
+    $('bracket-totals').innerHTML = `
+        <div class="totals-card">
+            <div class="totals-label">We projected</div>
+            <div class="totals-big">${t.projected_series_total.toFixed(1)}</div>
+            <div class="totals-sub">${t.projected_per_game.toFixed(2)}/game × ${t.projected_games.toFixed(1)} games</div>
+        </div>
+        <div class="totals-card">
+            <div class="totals-label">Actual</div>
+            <div class="totals-big">${t.actual_series_total}</div>
+            <div class="totals-sub">${t.actual_per_game != null ? t.actual_per_game.toFixed(2) : '—'}/game × ${t.actual_games} games</div>
+        </div>
+        <div class="totals-card">
+            <div class="totals-label">Difference</div>
+            <div class="totals-big ${diffCls}">${diff == null ? '—' : (diff > 0 ? '+' : '') + diff.toFixed(1)}</div>
+            <div class="totals-sub">goals vs projection</div>
+        </div>`;
 }
 
 function displayNoPerformanceData() {

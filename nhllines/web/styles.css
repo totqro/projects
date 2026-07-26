@@ -426,3 +426,71 @@ header h1 { font-size:1.9rem; margin-bottom:6px; font-weight:700; letter-spacing
     .gc-conf-bar { width:52px !important; }
     .gc-footer { flex-wrap:wrap; gap:8px; }
 }
+
+/* ---------------------------------------------------------------------------
+   Stanley Cup bracket — West runs inward from the left, East from the right,
+   the Final sits in the middle. Columns flex-center so each round's cards sit
+   between the two they came from without absolute positioning.
+   --------------------------------------------------------------------------- */
+.bracket-card { overflow-x:auto; }
+.bracket-board { display:flex; align-items:stretch; justify-content:center; gap:10px; min-width:min-content; padding-bottom:4px; }
+.bracket-col { display:flex; flex-direction:column; flex:0 0 auto; min-width:132px; }
+/* Labels pin to the top; only the cards distribute, so each round's cards sit
+   between the two they advanced from. */
+.bracket-col-body { flex:1; display:flex; flex-direction:column; justify-content:space-around; gap:10px; }
+.bracket-round-label { font-size:.62rem; color:var(--t3); text-transform:uppercase; letter-spacing:.08em; font-weight:700; text-align:center; margin-bottom:8px; }
+/* Fixed two-line header keeps every column's cards starting at the same y,
+   whether or not the conference line is populated. */
+.brl-conf { display:block; font-size:.6rem; letter-spacing:.1em; margin-bottom:2px; min-height:1em; }
+.brl-conf.west { color:var(--teal-b); }
+.brl-conf.east { color:var(--orange); }
+.bracket-final-col { min-width:150px; }
+.bracket-final-col .bracket-col-body { justify-content:center; gap:8px; flex:1; }
+.bracket-cup { font-size:1.8rem; text-align:center; line-height:1; filter:drop-shadow(0 0 10px rgba(244,144,30,.35)); }
+
+.bracket-series { background:var(--bg-s); border:1px solid var(--bd); border-radius:var(--rs); padding:8px 10px; display:flex; flex-direction:column; gap:5px; }
+.bracket-series.bs-correct { border-left:3px solid var(--grn); }
+.bracket-series.bs-wrong { border-left:3px solid var(--red); }
+/* Eastern cards mirror: accent bar faces the middle of the board. */
+.bracket-series.east { border-left:1px solid var(--bd); }
+.bracket-series.east.bs-correct { border-right:3px solid var(--grn); }
+.bracket-series.east.bs-wrong { border-right:3px solid var(--red); }
+.bracket-series.final { border-left:3px solid var(--orange); background:linear-gradient(135deg,rgba(244,144,30,.1),var(--bg-s)); }
+
+.bs-matchup { display:flex; align-items:center; justify-content:center; gap:6px; font-size:.8rem; font-weight:600; color:var(--t2); }
+.bs-team-pick { color:var(--t1); font-weight:800; }
+.bs-vs { font-size:.62rem; color:var(--t3); text-transform:uppercase; letter-spacing:.05em; }
+
+.bs-verdict { display:flex; align-items:center; justify-content:center; gap:6px; font-size:.92rem; font-weight:800; font-variant-numeric:tabular-nums; }
+.bs-verdict.bs-correct .bs-winner { color:var(--grn); }
+.bs-verdict.bs-wrong .bs-winner { color:var(--red); }
+.bs-mark { font-size:.82rem; line-height:1; }
+.bs-prob { font-size:.72rem; font-weight:700; color:var(--t3); }
+
+.bs-actual { font-size:.66rem; color:var(--t3); text-align:center; line-height:1.35; }
+.bs-actual strong { color:var(--t2); font-weight:700; }
+.bs-actual-matchup { display:block; color:var(--t3); opacity:.8; }
+
+/* Final total goals comparison */
+.totals-compare { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.totals-card { background:var(--bg-s); border:1px solid var(--bd); border-radius:var(--rs); padding:16px; text-align:center; }
+.totals-label { font-size:.66rem; color:var(--t3); text-transform:uppercase; letter-spacing:.08em; font-weight:700; margin-bottom:6px; }
+.totals-big { font-size:1.7rem; font-weight:800; color:var(--t1); font-variant-numeric:tabular-nums; line-height:1.1; }
+.totals-big.total-green { color:var(--grn); }
+.totals-big.total-yellow { color:var(--orange); }
+.totals-big.total-red { color:var(--red); }
+.totals-sub { font-size:.7rem; color:var(--t2); margin-top:5px; }
+
+@media (max-width:900px) {
+    /* Stack the two conferences instead of scrolling a 7-column board. */
+    .bracket-board { flex-wrap:wrap; justify-content:flex-start; gap:8px; }
+    .bracket-col { flex:1 1 calc(33.333% - 8px); min-width:104px; }
+    .bracket-final-col { flex:1 1 100%; order:99; }
+    .bracket-series { padding:7px 8px; }
+    .bs-matchup { font-size:.74rem; }
+    .bs-verdict { font-size:.84rem; }
+}
+@media (max-width:600px) {
+    .bracket-col { flex:1 1 calc(50% - 8px); }
+    .totals-compare { grid-template-columns:1fr; }
+}
