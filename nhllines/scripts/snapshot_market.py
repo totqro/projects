@@ -18,16 +18,14 @@ Cron-friendly: no interactive input, clear stdout summary, exit 0 on success
 Usage:
     python scripts/snapshot_market.py
     python scripts/snapshot_market.py --sport baseball_mlb   # smoke test in the NHL off-season
+    python scripts/snapshot_market.py --skip-empty           # what the scheduled job runs
 
-Suggested schedule — 2x daily plus one snapshot near typical puck drop
-(most NHL games start 19:00-19:30 local; times below are US/Eastern, cron
-runs in the server's local time so adjust the crontab's TZ or hours
-accordingly):
-
-    # crontab -e
-    0 9 * * *   cd /path/to/nhllines && /usr/bin/python3 scripts/snapshot_market.py >> logs/snapshot_market.log 2>&1
-    0 15 * * *  cd /path/to/nhllines && /usr/bin/python3 scripts/snapshot_market.py >> logs/snapshot_market.log 2>&1
-    30 18 * * * cd /path/to/nhllines && /usr/bin/python3 scripts/snapshot_market.py >> logs/snapshot_market.log 2>&1
+Schedule: `.github/workflows/market-snapshot.yml` runs this 3x daily and
+commits each snapshot — 2 during the day plus one near typical puck drop
+(most NHL games start 19:00-19:30 US/Eastern). It must be a scheduled job on
+infrastructure that is actually up: a snapshot not taken before a game
+cannot be reconstructed after it, and the season scorecard has no benchmark
+without it.
 """
 
 import argparse
@@ -43,8 +41,13 @@ from src.data.odds_fetcher import fetch_nhl_odds, parse_odds, get_consensus_no_v
 SNAPSHOT_DIR = Path(__file__).resolve().parents[1] / "data" / "market_snapshots"
 
 
-def take_snapshot(sport: str = "icehockey_nhl") -> tuple:
-    """Fetch, devig, and write one snapshot. Returns (out_path, snapshot_dict)."""
+def take_snapshot(sport: str = "icehockey_nhl", skip_empty: bool = False) -> tuple:
+    """Fetch, devig, and write one snapshot. Returns (out_path, snapshot_dict).
+
+    With `skip_empty`, an empty board writes nothing and returns (None,
+    snapshot) — the scheduled job runs year-round, and months of off-season
+    zero-game snapshots are noise in a record whose whole value is the games
+    it actually captured."""
     raw_games, quota = fetch_nhl_odds(sport=sport)
     games = parse_odds(raw_games)
 
@@ -74,6 +77,9 @@ def take_snapshot(sport: str = "icehockey_nhl") -> tuple:
             "n_books_ml": devigged["n_books_ml"],
         })
 
+    if skip_empty and not games:
+        return None, snapshot
+
     SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
     out_path = SNAPSHOT_DIR / f"{now.strftime('%Y-%m-%d_%H%M')}.json"
     out_path.write_text(json.dumps(snapshot, indent=2, default=str))
@@ -87,17 +93,21 @@ def main():
                         help="Odds API sport key (default: icehockey_nhl). Use "
                              "baseball_mlb to smoke-test the pipeline during the "
                              "NHL off-season, when there's nothing on the NHL board.")
+    parser.add_argument("--skip-empty", action="store_true",
+                        help="Write no file when the board is empty (used by the "
+                             "scheduled workflow, which runs year-round).")
     args = parser.parse_args()
 
     try:
-        out_path, snapshot = take_snapshot(args.sport)
+        out_path, snapshot = take_snapshot(args.sport, skip_empty=args.skip_empty)
     except Exception as e:
         print(f"Market snapshot failed: {e}", file=sys.stderr)
         return 1
 
     if snapshot["n_games"] == 0:
-        print(f"No games currently on the {args.sport} odds board — wrote an "
-              f"empty snapshot to {out_path} (expected during the NHL off-season).")
+        wrote = f"wrote an empty snapshot to {out_path}" if out_path else "wrote nothing"
+        print(f"No games currently on the {args.sport} odds board — {wrote} "
+              f"(expected during the NHL off-season).")
     else:
         print(f"Wrote {snapshot['n_games']} game(s) to {out_path}")
     return 0
