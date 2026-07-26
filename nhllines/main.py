@@ -67,6 +67,8 @@ from src.analysis import (
     get_team_advanced_stats,
     get_team_splits,
     log_predictions,
+    WIN_MODEL_VERSIONS,
+    TOTALS_MODEL_VERSION,
 )
 
 
@@ -216,6 +218,11 @@ def run_analysis(
 
     _win_prob = _xg_win_prob if use_xg else _elo_win_prob
     ml_indicator = " (xG+Platt)" if use_xg else " (Elo+Platt)"
+    # Stamp every logged prediction with the model that actually served it —
+    # the fallback path must not write rows claiming the xG model, or the
+    # season scorecard would score two different models as one.
+    logged_model_version = (
+        f"{WIN_MODEL_VERSIONS['xg' if use_xg else 'elo']}+{TOTALS_MODEL_VERSION}")
 
     # Step 4: Fetch odds (if enabled)
     odds_games = []
@@ -918,8 +925,9 @@ def run_analysis(
     # only if logged first"). Deduped by (game_id, run date) so re-running
     # main.py the same day doesn't double-log a game.
     if predictions_to_log:
-        n_logged = log_predictions(predictions_to_log)
-        print(f"Logged {n_logged} new prediction(s) to data/predictions_log.jsonl")
+        n_logged = log_predictions(predictions_to_log, model_version=logged_model_version)
+        print(f"Logged {n_logged} new prediction(s) as {logged_model_version} "
+              f"to data/predictions_log.jsonl")
 
     # Generate parlay performance data from historical results
     parlay_perf = get_parlay_performance(stake=stake)

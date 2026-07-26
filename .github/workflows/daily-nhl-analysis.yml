@@ -117,7 +117,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add nhllines/data/bet_results.json nhllines/data/analysis_history.json nhllines/data/latest_analysis.json nhllines/data/model_feedback.json nhllines/data/backtest_results.json 2>/dev/null || true
+          # predictions_log.jsonl is the season-validation record: it is
+          # appended on an ephemeral runner, so a run's predictions exist only
+          # if this commit captures them. It is also what makes the log's
+          # same-day dedup work at all — checkout restores prior runs' lines.
+          git add nhllines/data/bet_results.json nhllines/data/analysis_history.json nhllines/data/latest_analysis.json nhllines/data/model_feedback.json nhllines/data/backtest_results.json nhllines/data/predictions_log.jsonl 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No data changes to commit"
           else

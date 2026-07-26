@@ -36,6 +36,13 @@ nhllines/data/*
 !nhllines/data/analysis_history.json
 !nhllines/data/latest_analysis.json
 
+# The 2026-27 season-validation record: predictions timestamped before puck
+# drop, and the devigged market consensus they get scored against. Both are
+# written by CI on an ephemeral runner, so they only survive if committed —
+# and neither can be reconstructed after the fact.
+!nhllines/data/predictions_log.jsonl
+!nhllines/data/market_snapshots/
+
 mlblines/mlbdata/*
 !mlblines/mlbdata/bet_results.json
 !mlblines/mlbdata/analysis_history.json
