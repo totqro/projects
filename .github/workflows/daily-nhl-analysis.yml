@@ -121,7 +121,18 @@ jobs:
           # appended on an ephemeral runner, so a run's predictions exist only
           # if this commit captures them. It is also what makes the log's
           # same-day dedup work at all — checkout restores prior runs' lines.
-          git add nhllines/data/bet_results.json nhllines/data/analysis_history.json nhllines/data/latest_analysis.json nhllines/data/model_feedback.json nhllines/data/backtest_results.json nhllines/data/predictions_log.jsonl 2>/dev/null || true
+          #
+          # Added one at a time, and only if present: `git add` aborts without
+          # staging ANYTHING when a single pathspec doesn't match, and the
+          # prediction log doesn't exist until a run with games writes it — a
+          # bare list would silently stop committing the other data files on
+          # every gameless day.
+          for f in bet_results.json analysis_history.json latest_analysis.json \
+                   model_feedback.json backtest_results.json predictions_log.jsonl; do
+            if [ -f "nhllines/data/$f" ]; then
+              git add "nhllines/data/$f"
+            fi
+          done
           if git diff --cached --quiet; then
             echo "No data changes to commit"
           else
