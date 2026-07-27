@@ -133,8 +133,18 @@ def run_analysis(
         xg_coefs, xg_calibrator = xg_production.load_production_model()
         print(f"  Loaded xG drop-goalie coefficients + {xg_calibrator.method} calibrator")
     else:
-        print("  No persisted xG model found — falling back to Elo + home-ice "
-              "(documented fallback).")
+        # The xG artifacts are committed to the repo, so on any normal checkout
+        # they are present. Reaching this branch means serving a model that
+        # loses to the shipped one on both held-out log loss and Brier — say so
+        # loudly rather than in one passing line, because the failure mode this
+        # guards against is not noticing for a week.
+        print("  " + "!" * 66)
+        print("  !! WARNING: no persisted xG model in ml_models/ — serving the")
+        print("  !! Elo + home-ice FALLBACK, which the gate says is weaker.")
+        print("  !! The xG artifacts are tracked in git; if they are missing")
+        print("  !! here, the checkout or the weekly refit is broken.")
+        print("  !! Predictions will be logged as elo-platt-v1, not xG.")
+        print("  " + "!" * 66)
         if not elo_production.production_model_exists():
             print("  No persisted Elo calibrator found either, fitting one now "
                   "(normally done weekly by build_training_set.py)...")

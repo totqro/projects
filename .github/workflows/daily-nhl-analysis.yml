@@ -44,12 +44,11 @@ jobs:
           }
           EOF
 
-      - name: Restore ML models
-        uses: actions/download-artifact@v4
-        with:
-          name: nhl-ml-models
-          path: nhllines/ml_models/
-        continue-on-error: true  # OK: first run won't have models
+      # The shipped model artifacts are committed (nhllines/ml_models/*.json),
+      # so checkout restores them. There is deliberately no download-artifact
+      # step: it can only see artifacts from its OWN run, so the old restore
+      # failed on every run for months behind continue-on-error, and every run
+      # started with no model at all.
 
       - name: Create required directories
         run: mkdir -p nhllines/data nhllines/ml_models nhllines/cache
@@ -83,6 +82,29 @@ jobs:
         if: steps.check-day.outputs.is_sunday == 'true' || github.event.inputs.force_weekly_refit == 'true'
         working-directory: nhllines
         run: python build_training_set.py
+
+      # main.py falls back to Elo when the gated xG artifacts are absent. That
+      # fallback exists for local runs, not for production: here the artifacts
+      # are committed, so their absence means something is actually wrong and
+      # a silent downgrade to a weaker model is the worst outcome. Fail first.
+      - name: Verify the shipped model artifacts are present
+        if: steps.check-games.outputs.has_games == 'true'
+        working-directory: nhllines
+        run: |
+          missing=""
+          for f in xg_coefficients.json xg_calibrator.json; do
+            if [ ! -f "ml_models/$f" ]; then
+              missing="$missing $f"
+            fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Gated xG model artifacts missing:$missing"
+            echo "These are committed to the repo (nhllines/ml_models/*.json)."
+            echo "If they are gone, either the commit was reverted or the weekly"
+            echo "refit wrote nothing. Serving would silently fall back to Elo."
+            exit 1
+          fi
+          echo "✅ xG model artifacts present — serving the gated model."
 
       - name: Run NHL analysis
         if: steps.check-games.outputs.has_games == 'true'
@@ -133,6 +155,14 @@ jobs:
               git add "nhllines/data/$f"
             fi
           done
+          # The weekly refit rewrites these; committing them is what makes the
+          # refit outlive the runner. Without this the refit is pointless on
+          # every day but the one it runs.
+          for f in xg_coefficients.json xg_calibrator.json elo_coefficients.json calibrator.json; do
+            if [ -f "nhllines/ml_models/$f" ]; then
+              git add "nhllines/ml_models/$f"
+            fi
+          done
           if git diff --cached --quiet; then
             echo "No data changes to commit"
           else
@@ -146,14 +176,8 @@ jobs:
             echo "✅ NHL data committed and pushed"
           fi
 
-      - name: Save ML models
-        if: steps.check-games.outputs.has_games == 'true' || steps.check-day.outputs.is_sunday == 'true' || github.event.inputs.force_weekly_refit == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: nhl-ml-models
-          path: nhllines/ml_models/
-          retention-days: 90
-          overwrite: true
+      # No upload-artifact step: the model is committed above. The old one
+      # wrote an artifact after every run that nothing could ever read back.
 
       - name: Notify on failure
         if: failure()

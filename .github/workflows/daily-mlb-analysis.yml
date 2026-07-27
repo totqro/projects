@@ -39,12 +39,12 @@ jobs:
           }
           EOF
 
-      - name: Restore ML models
-        uses: actions/download-artifact@v4
-        with:
-          name: mlb-ml-models
-          path: mlblines/ml_models/
-        continue-on-error: true  # OK: first run won't have models
+      # No download-artifact step. It could only ever see artifacts from its
+      # OWN run, so the restore failed on every run for months behind
+      # continue-on-error — and it would have been discarded anyway: main.py
+      # retrains whenever win_model.pkl is more than a day old, which a
+      # restored artifact always is. MLB trains from scratch each run by
+      # design; the models are ~1.6 MB of pickles and are not tracked.
 
       - name: Create required directories
         run: mkdir -p mlblines/mlbdata mlblines/ml_models mlblines/cache
@@ -107,14 +107,8 @@ jobs:
           fi
         continue-on-error: true
 
-      - name: Save ML models
-        if: steps.check-games.outputs.has_games == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: mlb-ml-models
-          path: mlblines/ml_models/
-          retention-days: 90
-          overwrite: true
+      # No upload-artifact step either: nothing could read the result back, so
+      # it only accumulated ~0.5 MB of unusable artifacts per day.
 
       - name: Notify on failure
         if: failure()

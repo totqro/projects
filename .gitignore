@@ -18,9 +18,17 @@ env/
 
 # NHL caches & models
 nhllines/cache/
-nhllines/ml_models/
 nhllines/.venv/
 nhllines/.vscode/
+
+# The shipped win model is 16 KB of JSON coefficients, and it is tracked: CI
+# runs on an ephemeral runner, and actions/download-artifact can only see
+# artifacts from its OWN run, so the artifact round-trip never restored
+# anything. Committed, the daily run always has the gated model — and git
+# history records exactly which coefficients served which day.
+nhllines/ml_models/*
+!nhllines/ml_models/*.json
+# The .pkl files belong to the quarantined leaky XGBoost path — never tracked.
 
 # MLB caches & models
 mlblines/cache/
@@ -49,6 +57,10 @@ mlblines/mlbdata/*
 !mlblines/mlbdata/analysis_history.json
 !mlblines/mlbdata/latest_analysis.json
 !mlblines/mlbdata/backtest_results.json
+
+# Market-benchmark snapshots — same perishable-record reasoning as the NHL
+# block above: written by CI on an ephemeral runner, lost if not committed.
+!mlblines/mlbdata/market_snapshots/
 
 # Misc
 .DS_Store

@@ -11,7 +11,7 @@ ENV/
 
 # Data & Cache
 cache/
-ml_models/
+ml_models/*
 *.json
 *.jsonl
 !config.json.example
@@ -29,6 +29,12 @@ ml_models/
 
 # Projected playoff bracket — regenerated once a year, served by the web app.
 !data/playoff_bracket.json
+
+# The shipped win model: 16 KB of coefficients + calibrators. Tracked because
+# the CI artifact round-trip never worked (download-artifact only sees its own
+# run's artifacts), so a fresh runner had no model at all. The .pkl files above
+# stay ignored — they belong to the quarantined leaky path.
+!ml_models/*.json
 !mlblines_data/bet_results.json
 !mlblines_data/analysis_history.json
 !mlblines_data/latest_analysis.json

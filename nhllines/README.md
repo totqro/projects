@@ -292,7 +292,8 @@ nhllines/
 │   ├── predictions_log.jsonl      # Append-only prediction record (committed)
 │   └── market_snapshots/          # One devigged odds snapshot per run (committed)
 ├── cache/                         # API cache (gitignored)
-├── ml_models/                     # Model artifacts (gitignored)
+├── ml_models/                     # *.json coefficients + calibrators (tracked);
+│                                  #   quarantined *.pkl (gitignored)
 ├── web/                           # Web interface
 └── config.json                    # API keys (gitignored)
 ```
