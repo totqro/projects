@@ -242,6 +242,16 @@ python scorecard.py --json data/scorecard.json
 python playoff_bracket.py                # most recent completed playoffs
 python playoff_bracket.py --season 20252026
 
+# Season backtest: the SHIPPED model (persisted ml_models/ artifacts, not a
+# refit) against a real season, game by game, vs the Elo baseline.
+# NOTE: backtest.py / backtest_day.py / backtest_full_season.py /
+# backtest_season.py / backtest_historical_blends.py / backtest_blend_ratios.py
+# all predate the July 2026 rebuild and call the quarantined leaky model
+# (src/models/ml_model.py) — they report on a model that hasn't shipped in
+# months. Use model_backtest.py instead.
+python model_backtest.py                 # the shipped model's own held-out season
+python model_backtest.py --season 20252026 --json data/model_backtest_20252026.json
+
 # Snapshot the market's devigged consensus (runs 3x daily in CI via
 # .github/workflows/market-snapshot.yml; this is the manual equivalent)
 python scripts/snapshot_market.py
@@ -285,6 +295,9 @@ nhllines/
 ├── calibrate.py                   # CLI: held-out-season calibration
 ├── scorecard.py                   # CLI: logged predictions vs actuals vs market
 ├── playoff_bracket.py             # CLI: projected Stanley Cup bracket vs actual
+├── model_backtest.py              # CLI: shipped model vs Elo, game by game, on a real season
+├── backtest*.py                   # Legacy — predate the July 2026 rebuild, call the
+│                                  #   quarantined ml_model.py. Use model_backtest.py.
 ├── scripts/
 │   └── snapshot_market.py         # CLI: devigged market-consensus snapshot (cron job)
 ├── docs/                          # Documentation
