@@ -152,12 +152,77 @@ def american_to_implied_prob(american: int) -> float:
         return 100 / (american + 100)
 
 
+class AllKeysRejected(RuntimeError):
+    """Every configured Odds API key answered 401 or 429.
+
+    Distinct from a transport error so callers — notably
+    scripts/snapshot_market.py — can report a credentials/quota problem as
+    exactly that, instead of burying it in a generic fetch failure.
+    """
+
+
+def _get_with_key_rotation(url: str, params: dict) -> tuple:
+    """GET `url`, trying each configured key until one is accepted.
+
+    Returns (response, key_index); raises AllKeysRejected if none work.
+
+    Rotates on the response, not just on the cached quota figures. A key that
+    has burned its monthly credits answers 401 — the same status as a revoked
+    key — and CACHE_DIR is gitignored, so in CI quota_info.json never exists,
+    the cached figures always report a full 500 for key #1, and a dead key #1
+    would otherwise fail the whole run with the backup keys untouched.
+    """
+    keys = get_api_keys()
+    _, start_index = get_api_key_with_quota()
+    order = list(range(start_index, len(keys))) + list(range(0, start_index))
+    failures = []
+
+    for key_index in order:
+        attempt = requests.get(
+            url, params={**params, "apiKey": keys[key_index]}, timeout=15)
+
+        if attempt.status_code in (401, 429):
+            # Surface the API's own message: "401" alone cannot distinguish an
+            # exhausted key from a revoked one, and that is the first thing
+            # worth knowing from a failed cron run.
+            detail = attempt.text.strip()[:200] or "(no response body)"
+            failures.append(f"key #{key_index + 1}: HTTP {attempt.status_code} {detail}")
+            print(f"  ⚠️  Odds API key #{key_index + 1}/{len(keys)} rejected "
+                  f"(HTTP {attempt.status_code}): {detail}")
+            # Remember it is spent so later runs skip straight past it.
+            update_quota_info(key_index, {"requests_used": 500, "requests_remaining": 0})
+            continue
+
+        attempt.raise_for_status()
+        return attempt, key_index
+
+    raise AllKeysRejected(
+        f"All {len(keys)} Odds API key(s) were rejected. "
+        + " | ".join(failures)
+        + " — if these are quota exhaustions, the monthly credits reset on each "
+          "key's own signup anniversary; otherwise the keys need regenerating at "
+          "https://the-odds-api.com and re-saving as the ODDS_API_KEY, "
+          "ODDS_API_KEY_TWO and ODDS_API_KEY_THREE repo secrets."
+    )
+
+
+def fetch_upcoming_events(sport: str = "baseball_mlb") -> list:
+    """Return the events currently on `sport`'s board.
+
+    The Odds API bills /events at 0 credits, which makes this a free
+    preflight: it answers "is there anything to snapshot?" and proves a key
+    is live *before* the paid odds call — so an empty board costs nothing,
+    and a dead key is reported as a dead key rather than as a mid-run 401.
+    """
+    resp, _ = _get_with_key_rotation(f"{ODDS_API_BASE}/sports/{sport}/events", {})
+    return resp.json()
+
+
 def fetch_mlb_odds(markets: str = MARKETS):
     """
     Fetch current MLB odds for all available games.
     Returns (games, quota_summary).
     """
-    api_key, key_index = get_api_key_with_quota()
     cache_key = f"odds_mlb_{markets.replace(',','_')}_{datetime.now().strftime('%Y%m%d_%H')}"
     cached_path = CACHE_DIR / f"{cache_key}.json"
 
@@ -168,14 +233,12 @@ def fetch_mlb_odds(markets: str = MARKETS):
 
     url = f"{ODDS_API_BASE}/sports/baseball_mlb/odds"
     params = {
-        "apiKey": api_key,
         "regions": "us,us2",
         "markets": markets,
         "oddsFormat": "american",
     }
 
-    resp = requests.get(url, params=params, timeout=15)
-    resp.raise_for_status()
+    resp, key_index = _get_with_key_rotation(url, params)
     games = resp.json()
 
     remaining = resp.headers.get("x-requests-remaining", "?")

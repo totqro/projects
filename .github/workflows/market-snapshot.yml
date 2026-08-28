@@ -62,9 +62,21 @@ jobs:
 
       - name: Take market snapshot
         working-directory: nhllines
-        # --skip-empty: the schedule runs year-round, so off-season days would
-        # otherwise commit ~90 zero-game files before the season starts.
-        run: python scripts/snapshot_market.py --sport "${{ inputs.sport || 'icehockey_nhl' }}" --skip-empty
+        # --skip-empty: the schedule runs year-round, so an off-season or dark
+        # day writes nothing rather than committing a zero-game file. The
+        # script preflights the board via /events, which the Odds API bills at
+        # 0 credits, so an empty slate is a clean no-op and not a failed run.
+        run: |
+          set +e
+          python scripts/snapshot_market.py --sport "${{ inputs.sport || 'icehockey_nhl' }}" --skip-empty
+          status=$?
+          set -e
+          # Exit 2 means every key was rejected — quota exhaustion or a stale
+          # secret. Name it, because the bare 401 does not say which.
+          if [ "$status" -eq 2 ]; then
+            echo "::error::Every Odds API key was rejected. Regenerate at https://the-odds-api.com and update the ODDS_API_KEY / ODDS_API_KEY_TWO / ODDS_API_KEY_THREE repository secrets."
+          fi
+          exit $status
 
       - name: Commit snapshot
         run: |
@@ -92,7 +104,10 @@ jobs:
           exit 1
 
       - name: Notify on failure
-        if: failure()
+        # At most one mail per day, plus every manual run. The job fires 3x
+        # daily and the usual causes — a dead key, an API outage — persist
+        # across all three, so mailing per run is noise, not signal.
+        if: failure() && (github.event_name != 'schedule' || github.event.schedule == '0 14 * * *')
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
@@ -108,4 +123,8 @@ jobs:
 
             Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
             Trigger: ${{ github.event_name }}
+
+            An empty board is NOT a failure — it exits clean. This mail means
+            the fetch itself broke; if the log says every key was rejected,
+            the ODDS_API_KEY* repository secrets need regenerating.
         continue-on-error: true
