@@ -13,6 +13,8 @@ on:
     paths:
       - 'nhllines/web/**'
       - 'mlblines/web/**'
+      - 'xgcalc/web/**'
+      - 'swingai/**'
       - 'firebase.json'
   workflow_dispatch: # Allow manual trigger
 
@@ -34,11 +36,15 @@ jobs:
       - name: Build deploy folder
         run: |
           rm -rf build
-          mkdir -p build/nhllines build/mlblines build/swingai
+          mkdir -p build/nhllines build/mlblines build/swingai build/xgcalc
           # Root hub page
           cp nhllines/web/hub.html build/index.html 2>/dev/null || cp mlblines/web/hub.html build/index.html
           # SwingAI
           cp swingai/index.html build/swingai/
+          # xgcalc — static, no daily data. This step runs on every deploy
+          # (including the ones the daily analysis workflows chain into), so
+          # the page survives the `rm -rf build` above.
+          cp xgcalc/web/index.html build/xgcalc/
           # NHL
           cp nhllines/web/index.html build/nhllines/
           cp nhllines/web/app.js build/nhllines/
@@ -63,6 +69,16 @@ jobs:
         run: |
           echo "=== Build contents ==="
           find build -type f | sort
+          echo ""
+          # Fail loudly rather than deploying a site with a page missing.
+          for page in index.html nhllines/index.html mlblines/index.html \
+                      swingai/index.html xgcalc/index.html; do
+            if [ ! -s "build/$page" ]; then
+              echo "::error::build/$page is missing or empty — refusing to deploy"
+              exit 1
+            fi
+          done
+          echo "All pages present."
           echo ""
           python3 -c "
           import json
