@@ -45,6 +45,8 @@ jobs:
           # (including the ones the daily analysis workflows chain into), so
           # the page survives the `rm -rf build` above.
           cp xgcalc/web/index.html build/xgcalc/
+          cp xgcalc/web/scatter.html build/xgcalc/
+          cp xgcalc/web/xg_model.json build/xgcalc/
           # NHL
           cp nhllines/web/index.html build/nhllines/
           cp nhllines/web/app.js build/nhllines/

@@ -144,6 +144,12 @@ train_logistic.py      strength-encoding comparison (--strength situation|state|
 src/data/schema.py     source columns, feature/label/leak definitions, rink geometry
 src/data/clean.py      all cleaning transforms, each documented with what was measured
 src/data/shots.py      locating, downloading and reading raw season files
+score_tagged.py        CLI: score a hand-tagged x/y shot chart with the saved model
+export_model_web.py    flatten the fitted pipeline to web/xg_model.json, with a parity check
+zone_tagging.py        the 10- and 16-zone maps for shots you can only eyeball
+web/index.html         the live 16-zone tagger (tier rates, no coordinates needed)
+web/scatter.html       the shot chart — CSV in, the real model on a rink, in the browser
+web/serve.py           static server for previewing both pages locally
 data/                  built dataset + saved model (gitignored — regenerable)
 ```
 
@@ -159,6 +165,68 @@ shots = pd.DataFrame([{ "distance": 8, "angle_from_net": 10,
                         "situation": "EV_5v5" }])
 shots["xg"] = predict_xg(model, shots)     # 0.1937
 ```
+
+## The two web pages
+
+Two ways in, one model behind them.
+
+**`web/index.html` — the live tagger.** Tap one of 16 rink zones from your
+seat. No coordinates, because nobody can eyeball `x=71.3, y=-8.6` during a
+live game. It prices each shot off the empirical rate for that zone (three
+danger tiers, with multipliers for strength and rebounds), which is the
+honest resolution for tapped-by-eye input.
+
+**`web/scatter.html` — the shot chart.** For charts that already carry exact
+coordinates — tagged off film, or exported from another tool. Drop the CSV in
+and every shot lands on the rink, scored by the actual five-feature model
+rather than a zone lookup, filterable by team, period, shot type, danger tier
+and strength.
+
+```
+Period,Team,Player,Type,X,Y,Shot Type,Strength
+1,Away,,Shot,77.11,-2.44,Backhand,5v5
+```
+
+X/Y are raw NHL rink feet. Shots at the left end are mirrored onto the
+attacking-right frame (net at x = 89) — flipping x flips y with it, or every
+left-end shot lands on the wrong wing.
+
+`Type` is Shot/Goal/Miss/Block, and **only blocks are dropped**. The model's
+population is unblocked attempts: 269,893 of its 905,483 rows (30%) are misses
+carrying `goal=0`, so discarding misses would undercount a game's xG by a
+third of its attempts. Blocks are the one category the source data excludes
+too (`clean.py`, `valid_event`).
+
+Shot-type words map onto the model's vocabulary, and anything without a match
+(`Scramble`, blanks) scores as `UNKNOWN`. That is not a null — `UNKNOWN` is
+the NHL's own unrecorded-type bucket, and it is the highest-scoring type in
+the raw data at 14.5%, because it is disproportionately crease chaos: 42% of
+those rows are rebounds, at a median 9 ft. Conditional on distance and
+rebound, the model puts its coefficient at −0.19, just below `WRIST`. So a
+scramble is mapped as faithfully as the vocabulary allows; what the tag cannot
+supply is the rebound flag, which is where the rest of that danger lives.
+
+The page runs the model client-side. `export_model_web.py` flattens the
+fitted pipeline — the scaler, two one-hot maps, 26 coefficients — into
+`web/xg_model.json`, and asserts the flattened version reproduces scikit-learn
+to 1e-9 across 400 random rows including unseen categories:
+
+```bash
+./.venv/bin/python export_model_web.py
+```
+
+Rerun it whenever the model is retrained, or the page will keep serving the
+old coefficients. The same CSV scored on the command line gives the same
+numbers to three decimals:
+
+```bash
+./.venv/bin/python score_tagged.py shots.csv --tier HIGH
+```
+
+**What the chart cannot tell you.** Without timestamps rebounds can't be
+derived, and rebounds are the biggest single thing a coordinate export
+usually lacks — those shots score well below their real value. Both pages say
+so on screen rather than quietly rendering a confident-looking dot.
 
 ## Evaluation protocol
 

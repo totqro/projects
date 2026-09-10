@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Upload a shot chart CSV and see every shot placed on the rink, scored by a five-feature expected-goals model trained on 905,483 NHL attempts.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ctext y=%2226%22 font-size=%2226%22%3E%F0%9F%8F%92%3C/text%3E%3C/svg%3E">
+<title>Shot Chart &mdash; Luc Knox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+</head>
+<body>
+<style>
+:root{
+  --page:#EDF0F3; --surface:#FFFFFF; --surface-2:#F5F7F9; --line:#D3DBE2;
+  --ink:#141D26; --ink-2:#48586A; --ink-3:#7B8B9C;
+  --accent:#1E62B8; --accent-ink:#FFFFFF;
+  --paint:rgba(20,29,38,.30); --paint-blue:rgba(30,98,184,.60); --paint-red:rgba(196,42,62,.60);
+  --edge:rgba(20,29,38,.45);
+  --ice:#FBFCFD;
+  --hi:#A83A16;  --hi-ink:#FFF1E9;
+  --md:#E08A55;  --md-ink:#3A1607;
+  --lo:#F7E3D6;  --lo-ink:#6B3418;
+  --good:#1C7551; --warn:#9A6212; --bad:#B0293C;
+  --dot-hi:#B23A12; --dot-md:#E08A55; --dot-lo:#7C93A8;
+  --s1:#1E62B8; --s2:#B0293C;
+  --shadow:0 1px 2px rgba(20,29,38,.07), 0 6px 18px rgba(20,29,38,.06);
+  --radius:9px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#080b10; --surface:#111520; --surface-2:#0e1117; --line:rgba(255,255,255,0.09);
+    --ink:#f1f5f9; --ink-2:#94a3b8; --ink-3:#64748b;
+    --accent:#6366f1; --accent-ink:#ffffff;
+    --paint:rgba(241,245,249,.40); --paint-blue:rgba(129,140,248,.72); --paint-red:rgba(232,90,108,.62);
+    --edge:rgba(241,245,249,.38);
+    --ice:#0e1117;
+    --hi:#F0975C;  --hi-ink:#2A1408;
+    --md:#9E4F26;  --md-ink:#FFEEE2;
+    --lo:#2F2119;  --lo-ink:#C9A48C;
+    --good:#22c55e; --warn:#E0AE55; --bad:#F0788B;
+    --dot-hi:#F0975C; --dot-md:#C2702F; --dot-lo:#7E93A6;
+    --s1:#818cf8; --s2:#F0788B;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 12px 40px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --page:#080b10; --surface:#111520; --surface-2:#0e1117; --line:rgba(255,255,255,0.09);
+  --ink:#f1f5f9; --ink-2:#94a3b8; --ink-3:#64748b;
+  --accent:#6366f1; --accent-ink:#ffffff;
+  --paint:rgba(241,245,249,.40); --paint-blue:rgba(129,140,248,.72); --paint-red:rgba(232,90,108,.62);
+  --edge:rgba(241,245,249,.38);
+  --ice:#0e1117;
+  --hi:#F0975C;  --hi-ink:#2A1408;
+  --md:#9E4F26;  --md-ink:#FFEEE2;
+  --lo:#2F2119;  --lo-ink:#C9A48C;
+  --good:#22c55e; --warn:#E0AE55; --bad:#F0788B;
+  --dot-hi:#F0975C; --dot-md:#C2702F; --dot-lo:#7E93A6;
+  --s1:#818cf8; --s2:#F0788B;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 12px 40px rgba(0,0,0,.4);
+}
+
+*{box-sizing:border-box}
+body{margin:0; background:var(--page); color:var(--ink);
+  font-family:"Barlow",system-ui,-apple-system,sans-serif; font-size:15px; line-height:1.45;
+  -webkit-text-size-adjust:100%}
+h1{font-family:"Barlow Condensed","Barlow Semi Condensed",system-ui,sans-serif;
+  font-weight:700; margin:0; text-wrap:balance}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-variant-numeric:tabular-nums}
+.eyebrow{font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:12px;
+  letter-spacing:.13em; text-transform:uppercase; color:var(--ink-3)}
+button{font:inherit; color:inherit; cursor:pointer; border:1px solid var(--line);
+  background:var(--surface); border-radius:var(--radius)}
+button:focus-visible{outline:2.5px solid var(--accent); outline-offset:2px}
+input,textarea{font:inherit; color:inherit; background:var(--surface);
+  border:1px solid var(--line); border-radius:7px; padding:6px 8px}
+
+.wrap{max-width:1120px; margin:0 auto; padding:14px 14px 40px;
+  display:grid; gap:14px; grid-template-columns:minmax(0,1fr)}
+@media(min-width:980px){
+  .wrap{grid-template-columns:minmax(0,1fr) minmax(300px,340px);
+    align-items:start; padding:20px}
+  .col-main{display:grid; gap:14px; min-width:0}
+  .col-side{display:grid; gap:14px; position:sticky; top:14px}
+}
+
+.mast{display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+  grid-column:1/-1; flex-wrap:wrap; padding-bottom:2px; border-bottom:1px solid var(--line)}
+.mast h1{font-size:26px}
+.mast .sub{color:var(--ink-2); font-size:13px}
+.crosslink{font-size:12.5px; font-weight:600; color:var(--accent); text-decoration:none;
+  white-space:nowrap}
+.crosslink:hover{text-decoration:underline}
+
+
+.card{background:var(--surface); border:1px solid var(--line);
+  border-radius:12px; box-shadow:var(--shadow); padding:13px}
+.card > .eyebrow{display:block; margin-bottom:9px}
+
+/* ---- import ---- */
+.drop{border:1.5px dashed var(--line); border-radius:10px; padding:18px 14px; text-align:center;
+  background:var(--surface-2); transition:border-color .12s, background .12s}
+.drop.over{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 8%, transparent)}
+.drop p{margin:0 0 9px; color:var(--ink-2); font-size:13.5px}
+.drop .actions{justify-content:center}
+textarea#paste{width:100%; min-height:78px; margin-top:9px; resize:vertical;
+  font-family:"IBM Plex Mono",monospace; font-size:11.5px; display:none}
+
+/* ---- rink ---- */
+.rink-card{padding:11px 11px 9px}
+.rink-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px; gap:8px}
+svg.rink{display:block; width:100%; height:auto; touch-action:manipulation;
+  max-height:min(58vh,470px)}
+.board{fill:var(--ice); stroke:var(--edge); stroke-width:.7}
+.mark{fill:none; stroke:var(--paint); stroke-width:.35}
+.mark.blue{stroke:var(--paint-blue); stroke-width:1.1}
+.mark.red{stroke:var(--paint-red); stroke-width:.6}
+.zoneline{fill:none; stroke:var(--edge); stroke-width:.28; stroke-dasharray:1.6 1.6; opacity:.55}
+.dot{stroke-width:.7; cursor:pointer; transition:opacity .12s}
+.dot.off{opacity:.07; pointer-events:none}
+.dot.goal{stroke-width:1.5}
+.dot.sel{stroke:var(--accent); stroke-width:1.8}
+.tip{position:absolute; pointer-events:none; z-index:40; background:var(--surface);
+  border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow);
+  padding:7px 9px; font-size:12px; line-height:1.5; display:none; max-width:230px}
+.tip b{font-family:"Barlow Condensed",sans-serif; letter-spacing:.04em; text-transform:uppercase}
+.tip .k{color:var(--ink-3); font-family:"IBM Plex Mono",monospace; font-size:10.5px}
+
+.legend{display:flex; gap:6px; margin-top:9px; flex-wrap:wrap}
+.lg{display:flex; align-items:center; gap:6px; padding:4px 9px; border-radius:8px;
+  border:1px solid var(--line); background:var(--surface-2); flex:1; min-width:118px}
+.lg .sw{width:13px; height:13px; border-radius:50%; flex:none; border:1px solid var(--edge)}
+.lg .nm{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:13px;
+  letter-spacing:.06em; text-transform:uppercase}
+.lg .zl{font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--ink-3); margin-left:auto}
+
+/* ---- flow ---- */
+.flow-head{display:flex; justify-content:space-between; align-items:baseline; gap:8px;
+  margin-bottom:7px; flex-wrap:wrap}
+.readout{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--ink-2);
+  white-space:nowrap}
+.readout b{color:var(--ink); font-weight:500}
+svg.flow{display:block; width:100%; height:auto; cursor:crosshair}
+.axis{stroke:var(--line); stroke-width:1}
+.grid{stroke:var(--line); stroke-width:1; opacity:.55; stroke-dasharray:3 3}
+.axlabel{font-family:"IBM Plex Mono",monospace; font-size:9px; fill:var(--ink-3)}
+.perlabel{font-family:"Barlow Condensed",sans-serif; font-size:10px; fill:var(--ink-3);
+  letter-spacing:.08em; text-transform:uppercase}
+.series{fill:none; stroke-width:2; stroke-linejoin:round; stroke-linecap:round}
+.gmark{stroke:var(--surface); stroke-width:1.5}
+.guide{stroke:var(--ink-3); stroke-width:1; stroke-dasharray:2 2; opacity:.7}
+
+/* ---- filters ---- */
+.fgroup{margin-bottom:11px}
+.fgroup:last-child{margin-bottom:0}
+.fgroup .eyebrow{display:block; margin-bottom:6px; font-size:11px}
+.chips{display:flex; gap:5px; flex-wrap:wrap}
+.chips button{padding:4px 10px; border-radius:999px; background:var(--surface-2);
+  color:var(--ink-3); font-size:12.5px; font-weight:600; border:1px solid var(--line)}
+.chips button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink);
+  border-color:transparent}
+
+/* ---- tiles ---- */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(148px,1fr)); gap:10px}
+.tile{background:var(--surface-2); border:1px solid var(--line); border-radius:10px;
+  padding:10px 11px; min-width:0}
+.tile .who{display:flex; align-items:center; gap:6px; margin-bottom:5px}
+.tile .who span{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:14.5px;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--ink-2);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.big{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:34px; line-height:1;
+  font-variant-numeric:tabular-nums}
+.pm{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-3); margin-top:2px}
+.tile .split{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px 8px;
+  margin-top:7px; padding-top:7px; border-top:1px solid var(--line);
+  font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--ink-2)}
+.tile .split b{color:var(--ink); font-weight:500}
+
+.tblwrap{overflow-x:auto; margin:0 -3px; max-height:320px; overflow-y:auto}
+table{border-collapse:collapse; width:100%; font-size:12.5px}
+th,td{text-align:left; padding:5px 7px; white-space:nowrap; border-bottom:1px solid var(--line)}
+th{font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:11.5px;
+  letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3);
+  position:sticky; top:0; background:var(--surface); cursor:pointer}
+th:hover{color:var(--ink)}
+td.num{text-align:right; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
+tbody tr:last-child td{border-bottom:0}
+tr.shotrow{cursor:pointer}
+tr.shotrow:hover td{background:color-mix(in srgb, var(--accent) 8%, transparent)}
+tr.shotrow.sel td{background:color-mix(in srgb, var(--accent) 17%, transparent)}
+
+.note{font-size:12.5px; color:var(--ink-2); line-height:1.5}
+.note + .note{margin-top:5px}
+.note b{color:var(--ink); font-weight:600}
+.flag{display:inline-flex; align-items:center; font-family:"Barlow",sans-serif;
+  font-size:12px; font-weight:600; padding:2px 7px; border-radius:999px}
+.flag.ok{color:var(--good); background:color-mix(in srgb, var(--good) 13%, transparent)}
+.flag.watch{color:var(--warn); background:color-mix(in srgb, var(--warn) 15%, transparent)}
+.flag.bad{color:var(--bad); background:color-mix(in srgb, var(--bad) 13%, transparent)}
+.actions{display:flex; gap:8px; flex-wrap:wrap}
+.actions button{padding:9px 14px; font-family:"Barlow Condensed",sans-serif; font-weight:600;
+  font-size:15px; letter-spacing:.05em}
+.actions button.primary{background:var(--accent); color:var(--accent-ink); border-color:transparent}
+.empty{color:var(--ink-3); font-size:13px}
+.hidden{display:none !important}
+
+.site-nav{position:sticky; top:0; z-index:60; display:flex; align-items:center;
+  justify-content:space-between; padding:0 clamp(16px,4vw,40px); height:58px;
+  background:color-mix(in srgb, var(--page) 84%, transparent);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line)}
+.site-nav .brand{font-size:.95rem; font-weight:700; color:var(--ink);
+  letter-spacing:-.02em; text-decoration:none}
+.site-nav .back{display:inline-flex; align-items:center; gap:6px; padding:7px 14px;
+  border:1px solid var(--line); border-radius:8px;
+  background:color-mix(in srgb, var(--ink) 4%, transparent);
+  color:var(--ink-2); text-decoration:none; font-size:.82rem; font-weight:500;
+  transition:color .15s, background .15s}
+.site-nav .back:hover{color:var(--ink); background:color-mix(in srgb, var(--ink) 8%, transparent)}
+.site-foot{max-width:1120px; margin:0 auto; padding:20px clamp(14px,4vw,20px) 40px;
+  border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between}
+.site-foot span,.site-foot a{font-size:.78rem; color:var(--ink-3); font-weight:500; text-decoration:none}
+.site-foot a:hover{color:var(--ink-2)}
+@media(max-width:899px){ .site-foot{display:none} }
+</style>
+
+<nav class="site-nav">
+  <a class="brand" href="/">LK</a>
+  <a class="back" href="/">&larr; All Projects</a>
+</nav>
+
+<div class="wrap">
+
+  <div class="mast">
+    <h1>Shot Chart</h1>
+    <div class="sub">Load a shot chart CSV. Every shot placed, scored and filterable.
+      &nbsp;<a class="crosslink" href="index.html">Tagging live instead? Rinkside Tagger &rarr;</a></div>
+  </div>
+
+  <div class="col-main">
+
+    <div class="card" id="importCard">
+      <span class="eyebrow">Import</span>
+      <div class="drop" id="drop">
+        <p>Drop a shot chart CSV here, or</p>
+        <div class="actions">
+          <button class="primary" id="pickBtn">Choose file</button>
+          <button id="pasteBtn">Paste CSV</button>
+          <button id="sampleBtn">Load sample</button>
+        </div>
+        <textarea id="paste" placeholder="Period,Team,Player,Type,X,Y,Shot Type,Strength&#10;1,Away,,Shot,77.11,-2.44,Backhand,5v5"></textarea>
+      </div>
+      <input type="file" id="file" accept=".csv,text/csv" class="hidden">
+      <div class="note" id="importNote" style="margin-top:9px">
+        Expects <span class="mono">Period, Team, Type, X, Y, Shot Type, Strength</span> &mdash;
+        raw NHL rink feet, x from &minus;100 to 100. Nothing leaves your browser.
+      </div>
+    </div>
+
+    <div class="card rink-card hidden" id="rinkCard">
+      <div class="rink-head">
+        <span class="eyebrow">Attacking right &mdash; both ends mirrored onto one</span>
+        <button id="zoneBtn" style="padding:3px 9px;font-size:12px;font-family:'Barlow',sans-serif"
+                aria-pressed="false">Show zones</button>
+      </div>
+      <div style="position:relative">
+        <svg class="rink" id="rink" viewBox="-4 -45 108 90" role="img"
+             aria-label="Rink chart of every shot, placed by coordinate and sized by expected goals"></svg>
+        <div class="tip" id="tip"></div>
+      </div>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="card hidden" id="flowCard">
+      <div class="flow-head">
+        <span class="eyebrow">Game flow &mdash; cumulative xG by shot order</span>
+        <span class="readout" id="readout"></span>
+      </div>
+      <svg class="flow" id="flow" viewBox="0 0 720 210" role="img"
+           aria-label="Cumulative expected goals for each team over the course of the game"></svg>
+    </div>
+
+    <div class="card hidden" id="logCard">
+      <span class="eyebrow">Shots <span id="logCount" class="mono"></span></span>
+      <div class="tblwrap"><table id="log"></table></div>
+    </div>
+
+  </div>
+
+  <div class="col-side">
+
+    <div class="card hidden" id="filterCard">
+      <span class="eyebrow">Filters</span>
+      <div id="filters"></div>
+      <div class="actions" style="margin-top:11px">
+        <button id="resetBtn" style="padding:6px 11px;font-size:13px">Reset filters</button>
+        <button id="exportBtn" style="padding:6px 11px;font-size:13px">Export scored CSV</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="totalsCard">
+      <span class="eyebrow">Totals</span>
+      <div class="tiles" id="tiles"></div>
+    </div>
+
+    <div class="card hidden" id="notesCard">
+      <span class="eyebrow">Data notes</span>
+      <div id="notes"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="site-foot">
+  <span>Luc Knox &middot; 2026</span>
+  <a href="https://github.com/totqro" target="_blank" rel="noopener">GitHub</a>
+</footer>
+
+<script>
+(function(){
+"use strict";
+
+/* ================================================================
+   The model. xg_model.json is the fitted scikit-learn pipeline
+   flattened to numbers by export_model_web.py, which asserts the two
+   agree to 1e-9 over 400 random rows. Scoring is therefore the same
+   arithmetic the CLI does: scale three numerics, one-hot two
+   categoricals, dot with the coefficients, sigmoid.
+
+   Unknown categories deliberately produce an all-zero block rather
+   than an error, matching OneHotEncoder(handle_unknown="ignore").
+================================================================= */
+let MODEL=null, COLIDX=null;
+
+function scoreShot(s){
+  const x=new Float64Array(MODEL.columns.length);
+  const num=MODEL.numeric;
+  for(let i=0;i<num.names.length;i++){
+    const v=s[num.names[i]];
+    x[COLIDX["num__"+num.names[i]]]=(v-num.mean[i])/num.scale[i];
+  }
+  for(const name of MODEL.categorical.names){
+    const col=MODEL.categorical.columns[name][s[name]];
+    if(col!==undefined) x[COLIDX[col]]=1;
+  }
+  let z=MODEL.intercept;
+  for(let i=0;i<x.length;i++) z+=MODEL.coef[i]*x[i];
+  return 1/(1+Math.exp(-z));
+}
+
+/* ---------------- geometry — mirrors zone_tagging.py ---------------- */
+const GOAL_X=89, R_CREASE=8, R_MID=24, R_FAR=45, A_SLOT=20, A_WIDE=45,
+      R_CREASE_FT=6,
+      Y_BEHIND=17, BLUE_LINE_X=25;
+const ZONE_NAMES={1:"L corner",2:"behind net",3:"R corner",4:"L post",5:"crease",
+  6:"R post",7:"L boards",8:"inner slot",9:"R boards",10:"L circle",11:"slot",
+  12:"R circle",13:"L point",14:"mid point",15:"R point",16:"neutral zone"};
+const TIER_OF={5:"HIGH",8:"HIGH",4:"MED",6:"MED",10:"MED",11:"MED",12:"MED"};
+const TIER={HIGH:{label:"High",css:"hi",zones:"crease, inner slot"},
+            MED:{label:"Medium",css:"md",zones:"posts, circles, slot"},
+            LOW:{label:"Low",css:"lo",zones:"corners, boards, points"}};
+
+function geometry(x,y){
+  const dx=GOAL_X-x, ya=Math.abs(y);
+  return {d:Math.hypot(dx,ya), a:Math.atan2(ya,dx)*180/Math.PI};
+}
+/* zone16, tested in the same order as the Python. First match wins. */
+function zone16(x,y){
+  const g=geometry(x,y), d=g.d, a=g.a, left=y<0;
+  if(x>GOAL_X) return y<-Y_BEHIND?1:(y>Y_BEHIND?3:2);
+  if(x<BLUE_LINE_X) return 16;
+  if(d<R_CREASE) return 5;
+  if(d<R_MID) return a<A_SLOT?8:(left?4:6);
+  if(d<R_FAR){
+    if(a<A_SLOT) return 11;
+    if(a<A_WIDE) return left?10:12;
+    return left?7:9;
+  }
+  return a<A_SLOT?14:(left?13:15);
+}
+
+/* ---------------- tagger vocabulary -> the model's ----------------
+   Scramble and blanks have no NHL shotType equivalent, so they score
+   as UNKNOWN rather than being guessed at. Same table as the CLI. */
+const SHOT_TYPES={"wrist shot":"WRIST","wrist":"WRIST","snap shot":"SNAP","snap":"SNAP",
+  "slap shot":"SLAP","slap":"SLAP","backhand":"BACK","back":"BACK","tip-in":"TIP",
+  "tip in":"TIP","tip":"TIP","redirect":"TIP","deflected":"DEFL","deflection":"DEFL",
+  "wrap-around":"WRAP","wrap around":"WRAP","wraparound":"WRAP"};
+const SITUATIONS={"5v5":"EV_5v5","4v4":"EV_4v4","3v3":"EV_3v3","5v4":"PP_5v4",
+  "5v3":"PP_5v3","4v3":"PP_4v3","4v5":"SH_4v5","3v5":"SH_OTHER","3v4":"SH_OTHER",
+  "6v5":"EN_6v5_PULLED","5v6":"EN_AGAINST"};
+/* The model is fit on unblocked attempts: 30% of its 905,483 rows are misses
+   carrying goal=0. Dropping misses would undercount a game's xG, so only
+   blocks — the one category the source data itself excludes — come out. */
+const UNBLOCKED={"shot":1,"goal":1,"save":1,"shot on goal":1,"miss":1,"missed":1,
+  "missed shot":1,"wide":1,"post":1,"crossbar":1};
+const BLOCKED={"block":1,"blocked":1,"blocked shot":1};
+
+/* ---------------- CSV ---------------- */
+function parseCSV(text){
+  const rows=[]; let row=[], field="", quoted=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(quoted){
+      if(c==='"'){ if(text[i+1]==='"'){ field+='"'; i++; } else quoted=false; }
+      else field+=c;
+    } else if(c==='"') quoted=true;
+    else if(c===","){ row.push(field); field=""; }
+    else if(c==="\n"||c==="\r"){
+      if(c==="\r"&&text[i+1]==="\n") i++;
+      row.push(field); field="";
+      if(row.some(v=>v.trim()!=="")) rows.push(row);
+      row=[];
+    } else field+=c;
+  }
+  row.push(field);
+  if(row.some(v=>v.trim()!=="")) rows.push(row);
+  if(!rows.length) return [];
+  const head=rows[0].map(h=>h.trim().toLowerCase().replace(/\s+/g,"_"));
+  return rows.slice(1).map(r=>{
+    const o={}; head.forEach((h,i)=>o[h]=(r[i]===undefined?"":r[i].trim())); return o;
+  });
+}
+
+const REQUIRED=["period","team","type","x","y","shot_type","strength"];
+
+function loadShots(text){
+  const raw=parseCSV(text);
+  if(!raw.length) throw new Error("That file has no rows.");
+  const missing=REQUIRED.filter(c=>!(c in raw[0]));
+  if(missing.length) throw new Error("Missing column"+(missing.length>1?"s":"")+": "+missing.join(", "));
+
+  const out=[];
+  raw.forEach((r,i)=>{
+    const x=parseFloat(r.x), y=parseFloat(r.y);
+    if(!isFinite(x)||!isFinite(y)) return;
+    const event=String(r.type||"").toLowerCase();
+    /* Mirror the left end onto the attacking-right frame. Flipping x has
+       to flip y with it or every left-end shot lands on the wrong wing. */
+    const flip=x<0, X=flip?-x:x, Y=flip?-y:y;
+    const g=geometry(X,Y), z=zone16(X,Y);
+    const tagType=String(r.shot_type||"").trim();
+    const tagStr=String(r.strength||"").trim();
+    out.push({
+      i:out.length, period:r.period||"", team:String(r.team||"").trim()||"—",
+      player:String(r.player||"").trim(), event:event, raw_i:i+2,
+      x_adj:X, y_adj:Y, mirrored:flip?1:0,
+      distance:g.d, angle_from_net:g.a, zone:z, zone_name:ZONE_NAMES[z],
+      tier:TIER_OF[z]||"LOW",
+      shot_type:SHOT_TYPES[tagType.toLowerCase()]||"UNKNOWN", tagged_type:tagType,
+      situation:SITUATIONS[tagStr.toLowerCase()]||"EV_5v5", tagged_strength:tagStr,
+      is_rebound:("rebound" in r && /^(1|true|yes|y)$/i.test(r.rebound))?1:0,
+      goal:event==="goal"?1:0, unblocked:!!UNBLOCKED[event], blocked:!!BLOCKED[event]
+    });
+  });
+  if(!out.length) throw new Error("No rows had usable X/Y coordinates.");
+  const scored=out.filter(s=>s.unblocked);
+  scored.forEach(s=>{ s.xg=scoreShot(s); });
+  const odd=out.filter(s=>!s.unblocked&&!s.blocked);
+  return {all:out, scored:scored, blocked:out.filter(s=>s.blocked).length,
+          unrecognised:[...new Set(odd.map(s=>s.event||"(blank)"))],
+          unrecognisedCount:odd.length};
+}
+
+/* ---------------- state ---------------- */
+let DATA=null, FILTERS=null, SEL=null, SHOW_ZONES=false;
+let SORT={key:"xg", dir:-1};
+
+function facets(){
+  const f={team:[], period:[], shot_type:[], tier:[], situation:[]};
+  const seen={team:{}, period:{}, shot_type:{}, tier:{}, situation:{}};
+  DATA.scored.forEach(s=>{
+    for(const k in f){ const v=String(s[k]); if(!seen[k][v]){ seen[k][v]=1; f[k].push(v); } }
+  });
+  f.tier.sort((a,b)=>["HIGH","MED","LOW"].indexOf(a)-["HIGH","MED","LOW"].indexOf(b));
+  f.period.sort();
+  f.shot_type.sort();
+  f.situation.sort();
+  return f;
+}
+function resetFilters(){
+  const f=facets(); FILTERS={};
+  for(const k in f) FILTERS[k]=new Set(f[k]);
+}
+function visible(){
+  return DATA.scored.filter(s=>{
+    for(const k in FILTERS) if(!FILTERS[k].has(String(s[k]))) return false;
+    return true;
+  });
+}
+
+/* ---------------- rink ---------------- */
+/* NHL feet, offensive half, net at x = GOAL_X. Corner radius 28 puts the
+   goal line's ends at y = ±36.75, which is where the boards actually are. */
+function rinkPath(){
+  return "M 0 -42.5 H 72 A 28 28 0 0 1 100 -14.5 V 14.5 A 28 28 0 0 1 72 42.5 H 0 Z";
+}
+function polar(a,r){ const t=a*Math.PI/180; return [GOAL_X-r*Math.cos(t), r*Math.sin(t)]; }
+
+function drawRink(){
+  const p=[];
+  p.push(`<clipPath id="ice"><path d="${rinkPath()}"/></clipPath>`);
+  p.push(`<path class="board" d="${rinkPath()}"/>`);
+  p.push(`<g clip-path="url(#ice)">`);
+  if(SHOW_ZONES){
+    [R_CREASE,R_MID,R_FAR].forEach(r=>
+      p.push(`<circle class="zoneline" cx="${GOAL_X}" cy="0" r="${r}"/>`));
+    [A_SLOT,-A_SLOT,A_WIDE,-A_WIDE].forEach(a=>{
+      const e=polar(a,60);
+      p.push(`<line class="zoneline" x1="${GOAL_X}" y1="0" x2="${e[0]}" y2="${e[1]}"/>`);
+    });
+    [-Y_BEHIND,Y_BEHIND].forEach(y=>
+      p.push(`<line class="zoneline" x1="${GOAL_X}" y1="${y}" x2="102" y2="${y}"/>`));
+  }
+  /* blue line, goal line, crease, net, faceoff circles and dots */
+  p.push(`<line class="mark blue" x1="${BLUE_LINE_X}" y1="-42.5" x2="${BLUE_LINE_X}" y2="42.5"/>`);
+  p.push(`<line class="mark red" x1="${GOAL_X}" y1="-36.75" x2="${GOAL_X}" y2="36.75"/>`);
+  const cx=(GOAL_X-Math.sqrt(R_CREASE_FT*R_CREASE_FT-16)).toFixed(2);
+  p.push(`<path class="mark red" d="M ${GOAL_X} -4 H ${cx} A ${R_CREASE_FT} ${R_CREASE_FT} 0 0 0 ${cx} 4 H ${GOAL_X}"/>`);
+  p.push(`<rect class="mark red" x="${GOAL_X}" y="-3" width="4" height="6"/>`);
+  [[69,-22],[69,22]].forEach(c=>{
+    p.push(`<circle class="mark" cx="${c[0]}" cy="${c[1]}" r="15"/>`);
+    p.push(`<circle class="mark red" cx="${c[0]}" cy="${c[1]}" r="1" fill="var(--paint-red)"/>`);
+  });
+  [[20,-22],[20,22]].forEach(c=>
+    p.push(`<circle class="mark red" cx="${c[0]}" cy="${c[1]}" r="1" fill="var(--paint-red)"/>`));
+  p.push(`</g>`);
+  return p.join("");
+}
+
+/* Radius carries xG, colour carries the tier — the same three tiers the
+   live tagger uses, so a chart here reads like the tagger's legend. */
+function radius(xg){ return 1.15+Math.sqrt(Math.max(xg,0))*5.2; }
+
+function drawDots(){
+  const vis=new Set(visible().map(s=>s.i));
+  return DATA.scored.map(s=>{
+    const cls="dot "+(s.goal?"goal ":"")+(vis.has(s.i)?"":"off ")+(SEL===s.i?"sel":"");
+    const fill=`var(--dot-${TIER[s.tier].css})`;
+    const stroke=s.goal?"var(--good)":"var(--edge)";
+    return `<circle class="${cls}" data-i="${s.i}" cx="${s.x_adj.toFixed(2)}" `+
+           `cy="${s.y_adj.toFixed(2)}" r="${radius(s.xg).toFixed(2)}" `+
+           `fill="${fill}" stroke="${stroke}"/>`;
+  }).join("");
+}
+
+function renderRink(){
+  const svg=document.getElementById("rink");
+  svg.innerHTML=drawRink()+drawDots();
+  svg.querySelectorAll(".dot").forEach(el=>{
+    el.onmouseenter=e=>showTip(+el.dataset.i, e);
+    el.onmousemove=e=>showTip(+el.dataset.i, e);
+    el.onmouseleave=hideTip;
+    el.onclick=()=>{ SEL=(SEL===+el.dataset.i)?null:+el.dataset.i; render(); };
+  });
+}
+
+function showTip(i,e){
+  const s=DATA.scored.find(r=>r.i===i);
+  if(!s) return;
+  const tip=document.getElementById("tip");
+  tip.innerHTML=
+    `<b>${esc(s.zone_name)}</b> &middot; ${TIER[s.tier].label}<br>`+
+    `<span class="k">${s.distance.toFixed(1)} ft &middot; ${s.angle_from_net.toFixed(0)}&deg; &middot; `+
+    `${esc(s.shot_type)} &middot; ${esc(s.situation)}</span><br>`+
+    `<b>${s.xg.toFixed(3)} xG</b>${s.goal?' <span class="flag ok">goal</span>':""}`+
+    (s.player?`<br><span class="k">${esc(s.player)}</span>`:"");
+  const host=tip.parentElement.getBoundingClientRect();
+  tip.style.display="block";
+  tip.style.left=Math.min(e.clientX-host.left+12, host.width-tip.offsetWidth-4)+"px";
+  tip.style.top=Math.max(e.clientY-host.top-tip.offsetHeight-10, 2)+"px";
+}
+function hideTip(){ document.getElementById("tip").style.display="none"; }
+
+/* ---------------- filters ---------------- */
+const FACET_LABEL={team:"Team", period:"Period", shot_type:"Shot type",
+                   tier:"Danger tier", situation:"Strength"};
+
+function buildFilters(){
+  const f=facets();
+  document.getElementById("filters").innerHTML=Object.keys(f).filter(k=>f[k].length>1)
+    .map(k=>`<div class="fgroup"><span class="eyebrow">${FACET_LABEL[k]}</span>
+      <div class="chips" data-facet="${k}">${f[k].map(v=>{
+        const label=k==="tier"?TIER[v].label:v;
+        return `<button data-v="${esc(v)}" aria-pressed="true">${esc(label)}</button>`;
+      }).join("")}</div></div>`).join("");
+  document.querySelectorAll("#filters .chips button").forEach(b=>{
+    b.onclick=()=>{
+      const k=b.parentElement.dataset.facet, v=b.dataset.v;
+      if(FILTERS[k].has(v)) FILTERS[k].delete(v); else FILTERS[k].add(v);
+      render();
+    };
+  });
+}
+/* Sync only the state. Rebuilding the chips would drop focus off the one
+   the keyboard just pressed. */
+function syncFilters(){
+  document.querySelectorAll("#filters .chips button").forEach(b=>{
+    b.setAttribute("aria-pressed",
+      String(FILTERS[b.parentElement.dataset.facet].has(b.dataset.v)));
+  });
+}
+
+/* ---------------- totals ---------------- */
+function renderTiles(){
+  const vis=visible(), teams=[...new Set(vis.map(s=>s.team))].sort();
+  const el=document.getElementById("tiles");
+  if(!vis.length){ el.innerHTML=`<div class="empty">No shots match these filters.</div>`; return; }
+  el.innerHTML=teams.map(t=>{
+    const g=vis.filter(s=>s.team===t), xg=g.reduce((a,s)=>a+s.xg,0);
+    const goals=g.reduce((a,s)=>a+s.goal,0), diff=goals-xg;
+    const mix=["HIGH","MED","LOW"].map(k=>
+      `<div>${TIER[k].label.slice(0,3)} <b>${Math.round(g.filter(s=>s.tier===k).length/g.length*100)}%</b></div>`).join("");
+    return `<div class="tile">
+      <div class="who"><span>${esc(t)}</span></div>
+      <div class="big">${xg.toFixed(2)}</div>
+      <div class="pm">xG &middot; ${g.length} shots &middot; ${goals} goal${goals===1?"":"s"}</div>
+      <div class="pm" style="color:${Math.abs(diff)<0.5?"var(--ink-3)":(diff>0?"var(--good)":"var(--bad)")}">
+        ${diff>=0?"+":""}${diff.toFixed(2)} vs expected</div>
+      <div class="split">${mix}</div></div>`;
+  }).join("");
+}
+
+/* ---------------- table ---------------- */
+const COLS=[["period","P",0],["team","Team",0],["tier","Tier",0],["zone_name","Zone",0],
+            ["distance","Dist",1],["angle_from_net","Ang",1],["shot_type","Type",0],
+            ["situation","State",0],["xg","xG",1]];
+
+function renderLog(){
+  const vis=visible().slice().sort((a,b)=>{
+    const A=a[SORT.key], B=b[SORT.key];
+    return (A<B?-1:A>B?1:0)*SORT.dir;
+  });
+  document.getElementById("logCount").textContent=vis.length+" of "+DATA.scored.length;
+  const head=COLS.map(c=>
+    `<th data-k="${c[0]}"${c[2]?' style="text-align:right"':""}>${c[1]}${
+      SORT.key===c[0]?(SORT.dir>0?" ↑":" ↓"):""}</th>`).join("");
+  const body=vis.map(s=>`<tr class="shotrow${SEL===s.i?" sel":""}" data-i="${s.i}">
+    <td>${esc(s.period)}</td><td>${esc(s.team)}</td><td>${TIER[s.tier].label}</td>
+    <td>${esc(s.zone_name)}${s.goal?' <span class="flag ok">G</span>':""}</td>
+    <td class="num">${s.distance.toFixed(1)}</td><td class="num">${s.angle_from_net.toFixed(0)}</td>
+    <td>${esc(s.shot_type)}</td><td>${esc(s.situation)}</td>
+    <td class="num">${s.xg.toFixed(3)}</td></tr>`).join("");
+  const t=document.getElementById("log");
+  t.innerHTML=`<thead><tr>${head}</tr></thead><tbody>${body||
+    '<tr><td class="empty">No shots match these filters.</td></tr>'}</tbody>`;
+  t.querySelectorAll("th").forEach(th=>th.onclick=()=>{
+    const k=th.dataset.k;
+    if(SORT.key===k) SORT.dir*=-1; else { SORT.key=k; SORT.dir=(k==="xg"||k==="distance")?-1:1; }
+    render();
+  });
+  t.querySelectorAll("tr.shotrow").forEach(tr=>tr.onclick=()=>{
+    SEL=(SEL===+tr.dataset.i)?null:+tr.dataset.i; render();
+  });
+}
+
+function renderLegend(){
+  document.getElementById("legend").innerHTML=["HIGH","MED","LOW"].map(k=>{
+    const d=TIER[k];
+    return `<div class="lg"><span class="sw" style="background:var(--${d.css})"></span>
+      <span class="nm">${d.label}</span><span class="zl">${d.zones}</span></div>`;
+  }).join("")+`<div class="lg"><span class="sw" style="background:transparent;
+      border-color:var(--good);border-width:2px"></span><span class="nm">Goal</span>
+      <span class="zl">size = xG</span></div>`;
+}
+
+/* Every caveat the CLI prints, printed here too. A chart that hides the
+   holes in its input is worse than a table that shows them. */
+function renderNotes(){
+  const n=[], s=DATA.scored;
+  if(DATA.blocked) n.push(`<div class="note"><b>${DATA.blocked}</b> blocked shot${
+    DATA.blocked===1?"":"s"} dropped — the model is fit on unblocked attempts, which
+    is the one category the source data excludes too. Misses are kept and scored:
+    30% of the training rows are misses.</div>`);
+  if(DATA.unrecognisedCount) n.push(`<div class="note"><span class="flag watch">check this</span>
+    <b>${DATA.unrecognisedCount}</b> row${DATA.unrecognisedCount===1?"":"s"} had an
+    unrecognised Type (${DATA.unrecognised.map(esc).join(", ")}) and could not be
+    placed as an attempt or a block.</div>`);
+  const unknown=s.filter(r=>r.shot_type==="UNKNOWN");
+  if(unknown.length){
+    const kinds=[...new Set(unknown.map(r=>r.tagged_type||"(blank)"))].sort();
+    n.push(`<div class="note"><b>${unknown.length}</b> of ${s.length} shots scored as
+      UNKNOWN type (${kinds.map(esc).join(", ")}). That is the NHL's own
+      unrecorded-type bucket, and it is mostly crease chaos — 42% rebounds at a
+      median 9 ft — so it is the closest honest match, not a blank. What it can't
+      carry is the rebound flag, which is where a scramble's danger actually
+      lives: on a 6 ft shot that flag is worth +0.07 xG.</div>`);
+  }
+  const mir=s.filter(r=>r.mirrored).length;
+  if(mir) n.push(`<div class="note"><b>${mir}</b> shot${mir===1?"":"s"} had x &lt; 0 and
+    ${mir===1?"was":"were"} mirrored onto the attacking-right frame.</div>`);
+  if(!s.some(r=>r.is_rebound)) n.push(`<div class="note"><span class="flag watch">check this</span>
+    No rebound flags. Without timestamps rebounds can't be derived, and rebounds
+    are the single biggest thing this file is missing — they score well below
+    their real value here.</div>`);
+  if(s.length<25) n.push(`<div class="note"><span class="flag bad">small sample</span>
+    ${s.length} shots is noise, not a finding. Goals minus expected needs a
+    season, not a game.</div>`);
+  document.getElementById("notes").innerHTML=n.join("")||
+    `<div class="note"><span class="flag ok">clean</span> Nothing to flag in this file.</div>`;
+}
+
+
+/* ---------------- game flow ----------------
+   The export carries no clock, but rows come out in tagging order, so shot
+   sequence is a faithful x-axis: the same momentum read with "shots" along
+   the bottom instead of "minutes". Filters apply to the lines — they only
+   step at shots still in play — while x stays each shot's true position in
+   the game, so filtering never compresses the timeline.
+
+   What this cannot show, and a clock could: a five-shot flurry inside ninety
+   seconds looks identical to five shots spread across a period. */
+const FLOW={W:720, H:210, padL:34, padR:12, padT:10, padB:22};
+let TEAMCOL={};
+
+function flowSeries(){
+  const seq=DATA.scored, vis=new Set(visible().map(s=>s.i));
+  const teams=[...new Set(seq.map(s=>s.team))].sort();
+  const n=seq.length, curve={}, run={}, goals=[];
+  teams.forEach(t=>{ curve[t]=new Float64Array(n); run[t]=0; });
+  seq.forEach((s,i)=>{
+    if(vis.has(s.i)){
+      run[s.team]+=s.xg;
+      if(s.goal) goals.push({team:s.team, i:i, v:run[s.team]});
+    }
+    teams.forEach(t=>{ curve[t][i]=run[t]; });
+  });
+  return {teams, curve, goals, n};
+}
+
+function niceTicks(max){
+  const step = max<=1 ? 0.25 : max<=2.5 ? 0.5 : max<=6 ? 1 : 2;
+  const out=[];
+  for(let v=0; v<=max+1e-9; v+=step) out.push(+v.toFixed(2));
+  return out;
+}
+
+function renderFlow(){
+  const svg=document.getElementById("flow"), {W,H,padL,padR,padT,padB}=FLOW;
+  const S=flowSeries(), n=S.n;
+  if(!n){ svg.innerHTML=""; return; }
+  const x=i => n<2 ? (padL+W-padR)/2 : padL+(i/(n-1))*(W-padL-padR);
+  const top=Math.max(0.5, ...S.teams.map(t=>S.curve[t][n-1]));
+  const y=v => H-padB-(v/top)*(H-padT-padB);
+
+  const p=[];
+  niceTicks(top).forEach(v=>{
+    p.push(`<line class="grid" x1="${padL}" y1="${y(v).toFixed(1)}" x2="${W-padR}" y2="${y(v).toFixed(1)}"/>`);
+    p.push(`<text class="axlabel" x="${padL-5}" y="${(y(v)+3).toFixed(1)}" text-anchor="end">${v.toFixed(2)}</text>`);
+  });
+  p.push(`<line class="axis" x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}"/>`);
+
+  /* Period breaks are the only real time anchor the file has. */
+  const seq=DATA.scored;
+  for(let i=1;i<n;i++){
+    if(String(seq[i].period)!==String(seq[i-1].period)){
+      const px=x(i).toFixed(1);
+      p.push(`<line class="grid" x1="${px}" y1="${padT}" x2="${px}" y2="${H-padB}"/>`);
+      p.push(`<text class="perlabel" x="${(+px+3).toFixed(1)}" y="${padT+8}">P${esc(seq[i].period)}</text>`);
+    }
+  }
+  p.push(`<text class="axlabel" x="${W-padR}" y="${H-6}" text-anchor="end">${n} shots in order &rarr;</text>`);
+  p.push(`<text class="perlabel" x="${padL+3}" y="${padT+8}">P${esc(seq[0].period)}</text>`);
+
+  S.teams.forEach(t=>{
+    const c=S.curve[t];
+    let d=`M ${x(0).toFixed(1)} ${y(0).toFixed(1)}`, prev=0;
+    for(let i=0;i<n;i++){
+      if(c[i]!==prev){
+        d+=` L ${x(i).toFixed(1)} ${y(prev).toFixed(1)} L ${x(i).toFixed(1)} ${y(c[i]).toFixed(1)}`;
+        prev=c[i];
+      }
+    }
+    d+=` L ${x(n-1).toFixed(1)} ${y(prev).toFixed(1)}`;
+    p.push(`<path class="series" d="${d}" stroke="${TEAMCOL[t]||"var(--ink-3)"}"/>`);
+  });
+
+  S.goals.forEach(g=>{
+    p.push(`<circle class="gmark" cx="${x(g.i).toFixed(1)}" cy="${y(g.v).toFixed(1)}" r="3.6" `+
+           `fill="${TEAMCOL[g.team]||"var(--ink-3)"}"><title>${esc(g.team)} goal</title></circle>`);
+  });
+
+  p.push(`<line class="guide" id="guide" x1="0" y1="${padT}" x2="0" y2="${H-padB}" style="display:none"/>`);
+  p.push(`<rect id="flowHit" x="${padL}" y="${padT}" width="${W-padL-padR}" `+
+         `height="${H-padT-padB}" fill="transparent"/>`);
+  svg.innerHTML=p.join("");
+
+  const hit=document.getElementById("flowHit"), guide=document.getElementById("guide");
+  const at=idx=>{
+    guide.setAttribute("x1",x(idx)); guide.setAttribute("x2",x(idx));
+    guide.style.display="";
+    document.getElementById("readout").innerHTML=
+      `shot <b>${idx+1}</b> &middot; P${esc(seq[idx].period)} &nbsp; `+
+      S.teams.map(t=>`<span style="color:${TEAMCOL[t]}">${esc(t)}</span> <b>${S.curve[t][idx].toFixed(2)}</b>`)
+        .join(" &ndash; ");
+  };
+  hit.onmousemove=e=>{
+    const box=svg.getBoundingClientRect();
+    const vx=(e.clientX-box.left)/box.width*W;
+    at(Math.max(0, Math.min(n-1, Math.round((vx-padL)/(W-padL-padR)*(n-1)))));
+  };
+  hit.onmouseleave=()=>{ guide.style.display="none"; showFinal(S); };
+  showFinal(S);
+}
+
+function showFinal(S){
+  const n=S.n;
+  document.getElementById("readout").innerHTML="final &nbsp;"+S.teams.map(t=>
+    `<span style="color:${TEAMCOL[t]}">${esc(t)}</span> <b>${S.curve[t][n-1].toFixed(2)}</b>`)
+    .join(" &ndash; ");
+}
+
+function render(){ renderRink(); renderFlow(); syncFilters(); renderTiles(); renderLog(); renderNotes(); }
+
+/* ---------------- import ---------------- */
+function esc(s){ return String(s).replace(/[<>&"]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c])); }
+
+function show(id,on){ document.getElementById(id).classList.toggle("hidden",!on); }
+
+function ingest(text){
+  let d;
+  try{ d=loadShots(text); }
+  catch(err){
+    document.getElementById("importNote").innerHTML=
+      `<span class="flag bad">couldn't read that</span> ${esc(err.message)}`;
+    return;
+  }
+  DATA=d; SEL=null; resetFilters();
+  const teams=[...new Set(d.scored.map(s=>s.team))].sort();
+  TEAMCOL={}; teams.forEach((t,i)=>{ TEAMCOL[t]=["var(--s1)","var(--s2)"][i]||"var(--ink-3)"; });
+  document.getElementById("importNote").innerHTML=
+    `<span class="flag ok">loaded</span> ${d.scored.length} shot${
+      d.scored.length===1?"":"s"} scored${d.blocked?`, ${d.blocked} blocked`:""}${
+      d.unrecognisedCount?`, ${d.unrecognisedCount} unrecognised`:""}.`;
+  ["rinkCard","flowCard","logCard","filterCard","totalsCard","notesCard"]
+    .forEach(id=>show(id,true));
+  buildFilters(); renderLegend(); render();
+}
+
+function readFile(f){
+  if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>ingest(String(r.result));
+  r.onerror=()=>{ document.getElementById("importNote").innerHTML=
+    `<span class="flag bad">couldn't read that</span> The file could not be opened.`; };
+  r.readAsText(f);
+}
+
+const SAMPLE=`Period,Team,Player,Type,X,Y,Shot Type,Strength
+1,Home,,Shot,82.4,3.1,Wrist Shot,5v5
+1,Home,,Goal,85.9,-2.2,Backhand,5v5
+1,Home,,Shot,64.2,18.6,Slap Shot,5v5
+1,Home,,Miss,71.0,-24.4,Wrist Shot,5v5
+1,Away,,Shot,-78.3,-6.0,Tip-In,5v4
+1,Away,,Shot,-45.1,12.9,Slap Shot,5v4
+1,Away,,Shot,-83.0,4.4,Wrist Shot,5v5
+2,Home,,Shot,-69.5,-14.2,Snap Shot,5v5
+2,Home,,Shot,-88.1,7.7,Wrap-Around,5v5
+2,Home,,Block,-52.0,2.0,Slap Shot,5v5
+2,Away,,Goal,73.8,9.5,Snap Shot,5v5
+2,Away,,Shot,40.2,-20.1,Slap Shot,4v5
+2,Away,,Shot,80.6,-11.3,Wrist Shot,5v5
+2,Away,,Shot,86.2,1.0,Deflected,5v5
+3,Home,,Shot,79.9,-16.8,Wrist Shot,5v5
+3,Home,,Goal,84.6,5.2,Snap Shot,5v4
+3,Home,,Shot,58.4,22.7,Slap Shot,5v4
+3,Home,,Shot,-90.5,-9.1,Backhand,5v5
+3,Away,,Shot,-75.2,-19.6,Wrist Shot,5v5
+3,Away,,Shot,-30.8,6.3,Slap Shot,5v5
+3,Away,,Shot,-84.4,-3.7,Scramble,5v5
+3,Away,,Miss,-62.1,25.0,Snap Shot,5v5`;
+
+function exportCSV(){
+  const cols=["period","team","player","event","x_adj","y_adj","distance","angle_from_net",
+              "zone","zone_name","tier","shot_type","situation","is_rebound","goal","xg"];
+  const rows=visible().map(s=>cols.map(c=>{
+    const v=s[c];
+    return typeof v==="number"?(Number.isInteger(v)?v:v.toFixed(4)):`"${String(v).replace(/"/g,'""')}"`;
+  }).join(","));
+  const blob=new Blob([cols.join(",")+"\n"+rows.join("\n")+"\n"],{type:"text/csv"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download="scored_shots.csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+/* ---------------- wiring ---------------- */
+document.getElementById("pickBtn").onclick=()=>document.getElementById("file").click();
+document.getElementById("file").onchange=e=>readFile(e.target.files[0]);
+document.getElementById("sampleBtn").onclick=()=>ingest(SAMPLE);
+document.getElementById("pasteBtn").onclick=()=>{
+  const ta=document.getElementById("paste");
+  const open=ta.style.display==="block";
+  ta.style.display=open?"none":"block";
+  if(!open) ta.focus();
+};
+document.getElementById("paste").oninput=e=>{
+  const v=e.target.value.trim();
+  if(v.includes("\n")) ingest(v);
+};
+document.getElementById("resetBtn").onclick=()=>{ resetFilters(); SEL=null; render(); };
+document.getElementById("exportBtn").onclick=exportCSV;
+document.getElementById("zoneBtn").onclick=e=>{
+  SHOW_ZONES=!SHOW_ZONES;
+  e.currentTarget.setAttribute("aria-pressed",String(SHOW_ZONES));
+  e.currentTarget.textContent=SHOW_ZONES?"Hide zones":"Show zones";
+  renderRink();
+};
+
+const drop=document.getElementById("drop");
+["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{
+  e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{
+  e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop",e=>{
+  const f=e.dataTransfer.files&&e.dataTransfer.files[0];
+  if(f) readFile(f);
+});
+
+fetch("xg_model.json").then(r=>{
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  return r.json();
+}).then(m=>{
+  MODEL=m; COLIDX={}; m.columns.forEach((c,i)=>COLIDX[c]=i);
+}).catch(()=>{
+  document.getElementById("importNote").innerHTML=
+    `<span class="flag bad">model didn't load</span> xg_model.json is missing, so
+     nothing can be scored. Run <span class="mono">python export_model_web.py</span>.`;
+  document.getElementById("drop").style.opacity=".5";
+});
+})();
+</script>
+</body>
+</html>
