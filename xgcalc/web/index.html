@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Live shot tagging for U Sports hockey: tap one of 16 rink zones, get tier-based expected goals.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ctext y=%2226%22 font-size=%2226%22%3E%F0%9F%8F%92%3C/text%3E%3C/svg%3E">
+<title>Rinkside Shot Tagger &mdash; Luc Knox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+</head>
+<body>
+<style>
+:root{
+  --page:#EDF0F3; --surface:#FFFFFF; --surface-2:#F5F7F9; --line:#D3DBE2;
+  --ink:#141D26; --ink-2:#48586A; --ink-3:#7B8B9C;
+  --accent:#1E62B8; --accent-ink:#FFFFFF;
+  --paint:rgba(20,29,38,.30); --paint-blue:rgba(30,98,184,.60); --paint-red:rgba(196,42,62,.60);
+  --edge:rgba(20,29,38,.45);
+  --ice:#FBFCFD;
+  --hi:#A83A16;  --hi-ink:#FFF1E9;
+  --md:#E08A55;  --md-ink:#3A1607;
+  --lo:#F7E3D6;  --lo-ink:#6B3418;
+  --good:#1C7551; --warn:#9A6212; --bad:#B0293C;
+  --shadow:0 1px 2px rgba(20,29,38,.07), 0 6px 18px rgba(20,29,38,.06);
+  --radius:9px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#080b10; --surface:#111520; --surface-2:#0e1117; --line:rgba(255,255,255,0.09);
+    --ink:#f1f5f9; --ink-2:#94a3b8; --ink-3:#64748b;
+    --accent:#6366f1; --accent-ink:#ffffff;
+    --paint:rgba(241,245,249,.40); --paint-blue:rgba(129,140,248,.72); --paint-red:rgba(232,90,108,.62);
+    --edge:rgba(241,245,249,.38);
+    --ice:#0e1117;
+    --hi:#F0975C;  --hi-ink:#2A1408;
+    --md:#9E4F26;  --md-ink:#FFEEE2;
+    --lo:#2F2119;  --lo-ink:#C9A48C;
+    --good:#22c55e; --warn:#E0AE55; --bad:#F0788B;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 12px 40px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --page:#080b10; --surface:#111520; --surface-2:#0e1117; --line:rgba(255,255,255,0.09);
+  --ink:#f1f5f9; --ink-2:#94a3b8; --ink-3:#64748b;
+  --accent:#6366f1; --accent-ink:#ffffff;
+  --paint:rgba(241,245,249,.40); --paint-blue:rgba(129,140,248,.72); --paint-red:rgba(232,90,108,.62);
+  --edge:rgba(241,245,249,.38);
+  --ice:#0e1117;
+  --hi:#F0975C;  --hi-ink:#2A1408;
+  --md:#9E4F26;  --md-ink:#FFEEE2;
+  --lo:#2F2119;  --lo-ink:#C9A48C;
+  --good:#22c55e; --warn:#E0AE55; --bad:#F0788B;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 12px 40px rgba(0,0,0,.4);
+}
+
+*{box-sizing:border-box}
+body{margin:0; background:var(--page); color:var(--ink);
+  font-family:"Barlow",system-ui,-apple-system,sans-serif; font-size:15px; line-height:1.45;
+  -webkit-text-size-adjust:100%}
+h1{font-family:"Barlow Condensed","Barlow Semi Condensed",system-ui,sans-serif;
+  font-weight:700; margin:0; text-wrap:balance}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-variant-numeric:tabular-nums}
+.eyebrow{font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:12px;
+  letter-spacing:.13em; text-transform:uppercase; color:var(--ink-3)}
+button{font:inherit; color:inherit; cursor:pointer; border:1px solid var(--line);
+  background:var(--surface); border-radius:var(--radius)}
+button:focus-visible{outline:2.5px solid var(--accent); outline-offset:2px}
+.zone:focus-visible{outline:none; stroke:var(--accent); stroke-width:1.6}
+input{font:inherit; color:inherit; background:var(--surface);
+  border:1px solid var(--line); border-radius:7px; padding:6px 8px}
+
+.wrap{max-width:1120px; margin:0 auto; padding:14px 14px 40px;
+  display:grid; gap:14px; grid-template-columns:1fr}
+@media(min-width:900px){
+  .wrap{grid-template-columns:minmax(340px,430px) 1fr; align-items:start; padding:20px}
+  .col-left{position:sticky; top:14px; display:grid; gap:12px}
+  .col-right{display:grid; gap:12px}
+}
+/* Phone: the rink is the screen, the controls sit under your thumb. */
+@media(max-width:899px){
+  body{padding-bottom:206px}
+  .col-left,.col-right{display:contents}
+  .mast{order:0} .rink-card{order:1} .game-card{order:2}
+  .totals-card{order:3} .bias-card{order:4} .log-card{order:5}
+  .last-card{position:fixed; left:0; right:0; bottom:0; z-index:20;
+    border-radius:13px 13px 0 0; border-bottom:0; padding:9px 12px 12px;
+    box-shadow:0 -4px 22px rgba(0,0,0,.18)}
+  .hide-sm{display:none}
+  .mast h1{font-size:22px} .mast .sub{display:none}
+}
+
+.mast{display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+  grid-column:1/-1; flex-wrap:wrap; padding-bottom:2px; border-bottom:1px solid var(--line)}
+.mast h1{font-size:26px}
+.mast .sub{color:var(--ink-2); font-size:13px}
+
+.card{background:var(--surface); border:1px solid var(--line);
+  border-radius:12px; box-shadow:var(--shadow); padding:13px}
+.card > .eyebrow{display:block; margin-bottom:9px}
+
+.setup{display:grid; gap:9px}
+.setup .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.setup label{font-size:12.5px; color:var(--ink-2); font-weight:600}
+
+.seg{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden}
+.seg button{border:0; border-radius:0; padding:8px 0; flex:1; background:var(--surface-2);
+  font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:15px;
+  letter-spacing:.05em; color:var(--ink-2); min-width:44px; transition:background .12s,color .12s}
+.seg button + button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink)}
+
+/* ---- rink ---- */
+.rink-card{padding:11px 11px 9px}
+.rink-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px; gap:8px}
+svg.rink{display:block; width:100%; height:auto; margin:0 auto; touch-action:manipulation;
+  max-height:calc(100vh - 286px); max-height:calc(100dvh - 286px)}
+@media(min-width:900px){ svg.rink{max-height:none} }
+.zone{cursor:pointer; stroke:var(--edge); stroke-width:.55; transition:opacity .1s}
+.zone:hover{opacity:.82}
+.zone:active{opacity:.66}
+.znum{font-family:"Barlow Condensed",sans-serif; font-weight:700; text-anchor:middle;
+  pointer-events:none}
+.endtag{font-family:"Barlow Condensed",sans-serif; font-weight:700; text-anchor:middle;
+  letter-spacing:.09em; pointer-events:none; text-transform:uppercase}
+.flash{animation:pop .34s ease-out}
+@keyframes pop{0%{opacity:.3}100%{opacity:1}}
+@media(prefers-reduced-motion:reduce){ .flash{animation:none} .zone{transition:none} }
+
+.legend{display:flex; gap:6px; margin-top:9px; flex-wrap:wrap}
+.lg{display:flex; align-items:center; gap:6px; padding:4px 9px; border-radius:8px;
+  border:1px solid var(--line); background:var(--surface-2); flex:1; min-width:120px}
+.lg .sw{width:13px; height:13px; border-radius:3px; flex:none; border:1px solid var(--edge)}
+.lg .nm{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:13px;
+  letter-spacing:.06em; text-transform:uppercase}
+.lg .zl{font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--ink-3); margin-left:auto}
+
+/* ---- bottom bar ---- */
+.last{display:grid; gap:8px}
+.barrow{display:flex; align-items:center; gap:10px}
+.barrow .seg{flex:1; max-width:210px}
+.barlabel{font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:12px;
+  letter-spacing:.13em; text-transform:uppercase; color:var(--ink-3); white-space:nowrap}
+.last-line{display:flex; align-items:center; gap:7px; flex-wrap:wrap;
+  font-family:"Barlow Condensed",sans-serif; font-size:17px; font-weight:600; min-height:26px}
+.zbadge{display:inline-flex; align-items:center; justify-content:center; min-width:26px; height:26px;
+  padding:0 6px; border-radius:7px; font-family:"Barlow Condensed",sans-serif; font-weight:700;
+  font-size:16px; border:1px solid var(--edge)}
+.chip{display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px;
+  border:1px solid var(--line); background:var(--surface-2);
+  font-family:"Barlow",sans-serif; font-size:12px; font-weight:600}
+.chip.team{border-color:transparent; background:var(--accent); color:var(--accent-ink)}
+.mods{display:grid; grid-template-columns:repeat(4,1fr); gap:6px}
+.mods button{padding:9px 2px; font-family:"Barlow Condensed",sans-serif; font-weight:600;
+  font-size:14px; letter-spacing:.04em; background:var(--surface-2); color:var(--ink-2)}
+.mods button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink); border-color:transparent}
+.mods button.goal[aria-pressed="true"]{background:var(--good); color:#fff}
+.mods button:disabled{opacity:.38; cursor:not-allowed}
+.undo-btn{width:100%; padding:11px; font-family:"Barlow Condensed",sans-serif; font-weight:700;
+  font-size:15.5px; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--bad); border-color:color-mix(in srgb, var(--bad) 42%, var(--line));
+  background:color-mix(in srgb, var(--bad) 7%, transparent)}
+.undo-btn:hover:not(:disabled){background:color-mix(in srgb, var(--bad) 15%, transparent)}
+.undo-btn:disabled{opacity:.34; cursor:not-allowed; color:var(--ink-3);
+  border-color:var(--line); background:var(--surface-2)}
+
+/* ---- tiles ---- */
+.tiles{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.tile{background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:10px 11px}
+.tile .who{display:flex; align-items:center; gap:6px; margin-bottom:5px}
+.swatch{width:9px; height:9px; border-radius:2px; flex:none}
+.tile .who span{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:14.5px;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--ink-2);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.big{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:34px; line-height:1;
+  font-variant-numeric:tabular-nums}
+.pm{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-3); margin-top:2px}
+.tile .split{display:grid; grid-template-columns:repeat(3,1fr); gap:4px 8px;
+  margin-top:7px; padding-top:7px; border-top:1px solid var(--line);
+  font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--ink-2)}
+.tile .split b{color:var(--ink); font-weight:500}
+
+.tblwrap{overflow-x:auto; margin:0 -3px}
+table{border-collapse:collapse; width:100%; font-size:12.5px}
+th,td{text-align:left; padding:5px 7px; white-space:nowrap; border-bottom:1px solid var(--line)}
+th{font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:11.5px;
+  letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3)}
+td.num{text-align:right; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
+tbody tr:last-child td{border-bottom:0}
+.log-card .tblwrap{max-height:264px; overflow-y:auto}
+tr.logrow{cursor:pointer}
+tr.logrow:hover td{background:color-mix(in srgb, var(--accent) 8%, transparent)}
+tr.logrow.sel td{background:color-mix(in srgb, var(--accent) 17%, transparent)}
+tr.logrow.sel td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+tr.logrow:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+.chip.editing{background:color-mix(in srgb, var(--warn) 20%, transparent);
+  color:var(--warn); border-color:transparent; font-weight:700}
+.done-btn{padding:6px 12px; font-family:"Barlow Condensed",sans-serif; font-weight:600;
+  font-size:13px; letter-spacing:.06em; text-transform:uppercase;
+  background:var(--surface-2); color:var(--ink-2); flex:none}
+.del{border:0; background:none; color:var(--ink-3); padding:0 4px; font-size:15px; line-height:1}
+.del:hover{color:var(--bad)}
+
+.note{font-size:12.5px; color:var(--ink-2); line-height:1.5}
+.note b{color:var(--ink); font-weight:600}
+.flag{display:inline-flex; align-items:center; font-family:"Barlow",sans-serif;
+  font-size:12px; font-weight:600; padding:2px 7px; border-radius:999px}
+.flag.ok{color:var(--good); background:color-mix(in srgb, var(--good) 13%, transparent)}
+.flag.watch{color:var(--warn); background:color-mix(in srgb, var(--warn) 15%, transparent)}
+.actions{display:flex; gap:8px; flex-wrap:wrap}
+.actions button{padding:9px 14px; font-family:"Barlow Condensed",sans-serif; font-weight:600;
+  font-size:15px; letter-spacing:.05em}
+.actions button.primary{background:var(--accent); color:var(--accent-ink); border-color:transparent}
+.empty{color:var(--ink-3); font-size:13px}
+
+/* ---- site chrome (matches the hub) ---- */
+.site-nav{position:sticky; top:0; z-index:60; display:flex; align-items:center;
+  justify-content:space-between; padding:0 clamp(16px,4vw,40px); height:58px;
+  background:color-mix(in srgb, var(--page) 84%, transparent);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line)}
+.site-nav .brand{font-size:.95rem; font-weight:700; color:var(--ink);
+  letter-spacing:-.02em; text-decoration:none}
+.site-nav .back{display:inline-flex; align-items:center; gap:6px; padding:7px 14px;
+  border:1px solid var(--line); border-radius:8px;
+  background:color-mix(in srgb, var(--ink) 4%, transparent);
+  color:var(--ink-2); text-decoration:none; font-size:.82rem; font-weight:500;
+  transition:color .15s, background .15s}
+.site-nav .back:hover{color:var(--ink); background:color-mix(in srgb, var(--ink) 8%, transparent)}
+.site-foot{max-width:1120px; margin:0 auto; padding:20px clamp(14px,4vw,20px) 40px;
+  border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between}
+.site-foot span,.site-foot a{font-size:.78rem; color:var(--ink-3); font-weight:500; text-decoration:none}
+.site-foot a:hover{color:var(--ink-2)}
+@media(max-width:899px){ .site-foot{display:none} }
+</style>
+
+<nav class="site-nav">
+  <a class="brand" href="/">LK</a>
+  <a class="back" href="/">&larr; All Projects</a>
+</nav>
+
+<div class="wrap">
+
+  <div class="mast">
+    <h1>Rinkside Shot Tagger</h1>
+    <div class="sub">Tap the zone the shot came from. One tap logs it.</div>
+  </div>
+
+  <div class="col-left">
+
+    <div class="card game-card">
+      <span class="eyebrow">Game</span>
+      <div class="setup">
+        <div class="row">
+          <input type="date" id="gdate">
+          <div style="flex:1;min-width:170px">
+            <div class="seg" id="periodSeg"></div>
+          </div>
+        </div>
+        <div class="note" id="attackNote"></div>
+      </div>
+    </div>
+
+    <div class="card rink-card">
+      <div class="rink-head">
+        <span class="eyebrow">16 zones</span>
+        <button id="flipBtn" style="padding:3px 9px;font-size:12px;font-family:'Barlow',sans-serif">Swap ends</button>
+      </div>
+      <svg class="rink" id="rink" viewBox="0 0 85 166" role="group" aria-label="Rink map — tap a zone to log a shot"></svg>
+      <div class="legend" id="legend"></div>
+    </div>
+
+  </div>
+
+  <div class="col-right">
+
+    <div class="card last-card">
+      <div class="last">
+        <div class="barrow">
+          <span class="barlabel" id="barLabel">On ice now</span>
+          <div class="seg" id="strSeg"></div>
+          <button class="done-btn" id="doneEdit" hidden>Done</button>
+        </div>
+        <div class="last-line" id="lastLine"><span class="empty">Nothing logged yet.</span></div>
+        <div class="mods">
+          <button id="mRebound" aria-pressed="false" disabled>Rebound</button>
+          <button id="mGoal" class="goal" aria-pressed="false" disabled>Goal</button>
+          <button id="mMiss" aria-pressed="false" disabled>Missed</button>
+          <button id="mBlock" aria-pressed="false" disabled>Blocked</button>
+        </div>
+        <button class="undo-btn" id="mUndo" disabled>Undo last shot</button>
+        <div class="note hide-sm">The four buttons change the shot shown here. Tap any row in the shot log to edit an earlier one; tagging a new shot comes back to the latest.</div>
+      </div>
+    </div>
+
+    <div class="card totals-card">
+      <span class="eyebrow">This game</span>
+      <div class="tiles" id="tiles"></div>
+      <div class="note" style="margin-top:9px" id="xgNote"></div>
+    </div>
+
+    <div class="card bias-card">
+      <span class="eyebrow">Tagging bias check</span>
+      <div id="bias"></div>
+    </div>
+
+    <div class="card log-card">
+      <span class="eyebrow">Shot log</span>
+      <div class="tblwrap"><table id="log"></table></div>
+      <div class="actions" style="margin-top:11px">
+        <button class="primary" id="exportBtn">Export CSV</button>
+        <button id="copyBtn">Copy CSV</button>
+        <button id="clearBtn">Clear game</button>
+      </div>
+      <div class="note" style="margin-top:8px" id="saveNote"></div>
+    </div>
+
+  </div>
+</div>
+
+<footer class="site-foot">
+  <span>Luc Knox &middot; 2026</span>
+  <a href="https://github.com/totqro" target="_blank" rel="noopener">GitHub</a>
+</footer>
+
+<script>
+(function(){
+"use strict";
+
+/* ================================================================
+   Zones, tiers and rates.
+
+   The 16 zones are the EDGE-style map already in zone_tagging.py.
+   Rates: NHL 2018-2025, 899,311 attempts, EMPTY NET EXCLUDED — with
+   empty-netters in, the neutral zone reads 3.6% instead of its real
+   0.7%, which would badly overprice shots from centre ice.
+   Left/right mirror pairs are pooled, so 4=6, 7=9, 10=12, 13=15, 1=3.
+================================================================= */
+const ZONE = {
+  1:{n:"L corner",    t:"LOW"},  2:{n:"Behind net",  t:"LOW"},  3:{n:"R corner",  t:"LOW"},
+  4:{n:"L post",      t:"MED"},  5:{n:"Crease",      t:"HIGH"}, 6:{n:"R post",    t:"MED"},
+  7:{n:"L boards",    t:"LOW"},  8:{n:"Inner slot",  t:"HIGH"}, 9:{n:"R boards",  t:"LOW"},
+  10:{n:"L circle",   t:"MED"}, 11:{n:"Slot",        t:"MED"}, 12:{n:"R circle",  t:"MED"},
+  13:{n:"L point",    t:"LOW"}, 14:{n:"Mid point",   t:"LOW"}, 15:{n:"R point",   t:"LOW"},
+  16:{n:"Neutral zone", t:"LOW"}
+};
+const EV_RATE = {1:.0268, 2:.0532, 3:.0268, 4:.0928, 5:.1598, 6:.0928, 7:.0271, 8:.1316,
+                 9:.0271, 10:.0568, 11:.0708, 12:.0568, 13:.0125, 14:.0232, 15:.0125, 16:.0068};
+const STR = {HIGH:{EV:1, PP:1.15, SH:1.24}, MED:{EV:1, PP:1.34, SH:1.09}, LOW:{EV:1, PP:2.81, SH:0.54}};
+const REB = {HIGH:1.35, MED:1.93, LOW:2.03};
+const TIER = {
+  HIGH:{label:"High", css:"hi", zones:"5, 8",                      rate:.1455},
+  MED: {label:"Medium", css:"md", zones:"4, 6, 10, 11, 12",        rate:.0805},
+  LOW: {label:"Low", css:"lo", zones:"1, 2, 3, 7, 9, 13–16",       rate:.0222}
+};
+const KEY = "rinkside.v3";   // per-origin: the site and the artifact keep separate games
+
+let state = {date:new Date().toISOString().slice(0,10),
+             period:1, strength:"EV", homeAttacksFarInP1:true, shots:[]};
+
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); note("Saved on this device."); }
+  catch(e){ note("Not saved — this browser is blocking storage. Export before you close the tab."); }
+}
+function load(){ try{ const r=localStorage.getItem(KEY); if(r) state=Object.assign(state,JSON.parse(r)); }catch(e){} }
+function note(t){ const el=document.getElementById("saveNote"); if(el) el.textContent=t; }
+function esc(s){ return String(s).replace(/[<>&]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[c])); }
+
+/* Teams switch ends every period. "Far" = the end away from your seat, all game. */
+function homeAttacksFar(p){ return state.homeAttacksFarInP1 === (p % 2 === 1); }
+function teamAt(end, p){ return (end==="F") === homeAttacksFar(p) ? "HOME" : "AWAY"; }
+function nameOf(t){ return t==="HOME" ? "Home" : "Away"; }
+function xgOf(s){
+  if(s.outcome === "BLOCK") return 0;      // never reached the net — not in the model's population
+  const t = ZONE[s.zone].t;
+  return EV_RATE[s.zone] * STR[t][s.strength] * (s.rebound ? REB[t] : 1);
+}
+
+/* ---------------- rink geometry, NHL feet ----------------
+   85 wide. Each offensive zone is 75 ft deep: 11 ft behind the goal
+   line plus 64 ft out to the blue line. The neutral zone is drawn as
+   a 16 ft strip, split so each half belongs to the net being shot at.
+   Zone rules mirror zone_tagging.zone16: rings at 8/24/45 ft and
+   radial cuts at 20 deg and 45 deg off the net axis.
+-----------------------------------------------------------*/
+const W=85, CX=42.5, H=166, GL_F=11, GL_N=155, BL_F=75, BL_N=91, CORNER=28;
+const R_CREASE=8, R_MID=24, R_FAR=45, A_SLOT=20, A_WIDE=45, Y_BEHIND=17;
+const DOT_D=20, CIRC_R=15;                       // faceoff dots, 20 ft out from the goal line
+
+// A point at signed angle `a` (deg, negative = left) and radius `r` from the net.
+function P(a,r,gl,dir){ const t=a*Math.PI/180;
+  return [CX + r*Math.sin(t), gl + dir*r*Math.cos(t)]; }
+// Annular sector, sampled rather than arced — no sweep-flag traps.
+function sector(a1,a2,r1,r2,gl,dir){
+  const pts=[], step=2;
+  for(let a=a1; a<a2; a+=step) pts.push(P(a,r1,gl,dir));
+  pts.push(P(a2,r1,gl,dir));
+  for(let a=a2; a>a1; a-=step) pts.push(P(a,r2,gl,dir));
+  pts.push(P(a1,r2,gl,dir));
+  return "M " + pts.map(p=>p[0].toFixed(2)+" "+p[1].toFixed(2)).join(" L ") + " Z";
+}
+const SECTORS = [                       // [zone, a1, a2, r1, r2]  — drawn outermost first
+  [13,-90,-A_SLOT,R_FAR,200], [14,-A_SLOT,A_SLOT,R_FAR,200], [15,A_SLOT,90,R_FAR,200],
+  [7,-90,-A_WIDE,R_MID,R_FAR], [10,-A_WIDE,-A_SLOT,R_MID,R_FAR],
+  [11,-A_SLOT,A_SLOT,R_MID,R_FAR], [12,A_SLOT,A_WIDE,R_MID,R_FAR], [9,A_WIDE,90,R_MID,R_FAR],
+  [4,-90,-A_SLOT,R_CREASE,R_MID], [8,-A_SLOT,A_SLOT,R_CREASE,R_MID], [6,A_SLOT,90,R_CREASE,R_MID],
+  [5,-90,90,0,R_CREASE]
+];
+// number placements: (signed angle, radius) from the net, except POINT_ZONES which
+// sit outside the 45 ft arc and are given as [screen x, y at the far end]
+const NUMPOS = {13:[12,64], 14:[CX,66], 15:[73,64], 7:[-67,34], 10:[-32,34], 11:[0,34],
+                12:[32,34], 9:[67,34], 4:[-55,16], 8:[0,16], 6:[55,16], 5:[0,4.6]};
+const POINT_ZONES = new Set([13,14,15]);
+const MIRROR_LR = {1:3, 3:1, 4:6, 6:4, 7:9, 9:7, 10:12, 12:10, 13:15, 15:13};
+
+function endGeom(far){
+  const gl = far ? GL_F : GL_N, dir = far ? 1 : -1;
+  const board = far ? 0 : H, bl = far ? BL_F : BL_N;
+  return {gl, dir, board, bl};
+}
+
+function zoneSvg(far){
+  const {gl,dir,board,bl} = endGeom(far), id = far ? "F" : "N";
+  const p = [];
+  const cls = z => TIER[ZONE[z].t].css;
+  // A shooter attacking the near (bottom) net faces the other way, so their
+  // left is screen-right. Mirror every L/R zone id for that end.
+  const M = far ? (z=>z) : (z => MIRROR_LR[z] || z);
+  const path = (z,d) => p.push(`<path class="zone" tabindex="0" role="button" data-end="${id}" `+
+    `data-zone="${z}" d="${d}" fill="var(--${cls(z)})" clip-path="url(#clip${id})">`+
+    `<title>${z} — ${ZONE[z].n} · ${TIER[ZONE[z].t].label} danger</title></path>`);
+
+  SECTORS.forEach(([z,a1,a2,r1,r2]) => path(M(z), sector(a1,a2,r1,r2,gl,dir)));
+  // behind the goal line wins over everything, exactly as zone16 tests it first
+  const back = (z,x1,x2) => path(M(z),
+    `M ${x1} ${gl} L ${x1} ${board} L ${x2} ${board} L ${x2} ${gl} Z`);
+  back(1, 0, CX-Y_BEHIND); back(2, CX-Y_BEHIND, CX+Y_BEHIND); back(3, CX+Y_BEHIND, W);
+
+  // the paint you read off the ice
+  const L = 'stroke="var(--paint)" fill="none" stroke-width=".5" pointer-events="none"';
+  p.push(`<line x1="0" y1="${gl}" x2="${W}" y2="${gl}" stroke="var(--paint-red)" stroke-width=".8" pointer-events="none"/>`);
+  p.push(`<line x1="0" y1="${bl}" x2="${W}" y2="${bl}" stroke="var(--paint-blue)" stroke-width="1.6" pointer-events="none"/>`);
+  p.push(`<path d="M ${CX-4} ${gl} A 6 6 0 0 ${far?0:1} ${CX+4} ${gl}" ${L}/>`);
+  p.push(`<rect x="${CX-3}" y="${far?gl-4:gl}" width="6" height="4" ${L}/>`);
+  [-22,22].forEach(off=>{
+    const dx=CX+off, dy=gl+dir*DOT_D;
+    p.push(`<circle cx="${dx}" cy="${dy}" r="${CIRC_R}" ${L}/>`);
+    p.push(`<circle cx="${dx}" cy="${dy}" r="1" fill="var(--paint-red)" pointer-events="none"/>`);
+  });
+
+  // zone numbers — positions are screen positions, ids follow the same mirror
+  const num = (z,x,y) => p.push(`<text class="znum" x="${x.toFixed(2)}" y="${(y+1.9).toFixed(2)}" `+
+    `font-size="5.4" fill="var(--${cls(z)}-ink)">${z}</text>`);
+  for(const key in NUMPOS){
+    const z = +key, v = NUMPOS[z];
+    let x, y;
+    if(POINT_ZONES.has(z)){ x = v[0]; y = gl + dir*(v[1] - GL_F); }   // screen x, depth from the goal line
+    else { const q = P(v[0], v[1], gl, dir); x = q[0]; y = q[1]; }
+    num(M(z), x, y);
+  }
+  num(M(1), (CX-Y_BEHIND)/2, gl - dir*5.5);
+  num(M(2), CX, gl - dir*5.5);
+  num(M(3), (CX+Y_BEHIND+W)/2, gl - dir*5.5);
+  return p.join("");
+}
+
+function drawRink(){
+  const svg = document.getElementById("rink");
+  const clip = far => {
+    const {gl,dir,board,bl} = endGeom(far), R = CORNER, s = far?1:0;
+    return `<clipPath id="clip${far?'F':'N'}"><path d="M 0 ${board+dir*R} `+
+      `A ${R} ${R} 0 0 ${s} ${R} ${board} L ${W-R} ${board} A ${R} ${R} 0 0 ${s} ${W} ${board+dir*R} `+
+      `L ${W} ${bl} L 0 ${bl} Z"/></clipPath>`;
+  };
+  const nz = (id, y1, y2, lab) =>
+    `<rect class="zone" tabindex="0" role="button" data-end="${id}" data-zone="16" `+
+    `x="0" y="${y1}" width="${W}" height="${y2-y1}" fill="var(--lo)">`+
+    `<title>16 — Neutral zone · Low danger (${lab})</title></rect>`;
+  svg.innerHTML = `
+    <defs>${clip(true)}${clip(false)}</defs>
+    <rect x="0" y="0" width="${W}" height="${H}" fill="var(--ice)"/>
+    ${zoneSvg(true)}
+    ${nz("F", BL_F, 83, "far net")}${nz("N", 83, BL_N, "near net")}
+    <line x1="0" y1="83" x2="${W}" y2="83" stroke="var(--paint-red)" stroke-width="1.1" pointer-events="none"/>
+    <text class="endtag" x="${CX}" y="80.2" font-size="4" fill="var(--lo-ink)">Far — ${esc(nameOf(teamAt("F",state.period)))} attacking</text>
+    <text class="endtag" x="${CX}" y="88.2" font-size="4" fill="var(--lo-ink)">Near — ${esc(nameOf(teamAt("N",state.period)))} attacking</text>
+    ${zoneSvg(false)}
+    <rect x=".3" y=".3" width="${W-.6}" height="${H-.6}" rx="${CORNER}" fill="none"
+          stroke="var(--line)" stroke-width=".7" pointer-events="none"/>`;
+  svg.querySelectorAll(".zone").forEach(el=>{
+    const go = ()=>logShot(el.dataset.end, +el.dataset.zone, el);
+    el.addEventListener("click", go);
+    el.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } });
+  });
+}
+
+/* ---------------- logging ---------------- */
+function logShot(end, zone, el){
+  editing = null;                     // tagging a new shot returns the bar to it
+  state.shots.push({t:Date.now(), period:state.period, end, zone,
+                    strength:state.strength, rebound:false, outcome:"SAVE"});
+  if(el){ el.classList.remove("flash"); void el.getBoundingClientRect(); el.classList.add("flash"); }
+  save(); render();
+}
+const last = ()=> state.shots[state.shots.length-1] || null;
+
+// Which shot the bottom bar acts on: an earlier one picked from the log, or
+// the most recent. Not persisted — it's a view state, not part of the game.
+let editing = null;
+function editIndex(){
+  if(editing === null || editing < 0 || editing >= state.shots.length) editing = null;
+  return editing !== null ? editing : state.shots.length - 1;
+}
+const current = ()=> state.shots[editIndex()] || null;
+function selectShot(i){ editing = (editing === i) ? null : i; render(); }
+function removeAt(i){
+  state.shots.splice(i,1);
+  if(editing !== null){ if(editing === i) editing = null; else if(editing > i) editing--; }
+  save(); render();
+}
+function setOutcome(o){ const s=current(); if(!s) return; s.outcome = s.outcome===o ? "SAVE" : o; save(); render(); }
+
+/* ---------------- render ---------------- */
+function renderSegs(){
+  const per=document.getElementById("periodSeg");
+  per.innerHTML=[1,2,3,"OT"].map((p,i)=>{const v=i===3?4:p;
+    return `<button data-p="${v}" aria-pressed="${state.period===v}">${p}</button>`;}).join("");
+  per.querySelectorAll("button").forEach(b=>b.onclick=()=>{state.period=+b.dataset.p; save(); render();});
+
+  const str=document.getElementById("strSeg");
+  str.innerHTML=["EV","PP","SH"].map(s=>
+    `<button data-s="${s}" aria-pressed="${state.strength===s}">${s}</button>`).join("");
+  str.querySelectorAll("button").forEach(b=>b.onclick=()=>{state.strength=b.dataset.s; save(); render();});
+
+  const far=homeAttacksFar(state.period);
+  document.getElementById("attackNote").innerHTML =
+    `Period ${state.period===4?"OT":state.period}: <b>${esc(nameOf("HOME"))} attacks the ${far?"far":"near"} end</b>` +
+    ` — the ${far?"top":"bottom"} of the map. Ends swap every period.`;
+}
+
+function renderLast(){
+  const s=current(), line=document.getElementById("lastLine");
+  const btn=id=>document.getElementById(id);
+  const isEdit = editing !== null;
+  btn("doneEdit").hidden = !isEdit;
+  document.getElementById("barLabel").textContent = isEdit ? "Editing" : "On ice now";
+  if(!s){
+    line.innerHTML=`<span class="empty">Nothing logged yet.</span>`;
+    ["mRebound","mGoal","mMiss","mBlock"].forEach(i=>{btn(i).disabled=true; btn(i).setAttribute("aria-pressed","false");});
+    btn("mUndo").disabled=true; btn("mUndo").textContent="Undo last shot";
+    return;
+  }
+  const z=ZONE[s.zone], t=TIER[z.t];
+  line.innerHTML =
+    (isEdit ? `<span class="chip editing">shot ${editIndex()+1} of ${state.shots.length}</span>` : "")+
+    `<span class="zbadge" style="background:var(--${t.css});color:var(--${t.css}-ink)">${s.zone}</span>`+
+    `<span class="chip team">${esc(nameOf(teamAt(s.end,s.period)))}</span>`+
+    `<span>${z.n}</span><span class="chip">${t.label}</span><span class="chip">${s.strength}</span>`+
+    (s.rebound?`<span class="chip">rebound</span>`:"")+
+    `<span class="chip">${{SAVE:"on goal",GOAL:"goal",MISS:"missed",BLOCK:"blocked"}[s.outcome]}</span>`+
+    `<span class="mono" style="margin-left:auto;color:var(--ink-3)">${xgOf(s).toFixed(3)} xG</span>`;
+  const set=(id,v)=>{btn(id).disabled=false; btn(id).setAttribute("aria-pressed",String(v));};
+  set("mRebound",s.rebound); set("mGoal",s.outcome==="GOAL");
+  set("mMiss",s.outcome==="MISS"); set("mBlock",s.outcome==="BLOCK");
+  btn("mUndo").disabled=false;
+  btn("mUndo").textContent=(isEdit ? "Delete this shot" : "Undo last shot") + ` — ${s.zone} ${z.n}`;
+}
+
+function totals(team){
+  const rows=state.shots.filter(s=>teamAt(s.end,s.period)===team);
+  const sc=rows.filter(s=>s.outcome!=="BLOCK");
+  const xg=sc.reduce((a,s)=>a+xgOf(s),0);
+  const v=sc.reduce((a,s)=>{const p=xgOf(s); return a+p*(1-p);},0);
+  const byTier=t=>rows.filter(s=>ZONE[s.zone].t===t).length;
+  const n=o=>rows.filter(s=>s.outcome===o).length;
+  return {attempts:rows.length, sog:n("SAVE")+n("GOAL"), goals:n("GOAL"),
+          missed:n("MISS"), blocked:n("BLOCK"),
+          hi:byTier("HIGH"), md:byTier("MED"), xg, sd:Math.sqrt(v)};
+}
+
+function renderTiles(){
+  document.getElementById("tiles").innerHTML=[["HOME",nameOf("HOME"),"var(--accent)"],["AWAY",nameOf("AWAY"),"var(--ink-3)"]]
+    .map(([k,nm,c])=>{ const t=totals(k);
+      return `<div class="tile">
+        <div class="who"><span class="swatch" style="background:${c}"></span><span>${esc(nm)}</span></div>
+        <div class="big">${t.xg.toFixed(2)}</div><div class="pm">xG &plusmn; ${t.sd.toFixed(2)}</div>
+        <div class="split"><span>att <b>${t.attempts}</b></span><span>SOG <b>${t.sog}</b></span>
+          <span>G <b>${t.goals}</b></span><span>miss <b>${t.missed}</b></span>
+          <span>blk <b>${t.blocked}</b></span><span>high <b>${t.hi}</b></span></div>
+      </div>`;}).join("");
+  const a=totals("HOME"), b=totals("AWAY"), el=document.getElementById("xgNote");
+  if(a.attempts+b.attempts===0){ el.textContent="Totals appear as you tag."; return; }
+  const diff=a.xg-b.xg, noise=Math.sqrt(a.sd*a.sd+b.sd*b.sd);
+  el.innerHTML=`Difference <b class="mono">${diff>=0?"+":""}${diff.toFixed(2)}</b> xG against `+
+    `<span class="mono">&plusmn;${noise.toFixed(2)}</span> of counting noise. `+
+    (Math.abs(diff)>2*noise
+      ? `<span class="flag ok">separated</span> — bigger than the noise, though one game is still one game.`
+      : `<span class="flag watch">inside the noise</span> — two teams playing identical hockey would differ by this much. Don't read it as an edge.`);
+}
+
+/* Teams change ends every period, so your near-end and far-end tier mixes
+   should converge over a game. A gap is your eyes, not hockey. */
+function renderBias(){
+  const el=document.getElementById("bias"), TS=["HIGH","MED","LOW"];
+  const mix=end=>{ const r=state.shots.filter(s=>s.end===end);
+    return {n:r.length, m:TS.map(t=>r.length ? r.filter(s=>ZONE[s.zone].t===t).length/r.length : 0)}; };
+  const N=mix("N"), F=mix("F");
+  if(N.n<12||F.n<12){
+    el.innerHTML=`<div class="note">Needs about 12 shots at each end. So far <b class="mono">${N.n}</b> near, <b class="mono">${F.n}</b> far.</div>`;
+    return;
+  }
+  const worst=Math.max(...TS.map((_,i)=>Math.abs(N.m[i]-F.m[i])));
+  el.innerHTML=`<div class="tblwrap"><table>
+    <thead><tr><th>Tier</th><th style="text-align:right">Near</th><th style="text-align:right">Far</th><th style="text-align:right">Gap</th></tr></thead>
+    <tbody>${TS.map((t,i)=>{const d=N.m[i]-F.m[i];
+      return `<tr><td>${TIER[t].label}</td><td class="num">${(N.m[i]*100).toFixed(0)}%</td>
+        <td class="num">${(F.m[i]*100).toFixed(0)}%</td>
+        <td class="num" style="color:${Math.abs(d)>.08?"var(--warn)":"var(--ink-3)"}">${d>=0?"+":""}${(d*100).toFixed(0)}</td></tr>`;
+    }).join("")}</tbody></table></div>
+    <div class="note" style="margin-top:8px">`+
+    (worst>.08
+      ? `<span class="flag watch">check this</span> The ends should match — teams switch every period. A gap this size is measurement bias, most likely the far end reading more dangerous than it is.`
+      : `<span class="flag ok">consistent</span> Near and far agree within ${(worst*100).toFixed(0)} points. Your eye is holding across the ice.`)+
+    `</div>`;
+}
+
+function renderLog(){
+  const tb=document.getElementById("log");
+  if(!state.shots.length){ tb.innerHTML=`<tbody><tr><td class="empty">No shots yet.</td></tr></tbody>`; return; }
+  const sel=editIndex();
+  const rows=state.shots.map((s,i)=>({s,i})).reverse().map(({s,i})=>{
+    const z=ZONE[s.zone];
+    return `<tr class="logrow${i===sel?" sel":""}" data-i="${i}" tabindex="0">
+      <td>${s.period===4?"OT":s.period}</td><td>${esc(nameOf(teamAt(s.end,s.period)))}</td>
+      <td class="num">${s.zone}</td><td>${z.n}</td><td>${TIER[z.t].label}</td>
+      <td>${s.strength}${s.rebound?" · reb":""}</td>
+      <td>${{SAVE:"on goal",GOAL:"GOAL",MISS:"missed",BLOCK:"blocked"}[s.outcome]}</td>
+      <td class="num">${xgOf(s).toFixed(3)}</td>
+      <td><button class="del" data-i="${i}" aria-label="Delete shot">&times;</button></td></tr>`;}).join("");
+  tb.innerHTML=`<thead><tr><th>P</th><th>Team</th><th>Z</th><th>Zone</th><th>Tier</th><th>State</th>
+    <th>Result</th><th style="text-align:right">xG</th><th></th></tr></thead><tbody>${rows}</tbody>`;
+  tb.querySelectorAll(".del").forEach(b=>b.onclick=e=>{ e.stopPropagation(); removeAt(+b.dataset.i); });
+  tb.querySelectorAll(".logrow").forEach(tr=>{
+    tr.onclick=()=>selectShot(+tr.dataset.i);
+    tr.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); selectShot(+tr.dataset.i); } };
+  });
+}
+
+function renderLegend(){
+  document.getElementById("legend").innerHTML=["HIGH","MED","LOW"].map(t=>{const d=TIER[t];
+    return `<div class="lg"><span class="sw" style="background:var(--${d.css})"></span>
+      <span class="nm">${d.label}</span><span class="zl">${esc(d.zones)} · ${(d.rate*100).toFixed(1)}%</span></div>`;
+  }).join("");
+}
+
+function render(){ renderSegs(); drawRink(); renderLast(); renderTiles(); renderBias(); renderLog(); renderLegend(); }
+
+function csv(){
+  const head="date,period,side,end,zone,zone_name,tier,strength,rebound,outcome,xg";
+  return head+"\n"+state.shots.map(s=>{const z=ZONE[s.zone];
+    return [state.date, s.period===4?"OT":s.period,
+      teamAt(s.end,s.period).toLowerCase(), s.end==="F"?"far":"near", s.zone,
+      JSON.stringify(z.n), z.t.toLowerCase(), s.strength, s.rebound?1:0,
+      s.outcome.toLowerCase(), xgOf(s).toFixed(4)].join(",");}).join("\n")+"\n";
+}
+
+/* ---------------- wiring ---------------- */
+document.getElementById("mRebound").onclick=()=>{const s=current(); if(s){s.rebound=!s.rebound; save(); render();}};
+document.getElementById("mGoal").onclick =()=>setOutcome("GOAL");
+document.getElementById("mMiss").onclick =()=>setOutcome("MISS");
+document.getElementById("mBlock").onclick=()=>setOutcome("BLOCK");
+document.getElementById("mUndo").onclick =()=>{ if(state.shots.length) removeAt(editIndex()); };
+document.getElementById("doneEdit").onclick=()=>{ editing=null; render(); };
+document.getElementById("flipBtn").onclick=()=>{state.homeAttacksFarInP1=!state.homeAttacksFarInP1; save(); render();};
+
+document.getElementById("gdate").onchange=e=>{state.date=e.target.value; save();};
+document.getElementById("clearBtn").onclick=()=>{
+  if(state.shots.length && !confirm("Delete all "+state.shots.length+" shots from this game?")) return;
+  state.shots=[]; save(); render();};
+document.getElementById("copyBtn").onclick=async()=>{
+  try{ await navigator.clipboard.writeText(csv()); note("CSV copied to the clipboard."); }
+  catch(e){ note("Couldn't reach the clipboard here. Use Export CSV instead."); }};
+
+let downloads=null;
+document.getElementById("exportBtn").onclick=async()=>{
+  if(!state.shots.length){ note("Nothing to export yet."); return; }
+  if(!downloads){ note("Saving files isn't available in this view. Use Copy CSV instead."); return; }
+  const name=`shots_${state.date}.csv`;
+  try{ await downloads.save({filename:name, data:csv()}); note("Exported "+name); }
+  catch(err){ const c=err&&err.code;
+    note(c==="declined"?"Export cancelled."
+      : c==="rate_limited"?"A save prompt is already open — finish that one first."
+      : "Export didn't go through. Use Copy CSV instead."); }};
+
+load();
+document.getElementById("gdate").value=state.date;
+render();
+note(state.shots.length ? "Saved on this device." : "Tag a shot to start. Export after every game.");
+
+if(window.claude && window.claude.use){
+  window.claude.use("downloads").then(d=>{ downloads=d;
+    if(!d) document.getElementById("exportBtn").style.display="none"; })
+  .catch(()=>{ document.getElementById("exportBtn").style.display="none"; });
+}else{ document.getElementById("exportBtn").style.display="none"; }
+})();
+</script>
+</body>
+</html>
