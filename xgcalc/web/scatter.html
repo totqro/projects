@@ -224,6 +224,50 @@ tr.shotrow.sel td{background:color-mix(in srgb, var(--accent) 17%, transparent)}
 .site-foot span,.site-foot a{font-size:.78rem; color:var(--ink-3); font-weight:500; text-decoration:none}
 .site-foot a:hover{color:var(--ink-2)}
 @media(max-width:899px){ .site-foot{display:none} }
+
+/* ---- printable period report ----
+   The report is built into a container on this page rather than a pop-up:
+   pop-ups are blocked by default in exactly the place this gets used, on a
+   phone in the stands. It stays display:none until the print stylesheet
+   swaps it in for everything else. Colours are literal, not themed — a
+   dark-mode page still has to print on white paper. */
+#reportOut{display:none; background:#fff; color:#141D26; font-size:11px; line-height:1.45;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+#reportOut .head{display:flex; align-items:baseline; gap:14px; margin-bottom:10px;
+  border-bottom:1.5px solid #141D26; padding-bottom:6px}
+#reportOut .head h1{margin:0; font-size:21px; letter-spacing:-.02em; font-family:inherit}
+#reportOut .head .scope{font-size:16px; font-weight:700; margin-left:auto}
+#reportOut .head .when{font-size:10px; color:#7B8B9C}
+#reportOut .rinkfull{display:block; width:100%; max-width:7.25in; height:auto; margin:0 auto}
+#reportOut .keys{display:flex; gap:16px; flex-wrap:wrap; align-items:center; justify-content:center;
+  margin-top:8px; padding-top:7px; border-top:1px solid #E3E8ED; font-size:11px; color:#48586A}
+/* rkey/rkeyi, not lg/lgi: the page already owns those class names. */
+#reportOut .rkey{display:inline-flex; align-items:center; gap:5px}
+#reportOut .rkeyi{width:16px; height:16px; flex:none}
+#reportOut .keys .sep{width:1px; height:13px; background:#D3DBE2}
+#reportOut .keys b{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px}
+#reportOut .lower{display:grid; grid-template-columns:minmax(210px,.82fr) minmax(0,1.18fr);
+  gap:20px; align-items:start; margin-top:10px}
+#reportOut h2{font-size:10px; letter-spacing:.11em; text-transform:uppercase; color:#7B8B9C;
+  margin:0 0 5px; font-weight:700; font-family:inherit}
+#reportOut table.stats{border-collapse:collapse; width:100%; font-size:11.5px}
+#reportOut table.stats th,#reportOut table.stats td{padding:2.4px 5px; text-align:left;
+  border-bottom:1px solid #E3E8ED; white-space:nowrap; position:static; background:none;
+  font-family:inherit; color:#141D26; letter-spacing:normal; text-transform:none; font-size:11.5px}
+#reportOut table.stats th{font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:#7B8B9C}
+#reportOut table.stats td.n,#reportOut table.stats th.n{text-align:right; font-variant-numeric:tabular-nums}
+#reportOut table.stats tr.hl td{font-weight:700}
+#reportOut table.stats tbody tr:last-child td{border-bottom:0}
+#reportOut .flowmini{display:block; width:100%; height:auto; margin-top:2px}
+#reportOut .empty{color:#7B8B9C; font-size:10.5px; margin:4px 0}
+#reportOut .foot{margin-top:10px; padding-top:6px; border-top:1px solid #E3E8ED;
+  font-size:9.5px; color:#7B8B9C; display:flex; justify-content:space-between}
+@media print{
+  @page{ size:letter landscape; margin:9mm }
+  html,body{background:#fff !important; margin:0 !important; padding:0 !important}
+  body > *{display:none !important}
+  body > #reportOut{display:block !important}
+}
 </style>
 
 <nav class="site-nav">
@@ -305,6 +349,17 @@ tr.shotrow.sel td{background:color-mix(in srgb, var(--accent) 17%, transparent)}
       <div class="tiles" id="tiles"></div>
     </div>
 
+    <div class="card hidden" id="reportCard">
+      <span class="eyebrow">Period Report</span>
+      <div class="note" style="margin-bottom:9px">Full rink, home and away on opposite ends,
+        normalized so both sides stay put across periods. Goals, shots, blocks and misses each
+        get their own icon.</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap">
+        <select id="pdfScope" style="flex:1; min-width:120px; padding:6px 8px"></select>
+        <button class="primary" id="pdfBtn" style="padding:6px 11px;font-size:13px">Export PDF</button>
+      </div>
+    </div>
+
     <div class="card hidden" id="notesCard">
       <span class="eyebrow">Data notes</span>
       <div id="notes"></div>
@@ -318,6 +373,8 @@ tr.shotrow.sel td{background:color-mix(in srgb, var(--accent) 17%, transparent)}
   <span>Luc Knox &middot; 2026</span>
   <a href="https://github.com/totqro" target="_blank" rel="noopener">GitHub</a>
 </footer>
+
+<div id="reportOut" aria-hidden="true"></div>
 
 <script>
 (function(){
@@ -835,9 +892,9 @@ function ingest(text){
     `<span class="flag ok">loaded</span> ${d.scored.length} shot${
       d.scored.length===1?"":"s"} scored${d.blocked?`, ${d.blocked} blocked`:""}${
       d.unrecognisedCount?`, ${d.unrecognisedCount} unrecognised`:""}.`;
-  ["rinkCard","flowCard","logCard","filterCard","totalsCard","notesCard"]
+  ["rinkCard","flowCard","logCard","filterCard","totalsCard","reportCard","notesCard"]
     .forEach(id=>show(id,true));
-  buildFilters(); renderLegend(); render();
+  buildFilters(); buildScopeSelect(); renderLegend(); render();
 }
 
 function readFile(f){
@@ -887,6 +944,289 @@ function exportCSV(){
   setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
 
+/* ================================================================
+   Period report — a printable full-rink PDF.
+
+   The on-screen rink mirrors every shot onto one attacking end. A
+   report meant to be read at an intermission can't do that: it has to
+   show the actual ice, with each team's work at its own end. Teams
+   change ends every period, so the raw coordinates for the same team
+   sit at opposite ends in P1 and P2. Rather than assume the alternation
+   holds, each period's orientation is read off that period's own shots:
+   a team shoots at the net it is attacking, so the sign its shots
+   cluster on IS the end it attacked. Flip the periods that disagree and
+   home stays on the right all game.
+================================================================= */
+const REPORT_HOME_COL="#1E62B8", REPORT_AWAY_COL="#B0293C";
+const MISS_EVENTS={"miss":1,"missed":1,"missed shot":1,"wide":1,"post":1,"crossbar":1};
+
+function detectSides(teams){
+  const home=teams.find(t=>/^home$/i.test(t)), away=teams.find(t=>/^away$/i.test(t));
+  if(home&&away) return {home, away};
+  const sorted=teams.slice().sort();
+  return {home:sorted[0], away:sorted[1]||sorted[0]};
+}
+
+/* Numeric periods in order, then OT/SO and anything else after them. */
+function sortPeriods(periods){
+  const num=p=>/^\d+$/.test(String(p).trim())?parseInt(p,10):null;
+  return periods.slice().sort((a,b)=>{
+    const na=num(a), nb=num(b);
+    if(na!==null&&nb!==null) return na-nb;
+    if(na!==null) return -1;
+    if(nb!==null) return 1;
+    return String(a).localeCompare(String(b));
+  });
+}
+
+/* loadShots keeps only the mirrored copy, but the mirror is its own
+   inverse, so the flag is enough to recover what the CSV actually said. */
+function rawXY(s){
+  return s.mirrored ? [-s.x_adj, -s.y_adj] : [s.x_adj, s.y_adj];
+}
+
+function computeFlips(events, home){
+  const byPeriod={};
+  events.forEach(s=>{ (byPeriod[s.period]=byPeriod[s.period]||[]).push(s); });
+  const flips={};
+  Object.keys(byPeriod).forEach(p=>{
+    const evs=byPeriod[p], homeEvs=evs.filter(s=>s.team===home);
+    /* No home shots in a period is rare but survivable: away attacked the
+       other end by definition, so its sign answers the same question. */
+    const pool=homeEvs.length?homeEvs:evs, wantPositive=!!homeEvs.length;
+    let pos=0, neg=0;
+    pool.forEach(s=>{ const rx=rawXY(s)[0]; if(rx>0) pos++; else if(rx<0) neg++; });
+    flips[p]=wantPositive ? neg>pos : pos>neg;
+  });
+  return flips;
+}
+
+function normXY(s, flips){
+  const r=rawXY(s);
+  return flips[s.period] ? [-r[0], -r[1]] : r;
+}
+
+function classify(s){
+  if(s.goal) return "goal";
+  if(s.blocked) return "block";
+  if(MISS_EVENTS[s.event]) return "miss";
+  return "shot";
+}
+
+/* ---- icons: star = goal, circle = shot, square = block, X = miss ---- */
+function starMark(cx,cy,ro,ri,col){
+  const pts=[];
+  for(let i=0;i<10;i++){
+    const r=i%2?ri:ro, a=-Math.PI/2+i*Math.PI/5;
+    pts.push((cx+r*Math.cos(a)).toFixed(2)+","+(cy+r*Math.sin(a)).toFixed(2));
+  }
+  return `<polygon points="${pts.join(" ")}" fill="${col}" stroke="#fff" stroke-width=".35"/>`;
+}
+function iconMark(kind,cx,cy,col){
+  cx=+cx.toFixed(2); cy=+cy.toFixed(2);
+  if(kind==="goal")  return starMark(cx,cy,3.1,1.3,col);
+  if(kind==="shot")  return `<circle cx="${cx}" cy="${cy}" r="1.8" fill="${col}" stroke="#fff" stroke-width=".35"/>`;
+  if(kind==="block") return `<rect x="${(cx-1.6).toFixed(2)}" y="${(cy-1.6).toFixed(2)}" width="3.2" `+
+                            `height="3.2" fill="${col}" stroke="#fff" stroke-width=".35"/>`;
+  return `<g stroke="${col}" stroke-width=".95" stroke-linecap="round">`+
+         `<line x1="${(cx-1.7).toFixed(2)}" y1="${(cy-1.7).toFixed(2)}" x2="${(cx+1.7).toFixed(2)}" y2="${(cy+1.7).toFixed(2)}"/>`+
+         `<line x1="${(cx-1.7).toFixed(2)}" y1="${(cy+1.7).toFixed(2)}" x2="${(cx+1.7).toFixed(2)}" y2="${(cy-1.7).toFixed(2)}"/></g>`;
+}
+
+/* ---- the whole sheet of ice, both ends ---- */
+function fullRinkPath(){
+  return "M -72 -42.5 H 72 A 28 28 0 0 1 100 -14.5 V 14.5 A 28 28 0 0 1 72 42.5 "+
+         "H -72 A 28 28 0 0 1 -100 14.5 V -14.5 A 28 28 0 0 1 -72 -42.5 Z";
+}
+function fullRinkMarkup(){
+  /* Faceoff dots are drawn grey and small on purpose: at rink scale a red
+     dot is indistinguishable from an away marker. */
+  const p=[], red="#C42A3E", blue="#1E62B8", faint="rgba(20,29,38,.30)", dot="#9AA8B6";
+  p.push(`<clipPath id="iceFull"><path d="${fullRinkPath()}"/></clipPath>`);
+  p.push(`<path d="${fullRinkPath()}" fill="#FBFCFD" stroke="#141D26" stroke-width=".7"/>`);
+  p.push(`<g clip-path="url(#iceFull)">`);
+  p.push(`<line x1="0" y1="-42.5" x2="0" y2="42.5" stroke="${red}" stroke-width="1.1"/>`);
+  p.push(`<circle cx="0" cy="0" r="15" fill="none" stroke="${faint}" stroke-width=".4"/>`);
+  p.push(`<circle cx="0" cy="0" r=".8" fill="${dot}"/>`);
+  [-BLUE_LINE_X,BLUE_LINE_X].forEach(x=>
+    p.push(`<line x1="${x}" y1="-42.5" x2="${x}" y2="42.5" stroke="${blue}" stroke-width="1.1"/>`));
+  [1,-1].forEach(dir=>{
+    const gx=GOAL_X*dir, inner=((GOAL_X-Math.sqrt(R_CREASE_FT*R_CREASE_FT-16))*dir).toFixed(2);
+    p.push(`<line x1="${gx}" y1="-36.75" x2="${gx}" y2="36.75" stroke="${red}" stroke-width=".6"/>`);
+    p.push(`<path d="M ${gx} -4 H ${inner} A ${R_CREASE_FT} ${R_CREASE_FT} 0 0 ${dir>0?0:1} ${inner} 4 H ${gx}" `+
+           `fill="none" stroke="${red}" stroke-width=".6"/>`);
+    p.push(`<rect x="${(dir>0?gx:gx-4)}" y="-3" width="4" height="6" fill="none" stroke="${red}" stroke-width=".6"/>`);
+    [-22,22].forEach(cy=>{
+      p.push(`<circle cx="${69*dir}" cy="${cy}" r="15" fill="none" stroke="${faint}" stroke-width=".35"/>`);
+      p.push(`<circle cx="${69*dir}" cy="${cy}" r=".8" fill="${dot}"/>`);
+      p.push(`<circle cx="${20*dir}" cy="${cy}" r=".8" fill="${dot}"/>`);
+    });
+  });
+  p.push(`</g>`);
+  return p.join("");
+}
+
+function reportRinkSVG(events, flips, home, away){
+  const marks=events.map(s=>{
+    const c=normXY(s, flips);
+    return iconMark(classify(s), c[0], c[1], s.team===home?REPORT_HOME_COL:REPORT_AWAY_COL);
+  }).join("");
+  const lab=(x,txt,col,anchor)=>`<text x="${x}" y="-45.5" text-anchor="${anchor}" `+
+    `font-size="5" font-weight="700" fill="${col}" letter-spacing=".3">${esc(txt)}</text>`;
+  return `<svg viewBox="-104 -50 208 99" xmlns="http://www.w3.org/2000/svg" class="rinkfull">`+
+    fullRinkMarkup()+
+    lab(-50, "← "+away+" attacking", REPORT_AWAY_COL, "middle")+
+    lab(50, home+" attacking →", REPORT_HOME_COL, "middle")+
+    marks+`</svg>`;
+}
+
+/* ---- numbers ---- */
+function summarize(events, team){
+  const evs=events.filter(s=>s.team===team);
+  const kinds=evs.map(classify);
+  const goals=kinds.filter(k=>k==="goal").length;
+  const xg=evs.filter(s=>s.unblocked).reduce((a,s)=>a+(s.xg||0),0);
+  return {goals,
+    onNet:goals+kinds.filter(k=>k==="shot").length,
+    misses:kinds.filter(k=>k==="miss").length,
+    blocks:kinds.filter(k=>k==="block").length,
+    attempts:evs.length, xg:xg, diff:goals-xg,
+    hdc:evs.filter(s=>s.tier==="HIGH").length};
+}
+
+function statsTable(events, home, away){
+  const h=summarize(events,home), a=summarize(events,away);
+  const sg=v=>(v>=0?"+":"")+v.toFixed(2);
+  const row=(label,hv,av,cls)=>`<tr${cls?` class="${cls}"`:""}><td>${esc(label)}</td>`+
+    `<td class="n">${hv}</td><td class="n">${av}</td></tr>`;
+  return `<table class="stats">
+    <thead><tr><th></th>
+      <th class="n" style="color:${REPORT_HOME_COL}">${esc(home)}</th>
+      <th class="n" style="color:${REPORT_AWAY_COL}">${esc(away)}</th></tr></thead>
+    <tbody>
+      ${row("Goals", h.goals, a.goals, "hl")}
+      ${row("xG", h.xg.toFixed(2), a.xg.toFixed(2), "hl")}
+      ${row("G − xG", sg(h.diff), sg(a.diff))}
+      ${row("High-danger chances", h.hdc, a.hdc, "hl")}
+      ${row("Shots on net", h.onNet, a.onNet)}
+      ${row("Missed", h.misses, a.misses)}
+      ${row("Blocked", h.blocks, a.blocks)}
+      ${row("Total attempts", h.attempts, a.attempts)}
+    </tbody></table>`;
+}
+
+/* Same read as the on-screen flow chart: cumulative xG in tagging order.
+   Blocks carry no xG, so they are not steps on these lines. */
+function miniFlowSVG(events, home, away){
+  const seq=events.filter(s=>s.unblocked).slice().sort((a,b)=>a.i-b.i), n=seq.length;
+  if(!n) return `<p class="empty">No scored attempts in this scope.</p>`;
+  const W=300,H=104,padL=28,padR=8,padT=8,padB=17;
+  const run={}, curve={}; [home,away].forEach(t=>{ run[t]=0; curve[t]=new Float64Array(n); });
+  const goals=[];
+  seq.forEach((s,i)=>{
+    if(run[s.team]!==undefined){
+      run[s.team]+=s.xg||0;
+      if(s.goal) goals.push({team:s.team, i:i, v:run[s.team]});
+    }
+    [home,away].forEach(t=>{ curve[t][i]=run[t]; });
+  });
+  const top=Math.max(0.3, curve[home][n-1], curve[away][n-1]);
+  const x=i=> n<2 ? (padL+W-padR)/2 : padL+(i/(n-1))*(W-padL-padR);
+  const y=v=> H-padB-(v/top)*(H-padT-padB);
+  const p=[];
+  niceTicks(top).forEach(v=>{
+    p.push(`<line x1="${padL}" y1="${y(v).toFixed(1)}" x2="${W-padR}" y2="${y(v).toFixed(1)}" `+
+           `stroke="#D3DBE2" stroke-width="1" stroke-dasharray="3 3"/>`);
+    p.push(`<text x="${padL-4}" y="${(y(v)+3).toFixed(1)}" text-anchor="end" font-size="8" `+
+           `fill="#7B8B9C">${v.toFixed(2)}</text>`);
+  });
+  for(let i=1;i<n;i++){
+    if(String(seq[i].period)!==String(seq[i-1].period)){
+      p.push(`<line x1="${x(i).toFixed(1)}" y1="${padT}" x2="${x(i).toFixed(1)}" y2="${H-padB}" `+
+             `stroke="#7B8B9C" stroke-width=".8" stroke-dasharray="2 2"/>`);
+      p.push(`<text x="${(x(i)+3).toFixed(1)}" y="${padT+7}" font-size="7.5" fill="#7B8B9C">P${esc(seq[i].period)}</text>`);
+    }
+  }
+  [[home,REPORT_HOME_COL],[away,REPORT_AWAY_COL]].forEach(([t,col])=>{
+    const c=curve[t];
+    let d=`M ${x(0).toFixed(1)} ${y(0).toFixed(1)}`, prev=0;
+    for(let i=0;i<n;i++){
+      if(c[i]!==prev){
+        d+=` L ${x(i).toFixed(1)} ${y(prev).toFixed(1)} L ${x(i).toFixed(1)} ${y(c[i]).toFixed(1)}`;
+        prev=c[i];
+      }
+    }
+    d+=` L ${x(n-1).toFixed(1)} ${y(prev).toFixed(1)}`;
+    p.push(`<path d="${d}" fill="none" stroke="${col}" stroke-width="1.8" stroke-linejoin="round"/>`);
+  });
+  goals.forEach(g=>p.push(`<circle cx="${x(g.i).toFixed(1)}" cy="${y(g.v).toFixed(1)}" r="3" `+
+    `fill="${g.team===home?REPORT_HOME_COL:REPORT_AWAY_COL}" stroke="#fff" stroke-width="1.2"/>`));
+  p.push(`<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="#D3DBE2" stroke-width="1"/>`);
+  p.push(`<text x="${W-padR}" y="${H-5}" text-anchor="end" font-size="7.5" fill="#7B8B9C">`+
+         `${n} attempts in order →</text>`);
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="flowmini">${p.join("")}</svg>`;
+}
+
+function keysHTML(home, away){
+  const ic=kind=>`<svg viewBox="-3.6 -3.6 7.2 7.2" class="rkeyi">${iconMark(kind,0,0,"#48586A")}</svg>`;
+  return `<div class="keys">
+    <span class="rkey">${ic("goal")} Goal</span>
+    <span class="rkey">${ic("shot")} Shot</span>
+    <span class="rkey">${ic("block")} Block</span>
+    <span class="rkey">${ic("miss")} Miss</span>
+    <span class="sep"></span>
+    <span><b style="background:${REPORT_HOME_COL}"></b>${esc(home)}</span>
+    <span><b style="background:${REPORT_AWAY_COL}"></b>${esc(away)}</span>
+    <span class="sep"></span>
+    <span>Ends held fixed across periods</span>
+  </div>`;
+}
+
+function buildReportMarkup(events, home, away, flips, scopeLabel){
+  const when=new Date().toLocaleString([], {year:"numeric", month:"short", day:"numeric",
+    hour:"2-digit", minute:"2-digit"});
+  return `<div class="head">
+    <h1>Shot Report</h1>
+    <span class="scope">${esc(scopeLabel)}</span>
+    <span class="when">${esc(when)}</span>
+  </div>
+  ${reportRinkSVG(events, flips, home, away)}
+  ${keysHTML(home, away)}
+  <div class="lower">
+    <div><h2>Totals</h2>${statsTable(events, home, away)}</div>
+    <div><h2>Momentum &mdash; cumulative xG</h2>${miniFlowSVG(events, home, away)}</div>
+  </div>
+  <div class="foot">
+    <span>xG from a five-feature model fit on 905,483 NHL attempts. Blocks are placed but not scored.</span>
+    <span>lknox.web.app/xgcalc</span>
+  </div>`;
+}
+
+/* "3" reads as Period 3; "OT" already says what it is. */
+function periodLabel(p){ return /^\d+$/.test(p) ? "Period "+p : p; }
+
+function buildScopeSelect(){
+  const periods=sortPeriods([...new Set(DATA.all.map(s=>String(s.period)))]);
+  document.getElementById("pdfScope").innerHTML=
+    `<option value="__all__">Full game</option>`+
+    periods.map(p=>`<option value="${esc(p)}">${esc(periodLabel(p))}</option>`).join("");
+  document.getElementById("pdfScope").value=periods.length?periods[periods.length-1]:"__all__";
+}
+
+function exportReport(){
+  if(!DATA) return;
+  const scope=document.getElementById("pdfScope").value;
+  const {home,away}=detectSides([...new Set(DATA.all.map(s=>s.team))]);
+  const flips=computeFlips(DATA.all, home);
+  /* DATA.all, not visible(): a period report has to carry the blocks, and
+     they never enter the filtered set. */
+  const events=DATA.all.filter(s=>scope==="__all__"||String(s.period)===scope);
+  const label=scope==="__all__" ? "Full Game" : periodLabel(scope);
+  document.getElementById("reportOut").innerHTML=
+    buildReportMarkup(events, home, away, flips, label);
+  window.print();
+}
+
 /* ---------------- wiring ---------------- */
 document.getElementById("pickBtn").onclick=()=>document.getElementById("file").click();
 document.getElementById("file").onchange=e=>readFile(e.target.files[0]);
@@ -903,6 +1243,7 @@ document.getElementById("paste").oninput=e=>{
 };
 document.getElementById("resetBtn").onclick=()=>{ resetFilters(); SEL=null; render(); };
 document.getElementById("exportBtn").onclick=exportCSV;
+document.getElementById("pdfBtn").onclick=exportReport;
 document.getElementById("zoneBtn").onclick=e=>{
   SHOW_ZONES=!SHOW_ZONES;
   e.currentTarget.setAttribute("aria-pressed",String(SHOW_ZONES));
