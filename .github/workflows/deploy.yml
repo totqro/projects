@@ -15,7 +15,11 @@ on:
       - 'mlblines/web/**'
       - 'xgcalc/web/**'
       - 'swingai/**'
+      - 'retired-site/**'
       - 'firebase.json'
+      # .firebaserc maps the hosting targets to their sites. A change here
+      # repoints where a deploy lands, so it has to trigger one.
+      - '.firebaserc'
   workflow_dispatch: # Allow manual trigger
 
 # Cancel in-progress deploys if a newer one starts
@@ -74,12 +78,20 @@ jobs:
           echo ""
           # Fail loudly rather than deploying a site with a page missing.
           for page in index.html nhllines/index.html mlblines/index.html \
-                      swingai/index.html xgcalc/index.html; do
+                      swingai/index.html xgcalc/index.html xgcalc/scatter.html; do
             if [ ! -s "build/$page" ]; then
               echo "::error::build/$page is missing or empty — refusing to deploy"
               exit 1
             fi
           done
+          # The retired projects-brawlstars site is served straight from the
+          # repo by the "default" hosting target, not assembled into build/.
+          # It is the only thing left at the old URL, so an empty deploy there
+          # would strand anyone still holding that link.
+          if [ ! -s retired-site/index.html ]; then
+            echo "::error::retired-site/index.html is missing or empty — refusing to deploy"
+            exit 1
+          fi
           echo "All pages present."
           echo ""
           python3 -c "
@@ -101,6 +113,10 @@ jobs:
         run: |
           echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > /tmp/sa.json
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json
+          # Bare --only hosting covers every target in firebase.json: "main"
+          # (the live site at lknox.web.app, from build/) and "default" (the
+          # retired projects-brawlstars.web.app, from retired-site/). Naming
+          # one target here would silently stop deploying the other.
           firebase deploy --only hosting --project projects-brawlstars --non-interactive
-          echo "✅ Deployed to Firebase"
+          echo "✅ Deployed to Firebase (lknox + retired projects-brawlstars)"
 
