@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0a0a0f">
+  <meta name="description" content="Luc Knox — predictive models for hockey and baseball, a rinkside shot tagger, and an iOS golf-swing coach.">
+  <title>Luc Knox</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/cyber.css">
+  <style>
+    /* ── Hero: 60/40 split, readout panel on the right ── */
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 40px;
+      align-items: center;
+      padding-block: 80px 72px;
+      border-bottom: 1px solid var(--cy-border);
+    }
+    @media (min-width: 1024px) {
+      .hero { grid-template-columns: 3fr 2fr; gap: 56px; padding-block: 104px 96px; }
+    }
+    .hero__copy > * + * { margin-top: 22px; }
+    .hero .cy-h1 { font-size: clamp(2.4rem, 6.5vw, 4.75rem); }
+    .hero__sub { font-size: 1rem; line-height: 1.75; color: var(--cy-muted-fg); max-width: 56ch; }
+    .hero__cta { display: flex; gap: 12px; flex-wrap: wrap; }
+
+    .hud {
+      position: relative;
+      overflow: hidden;
+      padding: 22px 24px 20px;
+      font-size: .82rem;
+    }
+    .hud__title { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    .hud__row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 9px 0;
+      border-bottom: 1px dashed var(--cy-border);
+    }
+    .hud__row:last-of-type { border-bottom: 0; }
+    .hud__val { display: inline-flex; align-items: center; gap: 8px; color: var(--cy-fg); text-align: right; }
+    .hud__signal { display: flex; align-items: flex-end; gap: 3px; height: 26px; margin-top: 16px; }
+    .hud__signal i {
+      flex: 1;
+      height: 30%;
+      background: var(--cy-accent);
+      opacity: .75;
+      box-shadow: 0 0 6px color-mix(in srgb, var(--cy-accent) 60%, transparent);
+      animation: hud-sig 1.8s ease-in-out infinite;
+    }
+    .hud__signal i:nth-child(3n)   { height: 65%; animation-delay: .25s; }
+    .hud__signal i:nth-child(3n+1) { height: 45%; animation-delay: .5s; }
+    .hud__signal i:nth-child(4n)   { height: 90%; animation-delay: .1s; }
+    .hud__signal i:nth-child(7n)   { height: 20%; animation-delay: .7s; }
+    .hud__sweep {
+      position: absolute;
+      left: 0; right: 0; top: 0;
+      height: 40%;
+      pointer-events: none;
+      background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--cy-accent) 10%, transparent) 50%, transparent);
+      animation: hud-sweep 5s linear infinite;
+    }
+    @keyframes hud-sig   { 50% { transform: scaleY(.35); opacity: .35; } }
+    @keyframes hud-sweep { from { transform: translateY(-100%); } to { transform: translateY(250%); } }
+
+    /* ── Stats strip straddling the hero's bottom edge ── */
+    .stats { position: relative; z-index: 1; margin-top: -30px; }
+    .stats__row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      border: 1px solid var(--cy-border);
+      background: color-mix(in srgb, var(--cy-card) 88%, transparent);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .stats__item { display: flex; flex-direction: column; gap: 2px; padding: 16px 22px; border-right: 1px solid var(--cy-border); }
+    .stats__item:last-child { border-right: 0; }
+    @media (max-width: 767px) {
+      .stats__item:nth-child(2n) { border-right: 0; }
+      .stats__item:nth-child(-n+2) { border-bottom: 1px solid var(--cy-border); }
+    }
+    @media (min-width: 768px) { .stats__row { grid-template-columns: repeat(4, 1fr); } }
+
+    /* ── Projects ── */
+    .projects__head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+    .projects__tabs { display: inline-flex; }
+    .projects__grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      align-items: start;
+      gap: 18px;
+      animation: cy-fade-up .25s ease;
+    }
+    .project-card[hidden] { display: none; }
+    .project-card[data-disabled] { opacity: .45; pointer-events: none; }
+    .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .card-title { font-size: .92rem; letter-spacing: .06em; transition: color var(--cy-snap); }
+    .project-card:hover .card-title { color: var(--cy-accent); text-shadow: var(--cy-glow-sm); }
+    .card-desc { flex: 1; font-size: .84rem; line-height: 1.7; color: var(--cy-muted-fg); }
+    .card-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 2px; }
+    .tags { display: flex; flex-wrap: wrap; gap: 5px; }
+    .card-arrow {
+      flex-shrink: 0;
+      font-family: var(--cy-font-label);
+      letter-spacing: -.1em;
+      color: var(--cy-accent);
+      opacity: .75;
+      transition: transform var(--cy-ease), opacity var(--cy-snap);
+    }
+    .project-card:hover .card-arrow { transform: translateX(4px); opacity: 1; text-shadow: var(--cy-glow-sm); }
+
+    /* ── Terminal, tilted a degree so the section breaks the grid ── */
+    .term { padding-block: 0 80px; }
+    .term .cy-panel { transform: skewY(-1deg); }
+    .term .cy-term  { transform: skewY(1deg); }
+    @media (max-width: 640px) {
+      .hero { padding-block: 56px 60px; }
+      .stats { margin-top: -22px; }
+      .term .cy-panel, .term .cy-term { transform: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hud__signal i, .hud__sweep, .projects__grid { animation: none; }
+      .term .cy-panel, .term .cy-term { transform: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="cy-nav">
+    <a class="cy-brand cy-cursor" href="/">LK</a>
+    <a class="cy-btn cy-btn--outline cy-btn--sm" href="https://github.com/totqro" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" aria-hidden="true">
+        <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+      </svg>
+      github.com/totqro
+    </a>
+  </nav>
+
+  <header class="hero cy-container">
+    <div class="hero__copy">
+      <p class="cy-label cy-label--accent cy-prompt">sys.online // project index</p>
+      <h1 class="cy-h1 cy-glitch" data-text="Luc Knox">Luc Knox</h1>
+      <p class="hero__sub"><span class="cy-type" id="typed">ML models for hockey + baseball. Rinkside tools. iOS.</span></p>
+      <div class="hero__cta">
+        <a class="cy-btn cy-btn--glitch" href="#projects">View projects</a>
+        <a class="cy-btn cy-btn--outline" href="https://github.com/totqro" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+
+    <aside class="hud cy-holo cy-show-lg" aria-label="System readout">
+      <div class="hud__title">
+        <span class="cy-label cy-label--accent">// readout</span>
+        <span class="cy-label">v2026.09</span>
+      </div>
+      <div class="hud__row"><span class="cy-label">status</span><span class="hud__val cy-text-ok"><span class="cy-led"></span>online</span></div>
+      <div class="hud__row"><span class="cy-label">clock</span><span class="hud__val cy-num" id="hud-clock">--:--:-- UTC</span></div>
+      <div class="hud__row"><span class="cy-label">active projects</span><span class="hud__val cy-num" id="hud-active">0</span></div>
+      <div class="hud__row"><span class="cy-label">live dashboards</span><span class="hud__val cy-num" id="hud-live">0</span></div>
+      <div class="hud__row"><span class="cy-label">refresh</span><span class="hud__val">daily · gh actions → firebase</span></div>
+      <div class="hud__signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="hud__sweep" aria-hidden="true"></div>
+    </aside>
+  </header>
+
+  <section class="stats cy-container" aria-label="Summary">
+    <div class="stats__row">
+      <div class="stats__item"><span class="cy-stat__value cy-stat__value--accent" id="stat-active">0</span><span class="cy-label">active</span></div>
+      <div class="stats__item"><span class="cy-stat__value" id="stat-live">0</span><span class="cy-label">live</span></div>
+      <div class="stats__item"><span class="cy-stat__value" id="stat-progress">0</span><span class="cy-label">in progress</span></div>
+      <div class="stats__item"><span class="cy-stat__value" id="stat-langs">0</span><span class="cy-label">languages</span></div>
+    </div>
+  </section>
+
+  <main id="projects" class="projects cy-container cy-section">
+    <div class="projects__head">
+      <h2 class="cy-h2 cy-slash">Projects</h2>
+      <div class="cy-tabs projects__tabs" role="tablist" aria-label="Project status">
+        <button class="cy-tab active" role="tab" data-filter="active" aria-selected="true">Active</button>
+        <button class="cy-tab" role="tab" data-filter="completed" aria-selected="false">Completed</button>
+        <button class="cy-tab" role="tab" data-filter="old" aria-selected="false">Old</button>
+      </div>
+    </div>
+
+    <div class="projects__grid" id="grid">
+
+      <!-- ACTIVE -->
+      <a href="/nhllines" class="project-card cy-panel cy-panel--hover cy-card" data-category="active" style="--cy-panel-line: var(--cy-cyan);">
+        <div class="card-header">
+          <span class="card-title cy-h3">NHL Game Predictions</span>
+          <span class="cy-badge cy-badge--ok" data-status="live"><span class="cy-led"></span>Live</span>
+        </div>
+        <p class="card-desc">Calibrated Elo + home-ice win probabilities and expected totals, gated against a baseline and scored against the betting market's own accuracy.</p>
+        <div class="card-footer">
+          <div class="tags">
+            <span class="cy-tag">scikit-learn</span>
+            <span class="cy-tag">Python</span>
+            <span class="cy-tag">Firebase</span>
+          </div>
+          <span class="card-arrow" aria-hidden="true">&gt;&gt;</span>
+        </div>
+      </a>
+
+      <a href="/mlblines" class="project-card cy-panel cy-panel--hover cy-card" data-category="active" style="--cy-panel-line: var(--cy-magenta);">
+        <div class="card-header">
+          <span class="card-title cy-h3">MLB Game Predictions</span>
+          <span class="cy-badge cy-badge--ok" data-status="live"><span class="cy-led"></span>Live</span>
+        </div>
+        <p class="card-desc">62-feature XGBoost + similarity model for baseball. Pitcher matchups, park factors, bullpen quality, and L/R splits.</p>
+        <div class="card-footer">
+          <div class="tags">
+            <span class="cy-tag">XGBoost</span>
+            <span class="cy-tag">Python</span>
+            <span class="cy-tag">Firebase</span>
+          </div>
+          <span class="card-arrow" aria-hidden="true">&gt;&gt;</span>
+        </div>
+      </a>
+
+      <a href="/xgcalc" class="project-card cy-panel cy-panel--hover cy-card" data-category="active" style="--cy-panel-line: var(--cy-amber);">
+        <div class="card-header">
+          <span class="card-title cy-h3">Rinkside Shot Tagger</span>
+          <span class="cy-badge cy-badge--ok" data-status="live"><span class="cy-led"></span>Live</span>
+        </div>
+        <p class="card-desc">Tag shots live from the stands. Tap one of 16 rink zones and it scores the chance against expected-goals rates built from 900k NHL attempts &mdash; then checks your own tagging for bias.</p>
+        <div class="card-footer">
+          <div class="tags">
+            <span class="cy-tag">scikit-learn</span>
+            <span class="cy-tag">Python</span>
+            <span class="cy-tag">SVG</span>
+          </div>
+          <span class="card-arrow" aria-hidden="true">&gt;&gt;</span>
+        </div>
+      </a>
+
+      <a href="/xgcalc/scatter.html" class="project-card cy-panel cy-panel--hover cy-card" data-category="active" style="--cy-panel-line: var(--cy-cyan);">
+        <div class="card-header">
+          <span class="card-title cy-h3">Shot Chart</span>
+          <span class="cy-badge cy-badge--ok" data-status="live"><span class="cy-led"></span>Live</span>
+        </div>
+        <p class="card-desc">Drop in a shot chart CSV and every shot lands on the rink, scored by the same expected-goals model &mdash; filter by team, period, shot type or danger tier and the totals follow.</p>
+        <div class="card-footer">
+          <div class="tags">
+            <span class="cy-tag">scikit-learn</span>
+            <span class="cy-tag">JavaScript</span>
+            <span class="cy-tag">SVG</span>
+          </div>
+          <span class="card-arrow" aria-hidden="true">&gt;&gt;</span>
+        </div>
+      </a>
+
+      <a href="/swingai" class="project-card cy-panel cy-panel--hover cy-card" data-category="active" style="--cy-panel-line: var(--cy-green);">
+        <div class="card-header">
+          <span class="card-title cy-h3">SwingAI</span>
+          <span class="cy-badge cy-badge--tertiary" data-status="progress"><span class="cy-led"></span>In Progress</span>
+        </div>
+        <p class="card-desc">iOS app that records your golf swing, extracts body-pose metrics via Apple Vision, and generates AI coaching tips using the Anthropic API.</p>
+        <div class="card-footer">
+          <div class="tags">
+            <span class="cy-tag">Swift</span>
+            <span class="cy-tag">Vision</span>
+            <span class="cy-tag">Anthropic</span>
+          </div>
+          <span class="card-arrow" aria-hidden="true">&gt;&gt;</span>
+        </div>
+      </a>
+
+      <!-- COMPLETED -->
+      <div class="project-card cy-panel cy-card" data-category="completed" data-disabled>
+        <div class="card-header">
+          <span class="card-title cy-h3">Placeholder</span>
+          <span class="cy-badge cy-badge--muted">Completed</span>
+        </div>
+        <p class="card-desc">Add a completed project here.</p>
+        <div class="card-footer">
+          <div class="tags"><span class="cy-tag">—</span></div>
+        </div>
+      </div>
+
+      <!-- OLD -->
+      <div class="project-card cy-panel cy-card" data-category="old" data-disabled>
+        <div class="card-header">
+          <span class="card-title cy-h3">Placeholder</span>
+          <span class="cy-badge cy-badge--muted">Archived</span>
+        </div>
+        <p class="card-desc">Add an old project here.</p>
+        <div class="card-footer">
+          <div class="tags"><span class="cy-tag">—</span></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <section class="term cy-container" aria-label="About">
+    <div class="cy-panel cy-panel--terminal cy-panel--accent cy-card">
+      <div class="cy-termbar">luc@lknox:~ <span class="cy-termbar__right">bash</span></div>
+<pre class="cy-term"><span class="in">whoami</span>
+<span class="out">luc knox &mdash; ml models, hockey analytics, ios</span>
+<span class="in">ls projects/</span>
+<span class="out">nhllines/  mlblines/  xgcalc/  swingai/</span>
+<span class="in">tail -n 1 deploy.log</span>
+<span class="out"><span class="ok">[ok]</span> predictions rebuilt daily by github actions, pushed to firebase hosting</span>
+<span class="in cy-cursor"></span></pre>
+    </div>
+  </section>
+
+  <footer class="cy-footer">
+    <span>Luc Knox &middot; 2026</span>
+    <span class="cy-text-muted" aria-hidden="true">// EOF</span>
+    <a href="https://github.com/totqro" target="_blank" rel="noopener">GitHub</a>
+  </footer>
+
+  <script>
+    // Status filter tabs.
+    const tabs = document.querySelectorAll('.cy-tab[data-filter]');
+    const cards = document.querySelectorAll('.project-card');
+    function filterCards(category) {
+      tabs.forEach(btn => {
+        const on = btn.dataset.filter === category;
+        btn.classList.toggle('active', on);
+        btn.setAttribute('aria-selected', on);
+      });
+      cards.forEach(card => { card.hidden = card.dataset.category !== category; });
+      const grid = document.getElementById('grid');
+      grid.style.animation = 'none';
+      grid.offsetHeight;
+      grid.style.animation = '';
+    }
+    tabs.forEach(btn => btn.addEventListener('click', () => filterCards(btn.dataset.filter)));
+    filterCards('active');
+
+    // Readout + stats strip, derived from the cards so they stay honest.
+    const LANGS = new Set(['Python', 'JavaScript', 'TypeScript', 'Swift', 'Go', 'Rust', 'C++', 'Java', 'Kotlin']);
+    const active = [...cards].filter(c => c.dataset.category === 'active');
+    const live = active.filter(c => c.querySelector('[data-status="live"]'));
+    const progress = active.filter(c => c.querySelector('[data-status="progress"]'));
+    const langs = new Set(active.flatMap(c => [...c.querySelectorAll('.cy-tag')].map(t => t.textContent.trim())).filter(t => LANGS.has(t)));
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set('stat-active', active.length);   set('hud-active', active.length);
+    set('stat-live', live.length);       set('hud-live', live.length);
+    set('stat-progress', progress.length);
+    set('stat-langs', langs.size);
+
+    // UTC clock on the readout panel.
+    const clock = document.getElementById('hud-clock');
+    function tick() { clock.textContent = new Date().toISOString().slice(11, 19) + ' UTC'; }
+    tick(); setInterval(tick, 1000);
+
+    // Typewriter: size the reveal to the text, or fall back to plain text when it would not fit.
+    const typed = document.getElementById('typed');
+    typed.style.setProperty('--n', typed.textContent.length);
+    requestAnimationFrame(() => {
+      if (typed.scrollWidth > typed.parentElement.clientWidth) {
+        typed.classList.remove('cy-type');
+        typed.classList.add('cy-cursor');
+      }
+    });
+  </script>
+</body>
+</html>

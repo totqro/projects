@@ -1,0 +1,841 @@
+/* ==========================================================================
+   cyber.css — the shared design system for lknox.web.app
+   "High-tech, low-life": CRT scanlines, neon light against a void, chamfered
+   HUD panels, terminal prompts.
+
+   Served from the site root as /cyber.css (deploy.yml copies web/*.css into
+   build/). Every page links it, then keeps only its own page-specific rules.
+
+   Fonts — each page loads them once from Google Fonts:
+     Orbitron (headings) · JetBrains Mono (body) · Share Tech Mono (labels)
+
+   Layers:  1 tokens · 2 base · 3 atmosphere · 4 type · 5 shape · 6 components
+            7 utilities · 8 motion
+   Every shared class is prefixed `cy-` so it never collides with a page's own
+   class names. Pages re-tint the whole system by overriding --cy-accent.
+   ========================================================================== */
+
+
+/* 1. TOKENS ------------------------------------------------------------- */
+:root {
+  /* palette */
+  --cy-green:   #00ff88;
+  --cy-magenta: #ff00ff;
+  --cy-cyan:    #00d4ff;
+  --cy-pink:    #ff3366;
+  --cy-amber:   #ffb000;
+
+  /* surfaces + text */
+  --cy-bg:       #0a0a0f;
+  --cy-fg:       #e0e0e0;
+  --cy-card:     #12121a;
+  --cy-muted:    #1c1c2e;
+  --cy-muted-fg: #8b93a7;   /* spec token is #6b7280 — lifted to clear WCAG AA on cards */
+  --cy-dim:      #6b7280;   /* decoration only: prompt glyphs, dividers, never body text */
+  --cy-border:   #2a2a3a;
+  --cy-border-md: #3a3a4e;
+  --cy-input:    #12121a;
+
+  /* semantic — a page re-tints everything by overriding --cy-accent */
+  --cy-accent:   var(--cy-green);
+  --cy-accent-2: var(--cy-magenta);
+  --cy-accent-3: var(--cy-cyan);
+  --cy-ring:     var(--cy-accent);
+  --cy-ok:       var(--cy-green);
+  --cy-warn:     var(--cy-amber);
+  --cy-danger:   var(--cy-pink);
+
+  /* type */
+  --cy-font-head:  "Orbitron", "Share Tech Mono", monospace;
+  --cy-font-body:  "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  --cy-font-label: "Share Tech Mono", "JetBrains Mono", monospace;
+
+  /* shape */
+  --cy-cut:    10px;   /* chamfer size; components shrink it locally */
+  --cy-cut-sm: 6px;
+
+  /* glow (follows the page accent) */
+  --cy-glow-sm: 0 0 3px var(--cy-accent), 0 0 6px color-mix(in srgb, var(--cy-accent) 20%, transparent);
+  --cy-glow:    0 0 5px var(--cy-accent), 0 0 10px color-mix(in srgb, var(--cy-accent) 25%, transparent);
+  --cy-glow-lg: 0 0 10px var(--cy-accent), 0 0 20px color-mix(in srgb, var(--cy-accent) 40%, transparent), 0 0 40px color-mix(in srgb, var(--cy-accent) 20%, transparent);
+
+  /* motion — quick digital snaps, not soft eases */
+  --cy-ease: 150ms cubic-bezier(.4, 0, .2, 1);
+  --cy-snap: 100ms steps(4);
+
+  /* layout */
+  --cy-max: 1120px;
+  --cy-gutter: 40px;
+
+  color-scheme: dark;
+}
+
+/* Registered so colour changes on panels and buttons can animate. */
+@property --cy-panel-bd { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --cy-panel-bg { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --cy-btn-fill { syntax: "<color>"; inherits: true; initial-value: transparent; }
+
+
+/* 2. BASE ----------------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--cy-bg);
+  color: var(--cy-fg);
+  font-family: var(--cy-font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  letter-spacing: .01em;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection { background: var(--cy-accent); color: var(--cy-bg); }
+
+a { color: var(--cy-accent); text-decoration: none; }
+a:not([class]):hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+img, svg { max-width: 100%; }
+h1, h2, h3, h4, p { margin: 0; }
+
+:focus-visible { outline: 2px solid var(--cy-ring); outline-offset: 2px; box-shadow: var(--cy-glow); }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--cy-bg); }
+::-webkit-scrollbar-thumb { background: var(--cy-muted); border: 2px solid var(--cy-bg); }
+::-webkit-scrollbar-thumb:hover { background: var(--cy-accent); }
+
+
+/* 3. ATMOSPHERE ----------------------------------------------------------- */
+/* Circuit grid + neon gradient mesh, pinned behind everything. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 50% at 0% 0%,     color-mix(in srgb, var(--cy-accent)   9%, transparent), transparent 70%),
+    radial-gradient(ellipse 50% 45% at 100% 100%, color-mix(in srgb, var(--cy-accent-2) 7%, transparent), transparent 70%),
+    linear-gradient(color-mix(in srgb, var(--cy-accent) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--cy-accent) 4%, transparent) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 50px 50px, 50px 50px;
+}
+
+/* CRT scanlines over the whole page. Above every layer, never catches a click. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0, 0, 0, .18) 2px 4px);
+}
+
+
+/* 4. TYPE ----------------------------------------------------------------- */
+.cy-h1, .cy-h2, .cy-h3 {
+  font-family: var(--cy-font-head);
+  text-transform: uppercase;
+  line-height: 1.05;
+  color: var(--cy-fg);
+  text-wrap: balance;
+}
+.cy-h1 { font-size: clamp(2.5rem, 7vw, 5.25rem); font-weight: 900; letter-spacing: .08em; }
+.cy-h2 { font-size: clamp(1.5rem, 3.5vw, 2.25rem); font-weight: 700; letter-spacing: .06em; }
+.cy-h3 { font-size: clamp(1rem, 2vw, 1.25rem); font-weight: 600; letter-spacing: .05em; }
+
+.cy-label {
+  font-family: var(--cy-font-label);
+  font-size: .74rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: .2em;
+  color: var(--cy-muted-fg);
+}
+.cy-label--accent { color: var(--cy-accent); }
+
+/* Prefix glyphs, kept out of the DOM text so scripts that read textContent still work. */
+.cy-prompt::before { content: "> "; color: var(--cy-accent); }
+.cy-slash::before  { content: "// "; color: var(--cy-dim); }
+
+.cy-mono { font-family: var(--cy-font-body); font-variant-numeric: tabular-nums; }
+.cy-num  { font-family: var(--cy-font-head); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.cy-lead { font-size: 1.05rem; line-height: 1.75; color: var(--cy-muted-fg); }
+.cy-glow-text { text-shadow: 0 0 8px color-mix(in srgb, currentColor 60%, transparent); }
+/* Static chromatic aberration, no animation — for headings on busy pages. */
+.cy-rgb { text-shadow: -1.5px 0 var(--cy-accent-2), 1.5px 0 var(--cy-accent-3), 0 0 12px color-mix(in srgb, var(--cy-accent) 35%, transparent); }
+
+/* Chromatic aberration headline. Needs data-text="same text" for the RGB layers. */
+.cy-glitch {
+  position: relative;
+  display: inline-block;
+  text-shadow:
+    -1.5px 0 var(--cy-accent-2),
+     1.5px 0 var(--cy-accent-3),
+     0 0 14px color-mix(in srgb, var(--cy-accent) 45%, transparent);
+  animation: cy-glitch-base 6s infinite steps(1);
+}
+.cy-glitch::before, .cy-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  text-shadow: none;
+  pointer-events: none;
+}
+.cy-glitch::before { color: var(--cy-accent-2); animation: cy-glitch-a 6s infinite steps(1); }
+.cy-glitch::after  { color: var(--cy-accent-3); animation: cy-glitch-b 6s infinite steps(1); }
+
+/* Blinking block cursor after any inline text. */
+.cy-cursor::after {
+  content: "";
+  display: inline-block;
+  width: .55em;
+  height: 1em;
+  margin-left: .2em;
+  vertical-align: -.12em;
+  background: var(--cy-accent);
+  box-shadow: var(--cy-glow-sm);
+  animation: cy-blink 1s step-end infinite;
+}
+
+/* Typewriter: set --n to the character count (the hub script does this). */
+.cy-type {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: bottom;
+  width: calc(var(--n, 40) * 1ch);
+  border-right: .55em solid var(--cy-accent);
+  animation:
+    cy-type 2.2s steps(var(--n, 40)) .5s both,
+    cy-blink-border 1s step-end infinite;
+}
+
+
+/* 5. SHAPE ---------------------------------------------------------------- */
+/* Plain chamfer (clips box-shadow too — use .cy-panel when the edge must glow). */
+.cy-chamfer, .cy-chamfer-sm {
+  clip-path: polygon(
+    var(--cy-cut) 0, calc(100% - var(--cy-cut)) 0,
+    100% var(--cy-cut), 100% calc(100% - var(--cy-cut)),
+    calc(100% - var(--cy-cut)) 100%, var(--cy-cut) 100%,
+    0 calc(100% - var(--cy-cut)), 0 var(--cy-cut));
+}
+.cy-chamfer-sm { --cy-cut: var(--cy-cut-sm); }
+
+/* Chamfered panel whose edge can glow: the border and fill live on two clipped
+   pseudo-elements, so the element itself stays unclipped and a drop-shadow
+   traces the cut silhouette. --cy-panel-line paints a neon line along the top. */
+.cy-panel {
+  position: relative;
+  isolation: isolate;
+  --cy-bw: 1px;
+  --cy-cut-in: calc(var(--cy-cut) - var(--cy-bw) * .59);
+  --cy-panel-bg: var(--cy-card);
+  --cy-panel-bd: var(--cy-border);
+  --cy-panel-line: transparent;
+  filter: drop-shadow(0 0 0 transparent);
+  transition: filter var(--cy-ease), transform var(--cy-ease), --cy-panel-bd var(--cy-ease), --cy-panel-bg var(--cy-ease);
+}
+.cy-panel::before, .cy-panel::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+.cy-panel::after {             /* border layer */
+  inset: 0;
+  z-index: -2;
+  background: var(--cy-panel-bd);
+  clip-path: polygon(
+    var(--cy-cut) 0, calc(100% - var(--cy-cut)) 0,
+    100% var(--cy-cut), 100% calc(100% - var(--cy-cut)),
+    calc(100% - var(--cy-cut)) 100%, var(--cy-cut) 100%,
+    0 calc(100% - var(--cy-cut)), 0 var(--cy-cut));
+}
+.cy-panel::before {            /* fill layer + optional top line */
+  inset: var(--cy-bw);
+  z-index: -1;
+  background:
+    linear-gradient(90deg, transparent, var(--cy-panel-line) 25%, var(--cy-panel-line) 75%, transparent) top center / 100% 2px no-repeat,
+    var(--cy-panel-bg);
+  clip-path: polygon(
+    var(--cy-cut-in) 0, calc(100% - var(--cy-cut-in)) 0,
+    100% var(--cy-cut-in), 100% calc(100% - var(--cy-cut-in)),
+    calc(100% - var(--cy-cut-in)) 100%, var(--cy-cut-in) 100%,
+    0 calc(100% - var(--cy-cut-in)), 0 var(--cy-cut-in));
+}
+.cy-panel--sm       { --cy-cut: var(--cy-cut-sm); }
+.cy-panel--terminal { --cy-panel-bg: var(--cy-bg); }
+.cy-panel--accent   { --cy-panel-bd: color-mix(in srgb, var(--cy-accent) 45%, var(--cy-border)); }
+.cy-panel--hover:hover, .cy-panel--hover:focus-within {
+  --cy-panel-bd: var(--cy-accent);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--cy-accent) 70%, transparent));
+  transform: translateY(-1px);
+}
+.cy-panel--glow { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--cy-accent) 55%, transparent)); }
+
+/* Holographic glass panel: blurred, faint neon edge, bracket corners. */
+.cy-holo {
+  position: relative;
+  background: color-mix(in srgb, var(--cy-muted) 35%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cy-accent) 30%, transparent);
+  box-shadow: var(--cy-glow), inset 0 0 40px color-mix(in srgb, var(--cy-accent) 6%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.cy-holo::before, .cy-holo::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--cy-accent);
+  pointer-events: none;
+}
+.cy-holo::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.cy-holo::after  { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+/* Corner brackets on any positioned box (stat tiles use it). */
+.cy-brackets { position: relative; }
+.cy-brackets::before, .cy-brackets::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--cy-accent);
+  pointer-events: none;
+  opacity: .8;
+}
+.cy-brackets::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.cy-brackets::after  { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+
+/* 6. COMPONENTS ----------------------------------------------------------- */
+
+/* Nav ------------------------------------------------------------------- */
+.cy-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 60px;
+  padding: 0 var(--cy-gutter);
+  background: color-mix(in srgb, var(--cy-bg) 82%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--cy-border);
+}
+.cy-nav::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cy-accent), transparent);
+  opacity: .5;
+}
+.cy-brand {
+  font-family: var(--cy-font-head);
+  font-weight: 700;
+  font-size: .95rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--cy-fg);
+}
+.cy-brand:hover { color: var(--cy-accent); text-shadow: var(--cy-glow-sm); }
+.cy-nav__links { display: flex; align-items: center; gap: 10px; }
+
+/* Buttons ---------------------------------------------------------------- */
+.cy-btn {
+  --cy-btn-c: var(--cy-accent);
+  --cy-btn-fill: var(--cy-bg);
+  --cy-cut: var(--cy-cut-sm);
+  --cy-bw: 2px;
+  --cy-cut-in: calc(var(--cy-cut) - var(--cy-bw) * .59);
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 0;
+  background: transparent;
+  color: var(--cy-btn-c);
+  font-family: var(--cy-font-label);
+  font-size: .82rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--cy-snap), filter var(--cy-ease), transform var(--cy-ease), --cy-btn-fill var(--cy-snap);
+}
+.cy-btn::before, .cy-btn::after { content: ""; position: absolute; pointer-events: none; }
+.cy-btn::after {
+  inset: 0;
+  z-index: -2;
+  background: var(--cy-btn-c);
+  clip-path: polygon(
+    var(--cy-cut) 0, calc(100% - var(--cy-cut)) 0,
+    100% var(--cy-cut), 100% calc(100% - var(--cy-cut)),
+    calc(100% - var(--cy-cut)) 100%, var(--cy-cut) 100%,
+    0 calc(100% - var(--cy-cut)), 0 var(--cy-cut));
+}
+.cy-btn::before {
+  inset: var(--cy-bw);
+  z-index: -1;
+  background: var(--cy-btn-fill);
+  clip-path: polygon(
+    var(--cy-cut-in) 0, calc(100% - var(--cy-cut-in)) 0,
+    100% var(--cy-cut-in), 100% calc(100% - var(--cy-cut-in)),
+    calc(100% - var(--cy-cut-in)) 100%, var(--cy-cut-in) 100%,
+    0 calc(100% - var(--cy-cut-in)), 0 var(--cy-cut-in));
+}
+.cy-btn:hover, .cy-btn:focus-visible {
+  color: var(--cy-bg);
+  --cy-btn-fill: var(--cy-btn-c);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--cy-btn-c) 80%, transparent));
+}
+.cy-btn:active { transform: translateY(1px); }
+.cy-btn svg { width: 16px; height: 16px; stroke-width: 1.5; flex-shrink: 0; }
+
+.cy-btn--secondary { --cy-btn-c: var(--cy-accent-2); }
+.cy-btn--tertiary  { --cy-btn-c: var(--cy-accent-3); }
+.cy-btn--danger    { --cy-btn-c: var(--cy-danger); }
+
+.cy-btn--outline { --cy-btn-c: var(--cy-border); --cy-bw: 1px; color: var(--cy-fg); }
+.cy-btn--outline:hover, .cy-btn--outline:focus-visible {
+  --cy-btn-c: var(--cy-accent);
+  --cy-btn-fill: var(--cy-bg);
+  color: var(--cy-accent);
+}
+
+.cy-btn--ghost { color: var(--cy-muted-fg); }
+.cy-btn--ghost::before, .cy-btn--ghost::after { display: none; }
+.cy-btn--ghost:hover, .cy-btn--ghost:focus-visible {
+  color: var(--cy-accent);
+  background: color-mix(in srgb, var(--cy-accent) 10%, transparent);
+  filter: none;
+}
+
+.cy-btn--glitch { --cy-btn-fill: var(--cy-btn-c); color: var(--cy-bg); font-weight: 700; }
+.cy-btn--glitch:hover, .cy-btn--glitch:focus-visible { filter: brightness(1.12) drop-shadow(0 0 8px color-mix(in srgb, var(--cy-btn-c) 80%, transparent)); }
+
+.cy-btn--sm { min-height: 36px; padding: 0 14px; font-size: .72rem; }
+.cy-btn--block { display: flex; width: 100%; }
+
+/* Cards / panels --------------------------------------------------------- */
+.cy-card {
+  --cy-pad-y: 20px;
+  --cy-pad-x: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: var(--cy-pad-y) var(--cy-pad-x);
+  color: inherit;
+  text-decoration: none;
+}
+.cy-card--tight { --cy-pad-y: 14px; --cy-pad-x: 16px; }
+
+/* Terminal title bar: traffic lights + path, bleeding to the panel edge. */
+.cy-termbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 30px;
+  margin: calc(1px - var(--cy-pad-y, 20px)) calc(1px - var(--cy-pad-x, 22px)) 4px;
+  padding: 0 14px 0 60px;
+  background: color-mix(in srgb, var(--cy-muted) 70%, transparent);
+  border-bottom: 1px solid var(--cy-border);
+  font-family: var(--cy-font-label);
+  font-size: .7rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--cy-muted-fg);
+  clip-path: polygon(
+    var(--cy-cut-in, 9px) 0, calc(100% - var(--cy-cut-in, 9px)) 0,
+    100% var(--cy-cut-in, 9px), 100% 100%, 0 100%, 0 var(--cy-cut-in, 9px));
+}
+.cy-termbar::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: var(--cy-danger);
+  box-shadow: 14px 0 0 var(--cy-warn), 28px 0 0 var(--cy-ok);
+}
+.cy-termbar__right { margin-left: auto; color: var(--cy-dim); }
+
+/* Terminal transcript lines. */
+.cy-term { margin: 0; font-family: var(--cy-font-body); font-size: .86rem; line-height: 1.85; white-space: pre-wrap; word-break: break-word; }
+.cy-term .in  { color: var(--cy-fg); }
+.cy-term .in::before  { content: "$ "; color: var(--cy-accent); }
+.cy-term .out { color: var(--cy-muted-fg); }
+.cy-term .out::before { content: "> "; color: var(--cy-dim); }
+.cy-term .ok   { color: var(--cy-ok); }
+.cy-term .warn { color: var(--cy-warn); }
+
+/* Badges / tags ---------------------------------------------------------- */
+.cy-badge {
+  --cy-badge-c: var(--cy-muted-fg);
+  --cy-cut: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  font-family: var(--cy-font-label);
+  font-size: .68rem;
+  line-height: 1.5;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--cy-badge-c);
+  background: color-mix(in srgb, var(--cy-badge-c) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cy-badge-c) 45%, transparent);
+  clip-path: polygon(
+    var(--cy-cut) 0, calc(100% - var(--cy-cut)) 0,
+    100% var(--cy-cut), 100% calc(100% - var(--cy-cut)),
+    calc(100% - var(--cy-cut)) 100%, var(--cy-cut) 100%,
+    0 calc(100% - var(--cy-cut)), 0 var(--cy-cut));
+}
+.cy-badge--accent    { --cy-badge-c: var(--cy-accent); }
+.cy-badge--secondary { --cy-badge-c: var(--cy-accent-2); }
+.cy-badge--tertiary  { --cy-badge-c: var(--cy-accent-3); }
+.cy-badge--ok        { --cy-badge-c: var(--cy-ok); }
+.cy-badge--warn      { --cy-badge-c: var(--cy-warn); }
+.cy-badge--danger    { --cy-badge-c: var(--cy-danger); }
+.cy-badge--muted     { --cy-badge-c: var(--cy-muted-fg); }
+
+/* Square status LED, pulsing. */
+.cy-led {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+  animation: cy-pulse 2.2s ease-in-out infinite;
+}
+
+.cy-tag {
+  display: inline-block;
+  padding: 2px 7px;
+  font-family: var(--cy-font-label);
+  font-size: .66rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--cy-muted-fg);
+  background: color-mix(in srgb, var(--cy-muted) 60%, transparent);
+  border: 1px solid var(--cy-border);
+  white-space: nowrap;
+}
+.cy-tag::before { content: "#"; margin-right: 1px; color: var(--cy-dim); }
+
+/* Inputs ----------------------------------------------------------------- */
+.cy-field { position: relative; display: inline-flex; align-items: center; }
+.cy-field::before {
+  content: ">";
+  position: absolute;
+  left: 12px;
+  color: var(--cy-accent);
+  font-family: var(--cy-font-label);
+  pointer-events: none;
+}
+.cy-input, .cy-select {
+  --cy-cut: var(--cy-cut-sm);
+  min-height: 44px;
+  padding: 0 14px 0 28px;
+  background: var(--cy-input);
+  border: 1px solid var(--cy-border);
+  color: var(--cy-accent);
+  font-family: var(--cy-font-body);
+  font-size: .85rem;
+  clip-path: polygon(
+    var(--cy-cut) 0, calc(100% - var(--cy-cut)) 0,
+    100% var(--cy-cut), 100% calc(100% - var(--cy-cut)),
+    calc(100% - var(--cy-cut)) 100%, var(--cy-cut) 100%,
+    0 calc(100% - var(--cy-cut)), 0 var(--cy-cut));
+  transition: border-color var(--cy-snap), box-shadow var(--cy-ease);
+}
+.cy-input::placeholder { color: var(--cy-muted-fg); }
+.cy-input:hover, .cy-select:hover { border-color: color-mix(in srgb, var(--cy-accent) 50%, var(--cy-border)); }
+.cy-input:focus, .cy-select:focus {
+  outline: none;
+  border-color: var(--cy-accent);
+  box-shadow: inset 0 0 10px color-mix(in srgb, var(--cy-accent) 22%, transparent);
+}
+.cy-select { appearance: none; -webkit-appearance: none; padding-right: 36px; cursor: pointer; }
+.cy-select option { background: var(--cy-card); color: var(--cy-fg); }
+.cy-field--select::after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  width: 10px;
+  height: 6px;
+  background: var(--cy-accent);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  pointer-events: none;
+}
+.cy-check {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  display: inline-grid;
+  place-content: center;
+  background: var(--cy-input);
+  border: 1px solid var(--cy-border);
+  cursor: pointer;
+  transition: border-color var(--cy-snap), box-shadow var(--cy-ease);
+}
+.cy-check:checked { border-color: var(--cy-accent); box-shadow: var(--cy-glow-sm); }
+.cy-check:checked::before { content: ""; width: 8px; height: 8px; background: var(--cy-accent); }
+
+/* Tabs ------------------------------------------------------------------- */
+.cy-tabs {
+  --cy-cut: var(--cy-cut-sm);
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: color-mix(in srgb, var(--cy-muted) 60%, transparent);
+  border: 1px solid var(--cy-border);
+  clip-path: polygon(
+    var(--cy-cut) 0, calc(100% - var(--cy-cut)) 0,
+    100% var(--cy-cut), 100% calc(100% - var(--cy-cut)),
+    calc(100% - var(--cy-cut)) 100%, var(--cy-cut) 100%,
+    0 calc(100% - var(--cy-cut)), 0 var(--cy-cut));
+}
+.cy-tab {
+  --cy-cut: 4px;
+  flex: 1;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  background: transparent;
+  color: var(--cy-muted-fg);
+  font-family: var(--cy-font-label);
+  font-size: .78rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  clip-path: polygon(
+    var(--cy-cut) 0, calc(100% - var(--cy-cut)) 0,
+    100% var(--cy-cut), 100% calc(100% - var(--cy-cut)),
+    calc(100% - var(--cy-cut)) 100%, var(--cy-cut) 100%,
+    0 calc(100% - var(--cy-cut)), 0 var(--cy-cut));
+  transition: color var(--cy-snap), background var(--cy-snap), box-shadow var(--cy-ease);
+}
+.cy-tab::before { content: "> "; opacity: 0; transition: opacity var(--cy-snap); }
+.cy-tab:hover { color: var(--cy-fg); background: color-mix(in srgb, var(--cy-accent) 8%, transparent); }
+.cy-tab.active, .cy-tab[aria-selected="true"] {
+  color: var(--cy-accent);
+  background: color-mix(in srgb, var(--cy-accent) 14%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--cy-accent) 45%, transparent),
+    inset 0 0 14px color-mix(in srgb, var(--cy-accent) 18%, transparent);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--cy-accent) 60%, transparent);
+}
+.cy-tab.active::before, .cy-tab[aria-selected="true"]::before { opacity: 1; }
+
+/* Stat tile (HUD readout) ------------------------------------------------ */
+.cy-stat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  background: color-mix(in srgb, var(--cy-muted) 45%, transparent);
+  border: 1px solid var(--cy-border);
+}
+.cy-stat::before, .cy-stat::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--cy-accent);
+  opacity: .75;
+  pointer-events: none;
+}
+.cy-stat::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.cy-stat::after  { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+.cy-stat__label { font-family: var(--cy-font-label); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; color: var(--cy-muted-fg); }
+.cy-stat__value { font-family: var(--cy-font-head); font-size: 1.5rem; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; color: var(--cy-fg); }
+.cy-stat__value--accent { color: var(--cy-accent); text-shadow: 0 0 10px color-mix(in srgb, var(--cy-accent) 50%, transparent); }
+.cy-stat__value--text { font-family: var(--cy-font-body); font-size: .95rem; font-weight: 600; line-height: 1.4; }
+
+/* Feedback --------------------------------------------------------------- */
+.cy-spinner {
+  width: 36px;
+  height: 36px;
+  margin: 0 auto 16px;
+  border: 2px solid var(--cy-border);
+  border-top-color: var(--cy-accent);
+  border-right-color: var(--cy-accent);
+  box-shadow: var(--cy-glow-sm);
+  animation: cy-spin .9s steps(8) infinite;
+}
+.cy-alert {
+  --cy-alert-c: var(--cy-danger);
+  --cy-cut: var(--cy-cut-sm);
+  padding: 16px 20px;
+  color: var(--cy-alert-c);
+  background: color-mix(in srgb, var(--cy-alert-c) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cy-alert-c) 45%, transparent);
+  font-family: var(--cy-font-label);
+  font-size: .85rem;
+  letter-spacing: .06em;
+  text-align: center;
+  clip-path: polygon(
+    var(--cy-cut) 0, calc(100% - var(--cy-cut)) 0,
+    100% var(--cy-cut), 100% calc(100% - var(--cy-cut)),
+    calc(100% - var(--cy-cut)) 100%, var(--cy-cut) 100%,
+    0 calc(100% - var(--cy-cut)), 0 var(--cy-cut));
+}
+.cy-alert--warn { --cy-alert-c: var(--cy-warn); }
+.cy-alert--ok   { --cy-alert-c: var(--cy-ok); }
+.cy-empty { padding: 40px 20px; text-align: center; color: var(--cy-muted-fg); font-family: var(--cy-font-label); letter-spacing: .1em; text-transform: uppercase; font-size: .8rem; }
+.cy-empty code { padding: 3px 8px; color: var(--cy-accent); background: var(--cy-muted); border: 1px solid var(--cy-border); font-family: var(--cy-font-body); text-transform: none; letter-spacing: 0; }
+
+/* Neon progress bar ------------------------------------------------------ */
+.cy-bar { height: 8px; background: color-mix(in srgb, var(--cy-muted) 80%, transparent); border: 1px solid var(--cy-border); overflow: hidden; }
+.cy-bar__fill {
+  height: 100%;
+  background: color-mix(in srgb, var(--cy-fg) 14%, transparent);
+  transition: width .4s cubic-bezier(.4, 0, .2, 1);
+}
+.cy-bar__fill--accent {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--cy-accent) 55%, transparent), var(--cy-accent));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--cy-accent) 70%, transparent);
+}
+
+/* Icon box --------------------------------------------------------------- */
+.cy-icon {
+  --cy-cut: var(--cy-cut-sm);
+  display: inline-grid;
+  place-content: center;
+  width: 40px;
+  height: 40px;
+  color: var(--cy-accent);
+  border: 1px solid var(--cy-border);
+  background: color-mix(in srgb, var(--cy-muted) 50%, transparent);
+  clip-path: polygon(
+    var(--cy-cut) 0, calc(100% - var(--cy-cut)) 0,
+    100% var(--cy-cut), 100% calc(100% - var(--cy-cut)),
+    calc(100% - var(--cy-cut)) 100%, var(--cy-cut) 100%,
+    0 calc(100% - var(--cy-cut)), 0 var(--cy-cut));
+}
+.cy-icon svg { width: 20px; height: 20px; stroke-width: 1.5; fill: none; stroke: currentColor; }
+.cy-icon:hover svg { filter: drop-shadow(0 0 4px currentColor); }
+
+/* Footer ----------------------------------------------------------------- */
+.cy-footer {
+  max-width: var(--cy-max);
+  margin: 0 auto;
+  padding: 24px var(--cy-gutter) 40px;
+  border-top: 1px solid var(--cy-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-family: var(--cy-font-label);
+  font-size: .72rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--cy-muted-fg);
+}
+.cy-footer a { color: var(--cy-muted-fg); }
+.cy-footer a:hover { color: var(--cy-accent); text-shadow: var(--cy-glow-sm); }
+
+
+/* 7. UTILITIES ------------------------------------------------------------ */
+.cy-container { max-width: var(--cy-max); margin: 0 auto; padding-inline: var(--cy-gutter); }
+.cy-section   { padding-block: 64px; }
+.cy-divider   { height: 1px; border: 0; margin: 0; background: linear-gradient(90deg, transparent, var(--cy-border), transparent); }
+
+/* Section skew: the container tilts, its direct children stay upright. */
+.cy-skew { transform: skewY(-1deg); }
+.cy-skew > * { transform: skewY(1deg); }
+
+.cy-text-accent { color: var(--cy-accent); }
+.cy-text-2      { color: var(--cy-accent-2); }
+.cy-text-3      { color: var(--cy-accent-3); }
+.cy-text-ok     { color: var(--cy-ok); }
+.cy-text-warn   { color: var(--cy-warn); }
+.cy-text-danger { color: var(--cy-danger); }
+.cy-text-muted  { color: var(--cy-muted-fg); }
+
+.cy-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+@media (max-width: 640px) {
+  :root { --cy-gutter: 20px; }
+  .cy-section { padding-block: 44px; }
+  .cy-skew, .cy-skew > * { transform: none; }
+  .cy-type { white-space: normal; width: auto; border-right: 0; animation: none; }
+  .cy-hide-sm { display: none !important; }
+}
+@media (max-width: 1023px) {
+  .cy-show-lg { display: none !important; }
+}
+
+
+/* 8. MOTION --------------------------------------------------------------- */
+@keyframes cy-blink        { 50% { opacity: 0; } }
+@keyframes cy-blink-border { 50% { border-color: transparent; } }
+@keyframes cy-pulse        { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes cy-spin         { to { transform: rotate(360deg); } }
+@keyframes cy-fade-up      { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes cy-type         { from { width: 0; } }
+@keyframes cy-scan         { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
+@keyframes cy-flicker      { 0%, 97%, 100% { opacity: 1; } 98% { opacity: .55; } 99% { opacity: .9; } }
+
+/* The headline sits still most of the time, then tears for a few frames. */
+@keyframes cy-glitch-base {
+  0%, 91%, 95%, 100% { transform: none; }
+  92% { transform: skewX(-6deg) translateX(-2px); }
+  93% { transform: skewX(4deg) translateX(2px); }
+  94% { transform: translateX(-1px); }
+}
+@keyframes cy-glitch-a {
+  0%, 90%, 96%, 100% { opacity: 0; clip-path: inset(0 0 100% 0); transform: none; }
+  91% { opacity: .9; clip-path: inset(8% 0 62% 0);  transform: translate(-4px, 1px); }
+  92% { opacity: .9; clip-path: inset(48% 0 22% 0); transform: translate(3px, -1px); }
+  93% { opacity: .9; clip-path: inset(70% 0 4% 0);  transform: translate(-3px, 0); }
+  94% { opacity: .9; clip-path: inset(20% 0 50% 0); transform: translate(2px, 1px); }
+}
+@keyframes cy-glitch-b {
+  0%, 90%, 96%, 100% { opacity: 0; clip-path: inset(100% 0 0 0); transform: none; }
+  91% { opacity: .9; clip-path: inset(60% 0 12% 0); transform: translate(4px, -1px); }
+  92% { opacity: .9; clip-path: inset(12% 0 66% 0); transform: translate(-3px, 1px); }
+  93% { opacity: .9; clip-path: inset(36% 0 40% 0); transform: translate(3px, 0); }
+  94% { opacity: .9; clip-path: inset(78% 0 0 0);   transform: translate(-2px, -1px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .cy-glitch, .cy-glitch::before, .cy-glitch::after,
+  .cy-cursor::after, .cy-led, .cy-spinner, .cy-type { animation: none !important; }
+  .cy-glitch::before, .cy-glitch::after { opacity: 0; }
+  .cy-type { width: auto; white-space: normal; }
+  .cy-spinner { border-color: var(--cy-accent) var(--cy-border) var(--cy-border) var(--cy-accent); }
+  .cy-panel, .cy-btn, .cy-tab, .cy-input, .cy-select { transition: none; }
+  .cy-skew, .cy-skew > * { transform: none; }
+}

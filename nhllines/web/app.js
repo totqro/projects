@@ -140,7 +140,7 @@ function renderGameCard(g, i, gameRecs) {
     const homeWins = homeProb > awayProb;
     const contextHtml = renderContextIndicators(ci);
 
-    return `<div class="gc${isStrong?' gc-strong':''}" id="gc-${i}">
+    return `<div class="gc cy-panel${isStrong?' gc-strong':''}" id="gc-${i}">
         <div class="gc-header" onclick="toggleGC(${i})">
             <div class="gc-matchup">
                 <span class="${!homeWins?'gc-pick-team':''}">${g.away}</span>

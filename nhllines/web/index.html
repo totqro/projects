@@ -3,63 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#0a0a0f">
     <title>NHL Game Predictions</title>
-    <link rel="stylesheet" href="styles.css?v=16.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/cyber.css">
+    <link rel="stylesheet" href="/dashboard.css">
+    <link rel="stylesheet" href="styles.css?v=17.0">
 </head>
 <body>
+    <nav class="cy-nav">
+        <a class="cy-brand cy-cursor" href="/">LK</a>
+        <div class="cy-nav__links">
+            <span class="cy-badge cy-badge--accent cy-hide-sm"><span class="cy-led"></span>NHL</span>
+            <a href="/" class="back-link cy-btn cy-btn--ghost cy-btn--sm">&lt; All projects</a>
+        </div>
+    </nav>
+
     <div class="container">
-        <header>
-            <div class="header-nav">
-                <a href="/" class="back-link">← Back to Projects</a>
-            </div>
-            <h1>🏒 NHL Game Predictions</h1>
-            <p class="subtitle">AI-Powered Win &amp; Total Goal Predictions</p>
+        <header class="dash-header cy-panel cy-panel--terminal cy-card">
+            <p class="cy-label cy-label--accent cy-prompt">nhllines // daily model output</p>
+            <h1 class="cy-h2 cy-rgb">🏒 NHL Game Predictions</h1>
+            <p class="subtitle cy-label">AI-Powered Win &amp; Total Goal Predictions</p>
         </header>
 
-        <div class="tabs">
-            <button class="tab-button active" onclick="showTab('today')">Today's Predictions</button>
-            <button class="tab-button" onclick="showTab('performance')">Performance History</button>
-            <button class="tab-button" onclick="showTab('bracket')">Stanley Cup Bracket</button>
+        <div class="tabs cy-tabs" role="tablist">
+            <button class="tab-button cy-tab active" onclick="showTab('today')">Today's Predictions</button>
+            <button class="tab-button cy-tab" onclick="showTab('performance')">Performance History</button>
+            <button class="tab-button cy-tab" onclick="showTab('bracket')">Stanley Cup Bracket</button>
         </div>
 
-        <div id="loading" class="loading">
-            <div class="spinner"></div>
-            <p>Loading predictions...</p>
+        <div id="loading" class="loading cy-empty">
+            <div class="spinner cy-spinner"></div>
+            <p class="cy-cursor">Loading predictions</p>
         </div>
 
-        <div id="error" class="error" style="display: none;"></div>
+        <div id="error" class="error cy-alert" style="display: none;"></div>
 
         <!-- Today's Predictions Tab -->
         <div id="today-tab" class="tab-content" style="display: none;">
-            <section class="summary-card">
-                <h2>Today's Overview</h2>
+            <section class="summary-card cy-panel cy-card">
+                <h2 class="cy-label cy-slash">Today's Overview</h2>
                 <div class="stats-grid">
-                    <div class="stat">
-                        <span class="stat-label">Last Updated</span>
-                        <span class="stat-value" id="timestamp">-</span>
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Last Updated</span>
+                        <span class="stat-value cy-stat__value cy-stat__value--text" id="timestamp">-</span>
                     </div>
-                    <div class="stat">
-                        <span class="stat-label">Games Today</span>
-                        <span class="stat-value" id="games-analyzed">-</span>
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Games Today</span>
+                        <span class="stat-value cy-stat__value" id="games-analyzed">-</span>
                     </div>
-                    <div class="stat">
-                        <span class="stat-label">Strong Picks</span>
-                        <span class="stat-value" id="bets-found">-</span>
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Strong Picks</span>
+                        <span class="stat-value cy-stat__value cy-stat__value--accent" id="bets-found">-</span>
                     </div>
-                    <div class="stat">
-                        <span class="stat-label">Avg Confidence</span>
-                        <span class="stat-value" id="expected-roi">-</span>
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Avg Confidence</span>
+                        <span class="stat-value cy-stat__value" id="expected-roi">-</span>
                     </div>
                 </div>
             </section>
 
             <div class="games-filter-bar">
-                <select id="sort-games" class="filter-select" onchange="applySort()">
-                    <option value="confidence">Sort by Confidence</option>
-                    <option value="prob">Sort by Win Probability</option>
-                </select>
+                <label class="cy-field cy-field--select">
+                    <span class="cy-sr-only">Sort games</span>
+                    <select id="sort-games" class="filter-select cy-select" onchange="applySort()">
+                        <option value="confidence">Sort by Confidence</option>
+                        <option value="prob">Sort by Win Probability</option>
+                    </select>
+                </label>
                 <label class="filter-toggle">
-                    <input type="checkbox" id="strong-only" onchange="applySort()">
+                    <input type="checkbox" id="strong-only" class="cy-check" onchange="applySort()">
                     Strong picks only
                 </label>
             </div>
@@ -69,46 +85,46 @@
 
         <!-- Performance History Tab -->
         <div id="performance-tab" class="tab-content" style="display: none;">
-            <section class="summary-card">
-                <h2>Prediction Accuracy</h2>
+            <section class="summary-card cy-panel cy-card">
+                <h2 class="cy-label cy-slash">Prediction Accuracy</h2>
                 <div class="stats-grid">
-                    <div class="stat">
-                        <span class="stat-label">Games Tracked</span>
-                        <span class="stat-value" id="perf-total-bets">-</span>
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Games Tracked</span>
+                        <span class="stat-value cy-stat__value" id="perf-total-bets">-</span>
                     </div>
-                    <div class="stat">
-                        <span class="stat-label">Winner Accuracy</span>
-                        <span class="stat-value" id="perf-win-rate">-</span>
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Winner Accuracy</span>
+                        <span class="stat-value cy-stat__value cy-stat__value--accent" id="perf-win-rate">-</span>
                     </div>
-                    <div class="stat">
-                        <span class="stat-label">Total Within ±1</span>
-                        <span class="stat-value" id="perf-total-within1">-</span>
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Total Within ±1</span>
+                        <span class="stat-value cy-stat__value" id="perf-total-within1">-</span>
                     </div>
-                    <div class="stat">
-                        <span class="stat-label">Avg Goal Error</span>
-                        <span class="stat-value" id="perf-total-exact">-</span>
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Avg Goal Error</span>
+                        <span class="stat-value cy-stat__value" id="perf-total-exact">-</span>
                     </div>
                 </div>
             </section>
 
-            <section class="summary-card">
-                <h2>Total Goals Accuracy</h2>
+            <section class="summary-card cy-panel cy-card">
+                <h2 class="cy-label cy-slash">Total Goals Accuracy</h2>
                 <p class="parlay-subtitle">How close were the model's total goal predictions vs actual game totals.</p>
                 <div class="accuracy-breakdown">
                     <div class="accuracy-item">
-                        <span class="accuracy-dot" style="background:#00C896"></span>
+                        <span class="accuracy-dot total-green"></span>
                         <span class="accuracy-label">Exact (nearest int)</span>
                         <span class="accuracy-count" id="total-green">-</span>
                         <span class="accuracy-pct" id="total-green-pct"></span>
                     </div>
                     <div class="accuracy-item">
-                        <span class="accuracy-dot" style="background:#F4901E"></span>
+                        <span class="accuracy-dot total-yellow"></span>
                         <span class="accuracy-label">±1 goal off</span>
                         <span class="accuracy-count" id="total-yellow">-</span>
                         <span class="accuracy-pct" id="total-yellow-pct"></span>
                     </div>
                     <div class="accuracy-item">
-                        <span class="accuracy-dot" style="background:#FF4D6A"></span>
+                        <span class="accuracy-dot total-red"></span>
                         <span class="accuracy-label">±2+ goals off</span>
                         <span class="accuracy-count" id="total-red">-</span>
                         <span class="accuracy-pct" id="total-red-pct"></span>
@@ -116,53 +132,60 @@
                 </div>
             </section>
 
-            <section class="recent-results">
-                <h2>Recent Game Predictions</h2>
+            <section class="recent-results cy-panel cy-panel--terminal cy-card">
+                <div class="cy-termbar">backtest_results.json <span class="cy-termbar__right">last 60</span></div>
+                <h2 class="cy-label cy-slash">Recent Game Predictions</h2>
                 <div id="recent-results-list"></div>
             </section>
         </div>
 
         <!-- Stanley Cup Bracket Tab -->
         <div id="bracket-tab" class="tab-content" style="display: none;">
-            <section class="summary-card">
-                <h2>Projected Bracket</h2>
+            <section class="summary-card cy-panel cy-card">
+                <h2 class="cy-label cy-slash">Projected Bracket</h2>
                 <p class="parlay-subtitle" id="bracket-method">
                     Projected forward from the first round with the shipped model, using
                     team form frozen at the end of the regular season.
                 </p>
                 <div class="stats-grid">
-                    <div class="stat">
-                        <span class="stat-label">Season</span>
-                        <span class="stat-value" id="bracket-season">-</span>
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Season</span>
+                        <span class="stat-value cy-stat__value" id="bracket-season">-</span>
                     </div>
-                    <div class="stat">
-                        <span class="stat-label">Series Called</span>
-                        <span class="stat-value" id="bracket-correct">-</span>
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Series Called</span>
+                        <span class="stat-value cy-stat__value" id="bracket-correct">-</span>
                     </div>
-                    <div class="stat">
-                        <span class="stat-label">Hit Rate</span>
-                        <span class="stat-value" id="bracket-rate">-</span>
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Hit Rate</span>
+                        <span class="stat-value cy-stat__value cy-stat__value--accent" id="bracket-rate">-</span>
                     </div>
-                    <div class="stat">
-                        <span class="stat-label">Form Frozen At</span>
-                        <span class="stat-value" id="bracket-asof">-</span>
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Form Frozen At</span>
+                        <span class="stat-value cy-stat__value cy-stat__value--text" id="bracket-asof">-</span>
                     </div>
                 </div>
             </section>
 
-            <section class="summary-card bracket-card">
-                <h2>Western Conference &nbsp;·&nbsp; Stanley Cup &nbsp;·&nbsp; Eastern Conference</h2>
+            <section class="summary-card bracket-card cy-panel cy-card">
+                <h2 class="cy-label cy-slash">Western Conference &nbsp;·&nbsp; Stanley Cup &nbsp;·&nbsp; Eastern Conference</h2>
                 <div id="bracket-board" class="bracket-board"></div>
             </section>
 
-            <section class="summary-card">
-                <h2>Stanley Cup Final — Total Goals</h2>
+            <section class="summary-card cy-panel cy-card">
+                <h2 class="cy-label cy-slash">Stanley Cup Final — Total Goals</h2>
                 <p class="parlay-subtitle" id="totals-basis"></p>
                 <div class="totals-compare" id="bracket-totals"></div>
             </section>
         </div>
     </div>
 
-    <script src="app.js?v=16.0"></script>
+    <footer class="cy-footer">
+        <span>Luc Knox &middot; 2026</span>
+        <span class="cy-text-muted" aria-hidden="true">// EOF</span>
+        <a href="https://github.com/totqro" target="_blank" rel="noopener">GitHub</a>
+    </footer>
+
+    <script src="app.js?v=17.0"></script>
 </body>
 </html>

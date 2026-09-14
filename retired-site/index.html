@@ -3,132 +3,145 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0a0a0f">
   <title>Luc Knox &middot; Moved</title>
   <meta http-equiv="refresh" content="6;url=https://lknox.web.app">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=JetBrains+Mono:wght@400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
+    /* This page is deployed to its own Firebase site, so it carries a compact
+       copy of the tokens from web/cyber.css instead of linking across origins. */
     :root {
-      --bg:          #080b10;
-      --card:        #111520;
-      --border:      rgba(255,255,255,0.08);
-      --accent:      #6366f1;
-      --accent-lt:   #818cf8;
-      --text-1:      #f1f5f9;
-      --text-2:      #94a3b8;
-      --text-3:      #4b5563;
+      --cy-green: #00ff88; --cy-magenta: #ff00ff; --cy-cyan: #00d4ff; --cy-pink: #ff3366; --cy-amber: #ffb000;
+      --cy-bg: #0a0a0f; --cy-fg: #e0e0e0; --cy-card: #12121a; --cy-muted: #1c1c2e; --cy-muted-fg: #8b93a7; --cy-dim: #6b7280; --cy-border: #2a2a3a;
+      --cy-accent: var(--cy-green);
+      --cy-font-head: "Orbitron", "Share Tech Mono", monospace;
+      --cy-font-body: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+      --cy-font-label: "Share Tech Mono", "JetBrains Mono", monospace;
+      --cy-cut: 10px;
+      color-scheme: dark;
     }
-
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg);
-      color: var(--text-1);
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: grid;
+      place-items: center;
       padding: 24px;
+      background: var(--cy-bg);
+      color: var(--cy-fg);
+      font-family: var(--cy-font-body);
+      font-size: 15px;
+      line-height: 1.6;
       -webkit-font-smoothing: antialiased;
-      overflow: hidden;
-      position: relative;
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      background:
+        radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--cy-accent) 12%, transparent), transparent 60%),
+        linear-gradient(color-mix(in srgb, var(--cy-accent) 4%, transparent) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--cy-accent) 4%, transparent) 1px, transparent 1px);
+      background-size: 100% 100%, 50px 50px, 50px 50px;
+    }
+    body::after {
+      content: ""; position: fixed; inset: 0; z-index: 2147483000; pointer-events: none;
+      background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0, 0, 0, .18) 2px 4px);
     }
 
-    .glow {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 900px; height: 900px;
-      background: radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 65%);
-      pointer-events: none;
-      animation: drift 8s ease-in-out infinite;
-    }
+    .card { width: min(520px, 100%); text-align: center; }
+    .card > * + * { margin-top: 22px; }
 
-    @keyframes drift {
-      0%, 100% { transform: translate(-50%, -50%) scale(1); }
-      50%      { transform: translate(-50%, -50%) scale(1.08); }
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px;
+      font-family: var(--cy-font-label); font-size: .7rem; letter-spacing: .18em; text-transform: uppercase;
+      color: var(--cy-amber); background: color-mix(in srgb, var(--cy-amber) 12%, transparent);
+      border: 1px solid color-mix(in srgb, var(--cy-amber) 45%, transparent);
+      clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);
     }
-
-    .card {
-      position: relative;
-      text-align: center;
-      max-width: 460px;
-    }
-
-    .mark {
-      width: 88px;
-      height: 88px;
-      margin: 0 auto 32px;
-      border-radius: 22px;
-      background: linear-gradient(135deg, var(--accent), #818cf8 60%, #c084fc);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 20px 60px rgba(99,102,241,0.35);
-      animation: float 3.5s ease-in-out infinite;
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50%      { transform: translateY(-8px); }
-    }
-
-    .mark svg { width: 40px; height: 40px; stroke: white; }
+    .led { width: 6px; height: 6px; background: currentColor; box-shadow: 0 0 6px currentColor; animation: pulse 2.2s ease-in-out infinite; }
 
     h1 {
-      font-size: 1.7rem;
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      margin-bottom: 12px;
+      position: relative; display: inline-block;
+      font-family: var(--cy-font-head); font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: 900;
+      letter-spacing: .08em; text-transform: uppercase; line-height: 1.1;
+      text-shadow: -1.5px 0 var(--cy-magenta), 1.5px 0 var(--cy-cyan), 0 0 14px color-mix(in srgb, var(--cy-accent) 45%, transparent);
     }
+    p { color: var(--cy-muted-fg); font-size: .92rem; line-height: 1.75; }
 
-    p {
-      font-size: 0.95rem;
-      color: var(--text-2);
-      line-height: 1.65;
-      margin-bottom: 32px;
+    /* terminal panel with chamfered edge */
+    .term {
+      position: relative; isolation: isolate; text-align: left;
+      padding: 44px 22px 20px;
     }
+    .term::before, .term::after { content: ""; position: absolute; pointer-events: none; }
+    .term::after  { inset: 0; z-index: -2; background: color-mix(in srgb, var(--cy-accent) 45%, var(--cy-border));
+      clip-path: polygon(var(--cy-cut) 0, calc(100% - var(--cy-cut)) 0, 100% var(--cy-cut), 100% calc(100% - var(--cy-cut)), calc(100% - var(--cy-cut)) 100%, var(--cy-cut) 100%, 0 calc(100% - var(--cy-cut)), 0 var(--cy-cut)); }
+    .term::before { inset: 1px; z-index: -1; background: var(--cy-bg);
+      clip-path: polygon(9.4px 0, calc(100% - 9.4px) 0, 100% 9.4px, 100% calc(100% - 9.4px), calc(100% - 9.4px) 100%, 9.4px 100%, 0 calc(100% - 9.4px), 0 9.4px); }
+    .termbar {
+      position: absolute; top: 1px; left: 1px; right: 1px; height: 30px;
+      display: flex; align-items: center; padding-left: 60px;
+      background: color-mix(in srgb, var(--cy-muted) 70%, transparent); border-bottom: 1px solid var(--cy-border);
+      font-family: var(--cy-font-label); font-size: .7rem; letter-spacing: .16em; text-transform: uppercase; color: var(--cy-muted-fg);
+      clip-path: polygon(9.4px 0, calc(100% - 9.4px) 0, 100% 9.4px, 100% 100%, 0 100%, 0 9.4px);
+    }
+    .termbar::before {
+      content: ""; position: absolute; left: 14px; top: 50%; width: 8px; height: 8px; transform: translateY(-50%);
+      border-radius: 50%; background: var(--cy-pink); box-shadow: 14px 0 0 var(--cy-amber), 28px 0 0 var(--cy-green);
+    }
+    pre { font-family: inherit; font-size: .84rem; line-height: 1.85; white-space: pre-wrap; word-break: break-word; }
+    .in::before  { content: "$ "; color: var(--cy-accent); }
+    .out { color: var(--cy-muted-fg); }
+    .out::before { content: "> "; color: var(--cy-dim); }
+    .out a { color: var(--cy-accent); }
+    .cursor::after { content: ""; display: inline-block; width: .55em; height: 1em; margin-left: .2em; vertical-align: -.12em; background: var(--cy-accent); box-shadow: 0 0 6px var(--cy-accent); animation: blink 1s step-end infinite; }
 
     .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 22px;
-      background: var(--accent);
-      color: white;
-      text-decoration: none;
-      font-size: 0.9rem;
-      font-weight: 600;
-      border-radius: 10px;
-      letter-spacing: -0.01em;
-      transition: background 0.15s, transform 0.15s;
+      position: relative; isolation: isolate;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 0 22px;
+      color: var(--cy-bg); font-family: var(--cy-font-label); font-size: .84rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; text-decoration: none;
+      transition: filter .15s;
     }
-    .btn:hover { background: var(--accent-lt); transform: translateY(-1px); }
+    .btn::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--cy-accent);
+      clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px); }
+    .btn:hover { filter: brightness(1.12) drop-shadow(0 0 8px color-mix(in srgb, var(--cy-accent) 80%, transparent)); }
+    .btn svg { width: 16px; height: 16px; }
+    .fine { font-family: var(--cy-font-label); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--cy-dim); }
+    .fine a { color: var(--cy-muted-fg); text-decoration: none; }
+    .fine a:hover { color: var(--cy-accent); }
 
-    .fine {
-      margin-top: 24px;
-      font-size: 0.78rem;
-      color: var(--text-3);
-    }
-    .fine a { color: var(--text-3); }
+    @keyframes blink { 50% { opacity: 0; } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+    @media (prefers-reduced-motion: reduce) { .led, .cursor::after { animation: none; } }
   </style>
 </head>
 <body>
-  <div class="glow"></div>
-  <div class="card">
-    <div class="mark">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M5 12h14M13 6l6 6-6 6"/>
-      </svg>
-    </div>
+  <main class="card">
+    <span class="badge"><span class="led"></span>Signal relocated</span>
     <h1>This project has moved</h1>
-    <p>You'll find everything &mdash; NHL &amp; MLB predictions, the shot tagger, and more &mdash; at the new address.</p>
+    <p>NHL &amp; MLB predictions, the shot tagger, and more now live at the new address.</p>
+
+    <div class="term" aria-live="polite">
+      <div class="termbar">redirect.sh</div>
+<pre><span class="in">cat MOVED</span>
+<span class="out">everything is now served from <a href="https://lknox.web.app">lknox.web.app</a></span>
+<span class="in">redirect --in <span id="count">6</span>s</span>
+<span class="out cursor">waiting</span></pre>
+    </div>
+
     <a class="btn" href="https://lknox.web.app">
       Take me there
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
     </a>
-    <p class="fine">Redirecting automatically in a few seconds &middot; <a href="https://lknox.web.app">lknox.web.app</a></p>
-  </div>
+    <p class="fine">Redirecting automatically &middot; <a href="https://lknox.web.app">lknox.web.app</a></p>
+  </main>
+
+  <script>
+    // Count down alongside the 6-second meta refresh above.
+    const el = document.getElementById('count');
+    let n = 6;
+    const t = setInterval(() => { n = Math.max(0, n - 1); el.textContent = n; if (!n) clearInterval(t); }, 1000);
+  </script>
 </body>
 </html>
