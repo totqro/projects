@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Luc Knox &middot; Moved</title>
+  <meta http-equiv="refresh" content="6;url=https://lknox.web.app">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:          #080b10;
+      --card:        #111520;
+      --border:      rgba(255,255,255,0.08);
+      --accent:      #6366f1;
+      --accent-lt:   #818cf8;
+      --text-1:      #f1f5f9;
+      --text-2:      #94a3b8;
+      --text-3:      #4b5563;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text-1);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .glow {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 900px; height: 900px;
+      background: radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 65%);
+      pointer-events: none;
+      animation: drift 8s ease-in-out infinite;
+    }
+
+    @keyframes drift {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); }
+      50%      { transform: translate(-50%, -50%) scale(1.08); }
+    }
+
+    .card {
+      position: relative;
+      text-align: center;
+      max-width: 460px;
+    }
+
+    .mark {
+      width: 88px;
+      height: 88px;
+      margin: 0 auto 32px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, var(--accent), #818cf8 60%, #c084fc);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 20px 60px rgba(99,102,241,0.35);
+      animation: float 3.5s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-8px); }
+    }
+
+    .mark svg { width: 40px; height: 40px; stroke: white; }
+
+    h1 {
+      font-size: 1.7rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+    }
+
+    p {
+      font-size: 0.95rem;
+      color: var(--text-2);
+      line-height: 1.65;
+      margin-bottom: 32px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 22px;
+      background: var(--accent);
+      color: white;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 10px;
+      letter-spacing: -0.01em;
+      transition: background 0.15s, transform 0.15s;
+    }
+    .btn:hover { background: var(--accent-lt); transform: translateY(-1px); }
+
+    .fine {
+      margin-top: 24px;
+      font-size: 0.78rem;
+      color: var(--text-3);
+    }
+    .fine a { color: var(--text-3); }
+  </style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="card">
+    <div class="mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14M13 6l6 6-6 6"/>
+      </svg>
+    </div>
+    <h1>This project has moved</h1>
+    <p>You'll find everything &mdash; NHL &amp; MLB predictions, the shot tagger, and more &mdash; at the new address.</p>
+    <a class="btn" href="https://lknox.web.app">
+      Take me there
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </a>
+    <p class="fine">Redirecting automatically in a few seconds &middot; <a href="https://lknox.web.app">lknox.web.app</a></p>
+  </div>
+</body>
+</html>
