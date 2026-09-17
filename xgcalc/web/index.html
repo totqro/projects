@@ -5,78 +5,158 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Live shot tagging for U Sports hockey: tap one of 16 rink zones, get tier-based expected goals.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ctext y=%2226%22 font-size=%2226%22%3E%F0%9F%8F%92%3C/text%3E%3C/svg%3E">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0a0f">
 <title>Rinkside Shot Tagger &mdash; Luc Knox</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;500;600;700&family=Share+Tech+Mono&display=swap">
+<link rel="stylesheet" href="/cyber.css">
 </head>
 <body>
 <style>
+/* xgcalc on the shared Cyberpunk system (/cyber.css). Ice-cyan accent, with the
+   legacy variable names the scripts and SVG builders reference mapped onto the
+   shared tokens, so nothing in the JavaScript had to change. */
 :root{
-  --page:#EDF0F3; --surface:#FFFFFF; --surface-2:#F5F7F9; --line:#D3DBE2;
-  --ink:#141D26; --ink-2:#48586A; --ink-3:#7B8B9C;
-  --accent:#1E62B8; --accent-ink:#FFFFFF;
-  --paint:rgba(20,29,38,.30); --paint-blue:rgba(30,98,184,.60); --paint-red:rgba(196,42,62,.60);
-  --edge:rgba(20,29,38,.45);
-  --ice:#FBFCFD;
-  --hi:#A83A16;  --hi-ink:#FFF1E9;
-  --md:#E08A55;  --md-ink:#3A1607;
-  --lo:#F7E3D6;  --lo-ink:#6B3418;
-  --good:#1C7551; --warn:#9A6212; --bad:#B0293C;
-  --shadow:0 1px 2px rgba(20,29,38,.07), 0 6px 18px rgba(20,29,38,.06);
-  --radius:9px;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --page:#080b10; --surface:#111520; --surface-2:#0e1117; --line:rgba(255,255,255,0.09);
-    --ink:#f1f5f9; --ink-2:#94a3b8; --ink-3:#64748b;
-    --accent:#6366f1; --accent-ink:#ffffff;
-    --paint:rgba(241,245,249,.40); --paint-blue:rgba(129,140,248,.72); --paint-red:rgba(232,90,108,.62);
-    --edge:rgba(241,245,249,.38);
-    --ice:#0e1117;
-    --hi:#F0975C;  --hi-ink:#2A1408;
-    --md:#9E4F26;  --md-ink:#FFEEE2;
-    --lo:#2F2119;  --lo-ink:#C9A48C;
-    --good:#22c55e; --warn:#E0AE55; --bad:#F0788B;
-    --shadow:0 1px 2px rgba(0,0,0,.5), 0 12px 40px rgba(0,0,0,.4);
-  }
-}
-:root[data-theme="dark"]{
-  --page:#080b10; --surface:#111520; --surface-2:#0e1117; --line:rgba(255,255,255,0.09);
-  --ink:#f1f5f9; --ink-2:#94a3b8; --ink-3:#64748b;
-  --accent:#6366f1; --accent-ink:#ffffff;
-  --paint:rgba(241,245,249,.40); --paint-blue:rgba(129,140,248,.72); --paint-red:rgba(232,90,108,.62);
-  --edge:rgba(241,245,249,.38);
-  --ice:#0e1117;
-  --hi:#F0975C;  --hi-ink:#2A1408;
-  --md:#9E4F26;  --md-ink:#FFEEE2;
-  --lo:#2F2119;  --lo-ink:#C9A48C;
-  --good:#22c55e; --warn:#E0AE55; --bad:#F0788B;
-  --shadow:0 1px 2px rgba(0,0,0,.5), 0 12px 40px rgba(0,0,0,.4);
+  --cy-accent:var(--cy-cyan); --cy-accent-2:var(--cy-magenta); --cy-accent-3:var(--cy-green);
+  --page:var(--cy-bg); --surface:var(--cy-card); --surface-2:var(--cy-muted); --line:var(--cy-border);
+  --ink:var(--cy-fg); --ink-2:var(--cy-muted-fg); --ink-3:var(--cy-muted-fg);
+  --accent:var(--cy-accent); --accent-ink:var(--cy-bg);
+  --paint:color-mix(in srgb, var(--cy-fg) 34%, transparent);
+  --paint-blue:color-mix(in srgb, var(--cy-cyan) 78%, transparent);
+  --paint-red:color-mix(in srgb, var(--cy-pink) 72%, transparent);
+  --edge:color-mix(in srgb, var(--cy-fg) 42%, transparent);
+  --ice:#0c131d;
+  --hi:#b81e4a;  --hi-ink:#ffe3ea;
+  --md:#8a5a12;  --md-ink:#ffe0a3;
+  --lo:#101c2c;  --lo-ink:#8fb3d6;
+  --good:var(--cy-ok); --warn:var(--cy-warn); --bad:var(--cy-danger);
+  --dot-hi:#ff3366; --dot-md:#ffb000; --dot-lo:#4a7196;
+  --s1:var(--cy-cyan); --s2:var(--cy-magenta);
+  --shadow:none; --radius:0;
+  --chamfer:polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
 }
 
-*{box-sizing:border-box}
-body{margin:0; background:var(--page); color:var(--ink);
-  font-family:"Barlow",system-ui,-apple-system,sans-serif; font-size:15px; line-height:1.45;
-  -webkit-text-size-adjust:100%}
-h1{font-family:"Barlow Condensed","Barlow Semi Condensed",system-ui,sans-serif;
-  font-weight:700; margin:0; text-wrap:balance}
-.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
-  font-variant-numeric:tabular-nums}
-.eyebrow{font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:12px;
-  letter-spacing:.13em; text-transform:uppercase; color:var(--ink-3)}
-button{font:inherit; color:inherit; cursor:pointer; border:1px solid var(--line);
-  background:var(--surface); border-radius:var(--radius)}
-button:focus-visible{outline:2.5px solid var(--accent); outline-offset:2px}
+body{font-size:15px; line-height:1.45}
+h1{font-family:var(--cy-font-head); font-weight:700; margin:0; text-wrap:balance;
+  text-transform:uppercase; letter-spacing:.06em}
+.mono{font-family:var(--cy-font-body); font-variant-numeric:tabular-nums}
+.eyebrow{font-family:var(--cy-font-label); font-weight:400; font-size:12px;
+  letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3)}
+.eyebrow::before{content:"// "; color:var(--cy-dim)}
+button{font:inherit; font-family:var(--cy-font-label); letter-spacing:.06em; color:inherit;
+  cursor:pointer; border:1px solid var(--line); background:var(--surface);
+  transition:background .1s steps(3), color .1s steps(3), border-color .1s steps(3)}
+button:hover:not(:disabled){border-color:color-mix(in srgb, var(--accent) 55%, var(--line)); color:var(--ink)}
+button:focus-visible{outline:none; box-shadow:inset 0 0 0 2px var(--accent), 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent)}
 .zone:focus-visible{outline:none; stroke:var(--accent); stroke-width:1.6}
-input{font:inherit; color:inherit; background:var(--surface);
-  border:1px solid var(--line); border-radius:7px; padding:6px 8px}
+input,textarea,select{font:inherit; font-family:var(--cy-font-body); color:var(--accent);
+  background:var(--cy-input); border:1px solid var(--line); padding:6px 8px;
+  transition:border-color .1s steps(3), box-shadow .15s}
+input:focus,textarea:focus,select:focus{outline:none; border-color:var(--accent);
+  box-shadow:inset 0 0 8px color-mix(in srgb, var(--accent) 22%, transparent)}
+input[type="date"]{color-scheme:dark}
+select{color:var(--ink)}
+::placeholder{color:var(--ink-3)}
+
+/* Masthead: the rink's blue and red lines run under the title. */
+.mast{display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+  grid-column:1/-1; flex-wrap:wrap; position:relative; padding-bottom:12px}
+.mast::after{content:""; position:absolute; left:0; right:0; bottom:0; height:7px; pointer-events:none;
+  background:
+    linear-gradient(90deg, transparent 0 18%, var(--cy-cyan) 18% 19.2%, transparent 19.2% 49.3%,
+      var(--cy-pink) 49.3% 50.7%, transparent 50.7% 80.8%, var(--cy-cyan) 80.8% 82%, transparent 82%) top/100% 100% no-repeat,
+    linear-gradient(90deg, transparent, var(--line) 20%, var(--line) 80%, transparent) bottom/100% 1px no-repeat}
+.mast h1{font-size:24px; text-shadow:-1.5px 0 var(--cy-magenta), 1.5px 0 var(--cy-green),
+  0 0 12px color-mix(in srgb, var(--accent) 35%, transparent)}
+.mast .sub{color:var(--ink-2); font-size:13px}
+.crosslink{font-family:var(--cy-font-label); font-size:12px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--accent); text-decoration:none; white-space:nowrap}
+.crosslink:hover{text-shadow:0 0 8px color-mix(in srgb, var(--accent) 60%, transparent)}
+
+/* Cards are chamfered panels (the .cy-panel pseudo-elements draw border + fill). */
+.card{padding:13px; --cy-panel-bg:var(--cy-card)}
+.card > .eyebrow{display:block; margin-bottom:9px}
+
+/* Segmented controls */
+.seg{display:flex; border:1px solid var(--line); overflow:hidden; background:var(--surface-2)}
+.seg button{border:0; padding:8px 0; flex:1; background:transparent; font-size:13px;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--ink-2); min-width:44px}
+.seg button + button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:color-mix(in srgb, var(--accent) 18%, transparent); color:var(--accent);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--accent) 50%, transparent),
+    inset 0 0 12px color-mix(in srgb, var(--accent) 18%, transparent);
+  text-shadow:0 0 8px color-mix(in srgb, var(--accent) 60%, transparent)}
+
+/* Rink */
+.rink-card{padding:11px 11px 9px}
+.rink-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px; gap:8px}
+.rink-head button{padding:3px 9px; font-size:11px; white-space:nowrap; flex:none; clip-path:var(--chamfer)}
+.rink-head button[aria-pressed="true"]{background:color-mix(in srgb, var(--accent) 18%, transparent); color:var(--accent)}
+svg.rink{display:block; width:100%; height:auto; margin:0 auto; touch-action:manipulation;
+  filter:drop-shadow(0 0 10px color-mix(in srgb, var(--cy-cyan) 12%, transparent))}
+.flash{animation:pop .34s ease-out}
+@keyframes pop{0%{opacity:.3}100%{opacity:1}}
+
+.legend{display:flex; gap:6px; margin-top:9px; flex-wrap:wrap}
+.lg{display:flex; align-items:center; gap:6px; padding:4px 9px; border:1px solid var(--line);
+  background:var(--surface-2); flex:1; min-width:118px; clip-path:var(--chamfer)}
+.lg .sw{width:12px; height:12px; flex:none; border:1px solid var(--edge)}
+.lg .nm{font-family:var(--cy-font-label); font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink)}
+.lg .zl{font-family:var(--cy-font-body); font-size:10.5px; color:var(--ink-3); margin-left:auto}
+
+/* Tiles (HUD readouts) */
+.tile{position:relative; background:color-mix(in srgb, var(--cy-muted) 55%, transparent);
+  border:1px solid var(--line); padding:10px 11px; min-width:0}
+.tile::before,.tile::after{content:""; position:absolute; width:9px; height:9px;
+  border:1px solid var(--accent); opacity:.75; pointer-events:none}
+.tile::before{top:-1px; left:-1px; border-right:0; border-bottom:0}
+.tile::after{bottom:-1px; right:-1px; border-left:0; border-top:0}
+.tile .who{display:flex; align-items:center; gap:6px; margin-bottom:5px}
+.swatch{width:9px; height:9px; flex:none; box-shadow:0 0 6px currentColor}
+.tile .who span{font-family:var(--cy-font-label); font-size:12.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.big{font-family:var(--cy-font-head); font-weight:700; font-size:30px; line-height:1;
+  font-variant-numeric:tabular-nums; color:var(--ink)}
+.pm{font-family:var(--cy-font-body); font-size:12px; color:var(--ink-3); margin-top:3px}
+.tile .split{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px 8px;
+  margin-top:7px; padding-top:7px; border-top:1px dashed var(--line);
+  font-family:var(--cy-font-body); font-size:11.5px; color:var(--ink-2)}
+.tile .split b{color:var(--ink); font-weight:500}
+
+/* Tables */
+.tblwrap{overflow-x:auto; margin:0 -3px}
+table{border-collapse:collapse; width:100%; font-size:12.5px}
+th,td{text-align:left; padding:5px 7px; white-space:nowrap; border-bottom:1px solid var(--line)}
+th{font-family:var(--cy-font-label); font-weight:400; font-size:11px;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3)}
+td.num{text-align:right; font-family:var(--cy-font-body); font-variant-numeric:tabular-nums}
+tbody tr:last-child td{border-bottom:0}
+
+.note{font-size:12.5px; color:var(--ink-2); line-height:1.5}
+.note b{color:var(--ink); font-weight:600}
+.flag{display:inline-flex; align-items:center; font-family:var(--cy-font-label); font-size:11px;
+  letter-spacing:.12em; text-transform:uppercase; padding:2px 7px; border:1px solid transparent;
+  clip-path:polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px)}
+.flag.ok{color:var(--good); background:color-mix(in srgb, var(--good) 13%, transparent); border-color:color-mix(in srgb, var(--good) 45%, transparent)}
+.flag.watch{color:var(--warn); background:color-mix(in srgb, var(--warn) 15%, transparent); border-color:color-mix(in srgb, var(--warn) 45%, transparent)}
+.flag.bad{color:var(--bad); background:color-mix(in srgb, var(--bad) 13%, transparent); border-color:color-mix(in srgb, var(--bad) 45%, transparent)}
+.actions{display:flex; gap:8px; flex-wrap:wrap}
+.actions button{padding:9px 14px; font-size:12.5px; letter-spacing:.1em; text-transform:uppercase; clip-path:var(--chamfer)}
+.actions button.primary{background:var(--accent); color:var(--accent-ink); border-color:transparent; font-weight:700}
+.actions button.primary:hover{filter:brightness(1.12); color:var(--accent-ink)}
+.empty{color:var(--ink-3); font-size:13px}
+
+/* Site chrome comes from /cyber.css; the footer keeps its phone rule. */
+@media(max-width:899px){ .site-foot{display:none} }
+@media print{ body::before,body::after{display:none !important} }
 
 .wrap{max-width:1120px; margin:0 auto; padding:14px 14px 40px;
-  display:grid; gap:14px; grid-template-columns:1fr}
+  display:grid; gap:14px; grid-template-columns:minmax(0,1fr)}
 @media(min-width:900px){
   .wrap{grid-template-columns:minmax(340px,430px) 1fr; align-items:start; padding:20px}
-  .col-left{position:sticky; top:14px; display:grid; gap:12px}
+  .col-left{position:sticky; top:74px; display:grid; gap:12px}
   .col-right{display:grid; gap:12px}
 }
 /* Phone: the rink is the screen, the controls sit under your thumb. */
@@ -85,164 +165,81 @@ input{font:inherit; color:inherit; background:var(--surface);
   .col-left,.col-right{display:contents}
   .mast{order:0} .rink-card{order:1} .game-card{order:2}
   .totals-card{order:3} .bias-card{order:4} .log-card{order:5}
-  .last-card{position:fixed; left:0; right:0; bottom:0; z-index:20;
-    border-radius:13px 13px 0 0; border-bottom:0; padding:9px 12px 12px;
-    box-shadow:0 -4px 22px rgba(0,0,0,.18)}
+  .last-card{position:fixed; left:0; right:0; bottom:0; z-index:20; --cy-cut:0px;
+    --cy-panel-line:var(--accent); --cy-panel-bg:color-mix(in srgb, var(--cy-card) 94%, var(--cy-bg));
+    padding:9px 12px 12px; filter:drop-shadow(0 -4px 22px rgba(0,0,0,.45))}
   .hide-sm{display:none}
-  .mast h1{font-size:22px} .mast .sub{display:none}
+  .mast h1{font-size:19px} .mast .sub{display:none}
 }
-
-.mast{display:flex; align-items:baseline; justify-content:space-between; gap:12px;
-  grid-column:1/-1; flex-wrap:wrap; padding-bottom:2px; border-bottom:1px solid var(--line)}
-.mast h1{font-size:26px}
-.mast .sub{color:var(--ink-2); font-size:13px}
-.crosslink{font-size:12.5px; font-weight:600; color:var(--accent); text-decoration:none;
-  white-space:nowrap}
-.crosslink:hover{text-decoration:underline}
-
-
-.card{background:var(--surface); border:1px solid var(--line);
-  border-radius:12px; box-shadow:var(--shadow); padding:13px}
-.card > .eyebrow{display:block; margin-bottom:9px}
 
 .setup{display:grid; gap:9px}
 .setup .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
 .setup label{font-size:12.5px; color:var(--ink-2); font-weight:600}
 
-.seg{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden}
-.seg button{border:0; border-radius:0; padding:8px 0; flex:1; background:var(--surface-2);
-  font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:15px;
-  letter-spacing:.05em; color:var(--ink-2); min-width:44px; transition:background .12s,color .12s}
-.seg button + button{border-left:1px solid var(--line)}
-.seg button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink)}
-
-/* ---- rink ---- */
-.rink-card{padding:11px 11px 9px}
-.rink-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px; gap:8px}
-svg.rink{display:block; width:100%; height:auto; margin:0 auto; touch-action:manipulation;
-  max-height:calc(100vh - 286px); max-height:calc(100dvh - 286px)}
+svg.rink{max-height:calc(100vh - 286px); max-height:calc(100dvh - 286px)}
 @media(min-width:900px){ svg.rink{max-height:none} }
 .zone{cursor:pointer; stroke:var(--edge); stroke-width:.55; transition:opacity .1s}
 .zone:hover{opacity:.82}
 .zone:active{opacity:.66}
-.znum{font-family:"Barlow Condensed",sans-serif; font-weight:700; text-anchor:middle;
-  pointer-events:none}
-.endtag{font-family:"Barlow Condensed",sans-serif; font-weight:700; text-anchor:middle;
-  letter-spacing:.09em; pointer-events:none; text-transform:uppercase}
-.flash{animation:pop .34s ease-out}
-@keyframes pop{0%{opacity:.3}100%{opacity:1}}
+.znum{font-family:var(--cy-font-label); font-weight:700; text-anchor:middle; pointer-events:none}
+.endtag{font-family:var(--cy-font-label); text-anchor:middle; letter-spacing:.09em;
+  pointer-events:none; text-transform:uppercase}
 @media(prefers-reduced-motion:reduce){ .flash{animation:none} .zone{transition:none} }
-
-.legend{display:flex; gap:6px; margin-top:9px; flex-wrap:wrap}
-.lg{display:flex; align-items:center; gap:6px; padding:4px 9px; border-radius:8px;
-  border:1px solid var(--line); background:var(--surface-2); flex:1; min-width:120px}
-.lg .sw{width:13px; height:13px; border-radius:3px; flex:none; border:1px solid var(--edge)}
-.lg .nm{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:13px;
-  letter-spacing:.06em; text-transform:uppercase}
-.lg .zl{font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--ink-3); margin-left:auto}
 
 /* ---- bottom bar ---- */
 .last{display:grid; gap:8px}
 .barrow{display:flex; align-items:center; gap:10px}
 .barrow .seg{flex:1; max-width:210px}
-.barlabel{font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:12px;
-  letter-spacing:.13em; text-transform:uppercase; color:var(--ink-3); white-space:nowrap}
+.barlabel{font-family:var(--cy-font-label); font-size:11px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--ink-3); white-space:nowrap}
+.barlabel::before{content:"> "; color:var(--accent)}
 .last-line{display:flex; align-items:center; gap:7px; flex-wrap:wrap;
-  font-family:"Barlow Condensed",sans-serif; font-size:17px; font-weight:600; min-height:26px}
+  font-family:var(--cy-font-body); font-size:15px; font-weight:600; min-height:26px}
 .zbadge{display:inline-flex; align-items:center; justify-content:center; min-width:26px; height:26px;
-  padding:0 6px; border-radius:7px; font-family:"Barlow Condensed",sans-serif; font-weight:700;
-  font-size:16px; border:1px solid var(--edge)}
-.chip{display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px;
-  border:1px solid var(--line); background:var(--surface-2);
-  font-family:"Barlow",sans-serif; font-size:12px; font-weight:600}
-.chip.team{border-color:transparent; background:var(--accent); color:var(--accent-ink)}
+  padding:0 6px; font-family:var(--cy-font-head); font-weight:700; font-size:14px;
+  border:1px solid var(--edge); clip-path:polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px)}
+.chip{display:inline-flex; align-items:center; padding:2px 8px; border:1px solid var(--line);
+  background:var(--surface-2); font-family:var(--cy-font-label); font-size:11.5px; letter-spacing:.08em; text-transform:uppercase}
+.chip.team{border-color:transparent; background:var(--accent); color:var(--accent-ink); font-weight:700}
+.chip.editing{background:color-mix(in srgb, var(--warn) 20%, transparent); color:var(--warn); border-color:color-mix(in srgb, var(--warn) 50%, transparent)}
 .mods{display:grid; grid-template-columns:repeat(4,1fr); gap:6px}
-.mods button{padding:9px 2px; font-family:"Barlow Condensed",sans-serif; font-weight:600;
-  font-size:14px; letter-spacing:.04em; background:var(--surface-2); color:var(--ink-2)}
-.mods button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink); border-color:transparent}
-.mods button.goal[aria-pressed="true"]{background:var(--good); color:#fff}
+.mods button{padding:9px 2px; font-size:12px; letter-spacing:.08em; text-transform:uppercase;
+  background:var(--surface-2); color:var(--ink-2); clip-path:var(--chamfer)}
+.mods button[aria-pressed="true"]{background:color-mix(in srgb, var(--accent) 20%, var(--surface-2)); color:var(--accent);
+  box-shadow:inset 0 0 0 1px var(--accent), inset 0 0 12px color-mix(in srgb, var(--accent) 25%, transparent)}
+/* The goal lamp: a lit goal pulses like the light behind the net. */
+.mods button.goal[aria-pressed="true"]{background:color-mix(in srgb, var(--good) 26%, var(--surface-2)); color:var(--good);
+  box-shadow:inset 0 0 0 1px var(--good), inset 0 0 14px color-mix(in srgb, var(--good) 45%, transparent);
+  text-shadow:0 0 8px var(--good); animation:goal-lamp 1.4s ease-in-out infinite}
+@keyframes goal-lamp{50%{box-shadow:inset 0 0 0 1px var(--good), inset 0 0 24px color-mix(in srgb, var(--good) 75%, transparent)}}
 .mods button:disabled{opacity:.38; cursor:not-allowed}
-.undo-btn{width:100%; padding:11px; font-family:"Barlow Condensed",sans-serif; font-weight:700;
-  font-size:15.5px; letter-spacing:.07em; text-transform:uppercase;
+.undo-btn{width:100%; padding:11px; font-size:13px; letter-spacing:.12em; text-transform:uppercase;
   color:var(--bad); border-color:color-mix(in srgb, var(--bad) 42%, var(--line));
-  background:color-mix(in srgb, var(--bad) 7%, transparent)}
-.undo-btn:hover:not(:disabled){background:color-mix(in srgb, var(--bad) 15%, transparent)}
+  background:color-mix(in srgb, var(--bad) 7%, transparent); clip-path:var(--chamfer)}
+.undo-btn:hover:not(:disabled){background:color-mix(in srgb, var(--bad) 15%, transparent); color:var(--bad); border-color:var(--bad)}
 .undo-btn:disabled{opacity:.34; cursor:not-allowed; color:var(--ink-3);
   border-color:var(--line); background:var(--surface-2)}
+.done-btn{padding:6px 12px; font-size:12px; letter-spacing:.1em; text-transform:uppercase;
+  background:var(--surface-2); color:var(--ink-2); flex:none; clip-path:var(--chamfer)}
+.del{border:0; background:none; color:var(--ink-3); padding:0 4px; font-size:15px; line-height:1}
+.del:hover{color:var(--bad); border:0}
 
-/* ---- tiles ---- */
+/* ---- tiles + log ---- */
 .tiles{display:grid; grid-template-columns:1fr 1fr; gap:10px}
-.tile{background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:10px 11px}
-.tile .who{display:flex; align-items:center; gap:6px; margin-bottom:5px}
-.swatch{width:9px; height:9px; border-radius:2px; flex:none}
-.tile .who span{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:14.5px;
-  letter-spacing:.05em; text-transform:uppercase; color:var(--ink-2);
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.big{font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:34px; line-height:1;
-  font-variant-numeric:tabular-nums}
-.pm{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-3); margin-top:2px}
-.tile .split{display:grid; grid-template-columns:repeat(3,1fr); gap:4px 8px;
-  margin-top:7px; padding-top:7px; border-top:1px solid var(--line);
-  font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--ink-2)}
-.tile .split b{color:var(--ink); font-weight:500}
-
-.tblwrap{overflow-x:auto; margin:0 -3px}
-table{border-collapse:collapse; width:100%; font-size:12.5px}
-th,td{text-align:left; padding:5px 7px; white-space:nowrap; border-bottom:1px solid var(--line)}
-th{font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:11.5px;
-  letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3)}
-td.num{text-align:right; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
-tbody tr:last-child td{border-bottom:0}
 .log-card .tblwrap{max-height:264px; overflow-y:auto}
 tr.logrow{cursor:pointer}
 tr.logrow:hover td{background:color-mix(in srgb, var(--accent) 8%, transparent)}
 tr.logrow.sel td{background:color-mix(in srgb, var(--accent) 17%, transparent)}
 tr.logrow.sel td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 tr.logrow:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
-.chip.editing{background:color-mix(in srgb, var(--warn) 20%, transparent);
-  color:var(--warn); border-color:transparent; font-weight:700}
-.done-btn{padding:6px 12px; font-family:"Barlow Condensed",sans-serif; font-weight:600;
-  font-size:13px; letter-spacing:.06em; text-transform:uppercase;
-  background:var(--surface-2); color:var(--ink-2); flex:none}
-.del{border:0; background:none; color:var(--ink-3); padding:0 4px; font-size:15px; line-height:1}
-.del:hover{color:var(--bad)}
-
-.note{font-size:12.5px; color:var(--ink-2); line-height:1.5}
-.note b{color:var(--ink); font-weight:600}
-.flag{display:inline-flex; align-items:center; font-family:"Barlow",sans-serif;
-  font-size:12px; font-weight:600; padding:2px 7px; border-radius:999px}
-.flag.ok{color:var(--good); background:color-mix(in srgb, var(--good) 13%, transparent)}
-.flag.watch{color:var(--warn); background:color-mix(in srgb, var(--warn) 15%, transparent)}
-.actions{display:flex; gap:8px; flex-wrap:wrap}
-.actions button{padding:9px 14px; font-family:"Barlow Condensed",sans-serif; font-weight:600;
-  font-size:15px; letter-spacing:.05em}
-.actions button.primary{background:var(--accent); color:var(--accent-ink); border-color:transparent}
-.empty{color:var(--ink-3); font-size:13px}
-
-/* ---- site chrome (matches the hub) ---- */
-.site-nav{position:sticky; top:0; z-index:60; display:flex; align-items:center;
-  justify-content:space-between; padding:0 clamp(16px,4vw,40px); height:58px;
-  background:color-mix(in srgb, var(--page) 84%, transparent);
-  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-  border-bottom:1px solid var(--line)}
-.site-nav .brand{font-size:.95rem; font-weight:700; color:var(--ink);
-  letter-spacing:-.02em; text-decoration:none}
-.site-nav .back{display:inline-flex; align-items:center; gap:6px; padding:7px 14px;
-  border:1px solid var(--line); border-radius:8px;
-  background:color-mix(in srgb, var(--ink) 4%, transparent);
-  color:var(--ink-2); text-decoration:none; font-size:.82rem; font-weight:500;
-  transition:color .15s, background .15s}
-.site-nav .back:hover{color:var(--ink); background:color-mix(in srgb, var(--ink) 8%, transparent)}
-.site-foot{max-width:1120px; margin:0 auto; padding:20px clamp(14px,4vw,20px) 40px;
-  border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between}
-.site-foot span,.site-foot a{font-size:.78rem; color:var(--ink-3); font-weight:500; text-decoration:none}
-.site-foot a:hover{color:var(--ink-2)}
-@media(max-width:899px){ .site-foot{display:none} }
 </style>
 
-<nav class="site-nav">
-  <a class="brand" href="/">LK</a>
-  <a class="back" href="/">&larr; All Projects</a>
+<nav class="cy-nav">
+  <a class="cy-brand cy-cursor" href="/">LK</a>
+  <div class="cy-nav__links">
+    <span class="cy-badge cy-badge--accent cy-hide-sm"><span class="cy-led"></span>Rinkside</span>
+    <a class="cy-btn cy-btn--ghost cy-btn--sm" href="/">&lt; All projects</a>
+  </div>
 </nav>
 
 <div class="wrap">
@@ -255,7 +252,7 @@ tr.logrow:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
 
   <div class="col-left">
 
-    <div class="card game-card">
+    <div class="card cy-panel game-card">
       <span class="eyebrow">Game</span>
       <div class="setup">
         <div class="row">
@@ -268,10 +265,10 @@ tr.logrow:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
       </div>
     </div>
 
-    <div class="card rink-card">
+    <div class="card cy-panel rink-card">
       <div class="rink-head">
         <span class="eyebrow">16 zones</span>
-        <button id="flipBtn" style="padding:3px 9px;font-size:12px;font-family:'Barlow',sans-serif">Swap ends</button>
+        <button id="flipBtn" style="padding:3px 9px;font-size:12px">Swap ends</button>
       </div>
       <svg class="rink" id="rink" viewBox="0 0 85 166" role="group" aria-label="Rink map — tap a zone to log a shot"></svg>
       <div class="legend" id="legend"></div>
@@ -281,7 +278,7 @@ tr.logrow:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
 
   <div class="col-right">
 
-    <div class="card last-card">
+    <div class="card cy-panel last-card">
       <div class="last">
         <div class="barrow">
           <span class="barlabel" id="barLabel">On ice now</span>
@@ -300,18 +297,18 @@ tr.logrow:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
       </div>
     </div>
 
-    <div class="card totals-card">
+    <div class="card cy-panel totals-card">
       <span class="eyebrow">This game</span>
       <div class="tiles" id="tiles"></div>
       <div class="note" style="margin-top:9px" id="xgNote"></div>
     </div>
 
-    <div class="card bias-card">
+    <div class="card cy-panel bias-card">
       <span class="eyebrow">Tagging bias check</span>
       <div id="bias"></div>
     </div>
 
-    <div class="card log-card">
+    <div class="card cy-panel log-card">
       <span class="eyebrow">Shot log</span>
       <div class="tblwrap"><table id="log"></table></div>
       <div class="actions" style="margin-top:11px">
@@ -325,8 +322,9 @@ tr.logrow:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
   </div>
 </div>
 
-<footer class="site-foot">
+<footer class="cy-footer site-foot">
   <span>Luc Knox &middot; 2026</span>
+  <span class="cy-text-muted" aria-hidden="true">// EOF</span>
   <a href="https://github.com/totqro" target="_blank" rel="noopener">GitHub</a>
 </footer>
 
