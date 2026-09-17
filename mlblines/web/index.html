@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/cyber.css">
     <link rel="stylesheet" href="/dashboard.css">
-    <link rel="stylesheet" href="styles.css?v=7.0">
+    <link rel="stylesheet" href="styles.css?v=8.0">
 </head>
 <body>
     <nav class="cy-nav">
@@ -26,7 +26,7 @@
         <header class="dash-header cy-panel cy-panel--terminal cy-card">
             <p class="cy-label cy-label--accent cy-prompt">mlblines // daily model output</p>
             <h1 class="cy-h2 cy-rgb">&#9918; MLB Game Predictions</h1>
-            <p class="subtitle cy-label">AI-Powered Win &amp; Total Run Predictions</p>
+            <p class="subtitle cy-label">Starter-aware win probabilities &amp; expected runs &middot; pre-game data only</p>
         </header>
 
         <div class="tabs cy-tabs" role="tablist">
@@ -55,11 +55,11 @@
                         <span class="stat-value cy-stat__value" id="games-analyzed">-</span>
                     </div>
                     <div class="stat cy-stat">
-                        <span class="stat-label cy-stat__label">Strong Picks</span>
+                        <span class="stat-label cy-stat__label">60%+ Picks</span>
                         <span class="stat-value cy-stat__value cy-stat__value--accent" id="bets-found">-</span>
                     </div>
                     <div class="stat cy-stat">
-                        <span class="stat-label cy-stat__label">Avg Confidence</span>
+                        <span class="stat-label cy-stat__label">Avg Pick Prob</span>
                         <span class="stat-value cy-stat__value" id="expected-roi">-</span>
                     </div>
                 </div>
@@ -75,7 +75,7 @@
                 </label>
                 <label class="filter-toggle">
                     <input type="checkbox" id="strong-only" class="cy-check" onchange="applySort()">
-                    Strong picks only
+                    60%+ picks only
                 </label>
             </div>
 
@@ -100,10 +100,16 @@
                         <span class="stat-value cy-stat__value" id="perf-total-within1">-</span>
                     </div>
                     <div class="stat cy-stat">
-                        <span class="stat-label cy-stat__label">Exact Total</span>
+                        <span class="stat-label cy-stat__label">Avg Total Error</span>
                         <span class="stat-value cy-stat__value" id="perf-total-exact">-</span>
                     </div>
                 </div>
+            </section>
+
+            <section class="summary-card cy-panel cy-card">
+                <h2 class="cy-label cy-slash">Benchmarks</h2>
+                <p class="parlay-subtitle" id="bench-note">Blind season: the models never saw these games. Lower log loss and Brier are better; accuracy alone rewards overconfidence.</p>
+                <div id="bench-table"></div>
             </section>
 
             <section class="summary-card cy-panel cy-card">
@@ -145,6 +151,6 @@
         <a href="https://github.com/totqro" target="_blank" rel="noopener">GitHub</a>
     </footer>
 
-    <script src="app.js?v=7.0"></script>
+    <script src="app.js?v=8.0"></script>
 </body>
 </html>

@@ -32,7 +32,11 @@ nhllines/ml_models/*
 
 # MLB caches & models
 mlblines/cache/
-mlblines/ml_models/
+# The gated MLB models are a few KB of JSON coefficients. Tracked for the same
+# reason as NHL's: the CI runner is ephemeral, and git history records which
+# model served which day.
+mlblines/ml_models/*
+!mlblines/ml_models/*.json
 
 # Config with secrets (keep examples)
 nhllines/config.json
@@ -57,6 +61,8 @@ mlblines/mlbdata/*
 !mlblines/mlbdata/analysis_history.json
 !mlblines/mlbdata/latest_analysis.json
 !mlblines/mlbdata/backtest_results.json
+# Pre-game prediction record: written before first pitch, can't be rebuilt after.
+!mlblines/mlbdata/predictions_log.jsonl
 
 # Market-benchmark snapshots — same perishable-record reasoning as the NHL
 # block above: written by CI on an ephemeral runner, lost if not committed.

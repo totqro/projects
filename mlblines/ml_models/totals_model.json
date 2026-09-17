@@ -1,0 +1,55 @@
+{
+  "model": "glm",
+  "model_version": "mlb-totals-nbglm-v1",
+  "trained_on_seasons": [
+    2022,
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "n_train_games": 12004,
+  "coefficients": {
+    "sp_fip_sum": 0.08161071390577485,
+    "sp_depth_sum": 0.006081554148139786,
+    "bullpen_sum": 0.21227484620790188,
+    "home_rs_pg": 0.07850472350158273,
+    "home_ra_pg": 0.04605522657178672,
+    "away_rs_pg": 0.04081392889582156,
+    "away_ra_pg": -0.014979668564010635,
+    "park_factor": 0.7060581083232265,
+    "league_rpg": 0.013910294241708095,
+    "intercept": -0.26979822017355604
+  },
+  "dispersion": 7.371207947193805,
+  "feature_columns": [
+    "sp_fip_sum",
+    "sp_depth_sum",
+    "bullpen_sum",
+    "home_rs_pg",
+    "home_ra_pg",
+    "away_rs_pg",
+    "away_ra_pg",
+    "park_factor",
+    "league_rpg"
+  ],
+  "fitted_at": "2026-09-17T16:49:35.814079+00:00",
+  "gate": {
+    "test_season": 2026,
+    "baseline": {
+      "n": 2285,
+      "rmse": 4.528323594289031,
+      "mae": 3.586723652355478,
+      "nb_nll": 2.8755821076576322
+    },
+    "glm": {
+      "n": 2285,
+      "rmse": 4.4833525557533775,
+      "mae": 3.5580000160968672,
+      "nb_nll": 2.8662239290690663
+    },
+    "passed": true,
+    "loso_glm_wins": 5,
+    "loso_seasons": 5
+  }
+}

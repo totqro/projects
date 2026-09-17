@@ -51,11 +51,11 @@ function displayAnalysis(data) {
     allGames = data.games_analyzed;
     allRecommendations = data.recommendations;
 
-    const strong = allRecommendations.filter(r => r.confidence >= 0.60);
-    $('bets-found').textContent = strong.length;
+    const pickProb = g => g.model_probs?.confidence || 0;
+    $('bets-found').textContent = allGames.filter(g => pickProb(g) >= 0.60).length;
 
-    if (allRecommendations.length) {
-        const avgConf = allRecommendations.reduce((s, b) => s + (b.confidence||0), 0) / allRecommendations.length;
+    if (allGames.length) {
+        const avgConf = allGames.reduce((s, g) => s + pickProb(g), 0) / allGames.length;
         $('expected-roi').textContent = pct(avgConf, 0);
     } else {
         $('expected-roi').textContent = 'N/A';
@@ -77,10 +77,7 @@ function applySort() {
     let games = [...allGames];
 
     if (strongOnly) {
-        const strongGames = new Set(
-            allRecommendations.filter(r => r.confidence >= 0.60).map(r => r.game)
-        );
-        games = games.filter(g => strongGames.has(g.game));
+        games = games.filter(g => (g.model_probs?.confidence || 0) >= 0.60);
     }
 
     if (sortBy === 'confidence') {
@@ -119,16 +116,16 @@ function renderGameCard(g, i, gameRecs) {
     const totalLine = mp.total_line;
     const conf = bp.confidence || mp.confidence || 0;
 
-    const totalRec = gameRecs.find(r => r.bet_type === 'Total');
-    const topConf = gameRecs.length ? Math.max(...gameRecs.map(r => r.confidence||0)) : 0;
+    const overProb = mp.over_prob;
+    const topConf = conf;
     const isStrong = topConf >= 0.60;
     const grade = isStrong ? getGrade(topConf) : null;
     const gradeClass = grade ? getGradeClass(grade) : '';
 
     let ouHtml = '';
-    if (totalRec && totalLine) {
-        const isOver = (totalRec.pick||'').toLowerCase().startsWith('over');
-        ouHtml = ` · <span class="gc-ou ${isOver?'over':'under'}">${isOver?'↑ Over':'↓ Under'}</span>`;
+    if (totalLine && overProb != null && Math.abs(overProb - 0.5) >= 0.05) {
+        const isOver = overProb > 0.5;
+        ouHtml = ` · <span class="gc-ou ${isOver?'over':'under'}">${isOver?'↑ Over':'↓ Under'} ${(Math.max(overProb,1-overProb)*100).toFixed(0)}%</span>`;
     }
 
     const homePct = (homeProb*100).toFixed(0);
@@ -163,9 +160,10 @@ function renderGameCard(g, i, gameRecs) {
                 <span class="gc-total-num">${expectedTotal ? expectedTotal.toFixed(1) : '—'}</span>
                 <span class="gc-total-unit">exp. runs</span>
                 ${totalLine ? `<span class="gc-line">Line ${totalLine}${ouHtml}</span>` : ''}
+                ${g.market_probs ? `<span class="gc-line">Market ${g.home} ${(g.market_probs.home_win_prob*100).toFixed(0)}%</span>` : ''}
             </div>
             <div class="gc-conf">
-                <span class="gc-conf-label">Conf</span>
+                <span class="gc-conf-label">Pick</span>
                 <div class="confidence-bar gc-conf-bar"><div class="confidence-fill" style="width:${confPct}%"></div></div>
                 <span class="gc-conf-pct">${confPct}%</span>
             </div>
@@ -188,8 +186,7 @@ function toggleGC(i) {
 function renderContextIndicators(ci) {
     if (!ci || !Object.keys(ci).length) return '';
     const b = [];
-    (ci.fatigue||[]).forEach(i => { b.push(`<span class="context-badge ${i.severity}"><span class="context-icon">${i.type==='B2B'?'😴':'💪'}</span>${i.team} ${i.type==='B2B'?'B2B':'Rested'}</span>`); });
-    (ci.pitcher||[]).forEach(i => { const icon = i.type==='ace'?'🔥':'⚠️'; b.push(`<span class="context-badge ${i.severity}"><span class="context-icon">${icon}</span>${i.team} ${i.type==='ace'?'Ace':'Weak SP'}</span>`); });
+    (ci.pitcher||[]).forEach(i => { const icon = i.type==='ace'?'🔥':i.type==='tbd'?'❔':'⚠️'; const t = i.type==='ace'?'Ace':i.type==='tbd'?'SP TBD':'Weak SP'; b.push(`<span class="context-badge ${i.severity}"><span class="context-icon">${icon}</span>${i.team} ${t}</span>`); });
     (ci.park||[]).forEach(i => { const icon = i.type==='hitter-friendly'?'🏟️':'⚾'; b.push(`<span class="context-badge ${i.severity}"><span class="context-icon">${icon}</span>${i.type}</span>`); });
     (ci.splits||[]).forEach(i => { const t={strong_home:'Strong Home',weak_home:'Weak Home',strong_road:'Strong Road',weak_road:'Weak Road'}[i.type]; if(t) b.push(`<span class="context-badge ${i.severity}"><span class="context-icon">${i.severity==='positive'?'🏠':'🛣️'}</span>${i.team} ${t}</span>`); });
     return b.length ? `<div class="context-indicators">${b.join('')}</div>` : '';
@@ -202,10 +199,10 @@ function renderGameDetails(g) {
         const pc = (t, label) => `<div class="goalie-card">
             <div class="goalie-name">${label}: ${t.name} (${t.handedness}HP)</div>
             <div class="goalie-stats">
-                <div class="goalie-stat-row"><span class="goalie-stat-label">ERA</span><span class="goalie-stat-value">${t.era.toFixed(2)}</span></div>
+                <div class="goalie-stat-row"><span class="goalie-stat-label">Model FIP</span><span class="goalie-stat-value">${t.fip.toFixed(2)}</span></div>
+                <div class="goalie-stat-row"><span class="goalie-stat-label">K-BB%</span><span class="goalie-stat-value">${t.k_bb_pct != null ? t.k_bb_pct.toFixed(1) : '-'}</span></div>
+                <div class="goalie-stat-row"><span class="goalie-stat-label">Season ERA</span><span class="goalie-stat-value">${t.era.toFixed(2)}</span></div>
                 <div class="goalie-stat-row"><span class="goalie-stat-label">WHIP</span><span class="goalie-stat-value">${t.whip.toFixed(2)}</span></div>
-                <div class="goalie-stat-row"><span class="goalie-stat-label">K/9</span><span class="goalie-stat-value">${t.k_per_9.toFixed(1)}</span></div>
-                <div class="goalie-stat-row"><span class="goalie-stat-label">FIP</span><span class="goalie-stat-value">${t.fip.toFixed(2)}</span></div>
             </div>
             <div class="quality-score">${t.quality_score.toFixed(0)}</div>
         </div>`;
@@ -225,15 +222,19 @@ function renderGameDetails(g) {
     }
     if (g.bullpen?.home && g.bullpen?.away) {
         h += `<div class="details-section"><h3>Bullpen Quality</h3><div class="advanced-stats-grid">
-            <div class="advanced-stat-card"><div class="advanced-stat-label">${g.home} BP ERA</div><div class="advanced-stat-value">${(g.bullpen.home.bullpen_era||4).toFixed(2)}</div></div>
-            <div class="advanced-stat-card"><div class="advanced-stat-label">${g.away} BP ERA</div><div class="advanced-stat-value">${(g.bullpen.away.bullpen_era||4).toFixed(2)}</div></div>
+            <div class="advanced-stat-card"><div class="advanced-stat-label">${g.home} BP RA/9</div><div class="advanced-stat-value">${(g.bullpen.home.bullpen_ra9||4.5).toFixed(2)}</div></div>
+            <div class="advanced-stat-card"><div class="advanced-stat-label">${g.away} BP RA/9</div><div class="advanced-stat-value">${(g.bullpen.away.bullpen_ra9||4.5).toFixed(2)}</div></div>
             <div class="advanced-stat-card"><div class="advanced-stat-label">${g.home} Quality</div><div class="advanced-stat-value">${(g.bullpen.home.bullpen_quality||50).toFixed(0)}</div></div>
             <div class="advanced-stat-card"><div class="advanced-stat-label">${g.away} Quality</div><div class="advanced-stat-value">${(g.bullpen.away.bullpen_quality||50).toFixed(0)}</div></div>
         </div></div>`;
     }
     if (g.park_factor) {
-        h += `<div class="details-section"><h3>Park Factor</h3><div class="advanced-stats-grid">
-            <div class="advanced-stat-card"><div class="advanced-stat-label">${g.home} Park</div><div class="advanced-stat-value">${g.park_factor}</div></div>
+        const mk = g.market_probs;
+        h += `<div class="details-section"><h3>Model vs Market</h3><div class="advanced-stats-grid">
+            <div class="advanced-stat-card"><div class="advanced-stat-label">Model ${g.home}</div><div class="advanced-stat-value">${pct(g.model_probs.home_win_prob)}</div></div>
+            <div class="advanced-stat-card"><div class="advanced-stat-label">Market ${g.home}</div><div class="advanced-stat-value">${mk ? pct(mk.home_win_prob) : '-'}</div></div>
+            <div class="advanced-stat-card"><div class="advanced-stat-label">Elo ${g.away} / ${g.home}</div><div class="advanced-stat-value">${g.elo ? `${g.elo.away} / ${g.elo.home}` : '-'}</div></div>
+            <div class="advanced-stat-card"><div class="advanced-stat-label">${g.home} Park (100 = avg)</div><div class="advanced-stat-value">${g.park_factor}</div></div>
         </div></div>`;
     }
     return h;
@@ -248,6 +249,7 @@ function displayPerformance(data) {
     $('perf-win-rate').textContent = data.winner_accuracy != null ? pct(data.winner_accuracy) : '-';
     $('perf-total-within1').textContent = (data.within_1_run ?? data.within_1_goal) != null ? pct(data.within_1_run ?? data.within_1_goal) : '-';
     $('perf-total-exact').textContent = data.avg_total_error != null ? data.avg_total_error.toFixed(2) : '-';
+    renderBenchmarks(data);
 
     const diffs = results.map(r => Math.abs(Math.round(r.predicted_total) - r.actual_total));
     const greenCount = diffs.filter(d => d === 0).length;
@@ -266,6 +268,7 @@ function displayPerformance(data) {
         const dot = diff === 0 ? '🟢' : diff === 1 ? '🟡' : '🔴';
         const cls = diff === 0 ? 'total-green' : diff === 1 ? 'total-yellow' : 'total-red';
         const winIcon = r.winner_correct ? '✅' : '❌';
+        const pickProb = r.confidence != null ? ` ${(r.confidence*100).toFixed(0)}%` : '';
         const predicted = Math.round(r.predicted_total);
         const parts = r.actual_score?.split('-') || [];
         const score = parts.length === 2 ? `${parts[0]}–${parts[1]}` : '';
@@ -274,10 +277,31 @@ function displayPerformance(data) {
         return `<div class="pred-result-row">
             <span class="pred-result-date">${dateStr}</span>
             <span class="pred-result-matchup">${r.game}</span>
-            <span class="pred-result-winner">${winIcon} ${r.predicted_winner}${score ? `<span class="score"> ${score}</span>` : ''}</span>
+            <span class="pred-result-winner">${winIcon} ${r.predicted_winner}${pickProb}${score ? `<span class="score"> ${score}</span>` : ''}</span>
             <span class="pred-result-total ${cls}">${dot} ${predicted}<span class="actual"> · ${r.actual_total}</span></span>
         </div>`;
     }).join('');
+}
+
+function renderBenchmarks(data) {
+    const el = $('bench-table');
+    if (!el) return;
+    const b = data.benchmarks, mc = data.market_comparison;
+    if (!b) { el.innerHTML = ''; return; }
+    // Three cells, not four: dashboard.css hides .pred-result-total on phones,
+    // and log loss is the number this table exists to show.
+    const row = (label, m, strong) => m && m.n ? `<div class="pred-result-row bench-row${strong?' bench-row--model':''}">
+            <span class="pred-result-matchup">${label}<span class="pred-result-date"> · ${m.n}</span></span>
+            <span class="pred-result-winner">${pct(m.accuracy)}</span>
+            <span class="pred-result-winner">LL ${m.log_loss.toFixed(4)}<span class="score"> · Brier ${m.brier.toFixed(4)}</span></span>
+        </div>` : '';
+    let h = row('This model', b.model, true) + row('Elo + home field', b.elo) + row('Always pick home', b.always_home);
+    if (mc && mc.n) {
+        h += `<p class="parlay-subtitle" style="margin-top:12px">Same games where a pre-game market price was archived${mc.n < 200 ? ' (under 200 games, so the gap is noise)' : ''}:</p>`;
+        h += row('This model', mc.model, true) + row('Market close', mc.market);
+    }
+    if (data.season) $('bench-note').textContent = `Blind ${data.season} season: models trained on ${(data.trained_on_seasons||[]).join(', ')} only. Lower log loss and Brier are better; accuracy alone rewards overconfidence.`;
+    el.innerHTML = h;
 }
 
 function displayNoPerformanceData() {
