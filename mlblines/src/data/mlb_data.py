@@ -160,8 +160,15 @@ def fetch_season_games(days_back=90):
 
         for date_entry in data.get("dates", []):
             for game in date_entry.get("games", []):
-                status = game.get("status", {}).get("abstractGameState", "")
-                if status != "Final":
+                status = game.get("status", {})
+                # abstractGameState alone is not reliable: rain-postponed games
+                # get abstractGameState "Final" too (MLB Stats API quirk), with
+                # no score and officialDate/rescheduleDate pointing at the future
+                # makeup date. detailedState distinguishes an actually-played
+                # game from a postponed/suspended/cancelled one.
+                if status.get("abstractGameState", "") != "Final":
+                    continue
+                if status.get("detailedState", "") != "Final":
                     continue
 
                 teams = game.get("teams", {})

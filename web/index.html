@@ -10,8 +10,33 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/cyber.css">
+  <link rel="stylesheet" href="cyber.css">
+  <script>
+    // Restore a chosen accent before first paint so the page never flashes green.
+    (function () {
+      try {
+        var a = localStorage.getItem('lk-accent');
+        if (/^(green|cyan|magenta|amber|pink)$/.test(a)) document.documentElement.dataset.accent = a;
+      } catch (e) {}
+    })();
+  </script>
   <style>
+    /* ── Accent picker: re-tints the whole system via --cy-accent ── */
+    html[data-accent="cyan"]    { --cy-accent: var(--cy-cyan);    --cy-accent-3: var(--cy-green); }
+    html[data-accent="magenta"] { --cy-accent: var(--cy-magenta); --cy-accent-2: var(--cy-green); }
+    html[data-accent="amber"]   { --cy-accent: var(--cy-amber); }
+    html[data-accent="pink"]    { --cy-accent: var(--cy-pink);    --cy-accent-2: var(--cy-cyan); }
+    .accents { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; margin-right: 14px; }
+    .accents__dot {
+      width: 12px; height: 12px; padding: 0; border: 1px solid var(--cy-border-md);
+      background: var(--c); cursor: pointer; opacity: .55;
+      clip-path: polygon(3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px), 0 3px);
+      transition: opacity var(--cy-snap), transform var(--cy-ease);
+    }
+    .accents__dot:hover { opacity: 1; transform: scale(1.2); }
+    .accents__dot[aria-pressed="true"] { opacity: 1; box-shadow: 0 0 8px var(--c); border-color: var(--c); }
+    @media (max-width: 640px) { .accents { display: none; } }
+
     /* ── Hero: 60/40 split, readout panel on the right ── */
     .hero {
       position: relative;
@@ -107,6 +132,36 @@
       animation: cy-fade-up .25s ease;
     }
     .project-card[hidden] { display: none; }
+    /* Pointer-tracked tilt + spotlight; the script feeds --rx/--ry/--mx/--my. */
+    @media (hover: hover) and (pointer: fine) {
+      .project-card { transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); will-change: transform; }
+      /* Outranks .cy-panel--hover:hover, which would otherwise replace the tilt with its own translateY. */
+      .projects__grid .project-card.cy-panel--hover:hover,
+      .projects__grid .project-card.cy-panel--hover:focus-within {
+        transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-1px);
+      }
+      .project-card .card-spot {
+        position: absolute; inset: 1px; z-index: 0; pointer-events: none; opacity: 0;
+        background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--cy-accent) 14%, transparent), transparent 60%);
+        transition: opacity var(--cy-ease);
+      }
+      .project-card:hover .card-spot { opacity: 1; }
+      .project-card > :not(.card-spot) { position: relative; z-index: 1; }
+    }
+    .card-key {
+      position: absolute; top: 10px; right: 12px; z-index: 2;
+      font-family: var(--cy-font-label); font-size: .64rem; letter-spacing: .1em;
+      color: var(--cy-dim); opacity: 0; transition: opacity var(--cy-snap); pointer-events: none;
+    }
+    body.kb-hint .project-card:not([hidden]) .card-key { opacity: 1; color: var(--cy-accent); }
+    .cy-tag { cursor: pointer; transition: color var(--cy-snap), border-color var(--cy-snap), background var(--cy-snap); }
+    .cy-tag:hover { color: var(--cy-fg); border-color: var(--cy-accent); }
+    .cy-tag.is-on { color: var(--cy-accent); border-color: var(--cy-accent); background: color-mix(in srgb, var(--cy-accent) 12%, transparent); text-shadow: var(--cy-glow-sm); }
+    .projects__filter { display: none; align-items: center; gap: 10px; margin: -14px 0 24px; font-size: .78rem; color: var(--cy-muted-fg); }
+    .projects__filter.is-on { display: flex; }
+    .projects__filter .cy-btn { min-height: 30px; padding: 0 10px; font-size: .68rem; }
+    .projects__empty { display: none; grid-column: 1 / -1; }
+    .projects__grid:not(:has(.project-card:not([hidden]))) .projects__empty { display: block; }
     .project-card[data-disabled] { opacity: .45; pointer-events: none; }
     .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
     .card-title { font-size: .92rem; letter-spacing: .06em; transition: color var(--cy-snap); }
@@ -126,6 +181,42 @@
 
     /* ── Terminal, tilted a degree so the section breaks the grid ── */
     .term { padding-block: 0 80px; }
+    .term .cy-term { max-height: 340px; overflow-y: auto; scroll-behavior: smooth; }
+    .term .cy-term .err { color: var(--cy-danger); }
+    .term .cy-term .out a { text-decoration: underline; text-underline-offset: 3px; }
+    .term__prompt { display: flex; align-items: center; gap: 0; margin-top: 4px; font-family: var(--cy-font-body); font-size: .86rem; line-height: 1.85; }
+    .term__prompt::before { content: "$ "; color: var(--cy-accent); white-space: pre; }
+    .term__in {
+      flex: 1; min-width: 0; padding: 0; border: 0; outline: 0; background: transparent;
+      color: var(--cy-fg); font: inherit; caret-color: var(--cy-accent);
+    }
+    .term__in::placeholder { color: var(--cy-dim); }
+    .term__hint { margin-top: 6px; font-size: .68rem; color: var(--cy-dim); font-family: var(--cy-font-label); letter-spacing: .12em; text-transform: uppercase; }
+    .term .cy-panel:focus-within { --cy-panel-bd: var(--cy-accent); }
+
+    /* Keyboard help overlay */
+    .kb { border: 0; padding: 0; background: transparent; max-width: min(92vw, 520px); color: var(--cy-fg); }
+    .kb::backdrop { background: color-mix(in srgb, var(--cy-bg) 80%, transparent); backdrop-filter: blur(4px); }
+    .kb__grid { display: grid; grid-template-columns: auto 1fr; gap: 10px 18px; align-items: center; font-size: .84rem; color: var(--cy-muted-fg); }
+    .kb kbd {
+      display: inline-block; min-width: 26px; padding: 2px 7px; text-align: center;
+      font-family: var(--cy-font-label); font-size: .72rem; letter-spacing: .08em; color: var(--cy-accent);
+      background: color-mix(in srgb, var(--cy-accent) 10%, transparent); border: 1px solid color-mix(in srgb, var(--cy-accent) 45%, transparent);
+    }
+    .kb__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+
+    /* Konami: every heading tears at once for a moment. */
+    body.storm .cy-h1, body.storm .cy-h2, body.storm .cy-h3, body.storm .cy-stat__value {
+      animation: cy-glitch-base .35s infinite steps(1);
+    }
+    body.storm .cy-glitch::before { animation: cy-glitch-a .35s infinite steps(1); }
+    body.storm .cy-glitch::after  { animation: cy-glitch-b .35s infinite steps(1); }
+    body.storm::before { filter: hue-rotate(90deg) saturate(1.6); }
+
+    /* Live feed line on the dashboard cards */
+    .card-feed { display: flex; flex-wrap: wrap; gap: 6px 14px; font-family: var(--cy-font-label); font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--cy-muted-fg); min-height: 1.2em; }
+    .card-feed b { font-weight: 400; color: var(--cy-fg); }
+    .card-feed .cy-led { margin-right: 4px; vertical-align: 1px; }
     .term .cy-panel { transform: skewY(-1deg); }
     .term .cy-term  { transform: skewY(1deg); }
     @media (max-width: 640px) {
@@ -135,14 +226,63 @@
     }
     @media (prefers-reduced-motion: reduce) {
       .hud__signal i, .hud__sweep, .projects__grid { animation: none; }
+      .project-card { transform: none !important; }
+      body.storm * { animation: none !important; }
       .term .cy-panel, .term .cy-term { transform: none; }
     }
+
+    /* ── Tactile layer ──────────────────────────────────────────── */
+    /* Cursor-reactive node field, pinned behind the page but above the grid. */
+    #field { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+
+    /* Anything with a handle can be picked up and moved; the offset lives in --dx/--dy. */
+    .drag-handle { cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none; }
+    body.is-dragging, body.is-dragging * { cursor: grabbing !important; user-select: none; -webkit-user-select: none; }
+    .hud, .term .cy-panel { --dx: 0px; --dy: 0px; }
+    .hud { transform: translate(var(--dx), var(--dy)); transition: box-shadow var(--cy-ease); }
+    .hud.is-moving { box-shadow: var(--cy-glow-lg), inset 0 0 40px color-mix(in srgb, var(--cy-accent) 10%, transparent); }
+    .term .cy-panel { transform: translate(var(--dx), var(--dy)) skewY(-1deg); }
+    .term .cy-panel.is-moving { filter: drop-shadow(0 0 14px color-mix(in srgb, var(--cy-accent) 70%, transparent)); }
+    .term .cy-termbar { cursor: grab; }
+    @media (max-width: 640px) { .term .cy-panel { transform: translate(var(--dx), var(--dy)); } }
+    @media (prefers-reduced-motion: reduce) { .term .cy-panel { transform: translate(var(--dx), var(--dy)); } }
+    .drag-reset { margin-left: 10px; font-size: .62rem; color: var(--cy-dim); opacity: 0; transition: opacity var(--cy-snap); }
+    .hud:hover .drag-reset, .term .cy-panel:hover .drag-reset { opacity: 1; }
+
+    /* Cards lift while dragged; neighbours FLIP into their new slots. */
+    .project-card { touch-action: pan-y; }
+    .project-card.is-dragging {
+      z-index: 20; pointer-events: none; transition: none;
+      --cy-panel-bd: var(--cy-accent);
+      filter: drop-shadow(0 0 14px color-mix(in srgb, var(--cy-accent) 75%, transparent));
+    }
+    .project-card.is-dropping { transition: transform .22s cubic-bezier(.2, .8, .2, 1), filter var(--cy-ease); }
+    .project-card.is-armed { --cy-panel-bd: var(--cy-accent); }
+    .projects__hint { display: block; margin: -22px 0 26px; font-size: .64rem; }
+    @media (hover: none) { .projects__hint { display: none; } }
+
+    /* Headline letters scatter from the cursor and spring back. */
+    .hero .ch { display: inline-block; transition: transform .45s cubic-bezier(.2, .8, .2, 1); will-change: transform; }
+
+    /* Magnetic buttons drift a few pixels toward a nearby cursor. */
+    .magnet { transition: transform .18s ease; }
+
+    /* Readout bars follow the pointer while it is over the panel. */
+    .hud:hover .hud__signal i { animation: none; opacity: .9; transition: height .12s ease; }
   </style>
 </head>
 <body>
+  <canvas id="field" aria-hidden="true"></canvas>
 
   <nav class="cy-nav">
     <a class="cy-brand cy-cursor" href="/">LK</a>
+    <div class="accents" role="group" aria-label="Accent colour">
+      <button class="accents__dot" data-accent="green"   style="--c: var(--cy-green)"   aria-label="Green accent"   title="green"></button>
+      <button class="accents__dot" data-accent="cyan"    style="--c: var(--cy-cyan)"    aria-label="Cyan accent"    title="cyan"></button>
+      <button class="accents__dot" data-accent="magenta" style="--c: var(--cy-magenta)" aria-label="Magenta accent" title="magenta"></button>
+      <button class="accents__dot" data-accent="amber"   style="--c: var(--cy-amber)"   aria-label="Amber accent"   title="amber"></button>
+      <button class="accents__dot" data-accent="pink"    style="--c: var(--cy-pink)"    aria-label="Pink accent"    title="pink"></button>
+    </div>
     <a class="cy-btn cy-btn--outline cy-btn--sm" href="https://github.com/totqro" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" aria-hidden="true">
         <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
@@ -162,15 +302,17 @@
       </div>
     </div>
 
-    <aside class="hud cy-holo cy-show-lg" aria-label="System readout">
-      <div class="hud__title">
+    <aside class="hud cy-holo cy-show-lg" aria-label="System readout" data-drag="hud">
+      <div class="hud__title drag-handle" title="drag to move · double-click to reset">
         <span class="cy-label cy-label--accent">// readout</span>
-        <span class="cy-label">v2026.09</span>
+        <span class="cy-label">v2026.09 <span class="drag-reset">[drag]</span></span>
       </div>
       <div class="hud__row"><span class="cy-label">status</span><span class="hud__val cy-text-ok"><span class="cy-led"></span>online</span></div>
       <div class="hud__row"><span class="cy-label">clock</span><span class="hud__val cy-num" id="hud-clock">--:--:-- UTC</span></div>
       <div class="hud__row"><span class="cy-label">active projects</span><span class="hud__val cy-num" id="hud-active">0</span></div>
       <div class="hud__row"><span class="cy-label">live dashboards</span><span class="hud__val cy-num" id="hud-live">0</span></div>
+      <div class="hud__row"><span class="cy-label">nhl feed</span><span class="hud__val cy-num" id="hud-nhl">&hellip;</span></div>
+      <div class="hud__row"><span class="cy-label">mlb feed</span><span class="hud__val cy-num" id="hud-mlb">&hellip;</span></div>
       <div class="hud__row"><span class="cy-label">refresh</span><span class="hud__val">daily · gh actions → firebase</span></div>
       <div class="hud__signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <div class="hud__sweep" aria-hidden="true"></div>
@@ -196,15 +338,24 @@
       </div>
     </div>
 
+    <span class="cy-label projects__hint">// drag a card to reorder · click a tag to filter · click empty space for a pulse</span>
+
+    <div class="projects__filter" id="tagfilter" aria-live="polite">
+      <span class="cy-label">filter</span>
+      <span class="cy-tag is-on" id="tagfilter-name"></span>
+      <button class="cy-btn cy-btn--ghost cy-btn--sm" id="tagfilter-clear" type="button">clear ×</button>
+    </div>
+
     <div class="projects__grid" id="grid">
 
       <!-- ACTIVE -->
-      <a href="/nhllines" class="project-card cy-panel cy-panel--hover cy-card" data-category="active" style="--cy-panel-line: var(--cy-cyan);">
+      <a href="/nhllines" class="project-card cy-panel cy-panel--hover cy-card" data-id="nhl" data-category="active" draggable="false" style="--cy-panel-line: var(--cy-cyan);">
         <div class="card-header">
           <span class="card-title cy-h3">NHL Game Predictions</span>
           <span class="cy-badge cy-badge--ok" data-status="live"><span class="cy-led"></span>Live</span>
         </div>
         <p class="card-desc">Calibrated Elo + home-ice win probabilities and expected totals, gated against a baseline and scored against the betting market's own accuracy.</p>
+        <div class="card-feed" data-feed="nhl"></div>
         <div class="card-footer">
           <div class="tags">
             <span class="cy-tag">scikit-learn</span>
@@ -215,15 +366,16 @@
         </div>
       </a>
 
-      <a href="/mlblines" class="project-card cy-panel cy-panel--hover cy-card" data-category="active" style="--cy-panel-line: var(--cy-magenta);">
+      <a href="/mlblines" class="project-card cy-panel cy-panel--hover cy-card" data-id="mlb" data-category="active" draggable="false" style="--cy-panel-line: var(--cy-magenta);">
         <div class="card-header">
           <span class="card-title cy-h3">MLB Game Predictions</span>
           <span class="cy-badge cy-badge--ok" data-status="live"><span class="cy-led"></span>Live</span>
         </div>
-        <p class="card-desc">62-feature XGBoost + similarity model for baseball. Pitcher matchups, park factors, bullpen quality, and L/R splits.</p>
+        <p class="card-desc">Starter-aware win model that beats Elo + home field on held-out seasons. Probable pitchers, bullpens, park factors, pre-game data only.</p>
+        <div class="card-feed" data-feed="mlb"></div>
         <div class="card-footer">
           <div class="tags">
-            <span class="cy-tag">XGBoost</span>
+            <span class="cy-tag">scikit-learn</span>
             <span class="cy-tag">Python</span>
             <span class="cy-tag">Firebase</span>
           </div>
@@ -231,7 +383,7 @@
         </div>
       </a>
 
-      <a href="/xgcalc" class="project-card cy-panel cy-panel--hover cy-card" data-category="active" style="--cy-panel-line: var(--cy-amber);">
+      <a href="/xgcalc" class="project-card cy-panel cy-panel--hover cy-card" data-id="xgcalc" data-category="active" draggable="false" style="--cy-panel-line: var(--cy-amber);">
         <div class="card-header">
           <span class="card-title cy-h3">Rinkside Shot Tagger</span>
           <span class="cy-badge cy-badge--ok" data-status="live"><span class="cy-led"></span>Live</span>
@@ -247,7 +399,7 @@
         </div>
       </a>
 
-      <a href="/xgcalc/scatter.html" class="project-card cy-panel cy-panel--hover cy-card" data-category="active" style="--cy-panel-line: var(--cy-cyan);">
+      <a href="/xgcalc/scatter.html" class="project-card cy-panel cy-panel--hover cy-card" data-id="shots" data-category="active" draggable="false" style="--cy-panel-line: var(--cy-cyan);">
         <div class="card-header">
           <span class="card-title cy-h3">Shot Chart</span>
           <span class="cy-badge cy-badge--ok" data-status="live"><span class="cy-led"></span>Live</span>
@@ -263,7 +415,7 @@
         </div>
       </a>
 
-      <a href="/swingai" class="project-card cy-panel cy-panel--hover cy-card" data-category="active" style="--cy-panel-line: var(--cy-green);">
+      <a href="/swingai" class="project-card cy-panel cy-panel--hover cy-card" data-id="swingai" data-category="active" draggable="false" style="--cy-panel-line: var(--cy-green);">
         <div class="card-header">
           <span class="card-title cy-h3">SwingAI</span>
           <span class="cy-badge cy-badge--tertiary" data-status="progress"><span class="cy-led"></span>In Progress</span>
@@ -280,7 +432,7 @@
       </a>
 
       <!-- COMPLETED -->
-      <div class="project-card cy-panel cy-card" data-category="completed" data-disabled>
+      <div class="project-card cy-panel cy-card" data-id="ph-completed" data-category="completed" data-disabled>
         <div class="card-header">
           <span class="card-title cy-h3">Placeholder</span>
           <span class="cy-badge cy-badge--muted">Completed</span>
@@ -292,7 +444,7 @@
       </div>
 
       <!-- OLD -->
-      <div class="project-card cy-panel cy-card" data-category="old" data-disabled>
+      <div class="project-card cy-panel cy-card" data-id="ph-old" data-category="old" data-disabled>
         <div class="card-header">
           <span class="card-title cy-h3">Placeholder</span>
           <span class="cy-badge cy-badge--muted">Archived</span>
@@ -303,21 +455,45 @@
         </div>
       </div>
 
+      <p class="projects__empty cy-empty">no projects match that filter &mdash; <a href="#" id="tagfilter-clear2">clear it</a></p>
+
     </div>
   </main>
 
   <section class="term cy-container" aria-label="About">
-    <div class="cy-panel cy-panel--terminal cy-panel--accent cy-card">
-      <div class="cy-termbar">luc@lknox:~ <span class="cy-termbar__right">bash</span></div>
+    <div class="cy-panel cy-panel--terminal cy-panel--accent cy-card" data-drag="term">
+      <div class="cy-termbar drag-handle" title="drag to move · double-click to reset">luc@lknox:~ <span class="cy-termbar__right">bash <span class="drag-reset">[drag]</span></span></div>
 <pre class="cy-term"><span class="in">whoami</span>
 <span class="out">luc knox &mdash; ml models, hockey analytics, ios</span>
 <span class="in">ls projects/</span>
 <span class="out">nhllines/  mlblines/  xgcalc/  swingai/</span>
 <span class="in">tail -n 1 deploy.log</span>
 <span class="out"><span class="ok">[ok]</span> predictions rebuilt daily by github actions, pushed to firebase hosting</span>
-<span class="in cy-cursor"></span></pre>
+<span class="out">type <span class="ok">help</span> for commands</span></pre>
+      <form class="term__prompt" id="term-form" autocomplete="off">
+        <input class="term__in" id="term-in" type="text" aria-label="Terminal command" placeholder="help" spellcheck="false" autocapitalize="off" autocorrect="off" enterkeyhint="go">
+      </form>
+      <p class="term__hint cy-hide-sm">press / to focus · ? for shortcuts · tab completes · drag the bar to move</p>
     </div>
   </section>
+
+  <dialog class="kb" id="kb" aria-labelledby="kb-title">
+    <div class="cy-panel cy-panel--accent cy-card">
+      <div class="kb__head">
+        <span class="cy-label cy-label--accent cy-prompt" id="kb-title">keyboard</span>
+        <button class="cy-btn cy-btn--ghost cy-btn--sm" type="button" id="kb-close">esc</button>
+      </div>
+      <div class="kb__grid">
+        <span><kbd>1</kbd>–<kbd>5</kbd></span><span>open the nth project in the current tab</span>
+        <span><kbd>a</kbd> <kbd>c</kbd> <kbd>o</kbd></span><span>switch tab: active / completed / old</span>
+        <span><kbd>/</kbd></span><span>jump to the terminal</span>
+        <span><kbd>t</kbd></span><span>cycle the accent colour</span>
+        <span><kbd>g</kbd></span><span>open GitHub</span>
+        <span><kbd>?</kbd></span><span>toggle this overlay</span>
+        <span><kbd>esc</kbd></span><span>clear the tag filter, close overlays</span>
+      </div>
+    </div>
+  </dialog>
 
   <footer class="cy-footer">
     <span>Luc Knox &middot; 2026</span>
@@ -326,43 +502,592 @@
   </footer>
 
   <script>
-    // Status filter tabs.
+    const $ = (id) => document.getElementById(id);
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // ── Cards + filters ────────────────────────────────────────────────
     const tabs = document.querySelectorAll('.cy-tab[data-filter]');
-    const cards = document.querySelectorAll('.project-card');
-    function filterCards(category) {
+    const cards = [...document.querySelectorAll('.project-card')];
+    const grid = $('grid');
+    let category = 'active';
+    let tag = null;
+
+    function applyFilters() {
       tabs.forEach(btn => {
         const on = btn.dataset.filter === category;
         btn.classList.toggle('active', on);
         btn.setAttribute('aria-selected', on);
       });
-      cards.forEach(card => { card.hidden = card.dataset.category !== category; });
-      const grid = document.getElementById('grid');
-      grid.style.animation = 'none';
-      grid.offsetHeight;
-      grid.style.animation = '';
+      cards.forEach(card => {
+        const tags = [...card.querySelectorAll('.cy-tag')].map(t => t.textContent.trim().toLowerCase());
+        card.hidden = card.dataset.category !== category || (tag && !tags.includes(tag));
+      });
+      document.querySelectorAll('.cy-tag').forEach(t => t.classList.toggle('is-on', !!tag && t.textContent.trim().toLowerCase() === tag));
+      $('tagfilter').classList.toggle('is-on', !!tag);
+      $('tagfilter-name').textContent = tag || '';
+      if (!reducedMotion) { grid.style.animation = 'none'; grid.offsetHeight; grid.style.animation = ''; }
+      renumber();
     }
-    tabs.forEach(btn => btn.addEventListener('click', () => filterCards(btn.dataset.filter)));
-    filterCards('active');
+    function setCategory(c) { category = c; applyFilters(); }
+    function setTag(t) { tag = t && t !== '—' ? t.toLowerCase() : null; applyFilters(); }
+    tabs.forEach(btn => btn.addEventListener('click', () => setCategory(btn.dataset.filter)));
+    grid.addEventListener('click', e => {
+      const t = e.target.closest('.cy-tag');
+      if (!t) return;
+      e.preventDefault();
+      const name = t.textContent.trim();
+      setTag(tag === name.toLowerCase() ? null : name);
+    });
+    $('tagfilter-clear').addEventListener('click', () => setTag(null));
+    $('tagfilter-clear2').addEventListener('click', e => { e.preventDefault(); setTag(null); });
 
-    // Readout + stats strip, derived from the cards so they stay honest.
+    // Key hints [1]..[5] on the visible cards.
+    cards.forEach(card => {
+      const spot = document.createElement('span'); spot.className = 'card-spot'; card.prepend(spot);
+      const key = document.createElement('span'); key.className = 'card-key'; card.append(key);
+    });
+    function visibleCards() { return [...grid.querySelectorAll('.project-card')].filter(c => !c.hidden && !c.hasAttribute('data-disabled')); }
+    function renumber() {
+      cards.forEach(c => c.querySelector('.card-key').textContent = '');
+      visibleCards().slice(0, 9).forEach((c, i) => c.querySelector('.card-key').textContent = `[${i + 1}]`);
+    }
+
+    // Pointer tilt + spotlight (fine pointers only; CSS gates the transform).
+    if (!reducedMotion && matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      cards.forEach(card => {
+        card.addEventListener('pointermove', e => {
+          const r = card.getBoundingClientRect();
+          const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+          card.style.setProperty('--ry', `${(px - .5) * 8}deg`);
+          card.style.setProperty('--rx', `${(.5 - py) * 8}deg`);
+          card.style.setProperty('--mx', `${px * 100}%`);
+          card.style.setProperty('--my', `${py * 100}%`);
+        });
+        card.addEventListener('pointerleave', () => { card.style.removeProperty('--rx'); card.style.removeProperty('--ry'); });
+      });
+    }
+
+    // ── Readout + stats strip, derived from the cards so they stay honest ──
     const LANGS = new Set(['Python', 'JavaScript', 'TypeScript', 'Swift', 'Go', 'Rust', 'C++', 'Java', 'Kotlin']);
-    const active = [...cards].filter(c => c.dataset.category === 'active');
+    const active = cards.filter(c => c.dataset.category === 'active');
     const live = active.filter(c => c.querySelector('[data-status="live"]'));
     const progress = active.filter(c => c.querySelector('[data-status="progress"]'));
     const langs = new Set(active.flatMap(c => [...c.querySelectorAll('.cy-tag')].map(t => t.textContent.trim())).filter(t => LANGS.has(t)));
-    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
     set('stat-active', active.length);   set('hud-active', active.length);
     set('stat-live', live.length);       set('hud-live', live.length);
     set('stat-progress', progress.length);
     set('stat-langs', langs.size);
 
+    // Count-up on the stats strip once it scrolls into view.
+    if (!reducedMotion && 'IntersectionObserver' in window) {
+      const nums = [...document.querySelectorAll('.stats .cy-stat__value')];
+      const io = new IntersectionObserver(entries => {
+        entries.forEach(en => {
+          if (!en.isIntersecting) return;
+          io.unobserve(en.target);
+          if (document.hidden) return;              // throttled rAF would freeze a partial number
+          const target = +en.target.textContent || 0, t0 = performance.now();
+          const step = now => {
+            const k = Math.min(1, (now - t0) / 700);
+            en.target.textContent = Math.round(target * (1 - Math.pow(1 - k, 3)));
+            if (k < 1) requestAnimationFrame(step);
+          };
+          requestAnimationFrame(step);
+        });
+      }, { threshold: .6 });
+      nums.forEach(n => io.observe(n));
+    }
+
     // UTC clock on the readout panel.
-    const clock = document.getElementById('hud-clock');
+    const clock = $('hud-clock');
     function tick() { clock.textContent = new Date().toISOString().slice(11, 19) + ' UTC'; }
     tick(); setInterval(tick, 1000);
 
-    // Typewriter: size the reveal to the text, or fall back to plain text when it would not fit.
-    const typed = document.getElementById('typed');
+    // ── Live feeds: the dashboards' own JSON, same origin ──────────────
+    const feeds = {};
+    function ago(iso) {
+      const ms = Date.now() - new Date(iso).getTime();
+      if (!(ms >= 0)) return '?';
+      const m = Math.floor(ms / 6e4), h = Math.floor(m / 60), d = Math.floor(h / 24);
+      return d ? `${d}d` : h ? `${h}h` : `${m}m`;
+    }
+    const fmtDay = iso => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    async function loadFeed(key, url) {
+      const cardLine = document.querySelector(`[data-feed="${key}"]`);
+      const hud = $(`hud-${key}`);
+      const show = (led, cardHtml, hudText, hudCls = '') => {
+        if (cardLine) cardLine.innerHTML = `<span><span class="cy-led ${led}"></span>${cardHtml}</span>`;
+        if (hud) { hud.textContent = hudText; hud.className = 'hud__val cy-num ' + hudCls; }
+      };
+      if (location.protocol === 'file:') {          // opened from disk: nothing to fetch from
+        feeds[key] = { error: 'no server' };
+        show('cy-text-muted', 'feed needs the server', 'n/a');
+        return;
+      }
+      try {
+        const r = await fetch(url, { cache: 'no-store' });
+        if (!r.ok) throw new Error(r.status);
+        const d = await r.json();
+        const games = (d.games_analyzed || []).length, picks = (d.recommendations || []).length;
+        const ageMs = d.timestamp ? Date.now() - new Date(d.timestamp) : NaN;
+        const age = d.timestamp ? ago(d.timestamp) : '?';
+        // No games and nothing new for a week: the daily job is running but the league is not.
+        const offseason = games === 0 && ageMs > 7 * 864e5;
+        const stale = !offseason && ageMs > 36 * 36e5;
+        feeds[key] = { games, picks, age, stale, offseason, timestamp: d.timestamp };
+        if (offseason) show('cy-text-muted', `offseason · last run <b>${fmtDay(d.timestamp)}</b>`, 'offseason', 'cy-text-muted');
+        else show(stale ? 'cy-text-warn' : 'cy-text-ok',
+          `updated <b>${age}</b> ago</span><span>games <b>${games}</b></span><span>picks <b>${picks}</b>`,
+          `${games}g · ${picks}p · ${age}`, stale ? 'cy-text-warn' : '');
+      } catch (e) {
+        feeds[key] = { error: String(e) };
+        show('cy-text-danger', 'feed offline', 'offline', 'cy-text-danger');
+      }
+    }
+    loadFeed('nhl', '/nhllines/latest_analysis.json');
+    loadFeed('mlb', '/mlblines/latest_analysis.json');
+
+    // ── Accent picker ──────────────────────────────────────────────────
+    const ACCENTS = ['green', 'cyan', 'magenta', 'amber', 'pink'];
+    function currentAccent() { return document.documentElement.dataset.accent || 'green'; }
+    function setAccent(name) {
+      if (!ACCENTS.includes(name)) return false;
+      if (name === 'green') delete document.documentElement.dataset.accent;
+      else document.documentElement.dataset.accent = name;
+      try { localStorage.setItem('lk-accent', name); } catch (e) {}
+      document.querySelectorAll('.accents__dot').forEach(b => b.setAttribute('aria-pressed', b.dataset.accent === name));
+      document.dispatchEvent(new CustomEvent('lk:accent'));
+      return true;
+    }
+    document.querySelectorAll('.accents__dot').forEach(b => b.addEventListener('click', () => setAccent(b.dataset.accent)));
+    setAccent(currentAccent());
+
+    // ── Terminal ───────────────────────────────────────────────────────
+    const term = document.querySelector('.term .cy-term');
+    const termIn = $('term-in');
+    const PROJECTS = {
+      nhl:     { href: '/nhllines',            name: 'NHL Game Predictions' },
+      mlb:     { href: '/mlblines',            name: 'MLB Game Predictions' },
+      xgcalc:  { href: '/xgcalc',              name: 'Rinkside Shot Tagger' },
+      shots:   { href: '/xgcalc/scatter.html', name: 'Shot Chart' },
+      swingai: { href: '/swingai',             name: 'SwingAI' },
+      github:  { href: 'https://github.com/totqro', name: 'GitHub', ext: true },
+    };
+    const history = []; let hIdx = -1;
+    const esc = t => t.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+    function line(cls, html) {
+      const el = document.createElement('span');
+      el.className = cls; el.innerHTML = html;
+      term.append(el, '\n');
+      term.scrollTop = term.scrollHeight;
+    }
+    const out = (html) => line('out', html);
+    const err = (html) => line('out err', html);
+    function go(target) {
+      const p = PROJECTS[target];
+      if (!p) { err(`no such project: ${esc(target)} &mdash; try <span class="ok">ls</span>`); return; }
+      out(`opening ${p.name}&hellip;`);
+      setTimeout(() => { if (p.ext) window.open(p.href, '_blank', 'noopener'); else location.href = p.href; }, 250);
+    }
+    const COMMANDS = {
+      help() {
+        out('commands: <span class="ok">help ls open cd status whoami date theme field reset clear echo history neofetch</span>');
+        out('open &lt;name&gt; &mdash; nhl · mlb · xgcalc · shots · swingai · github');
+        out('theme &lt;colour&gt; &mdash; ' + ACCENTS.join(' · '));
+      },
+      ls(args) {
+        if (args[0] === '-l' || args[0] === '-la') {
+          Object.entries(PROJECTS).forEach(([k, p]) => out(`${k.padEnd(9)} <a href="${p.href}"${p.ext ? ' target="_blank" rel="noopener"' : ''}>${p.href}</a>  ${p.name}`));
+        } else out(Object.keys(PROJECTS).filter(k => !PROJECTS[k].ext).map(k => k + '/').join('  '));
+      },
+      open(args) { args[0] ? go(args[0].replace(/\/$/, '')) : err('usage: open &lt;name&gt;'); },
+      cd(args) { COMMANDS.open(args); },
+      whoami() { out('luc knox &mdash; ml models, hockey analytics, ios'); },
+      date() { out(new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC'); },
+      echo(args) { out(esc(args.join(' ')) || '&nbsp;'); },
+      clear() { term.replaceChildren(); },
+      history() { history.slice().reverse().forEach((h, i) => out(`${String(i + 1).padStart(3)}  ${esc(h)}`)); },
+      status() {
+        ['nhl', 'mlb'].forEach(k => {
+          const f = feeds[k];
+          if (!f) out(`${k}: fetching&hellip;`);
+          else if (f.error) err(`${k}: feed unavailable (${esc(f.error)})`);
+          else if (f.offseason) out(`${k}: <span class="warn">[offseason]</span> daily job runs, no games scheduled · last run ${fmtDay(f.timestamp)}`);
+          else out(`${k}: <span class="${f.stale ? 'warn' : 'ok'}">[${f.stale ? 'stale' : 'ok'}]</span> ${f.games} games · ${f.picks} picks · updated ${f.age} ago`);
+        });
+        out(`projects: ${active.length} active · ${live.length} live · ${progress.length} in progress`);
+      },
+      theme(args) {
+        if (!args[0]) { out(`accent: ${currentAccent()} (${ACCENTS.join(' · ')})`); return; }
+        setAccent(args[0]) ? out(`accent &rarr; <span class="ok">${args[0]}</span>`) : err(`unknown colour: ${esc(args[0])}`);
+      },
+      neofetch() {
+        out('<span class="ok">luc@lknox</span>');
+        out('os: firebase hosting · shell: bash · theme: cyber/' + currentAccent());
+        out(`uptime: ${$('hud-clock').textContent} · projects: ${cards.length - 2} · langs: ${langs.size}`);
+        out('refresh: daily via github actions');
+      },
+      field(args) {
+        const want = args[0] === 'off' ? false : args[0] === 'on' ? true : !window.lkField?.enabled;
+        window.lkField?.set(want);
+        out(`node field &rarr; <span class="ok">${want ? 'on' : 'off'}</span>`);
+      },
+      reset() {
+        ['lk-order', 'lk-pos:hud', 'lk-pos:term', 'lk-field'].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+        out('layout reset &mdash; reloading&hellip;');
+        setTimeout(() => location.reload(), 400);
+      },
+      sudo() { err('luc is not in the sudoers file. this incident will be reported.'); },
+      exit() { out('there is no exit. only projects.'); },
+    };
+    COMMANDS.sys = COMMANDS.neofetch;
+    function run(raw) {
+      const input = raw.trim();
+      line('in', esc(input));
+      if (!input) return;
+      history.unshift(input); hIdx = -1;
+      const [cmd, ...args] = input.split(/\s+/);
+      const fn = COMMANDS[cmd.toLowerCase()];
+      if (fn) fn(args);
+      else if (PROJECTS[cmd.toLowerCase()]) go(cmd.toLowerCase());
+      else err(`${esc(cmd)}: command not found &mdash; try <span class="ok">help</span>`);
+    }
+    $('term-form').addEventListener('submit', e => { e.preventDefault(); run(termIn.value); termIn.value = ''; });
+    termIn.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); run(termIn.value); termIn.value = ''; }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); if (hIdx < history.length - 1) termIn.value = history[++hIdx]; }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); termIn.value = hIdx > 0 ? history[--hIdx] : (hIdx = -1, ''); }
+      else if (e.key === 'Tab') {
+        e.preventDefault();
+        const parts = termIn.value.split(/\s+/);
+        const pool = parts.length > 1 ? (parts[0] === 'theme' ? ACCENTS : Object.keys(PROJECTS)) : Object.keys(COMMANDS);
+        const frag = parts[parts.length - 1].toLowerCase();
+        const hits = pool.filter(k => k.startsWith(frag));
+        if (hits.length === 1) { parts[parts.length - 1] = hits[0]; termIn.value = parts.join(' ') + (parts.length === 1 && ['open', 'cd', 'theme'].includes(hits[0]) ? ' ' : ''); }
+        else if (hits.length > 1) out(hits.join('  '));
+      }
+      else if (e.key === 'l' && e.ctrlKey) { e.preventDefault(); COMMANDS.clear(); }
+    });
+    document.querySelector('.term .cy-panel').addEventListener('click', e => { if (!e.target.closest('a')) termIn.focus({ preventScroll: true }); });
+
+    // ── Keyboard shortcuts + help overlay ──────────────────────────────
+    const kb = $('kb');
+    const toggleKb = () => kb.open ? kb.close() : kb.showModal();
+    $('kb-close').addEventListener('click', () => kb.close());
+    kb.addEventListener('click', e => { if (e.target === kb) kb.close(); });
+    document.addEventListener('keydown', e => {
+      const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName) || document.activeElement?.isContentEditable;
+      if (e.key === 'Escape') {
+        if (kb.open) kb.close();
+        else if (typing) document.activeElement.blur();
+        else setTag(null);
+        return;
+      }
+      if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === '/') { e.preventDefault(); termIn.focus(); termIn.scrollIntoView({ block: 'center', behavior: reducedMotion ? 'auto' : 'smooth' }); }
+      else if (e.key === '?') { e.preventDefault(); toggleKb(); }
+      else if (e.key === 't') setAccent(ACCENTS[(ACCENTS.indexOf(currentAccent()) + 1) % ACCENTS.length]);
+      else if (e.key === 'g') window.open('https://github.com/totqro', '_blank', 'noopener');
+      else if (e.key === 'a') setCategory('active');
+      else if (e.key === 'c') setCategory('completed');
+      else if (e.key === 'o') setCategory('old');
+      else if (/^[1-9]$/.test(e.key)) { const c = visibleCards()[+e.key - 1]; if (c) c.click(); }
+    });
+    // Show the [n] hints while a modifier-free key is held, hide on release.
+    let hintTimer;
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Shift' && !/^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName)) {
+        document.body.classList.add('kb-hint'); clearTimeout(hintTimer); hintTimer = setTimeout(() => document.body.classList.remove('kb-hint'), 2500);
+      }
+    });
+    document.addEventListener('keyup', e => { if (e.key === 'Shift') document.body.classList.remove('kb-hint'); });
+
+    // ── Konami ─────────────────────────────────────────────────────────
+    const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+    let kpos = 0;
+    document.addEventListener('keydown', e => {
+      kpos = e.key === KONAMI[kpos] ? kpos + 1 : (e.key === KONAMI[0] ? 1 : 0);
+      if (kpos !== KONAMI.length) return;
+      kpos = 0;
+      document.body.classList.add('storm');
+      line('out ok', '[cheat] code accepted &mdash; glitch storm engaged');
+      setTimeout(() => document.body.classList.remove('storm'), 2200);
+    });
+
+    // ── Tactile layer ──────────────────────────────────────────────────
+    const finePointer = matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const store = {
+      get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+      set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+    };
+    let suppressClick = false;
+    document.addEventListener('click', e => { if (suppressClick) { e.preventDefault(); e.stopPropagation(); suppressClick = false; } }, true);
+    // Follow one pointer until it lifts. Document-level, not pointer capture: a card that is
+    // moved in the DOM mid-drag would lose capture and never see its pointerup.
+    function track(e, onMove, onEnd) {
+      const id = e.pointerId;
+      const mv = ev => { if (ev.pointerId === id) onMove(ev); };
+      const up = ev => {
+        if (ev.pointerId !== id) return;
+        document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up);
+        onEnd(ev);
+      };
+      document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
+    }
+
+    // Movable panels: the readout and the terminal window. Offsets persist per panel.
+    function movable(panel) {
+      const key = 'lk-pos:' + panel.dataset.drag;
+      const handle = panel.querySelector('.drag-handle');
+      let dx = 0, dy = 0;
+      const apply = () => { panel.style.setProperty('--dx', dx + 'px'); panel.style.setProperty('--dy', dy + 'px'); };
+      const clamp = () => {
+        const r = panel.getBoundingClientRect();
+        const homeL = r.left - dx, homeT = r.top - dy + scrollY;           // untransformed page position
+        dx = Math.max(-homeL - r.width + 80, Math.min(innerWidth - homeL - 80, dx));
+        dy = Math.max(-homeT + 8, Math.min(document.documentElement.scrollHeight - homeT - r.height, dy));
+      };
+      const saved = store.get(key);
+      if (saved && finePointer) { dx = +saved.dx || 0; dy = +saved.dy || 0; apply(); clamp(); apply(); }
+      if (!finePointer) return;
+      handle.addEventListener('pointerdown', e => {
+        if (e.button !== 0 || e.target.closest('a, button')) return;
+        e.preventDefault();
+        const sx = e.clientX, sy = e.clientY, ox = dx, oy = dy;
+        let moved = false;
+        panel.classList.add('is-moving'); document.body.classList.add('is-dragging');
+        track(e, ev => { dx = ox + ev.clientX - sx; dy = oy + ev.clientY - sy; moved = true; apply(); },
+                 () => {
+                   panel.classList.remove('is-moving'); document.body.classList.remove('is-dragging');
+                   if (moved) { clamp(); apply(); store.set(key, { dx, dy }); }
+                 });
+      });
+      handle.addEventListener('dblclick', () => { dx = dy = 0; apply(); store.set(key, null); });
+    }
+    document.querySelectorAll('[data-drag]').forEach(movable);
+
+    // Reorderable project cards: pick one up, the others slide out of the way, the order sticks.
+    const emptyEl = grid.querySelector('.projects__empty');
+    (function restoreOrder() {
+      const order = store.get('lk-order');
+      if (!Array.isArray(order)) return;
+      order.forEach(id => { const c = grid.querySelector(`.project-card[data-id="${id}"]`); if (c) grid.insertBefore(c, emptyEl); });
+    })();
+    const saveOrder = () => store.set('lk-order', [...grid.querySelectorAll('.project-card')].map(c => c.dataset.id));
+    grid.addEventListener('dragstart', e => e.preventDefault());
+    cards.forEach(card => {
+      let drag = null, pressTimer = null, pressAt = null;
+      const blockScroll = e => e.preventDefault();
+      const begin = (e) => {
+        const r = card.getBoundingClientRect();
+        drag = { id: e.pointerId, sx: e.clientX, sy: e.clientY, gx: e.clientX - r.left, gy: e.clientY - r.top, home: { l: r.left, t: r.top }, live: false, touch: e.pointerType === 'touch' };
+        track(e, move, drop);
+      };
+      const lift = () => {
+        drag.live = true;
+        try { getSelection().removeAllRanges(); } catch (err) {}
+        card.classList.add('is-dragging'); card.classList.remove('is-armed'); document.body.classList.add('is-dragging');
+        if (drag.touch) document.addEventListener('touchmove', blockScroll, { passive: false });
+      };
+      const place = (x, y) => {
+        card.style.transform = `translate(${x - drag.gx - drag.home.l}px, ${y - drag.gy - drag.home.t}px) scale(1.03)`;
+      };
+      const rehome = () => {                 // where the card now sits without its transform
+        const t = card.style.transform; card.style.transform = 'none';
+        const r = card.getBoundingClientRect(); drag.home = { l: r.left, t: r.top };
+        card.style.transform = t;
+      };
+      card.addEventListener('pointerdown', e => {
+        if (e.button !== 0 || e.target.closest('.cy-tag')) return;
+        if (e.pointerType === 'touch') {          // long-press picks a card up on touch screens
+          drag = null; pressAt = { x: e.clientX, y: e.clientY };
+          card.classList.add('is-armed');
+          pressTimer = setTimeout(() => { pressTimer = null; begin(e); lift(); place(e.clientX, e.clientY); }, 380);
+          return;
+        }
+        if (!finePointer) return;
+        begin(e);
+      });
+      card.addEventListener('pointermove', e => {
+        if (pressTimer && pressAt && Math.hypot(e.clientX - pressAt.x, e.clientY - pressAt.y) > 8) {
+          clearTimeout(pressTimer); pressTimer = null; card.classList.remove('is-armed');
+        }
+      });
+      const move = e => {
+        if (!drag || e.pointerId !== drag.id) return;
+        if (!drag.live) {
+          if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 6) return;
+          lift();
+        }
+        place(e.clientX, e.clientY);
+        const under = document.elementFromPoint(e.clientX, e.clientY)?.closest('.project-card');
+        if (!under || under === card || under.hidden || !grid.contains(under)) return;
+        const vis = visibleCards();
+        const before = new Map(vis.map(c => [c, c.getBoundingClientRect()]));
+        const ur = before.get(under);
+        const pastMid = (e.clientX - ur.left) / ur.width + (e.clientY - ur.top) / ur.height > 1;
+        const underIsLater = !!(card.compareDocumentPosition(under) & Node.DOCUMENT_POSITION_FOLLOWING);
+        if (underIsLater && pastMid) under.after(card);
+        else if (!underIsLater && !pastMid) under.before(card);
+        else return;
+        rehome(); place(e.clientX, e.clientY);
+        vis.forEach(c => {                   // FLIP the neighbours into their new slots
+          if (c === card) return;
+          const b = before.get(c), a = c.getBoundingClientRect();
+          const ddx = b.left - a.left, ddy = b.top - a.top;
+          if (ddx || ddy) c.animate([{ transform: `translate(${ddx}px, ${ddy}px)` }, { transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.2,.8,.2,1)' });
+        });
+      };
+      const drop = e => {
+        clearTimeout(pressTimer); pressTimer = null; card.classList.remove('is-armed');
+        if (!drag || e.pointerId !== drag.id) return;
+        document.removeEventListener('touchmove', blockScroll);
+        const wasLive = drag.live; drag = null;
+        if (!wasLive) return;
+        suppressClick = true; setTimeout(() => suppressClick = false, 0);
+        card.classList.remove('is-dragging'); card.classList.add('is-dropping'); document.body.classList.remove('is-dragging');
+        card.style.transform = '';
+        card.addEventListener('transitionend', () => card.classList.remove('is-dropping'), { once: true });
+        setTimeout(() => card.classList.remove('is-dropping'), 300);
+        saveOrder(); renumber();
+      };
+      card.addEventListener('pointerup', () => { clearTimeout(pressTimer); pressTimer = null; card.classList.remove('is-armed'); });
+    });
+
+    // Headline letters scatter from the cursor and spring back.
+    const h1 = document.querySelector('.hero .cy-h1');
+    if (h1 && finePointer && !reducedMotion) {
+      h1.innerHTML = [...h1.textContent].map(ch => ch === ' ' ? ' ' : `<span class="ch">${ch}</span>`).join('');
+      const chars = [...h1.querySelectorAll('.ch')];
+      const hero = document.querySelector('.hero');
+      hero.addEventListener('pointermove', e => {
+        chars.forEach(c => {
+          const r = c.getBoundingClientRect();
+          const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+          const dx = cx - e.clientX, dy = cy - e.clientY, d = Math.hypot(dx, dy), R = 140;
+          if (d > R) { c.style.transform = ''; return; }
+          const f = (1 - d / R) ** 2 * 22;
+          c.style.transform = `translate(${dx / d * f}px, ${dy / d * f}px) rotate(${dx / d * f * .6}deg)`;
+        });
+      });
+      hero.addEventListener('pointerleave', () => chars.forEach(c => c.style.transform = ''));
+    }
+
+    // Magnetic buttons + readout bars that follow the pointer.
+    if (finePointer && !reducedMotion) {
+      const magnets = [...document.querySelectorAll('.hero__cta .cy-btn, .cy-nav .cy-btn')];
+      magnets.forEach(m => m.classList.add('magnet'));
+      const bars = [...document.querySelectorAll('.hud__signal i')];
+      const hud = document.querySelector('.hud');
+      let pending = null;
+      document.addEventListener('pointermove', e => {
+        pending = e;
+        requestAnimationFrame(() => {
+          if (!pending) return; const ev = pending; pending = null;
+          magnets.forEach(m => {
+            const r = m.getBoundingClientRect(), pad = 36;
+            if (ev.clientX < r.left - pad || ev.clientX > r.right + pad || ev.clientY < r.top - pad || ev.clientY > r.bottom + pad) { if (m.style.transform) m.style.transform = ''; return; }
+            const dx = ev.clientX - (r.left + r.width / 2), dy = ev.clientY - (r.top + r.height / 2);
+            m.style.transform = `translate(${Math.max(-8, Math.min(8, dx * .22))}px, ${Math.max(-6, Math.min(6, dy * .3))}px)`;
+          });
+          if (hud && hud.matches(':hover')) bars.forEach(b => {
+            const r = b.getBoundingClientRect();
+            const d = Math.abs(ev.clientX - (r.left + r.width / 2));
+            b.style.height = `${Math.round(18 + 82 * Math.max(0, 1 - d / 110) ** 1.5)}%`;
+          });
+        });
+      });
+      hud?.addEventListener('pointerleave', () => bars.forEach(b => b.style.height = ''));
+    }
+
+    // Node field: drifting points that link up, lean toward the cursor, and ripple on a click.
+    window.lkField = (function () {
+      const cv = $('field'), ctx = cv.getContext('2d');
+      let W = 0, H = 0, nodes = [], ripples = [], raf = 0, rgb = [0, 255, 136];
+      const mouse = { x: -1e4, y: -1e4 };
+      const api = { enabled: store.get('lk-field') !== false, set(on) { api.enabled = on; store.set('lk-field', on); on ? start() : stop(); } };
+      const R = 170, L = 110;
+      function readAccent() {
+        const v = getComputedStyle(document.documentElement).getPropertyValue('--cy-accent').trim();
+        const m = v.match(/^#([0-9a-f]{6})$/i);
+        if (m) { const n = parseInt(m[1], 16); rgb = [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+      }
+      function resize() {
+        const dpr = Math.min(2, devicePixelRatio || 1);
+        W = innerWidth; H = innerHeight;
+        cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const n = Math.round(Math.min(130, Math.max(40, W * H / 16000)));
+        while (nodes.length < n) nodes.push({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - .5) * .35, vy: (Math.random() - .5) * .35, r: 1 + Math.random() * 1.4 });
+        nodes.length = n;
+        if (!raf) draw();
+      }
+      function draw() {
+        ctx.clearRect(0, 0, W, H);
+        const [r, g, b] = rgb;
+        ctx.lineWidth = 1;
+        for (let i = 0; i < nodes.length; i++) {
+          const n = nodes[i];
+          for (let j = i + 1; j < nodes.length; j++) {
+            const m = nodes[j], dx = n.x - m.x, dy = n.y - m.y, d2 = dx * dx + dy * dy;
+            if (d2 > L * L) continue;
+            ctx.strokeStyle = `rgba(${r},${g},${b},${(1 - Math.sqrt(d2) / L) * .28})`;
+            ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(m.x, m.y); ctx.stroke();
+          }
+          const dx = mouse.x - n.x, dy = mouse.y - n.y, d = Math.hypot(dx, dy);
+          if (d < R) {
+            ctx.strokeStyle = `rgba(${r},${g},${b},${(1 - d / R) * .55})`;
+            ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(mouse.x, mouse.y); ctx.stroke();
+          }
+          ctx.fillStyle = `rgba(${r},${g},${b},${d < R ? .95 : .55})`;
+          ctx.beginPath(); ctx.arc(n.x, n.y, n.r + (d < R ? (1 - d / R) * 1.5 : 0), 0, Math.PI * 2); ctx.fill();
+        }
+        ripples.forEach(p => {
+          const k = (performance.now() - p.t) / 650;
+          ctx.strokeStyle = `rgba(${r},${g},${b},${(1 - k) * .6})`; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 20 + k * 220, 0, Math.PI * 2); ctx.stroke();
+        });
+        ripples = ripples.filter(p => performance.now() - p.t < 650);
+      }
+      function step() {
+        for (const n of nodes) {
+          const dx = mouse.x - n.x, dy = mouse.y - n.y, d = Math.hypot(dx, dy) || 1;
+          if (d < R) { const f = (1 - d / R) * .05; n.vx += dx / d * f; n.vy += dy / d * f; }
+          n.vx = (n.vx + (Math.random() - .5) * .03) * .985; n.vy = (n.vy + (Math.random() - .5) * .03) * .985;
+          const sp = Math.hypot(n.vx, n.vy); if (sp > 1.8) { n.vx *= 1.8 / sp; n.vy *= 1.8 / sp; }
+          n.x += n.vx; n.y += n.vy;
+          if (n.x < -10) n.x = W + 10; else if (n.x > W + 10) n.x = -10;
+          if (n.y < -10) n.y = H + 10; else if (n.y > H + 10) n.y = -10;
+        }
+        draw();
+        raf = requestAnimationFrame(step);
+      }
+      function start() {
+        cv.style.display = api.enabled ? '' : 'none';
+        if (W !== innerWidth || H !== innerHeight) resize();   // a tab that loaded hidden has a 0×0 canvas
+        if (!raf && api.enabled && !reducedMotion && !document.hidden) raf = requestAnimationFrame(step);
+      }
+      function stop() { cancelAnimationFrame(raf); raf = 0; cv.style.display = api.enabled ? '' : 'none'; }
+      function pulse(x, y) {
+        ripples.push({ x, y, t: performance.now() });
+        for (const n of nodes) { const dx = n.x - x, dy = n.y - y, d = Math.hypot(dx, dy) || 1; if (d < 220) { const f = (1 - d / 220) * 5; n.vx += dx / d * f; n.vy += dy / d * f; } }
+        if (!raf) draw();
+      }
+      window.addEventListener('pointermove', e => { mouse.x = e.clientX; mouse.y = e.clientY; }, { passive: true });
+      document.addEventListener('pointerleave', () => { mouse.x = mouse.y = -1e4; });
+      window.addEventListener('pointerdown', e => {
+        if (e.button !== 0 || e.target.closest('a, button, input, textarea, select, .project-card, .drag-handle, dialog')) return;
+        pulse(e.clientX, e.clientY);
+      });
+      window.addEventListener('resize', resize);
+      document.addEventListener('visibilitychange', () => document.hidden ? stop() : start());
+      document.addEventListener('lk:accent', () => { readAccent(); if (!raf) draw(); });
+      readAccent(); resize(); start();
+      return api;
+    })();
+
+    // ── Typewriter: size the reveal to the text, or fall back to plain text when it would not fit ──
+    const typed = $('typed');
     typed.style.setProperty('--n', typed.textContent.length);
     requestAnimationFrame(() => {
       if (typed.scrollWidth > typed.parentElement.clientWidth) {
@@ -370,6 +1095,8 @@
         typed.classList.add('cy-cursor');
       }
     });
+
+    applyFilters();
   </script>
 </body>
 </html>

@@ -35,6 +35,10 @@ TEAM_NAME_TO_ABBREV = {
     "Miami Marlins": "MIA", "Milwaukee Brewers": "MIL",
     "Minnesota Twins": "MIN", "New York Mets": "NYM",
     "New York Yankees": "NYY", "Oakland Athletics": "OAK",
+    # The franchise dropped "Oakland" when it left for Sacramento (2025); the
+    # Odds API now sends plain "Athletics". Without this entry every A's game
+    # fell through to an unknown team and was silently skipped.
+    "Athletics": "OAK", "Sacramento Athletics": "OAK",
     "Philadelphia Phillies": "PHI", "Pittsburgh Pirates": "PIT",
     "San Diego Padres": "SD", "San Francisco Giants": "SF",
     "Seattle Mariners": "SEA", "St. Louis Cardinals": "STL",

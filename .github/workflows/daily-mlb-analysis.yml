@@ -26,7 +26,7 @@ jobs:
           cache-dependency-path: mlblines/requirements.txt
 
       - name: Install dependencies
-        run: pip install -r mlblines/requirements.txt scipy
+        run: pip install -r mlblines/requirements.txt
 
       - name: Create config from secrets
         working-directory: mlblines
@@ -39,12 +39,9 @@ jobs:
           }
           EOF
 
-      # No download-artifact step. It could only ever see artifacts from its
-      # OWN run, so the restore failed on every run for months behind
-      # continue-on-error — and it would have been discarded anyway: main.py
-      # retrains whenever win_model.pkl is more than a day old, which a
-      # restored artifact always is. MLB trains from scratch each run by
-      # design; the models are ~1.6 MB of pickles and are not tracked.
+      # The gated models (mlblines/ml_models/*.json) are committed, so a fresh
+      # runner always has them. They are refit weekly below, and only the
+      # model each gate picks is written.
 
       - name: Create required directories
         run: mkdir -p mlblines/mlbdata mlblines/ml_models mlblines/cache
@@ -65,6 +62,17 @@ jobs:
             echo "No MLB games scheduled today, skipping analysis"
           fi
 
+      - name: Refit gated models and refresh the blind backtest (weekly)
+        working-directory: mlblines
+        run: |
+          if [ "$(date +%u)" == "7" ] || [ ! -f ml_models/win_model.json ]; then
+            python build_training_set.py
+            python model_gate.py || echo "::warning::A gate failed; build_training_set.py shipped the baseline for it"
+            python backtest.py
+          else
+            echo "Skipping refit (runs weekly on Sundays)"
+          fi
+
       - name: Run MLB analysis
         if: steps.check-games.outputs.has_games == 'true'
         working-directory: mlblines
@@ -79,20 +87,11 @@ jobs:
           check_results(days_back=21)
           "
 
-      - name: Refresh backtest results (weekly)
-        working-directory: mlblines
-        run: |
-          if [ "$(date +%u)" == "7" ]; then
-            python backtest.py
-          else
-            echo "Skipping backtest refresh (runs weekly on Sundays)"
-          fi
-
       - name: Commit updated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add mlblines/mlbdata/bet_results.json mlblines/mlbdata/analysis_history.json mlblines/mlbdata/latest_analysis.json mlblines/mlbdata/backtest_results.json 2>/dev/null || true
+          git add mlblines/mlbdata/bet_results.json mlblines/mlbdata/analysis_history.json mlblines/mlbdata/latest_analysis.json mlblines/mlbdata/backtest_results.json mlblines/mlbdata/predictions_log.jsonl mlblines/ml_models/*.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No data changes to commit"
           else

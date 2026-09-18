@@ -1,15 +1,4 @@
-"""Model modules"""
-try:
-    from .ml_model import MLBMLModel, blend_ml_and_similarity
-except Exception:
-    MLBMLModel = None
-    blend_ml_and_similarity = None
-from .model import find_similar_games, estimate_probabilities, blend_model_and_market
+"""Gated MLB models: win probability and expected total runs."""
+from . import totals_model, win_model
 
-__all__ = [
-    'MLBMLModel',
-    'blend_ml_and_similarity',
-    'find_similar_games',
-    'estimate_probabilities',
-    'blend_model_and_market',
-]
+__all__ = ["win_model", "totals_model"]

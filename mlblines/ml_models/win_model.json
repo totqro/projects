@@ -1,0 +1,118 @@
+{
+  "model": "pitcher",
+  "model_version": "mlb-pitcher-logit-v1",
+  "feature_columns": [
+    "elo_diff",
+    "sp_fip_diff",
+    "sp_k_bb_diff",
+    "sp_depth_diff",
+    "bullpen_diff",
+    "run_diff_pg_diff"
+  ],
+  "coefficients": {
+    "elo_diff": 0.0037455641755577856,
+    "sp_fip_diff": 0.10605274175215218,
+    "sp_k_bb_diff": 1.2961146949159,
+    "sp_depth_diff": 0.03081015218544791,
+    "bullpen_diff": 0.7741417510720067,
+    "run_diff_pg_diff": 0.0784128605835372,
+    "intercept": 0.1217729374745796
+  },
+  "calibrator": {
+    "method": "identity",
+    "a": 1.0,
+    "b": 0.0
+  },
+  "trained_on_seasons": [
+    2022,
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "calibration_season": null,
+  "n_train_games": 12004,
+  "fitted_at": "2026-09-17T16:49:35.814079+00:00",
+  "gate": {
+    "test_season": 2026,
+    "train_seasons": [
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "always_home": {
+      "n": 2285,
+      "accuracy": 0.5286652078774617,
+      "log_loss": 0.6915045748235316,
+      "brier": 0.2491791449587022,
+      "ece": 0.000916024759640921
+    },
+    "elo": {
+      "n": 2285,
+      "accuracy": 0.5566739606126915,
+      "log_loss": 0.6855142171455237,
+      "brier": 0.24621509802104602,
+      "ece": 0.013353572208507278
+    },
+    "pitcher": {
+      "n": 2285,
+      "accuracy": 0.5553610503282276,
+      "log_loss": 0.6830546353498834,
+      "brier": 0.24505784180872306,
+      "ece": 0.012656805897135463
+    },
+    "passed": true,
+    "loso": [
+      {
+        "test_season": 2022,
+        "elo_log_loss": 0.6747442006293732,
+        "pitcher_log_loss": 0.6706494021239922,
+        "pitcher_beats_elo": true
+      },
+      {
+        "test_season": 2023,
+        "elo_log_loss": 0.6811244332561455,
+        "pitcher_log_loss": 0.6778475886818127,
+        "pitcher_beats_elo": true
+      },
+      {
+        "test_season": 2024,
+        "elo_log_loss": 0.6811882332907196,
+        "pitcher_log_loss": 0.677373081938669,
+        "pitcher_beats_elo": true
+      },
+      {
+        "test_season": 2025,
+        "elo_log_loss": 0.6799829495785991,
+        "pitcher_log_loss": 0.679581623040303,
+        "pitcher_beats_elo": true
+      },
+      {
+        "test_season": 2026,
+        "elo_log_loss": 0.6855142171455237,
+        "pitcher_log_loss": 0.6830546353498834,
+        "pitcher_beats_elo": true
+      }
+    ]
+  },
+  "calibration_check": {
+    "calibration_season": 2025,
+    "test_season": 2026,
+    "raw": {
+      "n": 2285,
+      "accuracy": 0.5601750547045952,
+      "log_loss": 0.6832124156947071,
+      "brier": 0.24513839840926996,
+      "ece": 0.009199634302332515
+    },
+    "platt": {
+      "n": 2285,
+      "accuracy": 0.549671772428884,
+      "log_loss": 0.6834076488470519,
+      "brier": 0.24521508344363466,
+      "ece": 0.017705433141125042
+    },
+    "adopted": false
+  }
+}
