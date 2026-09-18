@@ -612,25 +612,37 @@
       const m = Math.floor(ms / 6e4), h = Math.floor(m / 60), d = Math.floor(h / 24);
       return d ? `${d}d` : h ? `${h}h` : `${m}m`;
     }
+    const fmtDay = iso => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     async function loadFeed(key, url) {
       const cardLine = document.querySelector(`[data-feed="${key}"]`);
       const hud = $(`hud-${key}`);
+      const show = (led, cardHtml, hudText, hudCls = '') => {
+        if (cardLine) cardLine.innerHTML = `<span><span class="cy-led ${led}"></span>${cardHtml}</span>`;
+        if (hud) { hud.textContent = hudText; hud.className = 'hud__val cy-num ' + hudCls; }
+      };
+      if (location.protocol === 'file:') {          // opened from disk: nothing to fetch from
+        feeds[key] = { error: 'no server' };
+        show('cy-text-muted', 'feed needs the server', 'n/a');
+        return;
+      }
       try {
         const r = await fetch(url, { cache: 'no-store' });
         if (!r.ok) throw new Error(r.status);
         const d = await r.json();
         const games = (d.games_analyzed || []).length, picks = (d.recommendations || []).length;
+        const ageMs = d.timestamp ? Date.now() - new Date(d.timestamp) : NaN;
         const age = d.timestamp ? ago(d.timestamp) : '?';
-        const stale = d.timestamp && Date.now() - new Date(d.timestamp) > 36 * 36e5;
-        feeds[key] = { games, picks, age, stale, timestamp: d.timestamp };
-        if (cardLine) cardLine.innerHTML =
-          `<span><span class="cy-led ${stale ? 'cy-text-warn' : 'cy-text-ok'}"></span>updated <b>${age}</b> ago</span>` +
-          `<span>games <b>${games}</b></span><span>picks <b>${picks}</b></span>`;
-        if (hud) { hud.textContent = `${games}g · ${picks}p · ${age}`; hud.className = 'hud__val cy-num ' + (stale ? 'cy-text-warn' : ''); }
+        // No games and nothing new for a week: the daily job is running but the league is not.
+        const offseason = games === 0 && ageMs > 7 * 864e5;
+        const stale = !offseason && ageMs > 36 * 36e5;
+        feeds[key] = { games, picks, age, stale, offseason, timestamp: d.timestamp };
+        if (offseason) show('cy-text-muted', `offseason · last run <b>${fmtDay(d.timestamp)}</b>`, 'offseason', 'cy-text-muted');
+        else show(stale ? 'cy-text-warn' : 'cy-text-ok',
+          `updated <b>${age}</b> ago</span><span>games <b>${games}</b></span><span>picks <b>${picks}</b>`,
+          `${games}g · ${picks}p · ${age}`, stale ? 'cy-text-warn' : '');
       } catch (e) {
         feeds[key] = { error: String(e) };
-        if (cardLine) cardLine.innerHTML = `<span><span class="cy-led cy-text-danger"></span>feed offline</span>`;
-        if (hud) { hud.textContent = 'offline'; hud.className = 'hud__val cy-num cy-text-danger'; }
+        show('cy-text-danger', 'feed offline', 'offline', 'cy-text-danger');
       }
     }
     loadFeed('nhl', '/nhllines/latest_analysis.json');
@@ -700,7 +712,8 @@
         ['nhl', 'mlb'].forEach(k => {
           const f = feeds[k];
           if (!f) out(`${k}: fetching&hellip;`);
-          else if (f.error) err(`${k}: feed offline (${esc(f.error)})`);
+          else if (f.error) err(`${k}: feed unavailable (${esc(f.error)})`);
+          else if (f.offseason) out(`${k}: <span class="warn">[offseason]</span> daily job runs, no games scheduled · last run ${fmtDay(f.timestamp)}`);
           else out(`${k}: <span class="${f.stale ? 'warn' : 'ok'}">[${f.stale ? 'stale' : 'ok'}]</span> ${f.games} games · ${f.picks} picks · updated ${f.age} ago`);
         });
         out(`projects: ${active.length} active · ${live.length} live · ${progress.length} in progress`);
