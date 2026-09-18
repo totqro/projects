@@ -44,7 +44,7 @@ SEASON_REVERSION = 1.0 / 3.0  # fraction reverted toward 1500 at season start
 ELO_FEATURE_COLUMNS = ["elo_diff", "rest_diff", "home_b2b", "away_b2b"]
 
 
-def _run_elo(all_games: list):
+def _run_elo(all_games: list, season_reversion: float = None):
     """
     Walk every completed game in chronological order, applying the Elo update
     and season-boundary reversion. Returns (pregame, final_ratings,
@@ -52,7 +52,13 @@ def _run_elo(all_games: list):
     final_ratings/last_season are the post-last-game state per team — the raw
     material both compute_pregame_elo() (training) and compute_live_ratings()
     (serving) are built from, so the two never drift apart.
+
+    `season_reversion` defaults to the module constant SEASON_REVERSION (every
+    existing caller). Pass an explicit value to test a different offseason
+    decay rate — see model_gate.py's --tune-elo-reversion, which sweeps this
+    against real held-out seasons rather than assuming 1/3 is well-tuned.
     """
+    season_reversion = SEASON_REVERSION if season_reversion is None else season_reversion
     games = sorted(all_games, key=lambda g: (g["date"], g["id"]))
 
     ratings = {}          # team -> elo
@@ -68,7 +74,7 @@ def _run_elo(all_games: list):
                 ratings[team] = INITIAL_ELO
                 last_season[team] = season
             elif last_season[team] != season:
-                ratings[team] += (INITIAL_ELO - ratings[team]) * SEASON_REVERSION
+                ratings[team] += (INITIAL_ELO - ratings[team]) * season_reversion
                 last_season[team] = season
 
         elo_home, elo_away = ratings[home], ratings[away]
@@ -83,13 +89,13 @@ def _run_elo(all_games: list):
     return pregame, ratings, last_season
 
 
-def compute_pregame_elo(all_games: list) -> dict:
+def compute_pregame_elo(all_games: list, season_reversion: float = None) -> dict:
     """
     Walk every completed game in chronological order and return
     {game_id: (home_elo_pre, away_elo_pre)} — the rating BEFORE that game,
     i.e. the only Elo values legitimately usable as a pregame feature.
     """
-    pregame, _, _ = _run_elo(all_games)
+    pregame, _, _ = _run_elo(all_games, season_reversion)
     return pregame
 
 
