@@ -10,13 +10,13 @@
     "run_diff_pg_diff"
   ],
   "coefficients": {
-    "elo_diff": 0.0037455641755577856,
-    "sp_fip_diff": 0.10605274175215218,
-    "sp_k_bb_diff": 1.2961146949159,
-    "sp_depth_diff": 0.03081015218544791,
-    "bullpen_diff": 0.7741417510720067,
-    "run_diff_pg_diff": 0.0784128605835372,
-    "intercept": 0.1217729374745796
+    "elo_diff": 0.0037236343376292036,
+    "sp_fip_diff": 0.10749064105902703,
+    "sp_k_bb_diff": 1.2910176537821876,
+    "sp_depth_diff": 0.030990494367774124,
+    "bullpen_diff": 0.8413093331807154,
+    "run_diff_pg_diff": 0.08003684456741657,
+    "intercept": 0.1228309070463147
   },
   "calibrator": {
     "method": "identity",
@@ -31,8 +31,8 @@
     2026
   ],
   "calibration_season": null,
-  "n_train_games": 12004,
-  "fitted_at": "2026-09-17T16:49:35.814079+00:00",
+  "n_train_games": 12043,
+  "fitted_at": "2026-09-20T18:20:04.400272+00:00",
   "gate": {
     "test_season": 2026,
     "train_seasons": [
@@ -42,56 +42,56 @@
       2025
     ],
     "always_home": {
-      "n": 2285,
-      "accuracy": 0.5286652078774617,
-      "log_loss": 0.6915045748235316,
-      "brier": 0.2491791449587022,
-      "ece": 0.000916024759640921
+      "n": 2324,
+      "accuracy": 0.5296901893287436,
+      "log_loss": 0.6913831521642668,
+      "brier": 0.249118504529184,
+      "ece": 0.00010895669164079358
     },
     "elo": {
-      "n": 2285,
-      "accuracy": 0.5566739606126915,
-      "log_loss": 0.6855142171455237,
-      "brier": 0.24621509802104602,
-      "ece": 0.013353572208507278
+      "n": 2324,
+      "accuracy": 0.5589500860585198,
+      "log_loss": 0.6847445533262467,
+      "brier": 0.24584049923678145,
+      "ece": 0.013701516447248506
     },
     "pitcher": {
-      "n": 2285,
-      "accuracy": 0.5553610503282276,
-      "log_loss": 0.6830546353498834,
-      "brier": 0.24505784180872306,
-      "ece": 0.012656805897135463
+      "n": 2324,
+      "accuracy": 0.5572289156626506,
+      "log_loss": 0.6820130703263175,
+      "brier": 0.24455594912483694,
+      "ece": 0.012639144106339005
     },
     "passed": true,
     "loso": [
       {
         "test_season": 2022,
-        "elo_log_loss": 0.6747442006293732,
-        "pitcher_log_loss": 0.6706494021239922,
+        "elo_log_loss": 0.6747091149085407,
+        "pitcher_log_loss": 0.6705982866436906,
         "pitcher_beats_elo": true
       },
       {
         "test_season": 2023,
-        "elo_log_loss": 0.6811244332561455,
-        "pitcher_log_loss": 0.6778475886818127,
+        "elo_log_loss": 0.6811428853530272,
+        "pitcher_log_loss": 0.6778584854976413,
         "pitcher_beats_elo": true
       },
       {
         "test_season": 2024,
-        "elo_log_loss": 0.6811882332907196,
-        "pitcher_log_loss": 0.677373081938669,
+        "elo_log_loss": 0.681201931409789,
+        "pitcher_log_loss": 0.6773592125924958,
         "pitcher_beats_elo": true
       },
       {
         "test_season": 2025,
-        "elo_log_loss": 0.6799829495785991,
-        "pitcher_log_loss": 0.679581623040303,
+        "elo_log_loss": 0.6799682134294178,
+        "pitcher_log_loss": 0.6796130548221913,
         "pitcher_beats_elo": true
       },
       {
         "test_season": 2026,
-        "elo_log_loss": 0.6855142171455237,
-        "pitcher_log_loss": 0.6830546353498834,
+        "elo_log_loss": 0.6847445533262467,
+        "pitcher_log_loss": 0.6820130703263175,
         "pitcher_beats_elo": true
       }
     ]
@@ -100,18 +100,18 @@
     "calibration_season": 2025,
     "test_season": 2026,
     "raw": {
-      "n": 2285,
-      "accuracy": 0.5601750547045952,
-      "log_loss": 0.6832124156947071,
-      "brier": 0.24513839840926996,
-      "ece": 0.009199634302332515
+      "n": 2324,
+      "accuracy": 0.5623924268502581,
+      "log_loss": 0.6821306801598713,
+      "brier": 0.2446171108109239,
+      "ece": 0.009678228457939256
     },
     "platt": {
-      "n": 2285,
-      "accuracy": 0.549671772428884,
-      "log_loss": 0.6834076488470519,
-      "brier": 0.24521508344363466,
-      "ece": 0.017705433141125042
+      "n": 2324,
+      "accuracy": 0.552065404475043,
+      "log_loss": 0.6823717720501937,
+      "brier": 0.24471438418547173,
+      "ece": 0.01578341581447614
     },
     "adopted": false
   }
