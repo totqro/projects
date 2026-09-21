@@ -1,0 +1,141 @@
+name: NFL Predictions
+
+# Logs pre-game NFL predictions (nfllines/) once each game's FINAL injury
+# report is out, and commits them to nfllines/data/predictions_log.jsonl —
+# the season record the scorecard grades. predict.py decides what is ready
+# (src/readiness.py): a game is logged only after its final report deadline
+# (4 pm ET the day before a Thursday game, two days before any other) and
+# only before kickoff. Every run is safe to repeat: games not ready are
+# printed with the reason and skipped; a game logged on several days is
+# scored on its last pre-kickoff row.
+on:
+  schedule:
+    # UTC. ET = UTC-4 until Nov 1, UTC-5 after.
+    - cron: '0 22 * * 2'   # Tue 6pm ET  — Wednesday games (Christmas)
+    - cron: '0 23 * * 3'   # Wed 7pm ET  — Thursday game (report due Wed 4pm)
+    - cron: '0 22 * * 4'   # Thu 6pm ET  — Thursday backup; Saturday games (report due Thu)
+    - cron: '0 23 * * 5'   # Fri 7pm ET  — Sunday games (report due Fri 4pm)
+    - cron: '0 22 * * 6'   # Sat 6pm ET  — Sunday + Monday (Monday report due Sat 4pm)
+    - cron: '0 12 * * 0'   # Sun 8am ET  — backup before London and 1pm kickoffs
+  workflow_dispatch:
+  # On a PR: the same run, dry (nothing logged or committed), plus the tests.
+  pull_request:
+    paths:
+      - 'nfllines/**'
+      - '.github/workflows/nfl-predictions.yml'
+
+concurrency:
+  group: nfl-predictions-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  predict:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      PYTHONPATH: .
+    defaults:
+      run:
+        working-directory: nfllines
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: nfllines/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # Completed seasons of play-by-play, snaps, rosters and injuries never
+      # change, so they are cached across runs. The current season is always
+      # re-downloaded by the code itself (src/data/nflverse.py), whatever is
+      # in this cache.
+      - name: Restore nflverse season cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            nfllines/data/processed/pbp
+            nfllines/data/processed/snaps
+            nfllines/data/processed/rosters_weekly
+            nfllines/data/processed/injuries
+          key: nflverse-seasons-v1-${{ github.run_id }}
+          restore-keys: nflverse-seasons-v1-
+
+      - name: Run tests
+        if: github.event_name == 'pull_request'
+        run: python -m pytest tests -q
+
+      - name: Predict
+        run: |
+          set -o pipefail
+          flags=""
+          if [ "${{ github.event_name }}" = "pull_request" ]; then flags="--no-log"; fi
+          python predict.py $flags 2>&1 | grep -v Warning | tee predict.out
+          {
+            echo "### NFL predictions ($([ -n "$flags" ] && echo 'dry run' || echo 'logged'))"
+            echo '```'
+            cat predict.out
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Season scorecard
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
+        run: |
+          python scorecard.py --season "$(python -c 'from src.data.nflverse import current_season; print(current_season())')" 2>&1 \
+            | grep -v Warning > scorecard.out || true
+          { echo "### Season scorecard"; echo '```'; cat scorecard.out; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit prediction log
+        if: github.event_name != 'pull_request'
+        working-directory: .
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add nfllines/data/predictions_log.jsonl
+          if git diff --cached --quiet; then
+            echo "No new predictions to log (nothing ready yet, or already logged today)"
+            exit 0
+          fi
+          git commit -m "chore: NFL predictions [$(date -u +'%Y-%m-%d %H:%M UTC')]"
+          # The log is append-only and no other job touches it, so a rebase
+          # onto the other bots' data commits cannot conflict. Retry on a push race.
+          for attempt in 1 2 3; do
+            git pull --rebase origin main && git push && {
+              echo "✅ Predictions committed and pushed"
+              exit 0
+            }
+            echo "::warning::Push attempt $attempt failed, retrying"
+            git rebase --abort 2>/dev/null || true
+            sleep 5
+          done
+          echo "::error::Could not push the prediction log after 3 attempts"
+          exit 1
+
+      - name: Notify on failure
+        # A missed run before kickoff is a permanent hole in the season record.
+        if: failure() && github.event_name != 'pull_request'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "❌ NFL Predictions Failed"
+          to: lucknox@icloud.com
+          from: ${{ secrets.EMAIL_USERNAME }}
+          body: |
+            The NFL predictions workflow failed. Predictions are only valid if
+            logged before kickoff, so check whether the next scheduled run
+            (or a manual run) will still land in time.
+
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Trigger: ${{ github.event_name }}
+        continue-on-error: true

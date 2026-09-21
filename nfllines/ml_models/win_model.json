@@ -1,0 +1,113 @@
+{
+ "features": [
+  "elo_diff",
+  "epa_margin_diff",
+  "success_margin_diff",
+  "prior_last_team_pts_early_diff",
+  "prior_snap_return_early_diff",
+  "sack_margin_diff",
+  "explosive_margin_diff",
+  "turnover_margin_diff",
+  "st_epa_diff",
+  "inj_total_diff"
+ ],
+ "C": 0.3,
+ "margin_features": [
+  "elo_diff",
+  "epa_margin_diff",
+  "success_margin_diff",
+  "prior_last_team_pts_early_diff",
+  "prior_snap_return_early_diff",
+  "sack_margin_diff",
+  "explosive_margin_diff",
+  "turnover_margin_diff",
+  "st_epa_diff",
+  "inj_total_diff"
+ ],
+ "alpha": 100,
+ "blend": 0.5,
+ "sigma": 12.935501314227748,
+ "logit": {
+  "type": "ridge_logit",
+  "C": 0.3,
+  "features": [
+   "elo_diff",
+   "epa_margin_diff",
+   "success_margin_diff",
+   "prior_last_team_pts_early_diff",
+   "prior_snap_return_early_diff",
+   "sack_margin_diff",
+   "explosive_margin_diff",
+   "turnover_margin_diff",
+   "st_epa_diff",
+   "inj_total_diff"
+  ],
+  "coef": {
+   "elo_diff": 0.0038828392153308425,
+   "epa_margin_diff": -2.663128040208753,
+   "success_margin_diff": 5.786734127615996,
+   "prior_last_team_pts_early_diff": 0.058555983319191436,
+   "prior_snap_return_early_diff": 1.3812932989852946,
+   "sack_margin_diff": 8.120012326681563,
+   "explosive_margin_diff": 7.180099642242815,
+   "turnover_margin_diff": 7.827346405990641,
+   "st_epa_diff": 0.09475593069485498,
+   "inj_total_diff": -1.549702739854827,
+   "intercept": 0.10127267757863298
+  }
+ },
+ "margin": {
+  "type": "ridge",
+  "alpha": 100,
+  "features": [
+   "elo_diff",
+   "epa_margin_diff",
+   "success_margin_diff",
+   "prior_last_team_pts_early_diff",
+   "prior_snap_return_early_diff",
+   "sack_margin_diff",
+   "explosive_margin_diff",
+   "turnover_margin_diff",
+   "st_epa_diff",
+   "inj_total_diff"
+  ],
+  "coef": {
+   "elo_diff": 0.020628266874423276,
+   "epa_margin_diff": 4.581464503440986,
+   "success_margin_diff": 34.00896156765443,
+   "prior_last_team_pts_early_diff": -0.03383680782397721,
+   "prior_snap_return_early_diff": 7.825062679136256,
+   "sack_margin_diff": 42.00412882680517,
+   "explosive_margin_diff": 38.34592414852403,
+   "turnover_margin_diff": 33.57985021863917,
+   "st_epa_diff": 1.0106316279227654,
+   "inj_total_diff": -9.714270080171065,
+   "intercept": 1.0983562625643843
+  }
+ },
+ "calibrator": null,
+ "calibration_report": {
+  "uncalibrated": {
+   "n": 2449,
+   "log_loss": 0.6222599012496656,
+   "brier": 0.2166778165164708,
+   "accuracy": 0.6549612086565946,
+   "ece": 0.013934680919939456
+  },
+  "platt": {
+   "n": 2449,
+   "log_loss": 0.6231173884265083,
+   "brier": 0.2170622536935131,
+   "accuracy": 0.6561861984483462,
+   "ece": 0.0159761391858054
+  },
+  "isotonic": {
+   "n": 2449,
+   "log_loss": 0.6370177211742625,
+   "brier": 0.21896747059021524,
+   "accuracy": 0.6606778276847693,
+   "ece": 0.013349882950534445
+  }
+ },
+ "calibration_chosen": null
+}
