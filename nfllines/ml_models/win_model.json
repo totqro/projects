@@ -1,0 +1,113 @@
+{
+ "features": [
+  "elo_diff",
+  "epa_margin_diff",
+  "success_margin_diff",
+  "prior_last_team_pts_early_diff",
+  "prior_snap_return_early_diff",
+  "sack_margin_diff",
+  "explosive_margin_diff",
+  "turnover_margin_diff",
+  "st_epa_diff",
+  "inj_total_diff"
+ ],
+ "C": 0.3,
+ "margin_features": [
+  "elo_diff",
+  "epa_margin_diff",
+  "success_margin_diff",
+  "prior_last_team_pts_early_diff",
+  "prior_snap_return_early_diff",
+  "sack_margin_diff",
+  "explosive_margin_diff",
+  "turnover_margin_diff",
+  "st_epa_diff",
+  "inj_total_diff"
+ ],
+ "alpha": 100,
+ "blend": 0.5,
+ "sigma": 12.936542251423361,
+ "logit": {
+  "type": "ridge_logit",
+  "C": 0.3,
+  "features": [
+   "elo_diff",
+   "epa_margin_diff",
+   "success_margin_diff",
+   "prior_last_team_pts_early_diff",
+   "prior_snap_return_early_diff",
+   "sack_margin_diff",
+   "explosive_margin_diff",
+   "turnover_margin_diff",
+   "st_epa_diff",
+   "inj_total_diff"
+  ],
+  "coef": {
+   "elo_diff": 0.003885246318105316,
+   "epa_margin_diff": -2.644567322336032,
+   "success_margin_diff": 5.7412731258923575,
+   "prior_last_team_pts_early_diff": 0.05799959493408742,
+   "prior_snap_return_early_diff": 1.381728104290185,
+   "sack_margin_diff": 8.093535021979827,
+   "explosive_margin_diff": 7.132060163055578,
+   "turnover_margin_diff": 7.799455250835686,
+   "st_epa_diff": 0.09498633719822303,
+   "inj_total_diff": -1.5219590096473397,
+   "intercept": 0.1011274655790694
+  }
+ },
+ "margin": {
+  "type": "ridge",
+  "alpha": 100,
+  "features": [
+   "elo_diff",
+   "epa_margin_diff",
+   "success_margin_diff",
+   "prior_last_team_pts_early_diff",
+   "prior_snap_return_early_diff",
+   "sack_margin_diff",
+   "explosive_margin_diff",
+   "turnover_margin_diff",
+   "st_epa_diff",
+   "inj_total_diff"
+  ],
+  "coef": {
+   "elo_diff": 0.020649363250784498,
+   "epa_margin_diff": 4.643373184286453,
+   "success_margin_diff": 33.807974998206404,
+   "prior_last_team_pts_early_diff": -0.03690919625721954,
+   "prior_snap_return_early_diff": 7.828142618843475,
+   "sack_margin_diff": 41.86525713709638,
+   "explosive_margin_diff": 38.12902307987491,
+   "turnover_margin_diff": 33.559473537583486,
+   "st_epa_diff": 1.0115699536363516,
+   "inj_total_diff": -9.496179413829486,
+   "intercept": 1.0976592345829166
+  }
+ },
+ "calibrator": null,
+ "calibration_report": {
+  "uncalibrated": {
+   "n": 2449,
+   "log_loss": 0.6223314426285373,
+   "brier": 0.21671441253457244,
+   "accuracy": 0.6553695385871784,
+   "ece": 0.016027716886042653
+  },
+  "platt": {
+   "n": 2449,
+   "log_loss": 0.6231898183094547,
+   "brier": 0.21709966298951452,
+   "accuracy": 0.6553695385871784,
+   "ece": 0.016016536865596915
+  },
+  "isotonic": {
+   "n": 2449,
+   "log_loss": 0.6364615706010733,
+   "brier": 0.21877542056110172,
+   "accuracy": 0.657819518170682,
+   "ece": 0.012906513642427932
+  }
+ },
+ "calibration_chosen": null
+}
