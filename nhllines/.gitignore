@@ -30,6 +30,9 @@ ml_models/*
 # Projected playoff bracket — regenerated once a year, served by the web app.
 !data/playoff_bracket.json
 
+# By-season performance history the site reads (finished seasons are frozen in it).
+!data/performance_history.json
+
 # The shipped win model: 16 KB of coefficients + calibrators. Tracked because
 # the CI artifact round-trip never worked (download-artifact only sees its own
 # run's artifacts), so a fresh runner had no model at all. The .pkl files above

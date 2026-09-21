@@ -3,6 +3,7 @@ from .nhl_data import (
     fetch_standings,
     fetch_season_games,
     fetch_todays_games,
+    fetch_schedule,
     get_team_recent_form,
     get_h2h_record,
 )
@@ -21,6 +22,7 @@ __all__ = [
     'fetch_standings',
     'fetch_season_games',
     'fetch_todays_games',
+    'fetch_schedule',
     'get_team_recent_form',
     'get_h2h_record',
     'fetch_nhl_odds',
