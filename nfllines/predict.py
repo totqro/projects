@@ -47,6 +47,7 @@ def main():
     ap.add_argument("--week", type=int, help="default: the earliest week with an unplayed game")
     ap.add_argument("--no-log", action="store_true")
     ap.add_argument("--force", action="store_true", help="log games the readiness guard holds back")
+    ap.add_argument("--features-out", help="write the exact feature rows served (CSV, full precision) for auditing")
     args = ap.parse_args()
 
     seasons = tuple(range(nv.WARM_START_SEASON, args.season + 1))
@@ -76,6 +77,8 @@ def main():
     eng.injuries.start_week(args.season, args.week, inputs["context"])
     rows = pd.DataFrame([eng.features_for(g) for _, g in target.iterrows()])
     rows = attach_targets(rows, games)
+    if args.features_out:
+        rows.to_csv(args.features_out, index=False, float_format="%.17g")
 
     # Frozen models served straight from their JSON coefficients: no feature
     # table, no refit, identical to the fitted models to machine precision.
