@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-09-20T18:20:12.443821+00:00",
-  "date": "2026-09-20",
+  "timestamp": "2026-09-21T20:08:46.380529+00:00",
+  "date": "2026-09-21",
   "model": {
     "win": "mlb-pitcher-logit-v1",
     "totals": "mlb-totals-nbglm-v1",
@@ -96,649 +96,281 @@
   },
   "games_analyzed": [
     {
-      "game": "TOR @ TEX",
-      "home": "TEX",
+      "game": "TOR @ BAL",
+      "home": "BAL",
       "away": "TOR",
-      "game_id": 822844,
-      "game_time": "2026-09-20T18:35:00Z",
+      "game_id": 824787,
+      "game_time": "2026-09-21T22:35:00Z",
       "model_probs": {
-        "home_win_prob": 0.5914680305200468,
-        "away_win_prob": 0.4085319694799532,
-        "expected_total": 7.473334514468501,
+        "home_win_prob": 0.5315805418679703,
+        "away_win_prob": 0.4684194581320297,
+        "expected_total": 8.709147049083073,
         "total_line": 7.5,
-        "over_prob": 0.44503638168456605,
-        "under_prob": 0.554963618315434,
-        "confidence": 0.5914680305200468
+        "over_prob": 0.5622839114190556,
+        "under_prob": 0.43771608858094435,
+        "confidence": 0.5315805418679703
       },
       "market_probs": {
-        "home_win_prob": 0.6118335815960968,
-        "away_win_prob": 0.38816641840390326,
-        "over_prob": 0.4914378176271408,
+        "home_win_prob": 0.501958485631826,
+        "away_win_prob": 0.49804151436817407,
+        "over_prob": 0.48880329960237856,
         "total_line": 7.5,
         "n_books": 15
       },
       "pick": {
-        "team": "TEX",
-        "prob": 0.5914680305200468,
+        "team": "BAL",
+        "prob": 0.5315805418679703,
         "agrees_with_market": true,
-        "edge_vs_market": -0.02036555107604998
+        "edge_vs_market": 0.029622056236144334
       },
       "context_indicators": {
-        "pitcher": [
-          {
-            "team": "TEX",
-            "type": "ace",
-            "value": 78.5,
-            "severity": "positive"
-          }
-        ],
+        "pitcher": [],
         "park": []
       },
       "pitcher_matchup": {
         "home": {
-          "name": "Jacob deGrom",
-          "era": 3.79,
-          "whip": 1.07,
-          "k_per_9": 11.31,
-          "fip": 3.54,
-          "k_bb_pct": 21.6,
-          "quality_score": 78.5,
+          "name": "Shane Baz",
+          "era": 4.11,
+          "whip": 1.35,
+          "k_per_9": 7.91,
+          "fip": 4.16,
+          "k_bb_pct": 12.5,
+          "quality_score": 53.6,
           "handedness": "R",
           "announced": true
         },
         "away": {
-          "name": "Spencer Miles",
-          "era": 2.65,
-          "whip": 1.09,
-          "k_per_9": 8.54,
-          "fip": 3.81,
-          "k_bb_pct": 14.7,
-          "quality_score": 67.7,
+          "name": "Trey Yesavage",
+          "era": 3.65,
+          "whip": 1.14,
+          "k_per_9": 8.74,
+          "fip": 4.34,
+          "k_bb_pct": 11.8,
+          "quality_score": 46.4,
           "handedness": "R",
           "announced": true
         }
       },
       "bullpen": {
         "home": {
-          "bullpen_ra9": 4.68,
-          "bullpen_quality": 41.5
+          "bullpen_ra9": 4.5,
+          "bullpen_quality": 48.3
         },
         "away": {
-          "bullpen_ra9": 4.29,
-          "bullpen_quality": 56.2
+          "bullpen_ra9": 4.28,
+          "bullpen_quality": 56.6
         }
       },
       "elo": {
-        "home": 1500,
-        "away": 1509
+        "home": 1494,
+        "away": 1511
       },
-      "park_factor": 97
+      "park_factor": 98
     },
     {
-      "game": "SEA @ COL",
-      "home": "COL",
-      "away": "SEA",
-      "game_id": 824300,
-      "game_time": "2026-09-20T19:10:00Z",
+      "game": "WSH @ DET",
+      "home": "DET",
+      "away": "WSH",
+      "game_id": 824221,
+      "game_time": "2026-09-21T22:40:00Z",
       "model_probs": {
-        "home_win_prob": 0.4264360629508911,
-        "away_win_prob": 0.5735639370491089,
-        "expected_total": 11.76875795551841,
-        "total_line": 10.5,
-        "over_prob": 0.5431185886432435,
-        "under_prob": 0.45688141135675653,
-        "confidence": 0.5735639370491089
+        "home_win_prob": 0.559467263479754,
+        "away_win_prob": 0.44053273652024605,
+        "expected_total": 9.481775622101333,
+        "total_line": 8.5,
+        "over_prob": 0.534614404741973,
+        "under_prob": 0.46538559525802703,
+        "confidence": 0.559467263479754
       },
       "market_probs": {
-        "home_win_prob": 0.40204199644189587,
-        "away_win_prob": 0.5979580035581041,
-        "over_prob": 0.5050941092264652,
-        "total_line": 10.5,
+        "home_win_prob": 0.5487430867994967,
+        "away_win_prob": 0.45125691320050343,
+        "over_prob": 0.5107593597162874,
+        "total_line": 8.5,
         "n_books": 15
       },
       "pick": {
-        "team": "SEA",
-        "prob": 0.5735639370491089,
+        "team": "DET",
+        "prob": 0.559467263479754,
         "agrees_with_market": true,
-        "edge_vs_market": -0.024394066508995227
+        "edge_vs_market": 0.010724176680257269
+      },
+      "context_indicators": {
+        "pitcher": [],
+        "park": []
+      },
+      "pitcher_matchup": {
+        "home": {
+          "name": "River Ryan",
+          "era": 4.5,
+          "whip": 1.3,
+          "k_per_9": 8.0,
+          "fip": 4.5,
+          "k_bb_pct": 11.0,
+          "quality_score": 40.0,
+          "handedness": "R",
+          "announced": true
+        },
+        "away": {
+          "name": "DJ Herz",
+          "era": 4.5,
+          "whip": 1.3,
+          "k_per_9": 8.0,
+          "fip": 4.5,
+          "k_bb_pct": 11.0,
+          "quality_score": 40.0,
+          "handedness": "R",
+          "announced": true
+        }
+      },
+      "bullpen": {
+        "home": {
+          "bullpen_ra9": 4.22,
+          "bullpen_quality": 58.7
+        },
+        "away": {
+          "bullpen_ra9": 5.22,
+          "bullpen_quality": 21.6
+        }
+      },
+      "elo": {
+        "home": 1487,
+        "away": 1471
+      },
+      "park_factor": 104
+    },
+    {
+      "game": "MIN @ SF",
+      "home": "SF",
+      "away": "MIN",
+      "game_id": 823169,
+      "game_time": "2026-09-22T01:45:00Z",
+      "model_probs": {
+        "home_win_prob": 0.48443464793429525,
+        "away_win_prob": 0.5155653520657048,
+        "expected_total": 9.127692523732303,
+        "total_line": 8.5,
+        "over_prob": 0.5045781845330057,
+        "under_prob": 0.49542181546699426,
+        "confidence": 0.5155653520657048
+      },
+      "market_probs": {
+        "home_win_prob": 0.47287739644070986,
+        "away_win_prob": 0.5271226035592901,
+        "over_prob": 0.48880280353834826,
+        "total_line": 8.5,
+        "n_books": 15
+      },
+      "pick": {
+        "team": "MIN",
+        "prob": 0.5155653520657048,
+        "agrees_with_market": true,
+        "edge_vs_market": -0.01155725149358533
       },
       "context_indicators": {
         "pitcher": [
           {
-            "team": "COL",
+            "team": "SF",
             "type": "weak",
-            "value": 15.7,
+            "value": 25.9,
             "severity": "negative"
           }
         ],
         "park": [
           {
-            "team": "COL",
-            "type": "hitter-friendly",
-            "value": 119,
+            "team": "SF",
+            "type": "pitcher-friendly",
+            "value": 95,
             "severity": "medium"
           }
         ]
       },
       "pitcher_matchup": {
         "home": {
-          "name": "Tomoyuki Sugano",
-          "era": 5.49,
-          "whip": 1.36,
-          "k_per_9": 5.43,
-          "fip": 5.11,
-          "k_bb_pct": 8.5,
-          "quality_score": 15.7,
+          "name": "Blade Tidwell",
+          "era": 4.56,
+          "whip": 1.2,
+          "k_per_9": 7.09,
+          "fip": 4.85,
+          "k_bb_pct": 7.9,
+          "quality_score": 25.9,
           "handedness": "R",
           "announced": true
         },
         "away": {
-          "name": "Kade Anderson",
-          "era": 5.33,
-          "whip": 1.42,
-          "k_per_9": 7.46,
-          "fip": 4.49,
-          "k_bb_pct": 11.2,
-          "quality_score": 40.4,
-          "handedness": "L",
-          "announced": true
-        }
-      },
-      "bullpen": {
-        "home": {
-          "bullpen_ra9": 5.05,
-          "bullpen_quality": 28.0
-        },
-        "away": {
-          "bullpen_ra9": 4.8,
-          "bullpen_quality": 37.1
-        }
-      },
-      "elo": {
-        "home": 1414,
-        "away": 1488
-      },
-      "park_factor": 119
-    },
-    {
-      "game": "MIN @ LAA",
-      "home": "LAA",
-      "away": "MIN",
-      "game_id": 823975,
-      "game_time": "2026-09-20T20:07:00Z",
-      "model_probs": {
-        "home_win_prob": 0.46702468379561224,
-        "away_win_prob": 0.5329753162043878,
-        "expected_total": 9.428814096578,
-        "total_line": 8.5,
-        "over_prob": 0.5302047437416135,
-        "under_prob": 0.4697952562583865,
-        "confidence": 0.5329753162043878
-      },
-      "market_probs": {
-        "home_win_prob": 0.48007746439874427,
-        "away_win_prob": 0.5199225356012557,
-        "over_prob": 0.4897585458180929,
-        "total_line": 8.5,
-        "n_books": 15
-      },
-      "pick": {
-        "team": "MIN",
-        "prob": 0.5329753162043878,
-        "agrees_with_market": true,
-        "edge_vs_market": 0.013052780603132086
-      },
-      "context_indicators": {
-        "pitcher": [
-          {
-            "team": "LAA",
-            "type": "weak",
-            "value": 20.2,
-            "severity": "negative"
-          }
-        ],
-        "park": []
-      },
-      "pitcher_matchup": {
-        "home": {
-          "name": "Ryan Johnson",
-          "era": 4.88,
-          "whip": 1.34,
-          "k_per_9": 6.97,
-          "fip": 4.99,
-          "k_bb_pct": 8.7,
-          "quality_score": 20.2,
-          "handedness": "R",
-          "announced": true
-        },
-        "away": {
-          "name": "Dean Kremer",
-          "era": 5.35,
+          "name": "Zebby Matthews",
+          "era": 4.74,
           "whip": 1.24,
-          "k_per_9": 8.61,
-          "fip": 4.43,
-          "k_bb_pct": 13.3,
-          "quality_score": 43.0,
+          "k_per_9": 7.68,
+          "fip": 4.46,
+          "k_bb_pct": 13.2,
+          "quality_score": 41.6,
           "handedness": "R",
           "announced": true
         }
       },
       "bullpen": {
         "home": {
-          "bullpen_ra9": 4.76,
-          "bullpen_quality": 38.9
+          "bullpen_ra9": 4.67,
+          "bullpen_quality": 42.2
         },
         "away": {
-          "bullpen_ra9": 5.19,
-          "bullpen_quality": 22.8
+          "bullpen_ra9": 5.17,
+          "bullpen_quality": 23.6
         }
       },
       "elo": {
-        "home": 1440,
-        "away": 1470
+        "home": 1461,
+        "away": 1472
       },
-      "park_factor": 101
-    },
-    {
-      "game": "MIA @ SD",
-      "home": "SD",
-      "away": "MIA",
-      "game_id": 823247,
-      "game_time": "2026-09-20T20:10:00Z",
-      "model_probs": {
-        "home_win_prob": 0.5363480357657762,
-        "away_win_prob": 0.46365196423422383,
-        "expected_total": 9.061723090377916,
-        "total_line": 8.5,
-        "over_prob": 0.4988407502257626,
-        "under_prob": 0.5011592497742374,
-        "confidence": 0.5363480357657762
-      },
-      "market_probs": {
-        "home_win_prob": 0.5836999496577231,
-        "away_win_prob": 0.4163000503422769,
-        "over_prob": 0.49488621334677135,
-        "total_line": 8.5,
-        "n_books": 15
-      },
-      "pick": {
-        "team": "SD",
-        "prob": 0.5363480357657762,
-        "agrees_with_market": true,
-        "edge_vs_market": -0.04735191389194693
-      },
-      "context_indicators": {
-        "pitcher": [
-          {
-            "team": "SD",
-            "type": "weak",
-            "value": 26.9,
-            "severity": "negative"
-          }
-        ],
-        "park": []
-      },
-      "pitcher_matchup": {
-        "home": {
-          "name": "Walker Buehler",
-          "era": 4.58,
-          "whip": 1.37,
-          "k_per_9": 7.66,
-          "fip": 4.83,
-          "k_bb_pct": 8.4,
-          "quality_score": 26.9,
-          "handedness": "R",
-          "announced": true
-        },
-        "away": {
-          "name": "Sandy Alcantara",
-          "era": 3.84,
-          "whip": 1.23,
-          "k_per_9": 6.51,
-          "fip": 4.38,
-          "k_bb_pct": 9.8,
-          "quality_score": 44.6,
-          "handedness": "R",
-          "announced": true
-        }
-      },
-      "bullpen": {
-        "home": {
-          "bullpen_ra9": 3.91,
-          "bullpen_quality": 70.1
-        },
-        "away": {
-          "bullpen_ra9": 4.53,
-          "bullpen_quality": 47.2
-        }
-      },
-      "elo": {
-        "home": 1535,
-        "away": 1492
-      },
-      "park_factor": 96
-    },
-    {
-      "game": "SF @ LAD",
-      "home": "LAD",
-      "away": "SF",
-      "game_id": 823896,
-      "game_time": "2026-09-20T20:10:00Z",
-      "model_probs": {
-        "home_win_prob": 0.6607228199286226,
-        "away_win_prob": 0.3392771800713774,
-        "expected_total": 8.342005507398056,
-        "total_line": 8.5,
-        "over_prob": 0.43360195705299,
-        "under_prob": 0.56639804294701,
-        "confidence": 0.6607228199286226
-      },
-      "market_probs": {
-        "home_win_prob": 0.7043682296127866,
-        "away_win_prob": 0.2956317703872135,
-        "over_prob": 0.48987375857373866,
-        "total_line": 8.5,
-        "n_books": 15
-      },
-      "pick": {
-        "team": "LAD",
-        "prob": 0.6607228199286226,
-        "agrees_with_market": true,
-        "edge_vs_market": -0.04364540968416397
-      },
-      "context_indicators": {
-        "pitcher": [],
-        "park": []
-      },
-      "pitcher_matchup": {
-        "home": {
-          "name": "Jack Dreyer",
-          "era": 3.19,
-          "whip": 1.13,
-          "k_per_9": 10.31,
-          "fip": 3.9,
-          "k_bb_pct": 15.6,
-          "quality_score": 64.1,
-          "handedness": "L",
-          "announced": true
-        },
-        "away": {
-          "name": "Matt Wilkinson",
-          "era": 4.58,
-          "whip": 1.12,
-          "k_per_9": 5.49,
-          "fip": 4.62,
-          "k_bb_pct": 10.0,
-          "quality_score": 35.1,
-          "handedness": "L",
-          "announced": true
-        }
-      },
-      "bullpen": {
-        "home": {
-          "bullpen_ra9": 4.19,
-          "bullpen_quality": 59.9
-        },
-        "away": {
-          "bullpen_ra9": 4.65,
-          "bullpen_quality": 42.9
-        }
-      },
-      "elo": {
-        "home": 1556,
-        "away": 1463
-      },
-      "park_factor": 97
-    },
-    {
-      "game": "NYY @ ARI",
-      "home": "ARI",
-      "away": "NYY",
-      "game_id": 825028,
-      "game_time": "2026-09-20T20:10:00Z",
-      "model_probs": {
-        "home_win_prob": 0.4726196640542489,
-        "away_win_prob": 0.5273803359457512,
-        "expected_total": 9.056731623873919,
-        "total_line": 8.5,
-        "over_prob": 0.4984048760461218,
-        "under_prob": 0.5015951239538782,
-        "confidence": 0.5273803359457512
-      },
-      "market_probs": {
-        "home_win_prob": 0.5188040177716228,
-        "away_win_prob": 0.48119598222837723,
-        "over_prob": 0.48926903952714096,
-        "total_line": 8.5,
-        "n_books": 15
-      },
-      "pick": {
-        "team": "NYY",
-        "prob": 0.5273803359457512,
-        "agrees_with_market": false,
-        "edge_vs_market": 0.04618435371737395
-      },
-      "context_indicators": {
-        "pitcher": [],
-        "park": []
-      },
-      "pitcher_matchup": {
-        "home": {
-          "name": "Corbin Burnes",
-          "era": 5.87,
-          "whip": 1.17,
-          "k_per_9": 7.04,
-          "fip": 4.41,
-          "k_bb_pct": 12.1,
-          "quality_score": 43.5,
-          "handedness": "R",
-          "announced": true
-        },
-        "away": {
-          "name": "Will Warren",
-          "era": 3.89,
-          "whip": 1.36,
-          "k_per_9": 8.94,
-          "fip": 4.21,
-          "k_bb_pct": 13.9,
-          "quality_score": 51.7,
-          "handedness": "R",
-          "announced": true
-        }
-      },
-      "bullpen": {
-        "home": {
-          "bullpen_ra9": 4.36,
-          "bullpen_quality": 53.6
-        },
-        "away": {
-          "bullpen_ra9": 3.83,
-          "bullpen_quality": 73.1
-        }
-      },
-      "elo": {
-        "home": 1512,
-        "away": 1544
-      },
-      "park_factor": 101
-    },
-    {
-      "game": "MIL @ BAL",
-      "home": "BAL",
-      "away": "MIL",
-      "game_id": 824789,
-      "game_time": "2026-09-20T23:20:00Z",
-      "model_probs": {
-        "home_win_prob": 0.3403499689200148,
-        "away_win_prob": 0.6596500310799852,
-        "expected_total": 8.567147257822489,
-        "total_line": 7.5,
-        "over_prob": 0.5497824618909477,
-        "under_prob": 0.4502175381090523,
-        "confidence": 0.6596500310799852
-      },
-      "market_probs": {
-        "home_win_prob": 0.3491497282610309,
-        "away_win_prob": 0.650850271738969,
-        "over_prob": 0.496941791499035,
-        "total_line": 7.5,
-        "n_books": 15
-      },
-      "pick": {
-        "team": "MIL",
-        "prob": 0.6596500310799852,
-        "agrees_with_market": true,
-        "edge_vs_market": 0.008799759341016178
-      },
-      "context_indicators": {
-        "pitcher": [
-          {
-            "team": "MIL",
-            "type": "ace",
-            "value": 99.3,
-            "severity": "positive"
-          }
-        ],
-        "park": []
-      },
-      "pitcher_matchup": {
-        "home": {
-          "name": "Brandon Young",
-          "era": 3.65,
-          "whip": 1.37,
-          "k_per_9": 7.29,
-          "fip": 4.68,
-          "k_bb_pct": 9.7,
-          "quality_score": 32.6,
-          "handedness": "R",
-          "announced": true
-        },
-        "away": {
-          "name": "Jacob Misiorowski",
-          "era": 1.89,
-          "whip": 0.81,
-          "k_per_9": 13.15,
-          "fip": 3.02,
-          "k_bb_pct": 25.2,
-          "quality_score": 99.3,
-          "handedness": "R",
-          "announced": true
-        }
-      },
-      "bullpen": {
-        "home": {
-          "bullpen_ra9": 4.51,
-          "bullpen_quality": 48.1
-        },
-        "away": {
-          "bullpen_ra9": 3.87,
-          "bullpen_quality": 71.6
-        }
-      },
-      "elo": {
-        "home": 1496,
-        "away": 1568
-      },
-      "park_factor": 98
+      "park_factor": 95
     }
   ],
   "recommendations": [
     {
-      "game": "TOR @ TEX",
+      "game": "TOR @ BAL",
       "bet_type": "Moneyline",
-      "pick": "TEX ML",
-      "book": "fanduel",
-      "odds": -166,
+      "pick": "BAL ML",
+      "book": "betanysports",
+      "odds": -104,
       "stake": 0.5,
-      "true_prob": 0.5914680305200468,
-      "implied_prob": 0.6118335815960968,
-      "edge": -0.02036555107604998,
-      "confidence": 0.5914680305200468,
+      "true_prob": 0.5315805418679703,
+      "implied_prob": 0.501958485631826,
+      "edge": 0.029622056236144334,
+      "confidence": 0.5315805418679703,
       "model_version": "mlb-pitcher-logit-v1"
     },
     {
-      "game": "SEA @ COL",
+      "game": "WSH @ DET",
       "bet_type": "Moneyline",
-      "pick": "SEA ML",
-      "book": "espnbet",
-      "odds": -155,
+      "pick": "DET ML",
+      "book": "betus",
+      "odds": -125,
       "stake": 0.5,
-      "true_prob": 0.5735639370491089,
-      "implied_prob": 0.5979580035581041,
-      "edge": -0.024394066508995227,
-      "confidence": 0.5735639370491089,
+      "true_prob": 0.559467263479754,
+      "implied_prob": 0.5487430867994967,
+      "edge": 0.010724176680257269,
+      "confidence": 0.559467263479754,
       "model_version": "mlb-pitcher-logit-v1"
     },
     {
-      "game": "MIN @ LAA",
+      "game": "MIN @ SF",
       "bet_type": "Moneyline",
       "pick": "MIN ML",
-      "book": "betonlineag",
-      "odds": -110,
-      "stake": 0.5,
-      "true_prob": 0.5329753162043878,
-      "implied_prob": 0.5199225356012557,
-      "edge": 0.013052780603132086,
-      "confidence": 0.5329753162043878,
-      "model_version": "mlb-pitcher-logit-v1"
-    },
-    {
-      "game": "MIA @ SD",
-      "bet_type": "Moneyline",
-      "pick": "SD ML",
       "book": "betus",
-      "odds": -143,
+      "odds": -115,
       "stake": 0.5,
-      "true_prob": 0.5363480357657762,
-      "implied_prob": 0.5836999496577231,
-      "edge": -0.04735191389194693,
-      "confidence": 0.5363480357657762,
-      "model_version": "mlb-pitcher-logit-v1"
-    },
-    {
-      "game": "SF @ LAD",
-      "bet_type": "Moneyline",
-      "pick": "LAD ML",
-      "book": "betus",
-      "odds": -265,
-      "stake": 0.5,
-      "true_prob": 0.6607228199286226,
-      "implied_prob": 0.7043682296127866,
-      "edge": -0.04364540968416397,
-      "confidence": 0.6607228199286226,
-      "model_version": "mlb-pitcher-logit-v1"
-    },
-    {
-      "game": "NYY @ ARI",
-      "bet_type": "Moneyline",
-      "pick": "NYY ML",
-      "book": "betonlineag",
-      "odds": 106,
-      "stake": 0.5,
-      "true_prob": 0.5273803359457512,
-      "implied_prob": 0.48119598222837723,
-      "edge": 0.04618435371737395,
-      "confidence": 0.5273803359457512,
-      "model_version": "mlb-pitcher-logit-v1"
-    },
-    {
-      "game": "MIL @ BAL",
-      "bet_type": "Moneyline",
-      "pick": "MIL ML",
-      "book": "betonlineag",
-      "odds": -200,
-      "stake": 0.5,
-      "true_prob": 0.6596500310799852,
-      "implied_prob": 0.650850271738969,
-      "edge": 0.008799759341016178,
-      "confidence": 0.6596500310799852,
+      "true_prob": 0.5155653520657048,
+      "implied_prob": 0.5271226035592901,
+      "edge": -0.01155725149358533,
+      "confidence": 0.5155653520657048,
       "model_version": "mlb-pitcher-logit-v1"
     }
   ],
   "quota_info": {
     "total_keys": 3,
-    "total_remaining": 664,
-    "total_used": 836,
+    "total_remaining": 622,
+    "total_used": 878,
     "keys": [
       {
         "index": 0,
@@ -747,8 +379,8 @@
       },
       {
         "index": 1,
-        "used": 336,
-        "remaining": 164
+        "used": 378,
+        "remaining": 122
       },
       {
         "index": 2,
