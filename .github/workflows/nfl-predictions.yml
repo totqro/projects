@@ -77,13 +77,24 @@ jobs:
           set -o pipefail
           flags=""
           if [ "${{ github.event_name }}" = "pull_request" ]; then flags="--no-log"; fi
-          python predict.py $flags 2>&1 | grep -v Warning | tee predict.out
+          python predict.py $flags --features-out served_features.csv 2>&1 | grep -v Warning | tee predict.out
           {
             echo "### NFL predictions ($([ -n "$flags" ] && echo 'dry run' || echo 'logged'))"
             echo '```'
             cat predict.out
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      # The exact feature rows behind this run's predictions, kept 90 days:
+      # the audit trail for any live-vs-training discrepancy.
+      - name: Upload served features
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: served-features-${{ github.run_id }}
+          path: nfllines/served_features.csv
+          if-no-files-found: ignore
+          retention-days: 90
 
       - name: Season scorecard
         if: github.event_name != 'pull_request'
