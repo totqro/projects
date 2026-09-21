@@ -129,7 +129,14 @@ def build_context(seasons, games: pd.DataFrame) -> dict:
     c = nv.load_contracts().dropna(subset=["gsis_id"])
     c = c[(c.year_signed > 0) & c.apy_cap_pct.notna()]
     contracts = defaultdict(list)
-    for r in c[["gsis_id", "year_signed", "apy_cap_pct"]].sort_values("year_signed").itertuples(index=False):
+    # Within one signing year a player can have several contracts (a minimum
+    # deal then an extension, a release then a new team). The larger one is
+    # taken: it is the one that superseded. The explicit key and a stable sort
+    # matter: sorting on year alone left ties to numpy's unstable sort, whose
+    # order differs between Apple Silicon and x86 (the GitHub runner) and
+    # changed ~8,000 player-seasons' value between the two machines.
+    c = c.sort_values(["gsis_id", "year_signed", "apy_cap_pct"], kind="mergesort")
+    for r in c[["gsis_id", "year_signed", "apy_cap_pct"]].itertuples(index=False):
         contracts[r.gsis_id].append((int(r.year_signed), float(r.apy_cap_pct)))
     picks = players.dropna(subset=["draft_pick"]).set_index("gsis_id").draft_pick.to_dict()
 

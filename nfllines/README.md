@@ -241,6 +241,16 @@ outputs summarised in `data/processed/*.json`).
   down from 80.1%). The same run exposed a 365-day download cache that had
   frozen the 2026 season at its first fetch. The current season now always
   downloads fresh. Both fixes date from 2026-09-21.
+* **Contract tie fix (2026-09-21).** When a player had two contracts signed
+  in the same year, the one used for his value was whichever an unstable sort
+  put last. That order differs between Apple Silicon and the x86 GitHub
+  runner. The first CI run exposed it: the same game came out at 0.770 there
+  and 0.769 locally. The rule is now explicit: take the larger same-year
+  deal. The main-QB and main-coach picks also got explicit tie-breaks. Only
+  the injury feature changed (correlation 0.9987 with the old one). The gate
+  was re-run on 2015–2023 and made every decision the same way, with LOSO
+  still 0.6223 / 0.2167. Coefficients moved by under 2%. The one-time test
+  above scored the pre-fix coefficients; it was not re-run.
 * **2026 injury files are thinner.** nflverse's 2026 injury data has about
   180–250 rows per week against about 330 historically, and no timestamp
   column. Watch whether that persists; it weakens the injury feature.

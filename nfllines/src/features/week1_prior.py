@@ -60,13 +60,19 @@ def build_team_season_inputs(games: pd.DataFrame, team_games: pd.DataFrame, qb_g
 
     # main QB and coach last season
     qreg = qb_games[qb_games.game_type == "REG"].groupby(["team", "season", "qb_id"]).dropbacks.sum().reset_index()
-    main_qb = qreg.sort_values("dropbacks", ascending=False).drop_duplicates(["team", "season"])[["team", "season", "qb_id"]]
+    # ties broken by qb_id, stable sort: never left to the platform's sort order
+    main_qb = qreg.sort_values(["dropbacks", "qb_id"], ascending=[False, True], kind="mergesort") \
+        .drop_duplicates(["team", "season"])[["team", "season", "qb_id"]]
     coaches = pd.concat([
         games[["season", "week", "game_type", "home_team", "home_coach"]].rename(columns={"home_team": "team", "home_coach": "coach"}),
         games[["season", "week", "game_type", "away_team", "away_coach"]].rename(columns={"away_team": "team", "away_coach": "coach"}),
     ])
-    main_coach = coaches[coaches.game_type == "REG"].groupby(["team", "season"]).coach.agg(
-        lambda s: s.value_counts().index[0]).reset_index()
+    # most regular-season games coached; a tie (an 8-8 split after a firing)
+    # goes to whoever coached the later games, i.e. the coach the team ended with
+    reg_c = coaches[coaches.game_type == "REG"]
+    cc = reg_c.groupby(["team", "season", "coach"]).agg(n=("week", "size"), last=("week", "max")).reset_index()
+    main_coach = cc.sort_values(["team", "season", "n", "last"], ascending=[True, True, False, False], kind="mergesort") \
+        .drop_duplicates(["team", "season"])[["team", "season", "coach"]]
 
     # returning snap share
     pfr2gsis = players.dropna(subset=["pfr_id"]).drop_duplicates("pfr_id").set_index("pfr_id").gsis_id

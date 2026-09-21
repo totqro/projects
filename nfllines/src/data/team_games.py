@@ -129,7 +129,7 @@ def build_qb_games(games: pd.DataFrame, pbp: pd.DataFrame | None = None) -> pd.D
     ).reset_index().rename(columns={"posteam": "team", "passer_player_id": "qb_id"})
     meta = games[["game_id", "season", "week", "game_type"]]
     return qb.merge(meta, on="game_id", how="left").sort_values(
-        ["season", "week", "game_id", "team"]).reset_index(drop=True)
+        ["season", "week", "game_id", "team", "qb_id"], kind="mergesort").reset_index(drop=True)
 
 
 if __name__ == "__main__":
