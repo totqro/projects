@@ -51,7 +51,13 @@ def _current_season_start_year() -> int:
     now = datetime.now()
     return now.year if now.month >= 7 else now.year - 1
 
-MONEYPUCK_SHOTS_URL = "https://moneypuck.com/moneypuck/playerData/shots/shots_{year}.zip"
+# Tried in order. MoneyPuck keeps only its newest season at its own path;
+# every other season 404s there and is served from the archive host its
+# data page (moneypuck.com/data.htm) links to.
+MONEYPUCK_SHOTS_URLS = (
+    "https://moneypuck.com/moneypuck/playerData/shots/shots_{year}.zip",
+    "https://peter-tanner.com/moneypuck/downloads/shots_{year}.zip",
+)
 
 # MoneyPuck's server 302-redirects to a license page for bare requests
 # without a browser-like User-Agent/Referer.
@@ -101,8 +107,10 @@ def download_season_shots(year: int) -> Path:
         if age_hours < _CURRENT_SEASON_SHOTS_CACHE_HOURS:
             return csv_path
 
-    url = MONEYPUCK_SHOTS_URL.format(year=year)
-    resp = requests.get(url, headers=_HEADERS, timeout=180)
+    for url in MONEYPUCK_SHOTS_URLS:
+        resp = requests.get(url.format(year=year), headers=_HEADERS, timeout=180)
+        if resp.status_code != 404:
+            break
     resp.raise_for_status()
     with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
         names = [n for n in zf.namelist() if n.endswith(".csv")]
