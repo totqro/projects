@@ -60,11 +60,14 @@ kbd{font-family:var(--body); font-size:11px; border:1px solid var(--line-2); bor
 #modelNote{flex-basis:100%; font-size:11.5px}
 
 /* ---- change bar ---- */
-.bar{flex-basis:100%; background:#0f0f18; border:1px solid var(--us); padding:8px 10px; display:grid; gap:6px}
-.bar .row{display:flex; gap:8px; align-items:center}
+.bar{flex-basis:100%; background:#0f0f18; border:1px solid var(--us); padding:5px 8px; display:flex; gap:10px; align-items:center}
+.bar .row{display:flex; gap:6px; align-items:center; flex:0 0 auto}
 .bar .row > span{font-family:var(--head); color:var(--us)}
-#barIn{flex:1; font-size:16px; font-family:var(--body); border-color:var(--us)}
-#barPrev{font-size:12.5px; min-height:20px; display:flex; flex-wrap:wrap; gap:6px; align-items:center}
+#barIn{width:340px; font-size:15px; font-family:var(--body); border-color:var(--us); padding:4px 7px}
+#barPrev{flex:1; min-width:0; font-size:12px; height:36px; overflow:hidden; display:flex; flex-wrap:wrap; gap:4px 6px; align-content:flex-start; align-items:center}
+.bar.idle{border-color:var(--line)}
+.bar.idle #barIn{border-color:var(--line)}
+.bar.idle .row > span{color:var(--ink-3)}
 .pchip{padding:1px 7px; border:1px solid var(--line-2); background:var(--card)}
 .pchip.off{border-color:rgba(255,51,102,.6)} .pchip.on{border-color:rgba(0,255,136,.55)}
 .bar.err #barIn{border-color:var(--bad)}
@@ -81,7 +84,7 @@ kbd{font-family:var(--body); font-size:11px; border:1px solid var(--line-2); bor
 .rinkhead .end,.rinkhead button{white-space:nowrap}
 .rinkhead .mid{display:flex; gap:6px; align-items:center; min-width:0}
 #dirNote{font-size:11.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--warn)}
-svg.rink{display:block; width:min(100%, calc((100vh - 330px) * 202 / 87)); height:auto; aspect-ratio:202/87; margin:0 auto; cursor:crosshair; user-select:none; touch-action:none}
+svg.rink{display:block; width:min(100%, calc((100vh - var(--hdr, 150px) - 240px) * 202 / 87)); height:auto; aspect-ratio:202/87; margin:0 auto; cursor:crosshair; user-select:none; touch-action:none}
 .rink .boards{fill:var(--ice); stroke:var(--line-2); stroke-width:.6}
 .rink .m{fill:none; stroke:var(--paint); stroke-width:.35}
 .rink .mr{fill:none; stroke:var(--red); stroke-width:.5}
@@ -95,10 +98,11 @@ svg.rink{display:block; width:min(100%, calc((100vh - 330px) * 202 / 87)); heigh
 .dot.sel{stroke:var(--warn); stroke-width:.9}
 .dot.old{opacity:.25}
 
-.side{display:grid; gap:10px; align-content:start}
-.board .grp{display:grid; grid-template-columns:repeat(4,1fr); gap:5px; margin:4px 0 8px}
-.pbtn{display:grid; padding:4px 3px; text-transform:none; letter-spacing:0; text-align:center; gap:0}
-.pbtn .n{font-family:var(--head); font-size:15px}
+.side{display:grid; gap:10px; align-content:start; max-height:calc(100vh - var(--hdr, 150px) - 20px); overflow-y:auto; position:sticky; top:calc(var(--hdr, 150px) + 10px)}
+.board .grp{display:grid; grid-template-columns:repeat(var(--cols,3),1fr); gap:5px; margin:4px 0 8px}
+.board .gap{visibility:hidden}
+.pbtn{display:grid; grid-template-columns:auto 1fr; align-items:baseline; padding:3px 6px; text-transform:none; letter-spacing:0; text-align:left; gap:0 6px}
+.pbtn .n{font-family:var(--head); font-size:15px; grid-row:span 2}
 .pbtn .nm{font-size:10px; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .pbtn .t{font-size:10px; color:var(--ink-3)}
 .pbtn.on{background:rgba(0,255,136,.12); border-color:var(--ok)}
@@ -119,7 +123,7 @@ button.del{border:0; background:none; color:var(--ink-3); padding:0 5px; font-si
 button.del:hover{color:var(--bad)}
 
 .leftcol{display:grid; gap:10px; align-content:start; min-width:0}
-.logwrap{position:relative; max-height:max(170px, calc(100vh - 110px - min(100vw - 390px, (100vh - 330px) * 202 / 87) * 87 / 202)); overflow:auto; padding:0 9px 9px}
+.logwrap{position:relative; max-height:max(150px, calc(100vh - var(--hdr, 150px) - 90px - min(100vw - 390px, (100vh - var(--hdr, 150px) - 240px) * 202 / 87) * 87 / 202)); overflow:auto; padding:0 9px 9px}
 table{border-collapse:collapse; width:100%; font-size:12px}
 th,td{padding:4px 7px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap}
 th{font-family:var(--label); font-weight:400; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2);
@@ -215,7 +219,7 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
     <button id="bHelp">?</button>
   </div>
   <div id="modelNote" class="note hidden"></div>
-  <div class="bar hidden" id="bar">
+  <div class="bar idle" id="bar">
     <div class="row">
       <span>c&gt;</span>
       <input id="barIn" autocomplete="off" spellcheck="false" placeholder="15 19 34 / 14 9 10   ·   f2 d1   ·   s20   ·   @12:40">
@@ -670,8 +674,8 @@ function resolveBar(text){
 }
 
 let barOpen = false;
-function openBar(){ barOpen = true; $("bar").classList.remove("hidden"); $("barIn").focus(); renderBar(); }
-function closeBar(){ barOpen = false; $("barIn").value = ""; $("bar").classList.add("hidden"); $("barIn").blur(); render(); }
+function openBar(){ barOpen = true; $("bar").classList.remove("idle"); if(document.activeElement !== $("barIn")) $("barIn").focus(); renderBar(); }
+function closeBar(){ barOpen = false; $("barIn").value = ""; $("bar").classList.add("idle"); $("barIn").blur(); render(); }
 function commitBar(force){
   const text = $("barIn").value;
   if(!text.trim()){ closeBar(); return; }
@@ -692,8 +696,9 @@ function chipsFor(list, cls){
     return `<span class="pchip ${cls}">#${esc(n)}${p ? " "+esc(p.name)+" ("+esc(p.pos)+")" : " ?"}</span>`; }).join("") || `<span class="note">nobody</span>`;
 }
 function renderBar(){
-  if(!barOpen) return;
   const text = $("barIn").value, bar = $("bar"), out = $("barPrev");
+  if(!barOpen){ bar.classList.remove("err");
+    out.innerHTML = `<span class="note">Press <kbd>c</kbd> (or click a player) to make a change</span>`; return; }
   if(!text.trim()){ bar.classList.remove("err");
     out.innerHTML = `<span class="note">off numbers <kbd>/</kbd> on numbers · presets f1-f4 d1-d3 p1 p2 · <kbd>s20</kbd> = 20 s ago · <kbd>@12:40</kbd> · <kbd>Enter</kbd> commit · <kbd>Shift</kbd>+<kbd>Enter</kbd> override · <kbd>Esc</kbd> cancel</span>`;
     return; }
@@ -811,19 +816,30 @@ function renderBoard(D){
   const toiNow = {}, n0 = now();
   for(const sh of D.shifts) if(sh.open) toiNow[sh.num] = between(sh.p1, sh.s1, n0.p, n0.v);
   const st = playerStats(D);
-  const grp = (pos, label) => {
+  const btn = p => {
+    const on = D.board.has(p.num);
+    const cls = ["pbtn", on ? "on" : "", pending.off.includes(p.num) ? "poff" : "", pending.on.includes(p.num) ? "pon" : ""].join(" ");
+    const t = on ? "shift " + fmt(toiNow[p.num] || 0) : fmt(st[p.num] ? st[p.num].toi : 0);
+    return `<button class="${cls}" data-num="${esc(p.num)}" tabindex="-1"><span class="n">${esc(p.num)}</span>`+
+           `<span class="nm">${esc(p.name || "")}</span><span class="t mono">${t}</span></button>`;
+  };
+  /* One row per line preset (F1-F4, D1-D3), then anyone not in a line. */
+  const grp = (pos, label, cols, keys) => {
     const ps = S.roster.filter(p => p.pos === pos);
     if(!ps.length) return "";
-    return `<div class="lab">${label}</div><div class="grp">` + ps.map(p => {
-      const on = D.board.has(p.num);
-      const cls = ["pbtn", on ? "on" : "", pending.off.includes(p.num) ? "poff" : "", pending.on.includes(p.num) ? "pon" : ""].join(" ");
-      const t = on ? "shift " + fmt(toiNow[p.num] || 0) : fmt(st[p.num] ? st[p.num].toi : 0);
-      return `<button class="${cls}" data-num="${esc(p.num)}" tabindex="-1"><span class="n">${esc(p.num)}</span>`+
-             `<span class="nm">${esc(p.name || "")}</span><span class="t mono">${t}</span></button>`;
-    }).join("") + `</div>`;
+    const byNum = {}; ps.forEach(p => byNum[p.num] = p);
+    const cells = [], placed = new Set();
+    for(const k of keys){
+      const line = (S.lines[k] || []).map(String).filter(n => byNum[n] && !placed.has(n));
+      if(!line.length) continue;
+      line.forEach(n => { cells.push(btn(byNum[n])); placed.add(n); });
+      while(cells.length % cols) cells.push(`<span class="gap"></span>`);
+    }
+    ps.filter(p => !placed.has(p.num)).forEach(p => cells.push(btn(p)));
+    return `<div class="lab">${label}</div><div class="grp" style="--cols:${cols}">${cells.join("")}</div>`;
   };
   $("board").innerHTML = S.roster.length
-    ? grp("F","Forwards") + grp("D","Defence") + grp("G","Goalies")
+    ? grp("F","Forwards",3,["f1","f2","f3","f4"]) + grp("D","Defence",2,["d1","d2","d3"]) + grp("G","Goalies",2,[])
     : `<div class="note" style="margin-top:6px">No roster yet. Add it under <b>Setup</b>.</div>`;
 }
 
@@ -992,6 +1008,7 @@ function render(){
 }
 function setView(v){
   if(barOpen) closeBar();
+  $("bar").classList.toggle("hidden", v !== "track");
   view = v;
   $("vTrack").classList.toggle("hidden", v !== "track");
   $("vShifts").classList.toggle("hidden", v !== "shifts");
@@ -1319,6 +1336,8 @@ $("rink").addEventListener("pointerup", e => {
 $("board").addEventListener("mousedown", e => e.preventDefault());
 $("board").addEventListener("click", e => { const b = e.target.closest(".pbtn"); if(b) barToggle(b.dataset.num); });
 $("barIn").addEventListener("input", () => { renderBar(); renderBoard(derive()); });
+$("barIn").addEventListener("focus", () => { if(!barOpen) openBar(); });
+$("barIn").addEventListener("blur", () => { if(barOpen && !$("barIn").value.trim()){ barOpen = false; $("bar").classList.add("idle"); renderBar(); renderBoard(derive()); } });
 $("barIn").addEventListener("keydown", e => {
   if(e.key === "Enter"){ e.preventDefault(); commitBar(e.shiftKey); }
   else if(e.key === "Escape"){ e.preventDefault(); closeBar(); }
@@ -1526,6 +1545,8 @@ async function boot(){
     if(c.run && view === "track" && !drag) renderBoard(derive());
   }, 150);
 }
+const hdrObs = new ResizeObserver(() => document.documentElement.style.setProperty("--hdr", document.querySelector(".top").offsetHeight + "px"));
+hdrObs.observe(document.querySelector(".top"));
 boot();
 })();
 </script>
