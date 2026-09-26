@@ -113,6 +113,10 @@ svg.rink{display:block; width:min(100%, calc((100vh - 330px) * 202 / 87)); heigh
 .chip.need{color:var(--warn); border-color:rgba(255,176,0,.55)}
 .shot .edits{display:grid; grid-template-columns:repeat(3,1fr); gap:5px}
 .shot .edits select{width:100%}
+.delbtn{justify-self:start; color:var(--bad); border-color:rgba(255,51,102,.45); background:rgba(255,51,102,.07)}
+.delbtn:hover:not(:disabled){border-color:var(--bad)}
+button.del{border:0; background:none; color:var(--ink-3); padding:0 5px; font-size:15px; line-height:1}
+button.del:hover{color:var(--bad)}
 
 .leftcol{display:grid; gap:10px; align-content:start; min-width:0}
 .logwrap{position:relative; max-height:max(170px, calc(100vh - 110px - min(100vw - 390px, (100vh - 330px) * 202 / 87) * 87 / 202)); overflow:auto; padding:0 9px 9px}
@@ -715,6 +719,12 @@ function logShot(x, y){
     selId = null;
   });
 }
+function deleteShot(id){
+  const s = G.shots.find(x => x.id === id); if(!s) return;
+  mutate(() => { G.shots = G.shots.filter(x => x.id !== id); if(selId === id) selId = null; });
+  const n = $("dirNote"); n.textContent = `Deleted ${s.result === "GOAL" ? "goal" : "shot"} · \u2318Z undo`;
+  clearTimeout(swapEnds.t); swapEnds.t = setTimeout(() => n.textContent = "", 5000);
+}
 function editSel(fn){ const s = selected(); if(!s) return; mutate(() => fn(s)); }
 function nudge(s, d){
   const cur = secOf(s);
@@ -824,7 +834,10 @@ function renderShotPanel(D){
       <select data-f="result">${opt(RESULT_LABEL, s.result)}</select>
       <select data-f="str">${opt(STR_LABEL, s.str)}</select>
     </div>
-    <div class="note">type <kbd>w</kbd><kbd>s</kbd><kbd>b</kbd><kbd>t</kbd><kbd>d</kbd><kbd>a</kbd><kbd>u</kbd> · result <kbd>o</kbd><kbd>g</kbd><kbd>m</kbd><kbd>k</kbd> · <kbd>r</kbd> rebound · <kbd>x</kbd> other team · <kbd>,</kbd><kbd>.</kbd> time</div>`;
+    <div class="note">type <kbd>w</kbd><kbd>s</kbd><kbd>b</kbd><kbd>t</kbd><kbd>d</kbd><kbd>a</kbd><kbd>u</kbd> · result <kbd>o</kbd><kbd>g</kbd><kbd>m</kbd><kbd>k</kbd> · <kbd>r</kbd> rebound · <kbd>x</kbd> other team · <kbd>,</kbd><kbd>.</kbd> time</div>
+    <button class="delbtn" id="shotDel">Delete ${s.result === "GOAL" ? "goal" : "shot"} <kbd>Shift</kbd>+<kbd>Delete</kbd></button>`;
+  $("shotDel").addEventListener("mousedown", e => e.preventDefault());
+  $("shotDel").onclick = () => deleteShot(s.id);
   el.querySelectorAll("select").forEach(sel => sel.onchange = () => { const f = sel.dataset.f, v = sel.value;
     editSel(x => x[f] = v); sel.blur(); });
 }
@@ -832,15 +845,20 @@ function renderShotPanel(D){
 function renderLog(D){
   const tb = $("log"), sel = selected();
   if(!D.ordered.length){ tb.innerHTML = `<tbody><tr><td class="note">No shots yet.</td></tr></tbody>`; return; }
-  tb.innerHTML = `<thead><tr><th>#</th><th>P</th><th>Clock</th><th>Team</th><th>Type</th><th>Result</th><th>Reb</th><th>Str</th><th>On ice</th><th class="num">xG</th></tr></thead><tbody>` +
+  tb.innerHTML = `<thead><tr><th>#</th><th>P</th><th>Clock</th><th>Team</th><th>Type</th><th>Result</th><th>Reb</th><th>Str</th><th>On ice</th><th class="num">xG</th><th></th></tr></thead><tbody>` +
     D.ordered.map((s,i) => { const I = D.shotInfo[s.id];
       return `<tr class="row${sel && sel.id === s.id ? " sel" : ""}" data-id="${s.id}">
         <td class="num">${i+1}</td><td>${perLabel(s.p)}</td><td class="mono">${fmt(I.sec)}${s.s !== undefined && s.s !== null ? "*" : ""}</td>
         <td style="color:var(--${s.team})">${esc(s.team === "us" ? S.us : S.opp)}</td>
         <td class="${s.type === "UNKNOWN" ? "warnc" : ""}">${esc(TYPE_LABEL[s.type])}</td><td>${RESULT_LABEL[s.result]}</td>
         <td>${I.rebound ? "yes" : ""}</td><td>${esc(SIT_TEXT[I.situation] || I.situation)}</td>
-        <td class="mono">${I.onIce.map(esc).join(" ")}</td><td class="num">${I.xg === null ? "" : I.xg.toFixed(3)}</td></tr>`; }).join("") + `</tbody>`;
+        <td class="mono">${I.onIce.map(esc).join(" ")}</td><td class="num">${I.xg === null ? "" : I.xg.toFixed(3)}</td>
+        <td><button class="del" data-del="${s.id}" tabindex="-1" title="Delete this ${s.result === "GOAL" ? "goal" : "shot"}" aria-label="Delete">&times;</button></td></tr>`; }).join("") + `</tbody>`;
   tb.querySelectorAll("tr.row").forEach(tr => tr.onclick = () => { selId = +tr.dataset.id; render(); });
+  tb.querySelectorAll("button.del").forEach(b => {
+    b.addEventListener("mousedown", e => e.preventDefault());
+    b.onclick = e => { e.stopPropagation(); deleteShot(+b.dataset.del); };
+  });
   const selRow = tb.querySelector("tr.sel"), wrap = $("logwrap");
   if(selRow){
     const top = selRow.offsetTop - 30, bottom = selRow.offsetTop + selRow.offsetHeight;
@@ -1364,7 +1382,7 @@ document.addEventListener("keydown", e => {
   if(e.key === "ArrowDown"){ e.preventDefault(); stepSel(1, D); return; }
   if(e.key === "Escape"){ selId = null; render(); return; }
   if((e.key === "Backspace" || e.key === "Delete") && e.shiftKey){ e.preventDefault();
-    const s = selected(); if(s) mutate(() => { G.shots = G.shots.filter(x => x !== s); selId = null; }); return; }
+    const s = selected(); if(s) deleteShot(s.id); return; }
   const k = e.key;
   if(TYPES[k]){ editSel(s => s.type = TYPES[k][0]); return; }
   if(RESULTS[k]){ editSel(s => s.result = RESULTS[k]); return; }
@@ -1396,7 +1414,7 @@ const HELP = [
   ["Shot log"],
   ["Up / Down","Select an earlier / later shot"],
   ["Esc","Back to the latest shot"],
-  ["Shift+Delete","Delete the selected shot"],
+  ["Shift+Delete","Delete the selected shot (or the × on its row)"],
   ["Change bar (c)"],
   ["15 19 34 / 14 9 10","Off / on, numbers separated by spaces"],
   ["f1-f4 d1-d3 p1 p2","Line presets: who comes off is worked out from positions"],
