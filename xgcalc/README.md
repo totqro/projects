@@ -222,6 +222,20 @@ The shots export keeps the shot-plotter columns and adds `Clock`, `Rebound`,
 `score_tagged.py` read it unchanged and give the same xG. Players and shifts
 export as their own CSVs, and a JSON backup restores a whole game.
 
+**Copy for TOI sheet** (Shifts view) fills the team's *TOI Live Stats*
+workbook: click A2 on its TOI TRACKER sheet and paste. That sheet is one row
+per second (P1 to P3 at 1,200 rows each, then a 7:00 OT block, 4,020 in all),
+and its Totals sheet counts a player's rows across E:J for TOI and new numbers
+between rows for shifts. So the export writes every row, zeros where nobody
+played; a partial paste would leave the template's copy-down formulas
+carrying the last lineup into seconds that were never played. Players keep
+their column for the whole shift, shots on net go in L (`o` for us, `d` for
+them), the running score in P:Q, and the opponent's skater count in S from
+the strength timeline, which is what the sheet's even/pp/sh column needs.
+Possession (K) keeps its copy-down formula for hand entry. Pasted into the
+real workbook and recalculated, its Totals sheet reproduces the tracker's TOI
+to the workbook's own 0.1-minute rounding.
+
 **Report PDF** (Shifts view) prints two landscape pages for the full game or
 any one period, OT included. Page 1 is the shot map with our team always
 attacking right, totals with xG split by strength, and cumulative xG on a real
