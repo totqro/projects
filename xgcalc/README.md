@@ -216,6 +216,15 @@ The shots export keeps the shot-plotter columns and adds `Clock`, `Rebound`,
 `score_tagged.py` read it unchanged and give the same xG. Players and shifts
 export as their own CSVs, and a JSON backup restores a whole game.
 
+**Report PDF** (Shifts view) prints two landscape pages for the full game or
+any one period, OT included. Page 1 is the shot map with our team always
+attacking right, totals with xG split by strength, and cumulative xG on a real
+game-clock axis. Page 2 is every skater's on-ice line (TOI, shifts, average
+shift, CF/CA, GF-GA, xGF, xGA, xG +/-, xGF%, per 60), goalies with GSAx, and
+the forward lines and D pairs that played 20+ seconds together; a 3v3 OT
+report lists the three-skater units instead. It uses the browser's print
+dialog, so pick "Save as PDF".
+
 **`web/scatter.html` — the shot chart.** For charts that already carry exact
 coordinates — tagged off film, or exported from another tool. Drop the CSV in
 and every shot lands on the rink, scored by the actual five-feature model
