@@ -165,7 +165,7 @@ model = joblib.load("data/xg_model.joblib")
 shots = pd.DataFrame([{ "distance": 8, "angle_from_net": 10,
                         "shot_type": "WRIST", "is_rebound": 0,
                         "situation": "EV_5v5" }])
-shots["xg"] = predict_xg(model, shots)     # 0.1937
+shots["xg"] = predict_xg(model, shots)     # 0.205
 ```
 
 ## The web pages
@@ -337,14 +337,14 @@ have to be right. `--model tree` switches if ranking matters more.
 
 | | AUC | log loss | sum(xG)/goals |
 |---|---|---|---|
-| ours, valid 2024 | 0.7582 | 0.22540 | **0.9989** |
-| ours, test 2025 | 0.7422 | 0.23369 | 1.0732 |
+| ours, valid 2024 | 0.7564 | 0.22592 | 0.9691 |
+| ours, test 2025 | 0.7395 | 0.23389 | **1.0284** |
 | MoneyPuck, valid 2024 | 0.7785 | 0.21825 | 1.0231 |
 | MoneyPuck, test 2025 | 0.7764 | 0.22215 | 1.0150 |
 
-On 2024 the model totals goals almost exactly (0.9989) and beats MoneyPuck on
-calibration while trailing it on AUC — MoneyPuck ranks individual shots
-better, we total them better.
+MoneyPuck ranks individual shots better; our totals land within 3% of actual
+goals on both held-out seasons. The full refit log, from download to export,
+is in `data/retrain_report.txt`.
 
 ### Wrist and snap are one level
 
@@ -357,37 +357,51 @@ on the real mix of both, so it is the honest price of "wrist or snap". The
 dataset keeps the NHL's split, `predict_xg` applies the merge, and the export
 maps `SNAP` onto the merged column so older CSVs still score.
 
-After pulling this change, refit and re-export once:
+The merged level fits at **+0.008**, between the two it replaces and nearer
+wrist, which is three times as common (470,468 wrist shots to 146,532 snaps).
+What the merge costs and buys, same data, same splits:
+
+| | split wrist/snap | merged |
+|---|---|---|
+| AUC, valid 2024 / test 2025 | 0.7582 / 0.7422 | 0.7564 / 0.7395 |
+| sum(xG)/goals, valid 2024 | 0.9989 | 0.9691 |
+| sum(xG)/goals, test 2025 | 1.0732 | **1.0284** |
+
+It gives up about 0.002 AUC, the value of knowing snap from wrist in NHL
+data where the scorer records it. Totals trade places: 2024 now under-counts
+by 3% and 2025, the season further from training, over-counts by 3% instead
+of 7%. For live tagging the split was never available, so the merged model is
+the one whose numbers mean what they say.
+
+`.github/workflows/xgcalc-retrain.yml` refits and re-exports on GitHub's
+runners whenever the model code changes on a branch, and commits the new
+`web/xg_model.json` and `.js` back to it. Locally the same thing is:
 
 ```bash
 ./.venv/bin/python xg_model.py && ./.venv/bin/python export_model_web.py
 ```
 
-Until then the web pages still carry the split model, and the tracker says
-so on screen. The coefficients and metrics quoted in this README predate the
-merge; the refit prints the new ones.
-
 ### What it learned
 
 Coefficients are in log-odds, and the useful ones are not the obvious ones:
 
-- `distance` −1.040 — by far the strongest single term, as it should be.
-- `angle_from_net` −0.303.
-- `SLAP` **+0.397**, the highest of any shot type — even though slap shots
+- `distance` −1.014 — by far the strongest single term, as it should be.
+- `angle_from_net` −0.302.
+- `SLAP` **+0.380**, the highest of any shot type — even though slap shots
   have the *lowest* raw goal rate in the dataset (4.8%). Once distance is
   controlled for, that reverses: slap shots look bad only because they are
   taken from far out. From the same spot a slapper beats a wrist shot
-  (35 ft, 55°: .046 vs .029). This is the kind of thing a five-term model
+  (35 ft, 55°: .046 vs .032 for wrist/snap). This is the kind of thing a five-term model
   can show you and a 40-feature one cannot.
-- `EN_AGAINST` +3.520 — shooting at an empty net, the single largest effect.
+- `EN_AGAINST` +3.383 — shooting at an empty net, the single largest effect.
 
 ### Known weaknesses
 
-- **Test-season over-prediction (1.0732).** 2024 calibrates at 0.999, 2025 at
-  1.073, so this is drift, not bias — see the drift section below. Refit
-  before using on a new season.
-- **The top decile is over-valued** (predicts .258, actual .193). The model
-  over-rates its best chances, driven partly by `EN_AGAINST` (1.211). Shrinking
+- **Season-to-season drift.** 2024 calibrates at 0.969 and 2025 at 1.028,
+  errors in opposite directions a season apart, so this is drift, not bias;
+  see the drift section below. Refit before using on a new season.
+- **The top decile is over-valued** (predicts .245, actual .192). The model
+  over-rates its best chances, driven partly by `EN_AGAINST` (1.171). Shrinking
   extreme predictions, or an isotonic recalibration layer, would help.
 - **Not usable for shot sequences.** One-step lookback only; no rush term.
 
