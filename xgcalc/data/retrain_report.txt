@@ -1,0 +1,177 @@
+xgcalc retrain, 2026-09-26 14:04 UTC, commit f85f6d8
+
+== dataset ==
+Building xG shot dataset for seasons [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
+
+  downloading 2018
+    ok  https://peter-tanner.com/moneypuck/downloads/shots_2018.zip (19 MB)
+  reading 2018 ... 117,622 raw -> 117,621 clean
+  downloading 2019
+    ok  https://peter-tanner.com/moneypuck/downloads/shots_2019.zip (17 MB)
+  reading 2019 ... 104,172 raw -> 104,154 clean
+  downloading 2020
+    ok  https://peter-tanner.com/moneypuck/downloads/shots_2020.zip (13 MB)
+  reading 2020 ... 78,611 raw -> 78,599 clean
+  downloading 2021
+    ok  https://peter-tanner.com/moneypuck/downloads/shots_2021.zip (20 MB)
+  reading 2021 ... 121,471 raw -> 121,470 clean
+  downloading 2022
+    ok  https://peter-tanner.com/moneypuck/downloads/shots_2022.zip (20 MB)
+  reading 2022 ... 122,026 raw -> 122,026 clean
+  downloading 2023
+    ok  https://peter-tanner.com/moneypuck/downloads/shots_2023.zip (20 MB)
+  reading 2023 ... 122,472 raw -> 122,472 clean
+  downloading 2024
+    ok  https://peter-tanner.com/moneypuck/downloads/shots_2024.zip (20 MB)
+  reading 2024 ... 119,870 raw -> 119,870 clean
+  downloading 2025
+    ok  https://peter-tanner.com/moneypuck/downloads/shots_2025.zip (20 MB)
+  reading 2025 ... 119,271 raw -> 119,271 clean
+
+====================================================================
+DROP ACCOUNTING
+====================================================================
+        rows_in  rows_out  dropped_bad_event  dropped_bad_coords  dropped_bad_strength  dropped_bad_label  dropped_shootout  dropped_total
+season                                                                                                                                    
+2018     117622    117621                  0                   0                     1                  0                 0              1
+2019     104172    104154                  0                   0                    18                  0                 0             18
+2020      78611     78599                  0                   0                    12                  0                 0             12
+2021     121471    121470                  0                   0                     1                  0                 0              1
+2022     122026    122026                  0                   0                     0                  0                 0              0
+2023     122472    122472                  0                   0                     0                  0                 0              0
+2024     119870    119870                  0                   0                     0                  0                 0              0
+2025     119271    119271                  0                   0                     0                  0                 0              0
+
+====================================================================
+DATASET: 905,483 shots, 60 columns
+====================================================================
+  seasons          2018-2025
+  goals            63,697 (0.0703 base rate)
+  empty-net shots  6,172 (goal rate 0.574)
+  behind-net shots 10,100
+  rebounds         59,040 (goal rate 0.149)
+  features         40 (9 categorical)
+
+  nulls in feature columns: none
+
+  goal rate by strength bucket:
+    EV    753,805 shots   0.0652
+    PP    128,964 shots   0.0990
+    SH     22,714 shots   0.0782
+
+  goal rate by shot type:
+    UNKNOWN     4,429 shots   0.1445
+    DEFL       19,632 shots   0.0923
+    BACK       66,065 shots   0.0866
+    TIP        71,387 shots   0.0862
+    SNAP      146,532 shots   0.0839
+    WRIST     470,468 shots   0.0658
+    WRAP        7,399 shots   0.0528
+    SLAP      119,571 shots   0.0481
+
+Wrote /home/runner/work/projects/projects/xgcalc/data/shots.parquet (37.6 MB)
+
+== validation ==
+Loaded 905,483 shots, seasons 2018-2025
+
+Integrity
+  [PASS] no null features
+  [PASS] no duplicate shot keys
+  [PASS] label is binary
+  [PASS] adjusted x is one-sided  (every shot attacks the net at x=+89)
+  [PASS] no leaky column in features
+
+Calibration against MoneyPuck
+  [PASS] mp_xg sums to actual goals  (ratio 1.0001 — off means rows were lost or duplicated)
+
+Hockey sanity (goalie in net)
+  [PASS] goal rate falls monotonically with distance  (0.149 close-in -> 0.011 far)
+  [PASS] goal rate falls as the angle sharpens  (0.072 -> 0.049)
+  [PASS] rebounds score more often than non-rebounds  (0.148 vs 0.061)
+  [PASS] empty-net shots score far more often  (0.574)
+  [PASS] power play beats even strength  (PP 0.099 vs EV 0.065)
+  [PASS] 3v3 OT scores well above regulation  (3v3 0.131 vs regulation 0.064)
+  [PASS] playoff 5v5 OT scores at or below regulation  (playoff OT 0.053 vs regulation 0.064)
+  [PASS] no shootout attempts present  (regular-season period 5+ would be the shootout)
+  [PASS] regular-season OT is 3v3-based
+  [PASS] playoff OT is 5v5-based
+  [PASS] shorthanded rate is not empty-net contaminated  (SH 0.078; >.12 means pulled goalies leaked into the bucket)
+
+============================================================
+All checks passed.
+
+== model ==
+Five-feature xG model (logistic)
+train 666,342 (<2024)  valid 119,870  test 119,271 (2025)
+
+Features: distance, angle_from_net, shot_type, is_rebound, situation
+
+Headline
+  ours valid 2024          AUC 0.7564   log loss 0.22592   sum(xG)/goals 0.9691
+  ours test 2025           AUC 0.7395   log loss 0.23389   sum(xG)/goals 1.0284
+  moneypuck valid 2024     AUC 0.7785   log loss 0.21825   sum(xG)/goals 1.0231
+  moneypuck test 2025      AUC 0.7764   log loss 0.22215   sum(xG)/goals 1.0150
+
+Held-out 2025
+
+  Calibration by predicted-probability decile
+    bucket                 n   mean xG    actual   ratio
+    0.000-0.014       11,931    0.0089    0.0097   0.912
+    0.014-0.022       11,924    0.0176    0.0126   1.396
+    0.022-0.031       11,937    0.0261    0.0199   1.307
+    0.031-0.041       11,942    0.0355    0.0309   1.147
+    0.041-0.052       11,902    0.0461    0.0474   0.972
+    0.052-0.066       11,953    0.0584    0.0681   0.858
+    0.066-0.084       11,901    0.0744    0.0913   0.815
+    0.084-0.111       12,004    0.0967    0.1138   0.850
+    0.111-0.155       11,862    0.1306    0.1329   0.983
+    0.155-0.961       11,915    0.2448    0.1917   1.277
+
+  Calibration by situation
+    situation                    n   goals        xG   ratio
+    EN_6v5_DELAYED_PEN         393      38      36.4   0.957
+    EN_6v5_PULLED            2,113     149     155.7   1.045
+    EN_AGAINST               1,033     510     597.4   1.171
+    EN_OTHER_PULLED            352      30      35.7   1.192
+    EV_3v3                   1,350     176     170.1   0.967
+    EV_4v4                   1,355      89      95.1   1.068
+    EV_5v5                  93,004   5,725    5654.7   0.988
+    PP_4v3                     339      34      44.4   1.306
+    PP_5v3                     554      88      83.5   0.949
+    PP_5v4                  16,090   1,537    1739.0   1.131
+    SH_4v5                   2,613     186     186.4   1.002
+    mean abs error                                    0.0959
+
+  What the model learned (log-odds; + means more likely to score)
+    situation_EN_AGAINST        +3.383  ++++++++++++++++++++++++++++++
+    shot_type_SLAP              +0.380  +++
+    is_rebound                  +0.098  
+    shot_type_WRIST             +0.008  
+    situation_infrequent_sklearn-0.004  
+    situation_PP_OTHER          -0.069  
+    situation_EN_OTHER_DELAYED_PEN-0.137  -
+    situation_PP_5v3            -0.139  -
+    shot_type_UNKNOWN           -0.152  -
+    situation_SH_OTHER          -0.162  -
+    situation_PP_4v3            -0.183  -
+    angle_from_net              -0.302  ---
+    situation_EV_3v3            -0.391  ---
+    situation_EN_OTHER_PULLED   -0.420  ----
+    shot_type_BACK              -0.449  ----
+    situation_PP_5v4            -0.482  ----
+    situation_EN_6v5_DELAYED_PEN-0.497  ----
+    shot_type_DEFL              -0.552  -----
+    shot_type_TIP               -0.558  -----
+    situation_SH_4v5            -0.735  -------
+    situation_EV_4v4            -0.747  -------
+    situation_EN_6v5_PULLED     -0.753  -------
+    situation_EV_5v5            -0.835  --------
+    shot_type_WRAP              -0.849  --------
+    distance                    -1.014  ----------
+
+Saved data/xg_model.joblib (4 KB)
+
+== web export ==
+Wrote web/xg_model.json (2.7 KB) and web/xg_model.js, 25 columns
+  max |sklearn - exported| over 400 rows: 1.110e-16
+  exported model reproduces the pipeline
