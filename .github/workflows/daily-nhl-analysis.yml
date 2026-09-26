@@ -120,6 +120,13 @@ jobs:
           check_results(days_back=30)
           "
 
+      # Not gated on has_games: results for yesterday's games arrive on days
+      # with no games today. Rebuilds only the live periods; finished-season
+      # backtest periods are frozen in the file itself.
+      - name: Rebuild by-season performance history
+        working-directory: nhllines
+        run: python performance_history.py
+
       - name: Update model feedback system
         if: steps.check-games.outputs.has_games == 'true'
         working-directory: nhllines
@@ -150,7 +157,8 @@ jobs:
           # bare list would silently stop committing the other data files on
           # every gameless day.
           for f in bet_results.json analysis_history.json latest_analysis.json \
-                   model_feedback.json backtest_results.json predictions_log.jsonl; do
+                   model_feedback.json backtest_results.json predictions_log.jsonl \
+                   performance_history.json; do
             if [ -f "nhllines/data/$f" ]; then
               git add "nhllines/data/$f"
             fi

@@ -149,6 +149,25 @@ admission.
     excluded, metrics matched against sklearn) and against the real
     snapshots already archived.
 
+12. ✅ **Preseason + by-season performance history** (`main.py`,
+    `performance_history.py`) — the NHL API serves empty standings until the
+    regular season starts, which used to skip every game. Now: teams come from
+    the model's own state; expected total is the league-average baseline (the
+    similarity model needs standings); no bets are recommended for preseason
+    games. **Model choice is per game:** the xG model was trained only on games
+    where both teams had >= 5 GP (`xg_production.TRAINING_MIN_GP`), and fed a
+    zero-game state it outputs ~40% for every home team — so until both teams
+    reach 5 GP the calibrated Elo model (which carries ratings across seasons)
+    serves the game, and each logged row names the model that produced it.
+    Preseason rows carry `game_type: 1`, are logged, shown, and scored by
+    `performance_history.py` as their own period, and are excluded from
+    `scorecard.py`. The site's Performance tab now reads
+    `data/performance_history.json`: one period per season and phase, newest
+    first. Finished-season backtests are **frozen** in that file (a season the
+    weekly refit later trains on would otherwise turn in-sample); live periods
+    are rebuilt daily from the prediction log. This replaced
+    `backtest_results.json`, which came from the legacy similarity model.
+
 The leaky XGBoost path stays quarantined. The similarity model still supplies
 **expected total goals** — the totals gate found nothing that beats a constant
 league-average Poisson mean, so there's nothing better to wire in yet. The
@@ -238,6 +257,10 @@ python calibrate.py
 python scorecard.py                      # current season to date
 python scorecard.py --json data/scorecard.json
 
+# By-season performance history the site reads (live periods only; frozen
+# backtest periods are left as-is)
+python performance_history.py
+
 # Projected playoff bracket (annual; writes data/playoff_bracket.json for the site)
 python playoff_bracket.py                # most recent completed playoffs
 python playoff_bracket.py --season 20252026
@@ -295,6 +318,7 @@ nhllines/
 ├── calibrate.py                   # CLI: held-out-season calibration
 ├── scorecard.py                   # CLI: logged predictions vs actuals vs market
 ├── playoff_bracket.py             # CLI: projected Stanley Cup bracket vs actual
+├── performance_history.py         # CLI: by-season performance JSON for the site
 ├── model_backtest.py              # CLI: shipped model vs Elo, game by game, on a real season
 ├── backtest*.py                   # Legacy — predate the July 2026 rebuild, call the
 │                                  #   quarantined ml_model.py. Use model_backtest.py.
