@@ -1,0 +1,82 @@
+name: xgcalc retrain
+
+# Rebuilds the MoneyPuck shot dataset, refits the five-feature xG model and
+# re-exports the browser copy the web pages score with. Runs on a branch push
+# that touches the model code, or by hand; the refit JSON is committed back
+# to the same branch, so it ships with the change that caused it.
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore: [main]
+    paths:
+      - 'xgcalc/xg_model.py'
+      - 'xgcalc/export_model_web.py'
+      - 'xgcalc/src/data/**'
+      - 'xgcalc/requirements.txt'
+      - '.github/workflows/xgcalc-retrain.yml'
+
+concurrency:
+  group: xgcalc-retrain-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: xgcalc/requirements.txt
+
+      - name: Install
+        run: pip install -r xgcalc/requirements.txt
+
+      - name: Build dataset (downloads 2018-2025 from MoneyPuck)
+        working-directory: xgcalc
+        run: |
+          set -o pipefail
+          python build_dataset.py --download | tee /tmp/build.txt
+
+      - name: Validate dataset
+        working-directory: xgcalc
+        run: |
+          set -o pipefail
+          python validate_dataset.py | tee /tmp/validate.txt
+
+      - name: Fit model and export for the web
+        working-directory: xgcalc
+        run: |
+          set -o pipefail
+          python xg_model.py | tee /tmp/model.txt
+          python export_model_web.py | tee /tmp/export.txt
+
+      - name: Write report
+        run: |
+          {
+            echo "xgcalc retrain, $(date -u '+%Y-%m-%d %H:%M UTC'), commit ${GITHUB_SHA::7}"
+            echo; echo "== dataset =="; cat /tmp/build.txt
+            echo; echo "== validation =="; cat /tmp/validate.txt
+            echo; echo "== model =="; cat /tmp/model.txt
+            echo; echo "== web export =="; cat /tmp/export.txt
+          } > xgcalc/data/retrain_report.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: retrain-report
+          path: xgcalc/data/retrain_report.txt
+
+      - name: Commit refit model
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add xgcalc/web/xg_model.json xgcalc/web/xg_model.js xgcalc/data/retrain_report.txt
+          if git diff --cached --quiet; then echo "model unchanged"; exit 0; fi
+          git commit -m "chore(xgcalc): refit xG model [${GITHUB_SHA::7}]"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
