@@ -78,7 +78,6 @@ kbd{font-family:var(--body); font-size:11px; border:1px solid var(--line-2); bor
   user-select:none; touch-action:none; position:relative; z-index:2; background:var(--card)}
 .rinkhead .end:hover{border-color:var(--us)}
 .rinkhead .end.dragging{cursor:grabbing; border-style:solid; border-color:var(--warn); box-shadow:0 0 12px rgba(255,176,0,.35)}
-.rinkhead .end.armed{border-color:var(--ok); color:var(--ok)}
 .rinkhead .end,.rinkhead button{white-space:nowrap}
 .rinkhead .mid{display:flex; gap:6px; align-items:center; min-width:0}
 #dirNote{font-size:11.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--warn)}
@@ -1262,28 +1261,46 @@ $("strSel").onchange = e => { G.strength = e.target.value; saveGame(); e.target.
 $("bAll").onclick = () => { showAll = !showAll; render(); };
 $("bSwap").addEventListener("mousedown", e => e.preventDefault());
 $("bSwap").onclick = swapEnds;
-/* Drag either end label past the middle of the rink to swap ends. */
+/* Drag either end label: once its centre crosses the middle of the rink the
+   ends swap on the spot, and both labels slide into their new places. */
+const reduceMotion = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+function slideFrom(el, fromLeft){
+  if(reduceMotion()) return;
+  const dx = fromLeft - el.getBoundingClientRect().left;
+  el.style.transition = "none"; el.style.transform = `translateX(${dx}px)`;
+  void el.offsetWidth;
+  el.style.transition = "transform 180ms cubic-bezier(.2,.8,.2,1)"; el.style.transform = "";
+  setTimeout(() => { el.style.transition = ""; }, 220);
+}
 ["endL","endR"].forEach(id => {
-  const el = $(id);
+  const el = $(id), otherId = id === "endL" ? "endR" : "endL";
   let start = null;
   el.addEventListener("pointerdown", e => {
     if(e.button !== 0) return;
     e.preventDefault(); el.setPointerCapture(e.pointerId);
     const head = el.parentElement.getBoundingClientRect(), box = el.getBoundingClientRect();
-    start = {x:e.clientX, need: id === "endL" ? head.left + head.width/2 - box.left : head.left + head.width/2 - box.right};
+    start = {x:e.clientX, pid:e.pointerId, need:(head.left + head.width/2) - (box.left + box.width/2)};
+    el.style.transition = "none";
     el.classList.add("dragging");
   });
   el.addEventListener("pointermove", e => {
     if(!start) return;
     const dx = e.clientX - start.x, lim = id === "endL" ? Math.max(0, dx) : Math.min(0, dx);
     el.style.transform = `translateX(${lim}px)`;
-    el.classList.toggle("armed", id === "endL" ? lim >= start.need : lim <= start.need);
+    if(id === "endL" ? lim >= start.need : lim <= start.need){
+      const dragged = el.getBoundingClientRect().left, otherWas = $(otherId).getBoundingClientRect().left;
+      try{ el.releasePointerCapture(start.pid); }catch(err){}
+      start = null; el.classList.remove("dragging"); el.style.transform = "";
+      swapEnds();
+      slideFrom($(otherId), dragged);
+      slideFrom(el, otherWas);
+    }
   });
   const end = () => {
     if(!start) return;
-    const armed = el.classList.contains("armed");
-    start = null; el.style.transform = ""; el.classList.remove("dragging", "armed");
-    if(armed) swapEnds();
+    start = null; el.classList.remove("dragging");
+    const was = el.getBoundingClientRect().left;
+    el.style.transform = ""; slideFrom(el, was);
   };
   el.addEventListener("pointerup", end);
   el.addEventListener("pointercancel", end);

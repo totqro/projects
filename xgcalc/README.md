@@ -200,7 +200,8 @@ line presets (F1-F4, D1-D3, PP1-PP2). During it, the keyboard does the work:
 | `` ` `` `?` | Shifts view, full key sheet |
 
 If the ends are wrong, drag either label above the rink ("UofT shooting
-right") to the other side, or click Swap ends. The swap applies from the
+right") toward the other end: halfway across, the ends swap and both labels
+snap into their new places. Swap ends does the same in one click. The swap applies from the
 current period on, later periods keep alternating from it, and shots
 already logged there keep their spot and switch team.
 
