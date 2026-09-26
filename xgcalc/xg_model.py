@@ -14,9 +14,16 @@ which for this project matters as much as the last decimal of AUC.
 
     distance         feet from the net
     angle_from_net   0 = straight on, 90 = on the goal line, >90 = behind it
-    shot_type        WRIST / SNAP / SLAP / TIP / BACK / DEFL / WRAP / UNKNOWN
+    shot_type        WRIST (incl. SNAP) / SLAP / TIP / BACK / DEFL / WRAP / UNKNOWN
     is_rebound       shot within 3s of a prior shot, close to it
     situation        strength state, with 6v5 split by cause
+
+SNAP is folded into WRIST before fitting. Nobody tagging live from the stands
+can tell the two apart, and a tagger forced to pick one is wrong about half the
+time in a consistent direction (SNAP fit +0.31, WRIST -0.10: a 1.5x swing in
+odds from the same spot). The merged level is fit on the real mix of both, so
+it is the honest price of "wrist or snap, couldn't tell". The dataset keeps
+the NHL's split; the merge lives here so every caller of predict_xg gets it.
 
 Default is logistic regression, not the tree: it is better calibrated per
 situation (0.1256 vs 0.1543), it gives a readable coefficient per shot type
@@ -45,6 +52,7 @@ from src.data.schema import assert_no_holdout_leak
 FEATURES = ["distance", "angle_from_net", "shot_type", "is_rebound", "situation"]
 NUMERIC = ["distance", "angle_from_net", "is_rebound"]
 CATEGORICAL = ["shot_type", "situation"]
+SHOT_TYPE_MERGE = {"SNAP": "WRIST"}
 
 VALID_SEASON, TEST_SEASON = 2024, 2025
 MODEL_PATH = ROOT / "data" / "xg_model.joblib"
@@ -73,12 +81,19 @@ def build(kind: str) -> Pipeline:
     ])
 
 
-def predict_xg(model, shots: pd.DataFrame) -> np.ndarray:
-    """xG for each row of `shots`. Needs the five FEATURES columns."""
+def model_frame(shots: pd.DataFrame) -> pd.DataFrame:
+    """The FEATURES columns, with shot types merged the way the model is fit."""
     missing = [c for c in FEATURES if c not in shots.columns]
     if missing:
         raise ValueError(f"missing required feature column(s): {missing}")
-    return model.predict_proba(shots[FEATURES])[:, 1]
+    X = shots[FEATURES].copy()
+    X["shot_type"] = X["shot_type"].astype(str).replace(SHOT_TYPE_MERGE)
+    return X
+
+
+def predict_xg(model, shots: pd.DataFrame) -> np.ndarray:
+    """xG for each row of `shots`. Needs the five FEATURES columns."""
+    return model.predict_proba(model_frame(shots))[:, 1]
 
 
 # --------------------------------------------------------------------------
@@ -162,7 +177,7 @@ def main():
 
     assert_no_holdout_leak(train)
     model = build(args.model)
-    model.fit(train[FEATURES], train.goal)
+    model.fit(model_frame(train), train.goal)
 
     print("\nHeadline")
     for name, part in [("valid " + str(VALID_SEASON), valid),

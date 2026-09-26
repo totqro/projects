@@ -145,11 +145,13 @@ src/data/schema.py     source columns, feature/label/leak definitions, rink geom
 src/data/clean.py      all cleaning transforms, each documented with what was measured
 src/data/shots.py      locating, downloading and reading raw season files
 score_tagged.py        CLI: score a hand-tagged x/y shot chart with the saved model
-export_model_web.py    flatten the fitted pipeline to web/xg_model.json, with a parity check
+export_model_web.py    flatten the fitted pipeline to web/xg_model.json (+ .js), with a parity check
 zone_tagging.py        the 10- and 16-zone maps for shots you can only eyeball
 web/index.html         the live 16-zone tagger (tier rates, no coordinates needed)
 web/scatter.html       the shot chart — CSV in, the real model on a rink, in the browser
-web/serve.py           static server for previewing both pages locally
+web/tracker.html       live tracker: shots with x/y, scoreboard clock, shifts; TOI, xGF, xGA
+web/xg_model.js        the model as a script, so tracker.html runs from file:// offline
+web/serve.py           static server for previewing the pages locally
 data/                  built dataset + saved model (gitignored — regenerable)
 ```
 
@@ -166,15 +168,53 @@ shots = pd.DataFrame([{ "distance": 8, "angle_from_net": 10,
 shots["xg"] = predict_xg(model, shots)     # 0.1937
 ```
 
-## The two web pages
+## The web pages
 
-Two ways in, one model behind them.
+Three ways in, one model behind them.
 
 **`web/index.html` — the live tagger.** Tap one of 16 rink zones from your
 seat. No coordinates, because nobody can eyeball `x=71.3, y=-8.6` during a
 live game. It prices each shot off the empirical rate for that zone (three
 danger tiers, with multipliers for strength and rebounds), which is the
 honest resolution for tapped-by-eye input.
+
+**`web/tracker.html`: the rinkside tracker.** The one to use when shifts
+matter. Built for a laptop at the rink: click the rink where a shot came from,
+and the page stamps it with the scoreboard clock and whoever is on the ice for
+our team. From that it works out every player's TOI, on-ice xGF and xGA, and
+xGF%. It runs from `file://` with no network, so open it straight from the
+folder (keep `xg_model.js` next to it). Everything saves after each keystroke.
+
+Before the game, **Setup** takes the roster (`14 Smith C`, one per line) and
+line presets (F1-F4, D1-D3, PP1-PP2). During it, the keyboard does the work:
+
+| Key | |
+|---|---|
+| `Tab` | pause / resume the clock, always |
+| `=` | type the scoreboard time (`1240`); also repairs events since the last reading |
+| `c` | change bar: `15 19 34 / 14 9 10`, `f2 d1`, `s20` (20 s ago), `@12:40`; Shift+Enter overrides a red check |
+| `w s b t d a u` | wrist/snap, slap, backhand, tip, deflection, wrap, unknown |
+| `o g m k` | on goal, goal, missed, blocked |
+| `r` `x` `,` `.` | rebound override, wrong end, time -1 s / +1 s |
+| `↑ ↓` `Esc` | walk the shot log, back to latest |
+| `` ` `` `?` | Shifts view, full key sheet |
+
+Only raw events are stored: clock operations, shots and shift changes. Clock
+times, who was on for each shot, rebounds (same team, within 3 s, the model's
+own definition) and all the stats are derived on every render, so fixing one
+change on the Shifts view fixes every shot and total that depended on it.
+
+The clock is corrected retroactively. Each typed scoreboard reading is a sync
+point, and every event before it in the same period is clamped so the clock
+can never read below the reading and can never have run faster than real
+time to reach it. That one rule repairs both live mistakes: a missed pause
+(events in the stoppage snap to the reading) and a missed resume (events in
+play count down to it).
+
+The shots export keeps the shot-plotter columns and adds `Clock`, `Rebound`,
+`Situation`, `xG`, `OnIce` and `Goalie`, so the Shot Chart and
+`score_tagged.py` read it unchanged and give the same xG. Players and shifts
+export as their own CSVs, and a JSON backup restores a whole game.
 
 **`web/scatter.html` — the shot chart.** For charts that already carry exact
 coordinates — tagged off film, or exported from another tool. Drop the CSV in
@@ -271,7 +311,7 @@ can be explained to someone who will never read the code:
 |---|---|
 | `distance` | feet from the net |
 | `angle_from_net` | 0° straight on, 90° on the goal line, >90° behind it |
-| `shot_type` | WRIST / SNAP / SLAP / TIP / BACK / DEFL / WRAP / UNKNOWN |
+| `shot_type` | WRIST (wrist or snap) / SLAP / TIP / BACK / DEFL / WRAP / UNKNOWN |
 | `is_rebound` | shot within 3 s of, and close to, a prior shot |
 | `situation` | strength state, with 6v5 split by cause |
 
@@ -290,6 +330,27 @@ have to be right. `--model tree` switches if ranking matters more.
 On 2024 the model totals goals almost exactly (0.9989) and beats MoneyPuck on
 calibration while trailing it on AUC — MoneyPuck ranks individual shots
 better, we total them better.
+
+### Wrist and snap are one level
+
+`SNAP` is folded into `WRIST` before the model is fit (`SHOT_TYPE_MERGE` in
+`xg_model.py`). Nobody tagging live can reliably tell the two apart, and they
+are priced very differently: fit separately, snap came out +0.31 and wrist
+−0.10, about 1.5x in odds from the same spot. A tagger forced to choose is
+wrong about half the time in a consistent direction; the merged level is fit
+on the real mix of both, so it is the honest price of "wrist or snap". The
+dataset keeps the NHL's split, `predict_xg` applies the merge, and the export
+maps `SNAP` onto the merged column so older CSVs still score.
+
+After pulling this change, refit and re-export once:
+
+```bash
+./.venv/bin/python xg_model.py && ./.venv/bin/python export_model_web.py
+```
+
+Until then the web pages still carry the split model, and the tracker says
+so on screen. The coefficients and metrics quoted in this README predate the
+merge; the refit prints the new ones.
 
 ### What it learned
 

@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Live rinkside tracker: shots with coordinates, a scoreboard clock, and who is on the ice, for TOI, xGF and xGA per player.">
+<meta name="color-scheme" content="dark">
+<title>Rinkside Tracker</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ctext y=%2226%22 font-size=%2226%22%3E%F0%9F%8F%92%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=JetBrains+Mono:wght@400;600;700&family=Share+Tech+Mono&display=swap">
+<style>
+/* Self-contained on purpose: this page has to work from file:// with no
+   network at the rink, so it carries its own copy of the site tokens. */
+:root{
+  --bg:#0a0a0f; --card:#12121a; --muted:#1c1c2e; --line:#2a2a3a; --line-2:#3a3a4e;
+  --ink:#e0e0e0; --ink-2:#8b93a7; --ink-3:#6b7280;
+  --us:#00d4ff; --them:#ff3366; --ok:#00ff88; --warn:#ffb000; --bad:#ff3366;
+  --ice:#0c131d; --paint:rgba(224,224,224,.30); --blue:rgba(0,212,255,.75); --red:rgba(255,51,102,.72);
+  --head:"Orbitron","Share Tech Mono",monospace;
+  --body:"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+  --label:"Share Tech Mono","JetBrains Mono",Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--body); font-size:13px; line-height:1.4}
+button,input,select,textarea{font:inherit; color:inherit}
+button{background:var(--muted); border:1px solid var(--line); padding:5px 10px; cursor:pointer;
+  font-family:var(--label); letter-spacing:.06em; text-transform:uppercase; font-size:12px}
+button:hover:not(:disabled){border-color:var(--us)}
+button:disabled{opacity:.4; cursor:not-allowed}
+button.primary{background:var(--us); color:var(--bg); border-color:transparent; font-weight:700}
+input,select,textarea{background:var(--card); border:1px solid var(--line); padding:5px 7px; color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:none; border-color:var(--us)}
+kbd{font-family:var(--body); font-size:11px; border:1px solid var(--line-2); border-bottom-width:2px;
+  padding:0 5px; background:var(--card); color:var(--ink)}
+.lab{font-family:var(--label); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2)}
+.mono{font-variant-numeric:tabular-nums}
+.hidden{display:none !important}
+.note{color:var(--ink-2); font-size:12px}
+.warnc{color:var(--warn)} .badc{color:var(--bad)} .okc{color:var(--ok)}
+
+/* ---- top bar ---- */
+.top{position:sticky; top:0; z-index:10; background:var(--bg); border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:10px; padding:6px 12px; flex-wrap:wrap}
+.clockbox{display:flex; align-items:baseline; gap:8px; min-width:215px}
+#per{font-family:var(--head); font-size:15px; color:var(--ink-2)}
+#clock{font-family:var(--head); font-size:30px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; min-width:118px}
+#clock.run{color:var(--ok); text-shadow:0 0 10px rgba(0,255,136,.35)}
+#clock.stop{color:var(--warn)}
+#runTag{font-family:var(--label); font-size:11px; letter-spacing:.14em}
+#setBox{width:92px; font-family:var(--head); font-size:18px}
+.ctl{display:flex; gap:6px; align-items:center}
+#light{font-family:var(--label); font-size:12px; letter-spacing:.06em; padding:4px 9px; border:1px solid var(--line)}
+#light.ok{color:var(--ok); border-color:rgba(0,255,136,.45)}
+#light.warn{color:var(--warn); border-color:rgba(255,176,0,.5); background:rgba(255,176,0,.08)}
+.score{display:flex; gap:12px; margin-left:auto; font-size:11.5px}
+.score b{font-family:var(--head); font-size:15px}
+.tabs{display:flex; gap:4px}
+.tabs button[aria-pressed="true"]{border-color:var(--us); color:var(--us)}
+#modelNote{flex-basis:100%; font-size:11.5px}
+
+/* ---- change bar ---- */
+.bar{flex-basis:100%; background:#0f0f18; border:1px solid var(--us); padding:8px 10px; display:grid; gap:6px}
+.bar .row{display:flex; gap:8px; align-items:center}
+.bar .row > span{font-family:var(--head); color:var(--us)}
+#barIn{flex:1; font-size:16px; font-family:var(--body); border-color:var(--us)}
+#barPrev{font-size:12.5px; min-height:20px; display:flex; flex-wrap:wrap; gap:6px; align-items:center}
+.pchip{padding:1px 7px; border:1px solid var(--line-2); background:var(--card)}
+.pchip.off{border-color:rgba(255,51,102,.6)} .pchip.on{border-color:rgba(0,255,136,.55)}
+.bar.err #barIn{border-color:var(--bad)}
+.errs{color:var(--bad); flex-basis:100%}
+
+/* ---- track view ---- */
+.track{display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:10px; padding:10px 12px}
+.panel{background:var(--card); border:1px solid var(--line); padding:9px}
+.rinkhead{display:flex; justify-content:space-between; gap:8px; align-items:center; margin-bottom:6px; font-size:12px}
+.rinkhead .end{font-family:var(--label); letter-spacing:.06em}
+svg.rink{display:block; width:min(100%, calc((100vh - 330px) * 202 / 87)); height:auto; aspect-ratio:202/87; margin:0 auto; cursor:crosshair; user-select:none; touch-action:none}
+.rink .boards{fill:var(--ice); stroke:var(--line-2); stroke-width:.6}
+.rink .m{fill:none; stroke:var(--paint); stroke-width:.35}
+.rink .mr{fill:none; stroke:var(--red); stroke-width:.5}
+.rink .mb{stroke:var(--blue); stroke-width:1.1}
+.dot{cursor:grab; stroke-width:.35}
+.dot.us{fill:rgba(0,212,255,.55); stroke:var(--us)}
+.dot.them{fill:rgba(255,51,102,.5); stroke:var(--them)}
+.dot.block{fill:none; stroke-dasharray:.8 .6}
+.dot.miss{fill-opacity:.12}
+.dot.goal{stroke:#fff; stroke-width:.8}
+.dot.sel{stroke:var(--warn); stroke-width:.9}
+.dot.old{opacity:.25}
+
+.side{display:grid; gap:10px; align-content:start}
+.board .grp{display:grid; grid-template-columns:repeat(4,1fr); gap:5px; margin:4px 0 8px}
+.pbtn{display:grid; padding:4px 3px; text-transform:none; letter-spacing:0; text-align:center; gap:0}
+.pbtn .n{font-family:var(--head); font-size:15px}
+.pbtn .nm{font-size:10px; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.pbtn .t{font-size:10px; color:var(--ink-3)}
+.pbtn.on{background:rgba(0,255,136,.12); border-color:var(--ok)}
+.pbtn.on .t{color:var(--ok)}
+.pbtn.poff{outline:2px solid var(--bad)} .pbtn.pon{outline:2px solid var(--ok)}
+
+.shot{display:grid; gap:7px}
+.shot .line{display:flex; gap:6px; flex-wrap:wrap; align-items:center; font-size:12.5px}
+.chip{padding:1px 7px; border:1px solid var(--line-2); background:var(--muted)}
+.chip.team-us{background:var(--us); color:var(--bg); border-color:transparent; font-weight:700}
+.chip.team-them{background:var(--them); color:var(--bg); border-color:transparent; font-weight:700}
+.chip.need{color:var(--warn); border-color:rgba(255,176,0,.55)}
+.shot .edits{display:grid; grid-template-columns:repeat(3,1fr); gap:5px}
+.shot .edits select{width:100%}
+
+.leftcol{display:grid; gap:10px; align-content:start; min-width:0}
+.logwrap{position:relative; max-height:max(170px, calc(100vh - 110px - min(100vw - 390px, (100vh - 330px) * 202 / 87) * 87 / 202)); overflow:auto; padding:0 9px 9px}
+table{border-collapse:collapse; width:100%; font-size:12px}
+th,td{padding:4px 7px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap}
+th{font-family:var(--label); font-weight:400; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2);
+  position:sticky; top:0; background:var(--card)}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+tr.row{cursor:pointer}
+tr.row:hover td{background:rgba(0,212,255,.06)}
+tr.row.sel td{background:rgba(255,176,0,.13)}
+tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
+
+/* ---- shifts + setup ---- */
+.page{padding:12px; display:grid; gap:12px; max-width:1200px}
+.page h2{font-family:var(--head); font-size:14px; letter-spacing:.08em; margin:0 0 8px; text-transform:uppercase}
+.shiftlist input{width:100%; min-width:60px; padding:3px 5px}
+.shiftlist td.iss{color:var(--warn); white-space:normal; min-width:180px}
+.actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
+.form{display:grid; grid-template-columns:170px minmax(0,1fr); gap:8px 12px; align-items:center; max-width:760px}
+.form textarea{width:100%; min-height:220px; font-family:var(--body)}
+.lines{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px}
+.lines label{display:flex; gap:6px; align-items:center}
+.lines input{width:100%}
+
+/* ---- help ---- */
+.help{position:fixed; inset:0; background:rgba(5,5,10,.86); z-index:50; display:grid; place-items:center; padding:20px}
+.help .box{background:var(--card); border:1px solid var(--us); padding:16px 18px; max-width:980px; max-height:92vh; overflow:auto;
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 26px}
+.help h3{grid-column:1/-1; font-family:var(--head); font-size:13px; margin:8px 0 2px; color:var(--us)}
+.help .k{display:flex; gap:10px; font-size:12.5px} .help .k > span:first-child{min-width:130px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="clockbox">
+    <span id="per">P1</span>
+    <span id="clock" class="mono">20:00</span>
+    <input id="setBox" class="hidden" placeholder="12:40" autocomplete="off" aria-label="Scoreboard time">
+    <span id="runTag" class="lab">PAUSED</span>
+  </div>
+  <div class="ctl">
+    <button id="bRun" title="Tab">Start <kbd>Tab</kbd></button>
+    <button id="bSet" title="=">Set <kbd>=</kbd></button>
+    <button id="bNext" title="]">End per <kbd>]</kbd></button>
+    <select id="strSel" title="e cycles EV / PP / PK" aria-label="Strength">
+      <option value="EV">EV</option><option value="PP">PP 5v4</option><option value="PP2">PP 5v3</option>
+      <option value="PK">PK 4v5</option><option value="PK2">PK 3v5</option>
+    </select>
+  </div>
+  <span id="light">board</span>
+  <div class="score" id="score"></div>
+  <div class="tabs">
+    <button data-view="track" aria-pressed="true">Track</button>
+    <button data-view="shifts" aria-pressed="false">Shifts</button>
+    <button data-view="setup" aria-pressed="false">Setup</button>
+    <button id="bHelp">?</button>
+  </div>
+  <div id="modelNote" class="note hidden"></div>
+  <div class="bar hidden" id="bar">
+    <div class="row">
+      <span>c&gt;</span>
+      <input id="barIn" autocomplete="off" spellcheck="false" placeholder="15 19 34 / 14 9 10   ·   f2 d1   ·   s20   ·   @12:40">
+      <button class="primary" id="barGo">Commit</button>
+      <button id="barX">Esc</button>
+    </div>
+    <div id="barPrev"></div>
+  </div>
+</header>
+
+
+<main id="vTrack" class="track">
+  <div class="leftcol">
+  <div class="panel">
+    <div class="rinkhead">
+      <span class="end" id="endL"></span>
+      <span>
+        <button id="bAll" aria-pressed="false">All periods</button>
+      </span>
+      <span class="end" id="endR"></span>
+    </div>
+    <svg class="rink" id="rink" viewBox="-101 -43.5 202 87" aria-label="Rink: click where the shot came from"></svg>
+  </div>
+  <div class="panel logwrap" id="logwrap"><table id="log"></table></div>
+  </div>
+  <div class="side">
+    <div class="panel board">
+      <span class="lab">On ice · click to build a change</span>
+      <div id="board"></div>
+    </div>
+    <div class="panel shot" id="shotPanel"></div>
+  </div>
+</main>
+
+<main id="vShifts" class="page hidden">
+  <div class="panel">
+    <h2>Players</h2>
+    <div style="overflow:auto"><table id="stats"></table></div>
+    <div class="note" id="statsNote" style="margin-top:6px"></div>
+  </div>
+  <div class="panel">
+    <h2>Shift changes</h2>
+    <div class="note">Edit any change: time as <b>12:40</b> (blank = the time you logged it), numbers separated by spaces. Every stat above recomputes from this list.</div>
+    <div style="overflow:auto; margin-top:8px"><table id="shiftlist" class="shiftlist"></table></div>
+  </div>
+  <div class="panel">
+    <h2>Export</h2>
+    <div class="actions">
+      <button class="primary" id="xShots">Shots CSV</button>
+      <button id="xPlayers">Players CSV</button>
+      <button id="xShifts">Shifts CSV</button>
+      <button id="xBackup">Full backup (JSON)</button>
+    </div>
+    <div class="note" style="margin-top:6px">The shots CSV keeps the shot-plotter columns, so Shot Chart and <code>score_tagged.py</code> read it as-is, plus clock, rebound, situation, xG and who was on the ice.</div>
+  </div>
+</main>
+
+<main id="vSetup" class="page hidden">
+  <div class="panel">
+    <h2>Game</h2>
+    <div class="form">
+      <label for="sDate">Date</label><input type="date" id="sDate">
+      <label for="sUs">Our team</label><input id="sUs">
+      <label for="sOpp">Opponent</label><input id="sOpp">
+      <label for="sPer">Period length (min)</label><input id="sPer" type="number" min="1" max="30" step="1">
+      <label for="sOt">OT length (min)</label><input id="sOt" type="number" min="1" max="30" step="1">
+      <label for="sOtf">OT format</label><select id="sOtf"><option value="3v3">3v3</option><option value="5v5">5v5</option></select>
+      <label for="sEnd">We attack in P1</label><select id="sEnd"><option value="R">Right end (from your seat)</option><option value="L">Left end</option></select>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Roster</h2>
+    <div class="form">
+      <label for="sRoster">One per line:<br><span class="note">number name position<br>14 Smith C<br>22 Park D<br>30 Lee G</span></label>
+      <textarea id="sRoster" spellcheck="false"></textarea>
+    </div>
+    <h2 style="margin-top:12px">Line presets</h2>
+    <div class="lines" id="sLines"></div>
+    <div class="note" id="setupNote" style="margin-top:8px"></div>
+    <div class="actions">
+      <button class="primary" id="sSave">Save setup</button>
+      <button id="sSwap">Swap ends (fix team on logged shots)</button>
+      <button id="sNew">New game</button>
+      <button id="sImport">Import backup</button>
+      <input type="file" id="sFile" accept=".json,application/json" class="hidden">
+    </div>
+  </div>
+</main>
+
+<div class="help hidden" id="help"><div class="box" id="helpBox"></div></div>
+
+<script src="xg_model.js"></script>
+<script>
+(function(){
+"use strict";
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[<>&"]/g, c => ({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c]));
+const KEY_GAME = "rinkside-tracker.game.v1", KEY_SETUP = "rinkside-tracker.setup.v1";
+const LINE_KEYS = ["f1","f2","f3","f4","d1","d2","d3","p1","p2"];
+
+/* ================================================================
+   Model: the exported logistic pipeline, same arithmetic as
+   scatter.html and export_model_web.py's reference scorer.
+================================================================= */
+let MODEL = window.XG_MODEL || null, COLIDX = null;
+function initModel(){
+  if(!MODEL) return;
+  COLIDX = {}; MODEL.columns.forEach((c,i) => COLIDX[c] = i);
+}
+function scoreShot(s){
+  if(!MODEL) return null;
+  const x = new Float64Array(MODEL.columns.length), num = MODEL.numeric;
+  for(let i=0;i<num.names.length;i++) x[COLIDX["num__"+num.names[i]]] = (s[num.names[i]]-num.mean[i])/num.scale[i];
+  for(const name of MODEL.categorical.names){
+    const col = MODEL.categorical.columns[name][s[name]];
+    if(col !== undefined) x[COLIDX[col]] = 1;
+  }
+  let z = MODEL.intercept;
+  for(let i=0;i<x.length;i++) z += MODEL.coef[i]*x[i];
+  return 1/(1+Math.exp(-z));
+}
+const GOAL_X = 89;
+function geometry(x,y){ const dx = GOAL_X-x, ya = Math.abs(y);
+  return {d:Math.hypot(dx,ya), a:Math.atan2(ya,dx)*180/Math.PI}; }
+
+const TYPES = {w:["WRIST","Wrist/Snap"], s:["SLAP","Slap"], b:["BACK","Backhand"], t:["TIP","Tip"],
+               d:["DEFL","Deflection"], a:["WRAP","Wrap"], u:["UNKNOWN","Unknown"]};
+const TYPE_LABEL = {}; Object.values(TYPES).forEach(([c,l]) => TYPE_LABEL[c] = l);
+const TYPE_EXPORT = {WRIST:"Wrist/Snap", SLAP:"Slap Shot", BACK:"Backhand", TIP:"Tip-In",
+                     DEFL:"Deflection", WRAP:"Wrap-around", UNKNOWN:""};
+const RESULTS = {o:"SAVE", g:"GOAL", m:"MISS", k:"BLOCK"};
+const RESULT_LABEL = {SAVE:"on goal", GOAL:"GOAL", MISS:"missed", BLOCK:"blocked"};
+const RESULT_EXPORT = {SAVE:"Shot", GOAL:"Goal", MISS:"Miss", BLOCK:"Block"};
+const STRENGTHS = ["EV","PP","PP2","PK","PK2"];
+const STR_LABEL = {EV:"EV", PP:"PP 5v4", PP2:"PP 5v3", PK:"PK 4v5", PK2:"PK 3v5"};
+const SIT_TEXT = {EV_5v5:"5v5", EV_4v4:"4v4", EV_3v3:"3v3", PP_5v4:"5v4", PP_5v3:"5v3", PP_4v3:"4v3",
+                  SH_4v5:"4v5", SH_OTHER:"3v5", EN_6v5_PULLED:"6v5", EN_AGAINST:"5v6"};
+const REBOUND_SECONDS = 3;
+
+/* ================================================================
+   State. Only raw events are stored: clock operations, shots and
+   shift changes. Clock times, who was on the ice, rebounds, TOI and
+   every stat are derived from them on each render, so editing one
+   event fixes everything downstream of it.
+================================================================= */
+const today = () => { const d = new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+function blankSetup(){
+  const lines = {}; LINE_KEYS.forEach(k => lines[k] = []);
+  return {date:today(), us:"UofT", opp:"Opponent", periodMin:20, otMin:5, otFormat:"3v3", usRightP1:true, roster:[], lines};
+}
+function blankGame(setup){
+  return {clock:[{w:Date.now(), k:"set", p:1, s:setup.periodMin*60}], strength:"EV", shots:[], changes:[], nextId:1};
+}
+let S = blankSetup(), G = null;
+try{ const r = localStorage.getItem(KEY_SETUP); if(r) S = Object.assign(blankSetup(), JSON.parse(r)); }catch(e){}
+try{ const r = localStorage.getItem(KEY_GAME); if(r) G = JSON.parse(r); }catch(e){}
+if(!G) G = blankGame(S);
+
+let saveFailed = false;
+function saveGame(){ try{ localStorage.setItem(KEY_GAME, JSON.stringify(G)); saveFailed = false; }catch(e){ saveFailed = true; } }
+function saveSetup(){ try{ localStorage.setItem(KEY_SETUP, JSON.stringify(S)); }catch(e){ saveFailed = true; } }
+
+const hist = [];
+const snapshot = () => JSON.stringify({shots:G.shots, changes:G.changes, strength:G.strength, nextId:G.nextId});
+function mutate(fn){ hist.push(snapshot()); if(hist.length > 200) hist.shift(); fn(); saveGame(); render(); }
+function undo(){
+  const s = hist.pop(); if(!s) return;
+  Object.assign(G, JSON.parse(s)); selId = null; saveGame(); render();
+}
+
+const rosterMap = () => { const m = {}; S.roster.forEach(p => m[p.num] = p); return m; };
+const posOf = n => (rosterMap()[n] || {}).pos || "?";
+
+/* ================================================================
+   Clock. The scoreboard counts down. Operations are appended with the
+   wall time they happened: set (a period start or a typed scoreboard
+   reading), run, pause.
+
+   pred(w) replays them. corrected(w) also honours the next typed
+   reading in the same period: the clock cannot read lower than it,
+   and cannot have run faster than real time to reach it. That one
+   rule repairs both live mistakes after the fact:
+     missed a pause: events in the stoppage snap to the reading
+     missed a resume: events in play count down to the reading
+================================================================= */
+const periodLen = p => (p <= 3 ? S.periodMin : S.otMin) * 60;
+function pred(w){
+  let p = 1, v = periodLen(1), run = false, last = null;
+  for(const op of G.clock){
+    if(op.w > w) break;
+    if(run && last !== null) v = Math.max(0, v - (op.w-last)/1000);
+    last = op.w;
+    if(op.k === "set"){ p = op.p; v = op.s; }
+    else if(op.k === "run") run = true;
+    else if(op.k === "pause") run = false;
+  }
+  if(run && last !== null) v = Math.max(0, v - (w-last)/1000);
+  return {p, v, run};
+}
+function corrected(w){
+  const c = pred(w);
+  const next = G.clock.find(op => op.w > w && op.k === "set");
+  if(next && next.sync && next.p === c.p)
+    c.v = Math.min(Math.max(c.v, next.s), next.s + (next.w - w)/1000);
+  return c;
+}
+const now = () => pred(Date.now());
+function toggleClock(){ G.clock.push({w:Date.now(), k: now().run ? "pause" : "run"}); saveGame(); render(); }
+function syncClock(sec){ const c = now(); G.clock.push({w:Date.now(), k:"set", p:c.p, s:sec, sync:true}); saveGame(); render(); }
+function nextPeriod(){
+  const c = now(), w = Date.now();
+  G.clock.push({w, k:"pause"}, {w:w+1, k:"set", p:c.p+1, s:periodLen(c.p+1)});
+  saveGame(); render();
+}
+function fmt(sec){ const s = Math.max(0, Math.ceil(sec - 1e-6)); return Math.floor(s/60) + ":" + String(s%60).padStart(2,"0"); }
+const perLabel = p => p <= 3 ? "P"+p : (p === 4 ? "OT" : "OT"+(p-3));
+function parseClock(str){
+  str = String(str).trim();
+  let m, s;
+  const hit = str.match(/^(\d{1,2})[:.](\d{1,2})$/);
+  if(hit){ m = +hit[1]; s = +hit[2]; }
+  else if(/^\d{1,4}$/.test(str)){ const n = str.padStart(3,"0"); m = +n.slice(0,-2); s = +n.slice(-2); }
+  else return null;
+  if(s >= 60) return null;
+  return m*60 + s;
+}
+function between(p1, s1, p2, s2){
+  if(p1 === p2) return Math.max(0, s1 - s2);
+  let t = s1;
+  for(let q = p1+1; q < p2; q++) t += periodLen(q);
+  return t + periodLen(p2) - s2;
+}
+
+/* ================================================================
+   Derivation: order every event by (period, clock desc, wall time),
+   replay the shift changes, and read who was on for each shot.
+================================================================= */
+const secOf = e => (e.s !== undefined && e.s !== null) ? e.s : corrected(e.w).v;
+const cmp = (a,b) => a.p - b.p || b.sec - a.sec || a.w - b.w;
+const usAttacksRight = p => S.usRightP1 === (p % 2 === 1);
+const attacksRight = (team, p) => (team === "us") === usAttacksRight(p);
+
+function situationFor(team, str, info, p){
+  const known = info.onIce.length > 0;
+  if(known && !info.goalie) return team === "us" ? "EN_6v5_PULLED" : "EN_AGAINST";
+  const n = known ? info.skaters : null, us = team === "us";
+  const ot3 = p >= 4 && S.otFormat === "3v3";
+  switch(str){
+    case "PP":  return us ? (n === 4 || (n === null && ot3) ? "PP_4v3" : "PP_5v4") : (n === 4 || (n === null && ot3) ? "SH_OTHER" : "SH_4v5");
+    case "PP2": return us ? "PP_5v3" : "SH_OTHER";
+    case "PK":  return us ? (n === 3 ? "SH_OTHER" : "SH_4v5") : (n === 3 ? "PP_4v3" : "PP_5v4");
+    case "PK2": return us ? "SH_OTHER" : "PP_5v3";
+    default:
+      if(n === 4) return "EV_4v4";
+      if(n === 3 || (n === null && ot3)) return "EV_3v3";
+      return "EV_5v5";
+  }
+}
+
+function applyChange(board, c, issues){
+  const R = rosterMap();
+  const bad = t => issues && issues.push(t);
+  for(const n of c.off){ if(board.has(n)) board.delete(n); else bad(`#${n} was not on the ice`); }
+  for(const n of c.on){
+    if(!R[n]) bad(`#${n} is not on the roster`);
+    if(board.has(n)) bad(`#${n} was already on`); else board.add(n);
+  }
+  const all = [...board], g = all.filter(n => posOf(n) === "G").length;
+  if(g > 1) bad(`${g} goalies on the ice`);
+  if(all.length - g > 6) bad(`${all.length - g} skaters on the ice`);
+  if(all.length > 6 && g > 0) bad(`${all.length} players on the ice`);
+}
+
+function derive(extraChange){
+  const events = [];
+  const changes = extraChange ? G.changes.concat([extraChange]) : G.changes;
+  changes.forEach(c => events.push({kind:"c", o:c, p:c.p, sec:secOf(c), w:c.w}));
+  G.shots.forEach(s => events.push({kind:"s", o:s, p:s.p, sec:secOf(s), w:s.w}));
+  events.sort(cmp);
+
+  const board = new Set(), issues = {}, shotInfo = {}, since = {}, shifts = [], candidate = {};
+  const n0 = now();
+  for(const e of events){
+    if(e.kind === "c"){
+      const before = new Set(board), list = [];
+      applyChange(board, e.o, list);
+      issues[e.o.id] = list;
+      if(e.o === extraChange){ candidate.before = before; candidate.after = new Set(board); }
+      for(const n of before) if(!board.has(n)){ const st = since[n]; if(st) shifts.push({num:n, p1:st.p, s1:st.sec, p2:e.p, s2:e.sec}); delete since[n]; }
+      for(const n of board) if(!before.has(n)) since[n] = {p:e.p, sec:e.sec};
+    } else {
+      const onIce = [...board].sort((a,b) => a-b);
+      const goalie = onIce.find(n => posOf(n) === "G") || null;
+      shotInfo[e.o.id] = {onIce, goalie, skaters: onIce.length - (goalie ? 1 : 0), p:e.p, sec:e.sec, w:e.w};
+    }
+  }
+  for(const n in since){ const st = since[n];
+    shifts.push({num:n, p1:st.p, s1:st.sec, p2:Math.max(n0.p, st.p), s2:(n0.p > st.p ? n0.v : Math.min(n0.v, st.sec)), open:true}); }
+
+  const ordered = events.filter(e => e.kind === "s").map(e => e.o);
+  let prev = null;
+  for(const s of ordered){
+    const I = shotInfo[s.id];
+    const auto = !!(prev && prev.team === s.team && prev.p === s.p && prev.result !== "GOAL" &&
+                    shotInfo[prev.id].sec - I.sec <= REBOUND_SECONDS && shotInfo[prev.id].sec - I.sec >= 0);
+    I.autoReb = auto;
+    I.rebound = s.reb === null || s.reb === undefined ? auto : !!s.reb;
+    I.situation = situationFor(s.team, s.str, I, s.p);
+    const right = attacksRight(s.team, s.p), X = right ? s.x : -s.x, Y = right ? s.y : -s.y;
+    const g = geometry(X, Y);
+    I.distance = g.d; I.angle = g.a;
+    I.xg = s.result === "BLOCK" ? 0 : scoreShot({distance:g.d, angle_from_net:g.a, shot_type:s.type,
+                                                 is_rebound:I.rebound ? 1 : 0, situation:I.situation});
+    prev = s;
+  }
+  return {ordered, shotInfo, issues, board, shifts, candidate};
+}
+
+function playerStats(D){
+  const st = {};
+  S.roster.forEach(p => st[p.num] = {p, toi:0, shifts:0, cf:0, ca:0, gf:0, ga:0, xgf:0, xga:0});
+  for(const sh of D.shifts){ const r = st[sh.num]; if(!r) continue;
+    r.toi += between(sh.p1, sh.s1, sh.p2, sh.s2); r.shifts++; }
+  for(const s of D.ordered){
+    const I = D.shotInfo[s.id], us = s.team === "us";
+    for(const n of I.onIce){ const r = st[n]; if(!r) continue;
+      if(us){ r.cf++; r.xgf += I.xg || 0; if(s.result === "GOAL") r.gf++; }
+      else  { r.ca++; r.xga += I.xg || 0; if(s.result === "GOAL") r.ga++; }
+    }
+  }
+  return st;
+}
+function teamTotals(D, team){
+  const t = {att:0, sog:0, g:0, xg:0};
+  for(const s of D.ordered){ if(s.team !== team) continue;
+    t.att++; if(s.result === "SAVE" || s.result === "GOAL") t.sog++; if(s.result === "GOAL") t.g++;
+    t.xg += D.shotInfo[s.id].xg || 0; }
+  return t;
+}
+
+/* ================================================================
+   Change bar: "15 19 34 / 14 9 10 s20". Presets (f1-f4, d1-d3,
+   p1-p2) resolve against whoever is on at the change's time.
+================================================================= */
+function parseBar(text){
+  const toks = text.toLowerCase().replace(/\//g, " / ").replace(/,/g, " ").trim().split(/\s+/).filter(Boolean);
+  const out = {off:[], on:[], presets:[], ago:null, at:null, errors:[], slash:false};
+  for(const t of toks){
+    let m;
+    if(t === "/"){ if(out.slash) out.errors.push("only one / allowed"); out.slash = true; }
+    else if(/^\d{1,2}$/.test(t)) (out.slash ? out.on : out.off).push(String(+t));
+    else if((m = t.match(/^s(\d{1,3})$/))) out.ago = +m[1];
+    else if(t.startsWith("@")){ const v = parseClock(t.slice(1)); if(v === null) out.errors.push(`bad time ${t}`); else out.at = v; }
+    else if(LINE_KEYS.includes(t)) out.presets.push(t);
+    else out.errors.push(`don't know "${t}"`);
+  }
+  if(!out.slash && (out.off.length || out.on.length)) out.errors.push("use / between players off and players on");
+  return out;
+}
+
+function resolveBar(text){
+  const P = parseBar(text), n0 = now(), p = n0.p;
+  let sec = null;
+  if(P.at !== null) sec = Math.min(P.at, periodLen(p));
+  else if(P.ago !== null) sec = Math.min(periodLen(p), n0.v + P.ago);
+  const w = Date.now();
+  const probe = {id:"_probe", w, p, s:sec, off:[], on:[]};
+  const before = derive(probe).candidate.before;
+
+  const off = new Set(P.off), on = new Set(P.on);
+  const R = rosterMap();
+  for(const k of P.presets){
+    const members = (S.lines[k] || []).map(String);
+    if(!members.length){ P.errors.push(`${k.toUpperCase()} preset is empty (Setup)`); continue; }
+    const pos = k[0] === "f" ? "F" : k[0] === "d" ? "D" : null;
+    for(const n of before){
+      const np = (R[n] || {}).pos;
+      if(np === "G") continue;
+      if((pos === null || np === pos) && !members.includes(n)) off.add(n);
+    }
+    for(const n of members) if(!before.has(n)) on.add(n);
+  }
+  for(const n of [...off]) if(on.has(n)){ off.delete(n); on.delete(n); }
+
+  const change = {id:"_probe", w, p, s:sec, off:[...off], on:[...on]};
+  const D2 = derive(change);
+  const errors = P.errors.concat(D2.issues["_probe"] || []);
+  if(!change.off.length && !change.on.length && !P.errors.length) errors.push("nobody coming off or on");
+
+  let moved = 0;
+  if(sec !== null){
+    const D1 = derive();
+    for(const s of G.shots) if(D1.shotInfo[s.id].onIce.join() !== D2.shotInfo[s.id].onIce.join()) moved++;
+  }
+  return {change, errors, sec, ago:P.ago, at:P.at, moved};
+}
+
+let barOpen = false;
+function openBar(){ barOpen = true; $("bar").classList.remove("hidden"); $("barIn").focus(); renderBar(); }
+function closeBar(){ barOpen = false; $("barIn").value = ""; $("bar").classList.add("hidden"); $("barIn").blur(); render(); }
+function commitBar(force){
+  const text = $("barIn").value;
+  if(!text.trim()){ closeBar(); return; }
+  const r = resolveBar(text);
+  if(r.errors.length && !force){ renderBar(); return; }
+  if(!r.change.off.length && !r.change.on.length){ renderBar(); return; }
+  mutate(() => {
+    const c = {id:G.nextId++, w:r.change.w, p:r.change.p, off:r.change.off, on:r.change.on};
+    if(r.sec !== null) c.s = r.sec;
+    if(r.errors.length) c.forced = true;
+    G.changes.push(c);
+  });
+  closeBar();
+}
+function chipsFor(list, cls){
+  const R = rosterMap();
+  return list.map(n => { const p = R[n];
+    return `<span class="pchip ${cls}">#${esc(n)}${p ? " "+esc(p.name)+" ("+esc(p.pos)+")" : " ?"}</span>`; }).join("") || `<span class="note">nobody</span>`;
+}
+function renderBar(){
+  if(!barOpen) return;
+  const text = $("barIn").value, bar = $("bar"), out = $("barPrev");
+  if(!text.trim()){ bar.classList.remove("err");
+    out.innerHTML = `<span class="note">off numbers <kbd>/</kbd> on numbers · presets f1-f4 d1-d3 p1 p2 · <kbd>s20</kbd> = 20 s ago · <kbd>@12:40</kbd> · <kbd>Enter</kbd> commit · <kbd>Shift</kbd>+<kbd>Enter</kbd> override · <kbd>Esc</kbd> cancel</span>`;
+    return; }
+  const r = resolveBar(text);
+  const when = r.sec === null ? "live" : `at ${fmt(r.sec)} ${perLabel(r.change.p)}` + (r.ago !== null ? ` (${r.ago}s ago)` : "");
+  bar.classList.toggle("err", r.errors.length > 0);
+  out.innerHTML = `<span class="lab">off</span>${chipsFor(r.change.off,"off")}<span>&rarr;</span>`+
+    `<span class="lab">on</span>${chipsFor(r.change.on,"on")}<span class="note">${esc(when)}</span>`+
+    (r.moved ? `<span class="warnc">changes on-ice for ${r.moved} logged shot${r.moved>1?"s":""}</span>` : "")+
+    (r.errors.length ? `<span class="errs">${r.errors.map(esc).join(" · ")} &nbsp;<span class="note">(Shift+Enter to commit anyway)</span></span>` : "");
+}
+function barToggle(n){
+  if(!barOpen) openBar();
+  const D = derive(), inp = $("barIn");
+  const parts = inp.value.split("/");
+  let left = (parts[0] || "").trim().split(/\s+/).filter(Boolean);
+  let right = (parts[1] || "").trim().split(/\s+/).filter(Boolean);
+  const flip = arr => arr.includes(n) ? arr.filter(t => t !== n) : arr.concat([n]);
+  if(D.board.has(n)) left = flip(left); else right = flip(right);
+  inp.value = left.join(" ") + " / " + right.join(" ");
+  inp.focus(); renderBar(); renderBoard(D);
+}
+
+/* ================================================================
+   Shots
+================================================================= */
+let selId = null, showAll = false, view = "track";
+const latest = () => G.shots.length ? G.shots[G.shots.length-1] : null;
+const selected = () => (selId !== null && G.shots.find(s => s.id === selId)) || latest();
+
+function logShot(x, y){
+  const c = now();
+  const team = x >= 0 ? (usAttacksRight(c.p) ? "us" : "them") : (usAttacksRight(c.p) ? "them" : "us");
+  mutate(() => {
+    G.shots.push({id:G.nextId++, w:Date.now(), p:c.p, x:+x.toFixed(1), y:+y.toFixed(1), team,
+                  type:"UNKNOWN", result:"SAVE", reb:null, str:G.strength});
+    selId = null;
+  });
+}
+function editSel(fn){ const s = selected(); if(!s) return; mutate(() => fn(s)); }
+function nudge(s, d){
+  const cur = secOf(s);
+  s.s = Math.max(0, Math.min(periodLen(s.p), Math.round(cur) + d));
+}
+function stepSel(dir, D){
+  if(!D.ordered.length) return;
+  const cur = selected(), i = D.ordered.indexOf(cur);
+  const j = Math.max(0, Math.min(D.ordered.length-1, (i < 0 ? D.ordered.length-1 : i) + dir));
+  selId = D.ordered[j].id; render();
+}
+
+/* ================================================================
+   Rendering
+================================================================= */
+function drawRinkBase(){
+  const p = [];
+  p.push(`<rect class="boards" x="-100" y="-42.5" width="200" height="85" rx="28"/>`);
+  p.push(`<line class="mr" x1="0" y1="-42.5" x2="0" y2="42.5" style="stroke-width:1"/>`);
+  [-25,25].forEach(x => p.push(`<line class="mb" x1="${x}" y1="-42.5" x2="${x}" y2="42.5"/>`));
+  [-89,89].forEach(x => {
+    const dir = x > 0 ? 1 : -1;
+    p.push(`<line class="mr" x1="${x}" y1="-36.8" x2="${x}" y2="36.8"/>`);
+    p.push(`<path class="mr" d="M ${x} -4 A 6 6 0 0 ${dir>0?0:1} ${x} 4"/>`);
+    p.push(`<rect class="mr" x="${dir>0?x:x-4}" y="-3" width="4" height="6"/>`);
+    [-22,22].forEach(y => { p.push(`<circle class="m" cx="${x-dir*20}" cy="${y}" r="15"/>`);
+      p.push(`<circle cx="${x-dir*20}" cy="${y}" r="1" fill="var(--red)"/>`); });
+  });
+  p.push(`<circle class="m" cx="0" cy="0" r="15"/>`);
+  [-20,20].forEach(x => [-22,22].forEach(y => p.push(`<circle cx="${x}" cy="${y}" r="1" fill="var(--red)"/>`)));
+  return p.join("");
+}
+const RINK_BASE = drawRinkBase();
+const rad = xg => 1.1 + Math.sqrt(Math.max(xg || 0, 0)) * 5;
+
+function renderRink(D){
+  const cur = now().p, sel = selected();
+  const dots = D.ordered.filter(s => showAll || s.p === cur).map(s => {
+    const I = D.shotInfo[s.id];
+    const cls = ["dot", s.team, s.result === "BLOCK" ? "block" : "", s.result === "MISS" ? "miss" : "",
+                 s.result === "GOAL" ? "goal" : "", sel && sel.id === s.id ? "sel" : "", s.p !== cur ? "old" : ""].join(" ");
+    return `<circle class="${cls}" data-id="${s.id}" cx="${s.x}" cy="${-s.y}" r="${rad(I.xg).toFixed(2)}"><title>${esc(perLabel(s.p))} ${fmt(I.sec)} · ${esc(TYPE_LABEL[s.type])} · ${(I.xg||0).toFixed(3)} xG</title></circle>`;
+  }).join("");
+  $("rink").innerHTML = RINK_BASE + dots;
+  const r = usAttacksRight(cur);
+  $("endL").innerHTML = `&larr; <b style="color:var(--${r ? "them" : "us"})">${esc(r ? S.opp : S.us)}</b> shooting left`;
+  $("endR").innerHTML = `<b style="color:var(--${r ? "us" : "them"})">${esc(r ? S.us : S.opp)}</b> shooting right &rarr;`;
+  $("bAll").setAttribute("aria-pressed", String(showAll));
+}
+
+function expectedSkaters(p){
+  const ot3 = p >= 4 && S.otFormat === "3v3";
+  return {EV: ot3 ? 3 : 5, PP: ot3 ? 4 : 5, PP2: 5, PK: ot3 ? 3 : 4, PK2: 3}[G.strength];
+}
+function renderLight(D){
+  const el = $("light"), on = [...D.board];
+  const g = on.filter(n => posOf(n) === "G").length, sk = on.length - g, exp = expectedSkaters(now().p);
+  let txt, ok = false;
+  if(!on.length) txt = "board empty: c / numbers for the lineup";
+  else if(g === 0 && sk === exp + 1) txt = `${sk} skaters, goalie pulled`;
+  else if(g !== 1) txt = `${sk} skaters, ${g} goalies`;
+  else if(sk !== exp) txt = `${sk} skaters + G (expected ${exp})`;
+  else { txt = `${sk} + G`; ok = true; }
+  el.textContent = txt; el.className = ok ? "ok" : "warn";
+}
+
+function renderBoard(D){
+  const pending = barOpen ? resolveBar($("barIn").value).change : {off:[], on:[]};
+  const toiNow = {}, n0 = now();
+  for(const sh of D.shifts) if(sh.open) toiNow[sh.num] = between(sh.p1, sh.s1, n0.p, n0.v);
+  const st = playerStats(D);
+  const grp = (pos, label) => {
+    const ps = S.roster.filter(p => p.pos === pos);
+    if(!ps.length) return "";
+    return `<div class="lab">${label}</div><div class="grp">` + ps.map(p => {
+      const on = D.board.has(p.num);
+      const cls = ["pbtn", on ? "on" : "", pending.off.includes(p.num) ? "poff" : "", pending.on.includes(p.num) ? "pon" : ""].join(" ");
+      const t = on ? "shift " + fmt(toiNow[p.num] || 0) : fmt(st[p.num] ? st[p.num].toi : 0);
+      return `<button class="${cls}" data-num="${esc(p.num)}" tabindex="-1"><span class="n">${esc(p.num)}</span>`+
+             `<span class="nm">${esc(p.name || "")}</span><span class="t mono">${t}</span></button>`;
+    }).join("") + `</div>`;
+  };
+  $("board").innerHTML = S.roster.length
+    ? grp("F","Forwards") + grp("D","Defence") + grp("G","Goalies")
+    : `<div class="note" style="margin-top:6px">No roster yet. Add it under <b>Setup</b>.</div>`;
+}
+
+function renderShotPanel(D){
+  const s = selected(), el = $("shotPanel");
+  if(!s){ el.innerHTML = `<span class="lab">Shot</span><div class="note">Click the rink where a shot came from. The clock time and who is on the ice are taken automatically.</div>`; return; }
+  const I = D.shotInfo[s.id], idx = D.ordered.indexOf(s) + 1, editing = selId !== null && s !== latest();
+  const opt = (map, cur) => Object.entries(map).map(([v,l]) => `<option value="${v}"${v===cur?" selected":""}>${esc(l)}</option>`).join("");
+  el.innerHTML = `<span class="lab">${editing ? "Editing shot "+idx+" of "+D.ordered.length+" · Esc for latest" : "Latest shot"}</span>
+    <div class="line">
+      <span class="chip team-${s.team}">${esc(s.team === "us" ? S.us : S.opp)}</span>
+      <span class="chip mono">${esc(perLabel(s.p))} ${fmt(I.sec)}</span>
+      <span class="chip ${s.type === "UNKNOWN" ? "need" : ""}">${esc(TYPE_LABEL[s.type])}</span>
+      <span class="chip">${RESULT_LABEL[s.result]}</span>
+      ${I.rebound ? `<span class="chip">rebound${s.reb === null || s.reb === undefined ? " (auto)" : ""}</span>` : ""}
+      <span class="chip">${esc(SIT_TEXT[I.situation] || I.situation)}</span>
+      <span class="mono" style="margin-left:auto">${I.xg === null ? "no model" : I.xg.toFixed(3)+" xG"}</span>
+    </div>
+    <div class="note">${I.distance.toFixed(0)} ft · ${I.angle.toFixed(0)}° · on ice: ${I.onIce.length ? I.onIce.map(esc).join(" ") : "nobody logged"}</div>
+    <div class="edits">
+      <select data-f="type">${opt(TYPE_LABEL, s.type)}</select>
+      <select data-f="result">${opt(RESULT_LABEL, s.result)}</select>
+      <select data-f="str">${opt(STR_LABEL, s.str)}</select>
+    </div>
+    <div class="note">type <kbd>w</kbd><kbd>s</kbd><kbd>b</kbd><kbd>t</kbd><kbd>d</kbd><kbd>a</kbd><kbd>u</kbd> · result <kbd>o</kbd><kbd>g</kbd><kbd>m</kbd><kbd>k</kbd> · <kbd>r</kbd> rebound · <kbd>x</kbd> other team · <kbd>,</kbd><kbd>.</kbd> time</div>`;
+  el.querySelectorAll("select").forEach(sel => sel.onchange = () => { const f = sel.dataset.f, v = sel.value;
+    editSel(x => x[f] = v); sel.blur(); });
+}
+
+function renderLog(D){
+  const tb = $("log"), sel = selected();
+  if(!D.ordered.length){ tb.innerHTML = `<tbody><tr><td class="note">No shots yet.</td></tr></tbody>`; return; }
+  tb.innerHTML = `<thead><tr><th>#</th><th>P</th><th>Clock</th><th>Team</th><th>Type</th><th>Result</th><th>Reb</th><th>Str</th><th>On ice</th><th class="num">xG</th></tr></thead><tbody>` +
+    D.ordered.map((s,i) => { const I = D.shotInfo[s.id];
+      return `<tr class="row${sel && sel.id === s.id ? " sel" : ""}" data-id="${s.id}">
+        <td class="num">${i+1}</td><td>${perLabel(s.p)}</td><td class="mono">${fmt(I.sec)}${s.s !== undefined && s.s !== null ? "*" : ""}</td>
+        <td style="color:var(--${s.team})">${esc(s.team === "us" ? S.us : S.opp)}</td>
+        <td class="${s.type === "UNKNOWN" ? "warnc" : ""}">${esc(TYPE_LABEL[s.type])}</td><td>${RESULT_LABEL[s.result]}</td>
+        <td>${I.rebound ? "yes" : ""}</td><td>${esc(SIT_TEXT[I.situation] || I.situation)}</td>
+        <td class="mono">${I.onIce.map(esc).join(" ")}</td><td class="num">${I.xg === null ? "" : I.xg.toFixed(3)}</td></tr>`; }).join("") + `</tbody>`;
+  tb.querySelectorAll("tr.row").forEach(tr => tr.onclick = () => { selId = +tr.dataset.id; render(); });
+  const selRow = tb.querySelector("tr.sel"), wrap = $("logwrap");
+  if(selRow){
+    const top = selRow.offsetTop - 30, bottom = selRow.offsetTop + selRow.offsetHeight;
+    if(top < wrap.scrollTop) wrap.scrollTop = top;
+    else if(bottom > wrap.scrollTop + wrap.clientHeight) wrap.scrollTop = bottom - wrap.clientHeight;
+  }
+}
+
+function renderTop(D){
+  const c = now(), clk = $("clock");
+  $("per").textContent = perLabel(c.p);
+  clk.textContent = fmt(c.v);
+  clk.className = "mono " + (c.run ? "run" : "stop");
+  $("runTag").textContent = c.run ? "RUNNING" : "PAUSED";
+  $("bRun").innerHTML = (c.run ? "Pause" : "Start") + " <kbd>Tab</kbd>";
+  $("strSel").value = G.strength;
+  if(!D) return;
+  const a = teamTotals(D, "us"), b = teamTotals(D, "them");
+  const need = G.shots.filter(s => s.type === "UNKNOWN").length;
+  $("score").innerHTML =
+    `<span style="color:var(--us)">${esc(S.us)} <b>${a.xg.toFixed(2)}</b> xG ${a.g}G ${a.att}att</span>`+
+    `<span style="color:var(--them)">${esc(S.opp)} <b>${b.xg.toFixed(2)}</b> xG ${b.g}G ${b.att}att</span>`+
+    (need ? `<span class="warnc">${need} need a type</span>` : "")+
+    (saveFailed ? `<span class="badc">NOT SAVING: export a backup</span>` : "");
+  renderLight(D);
+}
+
+function renderStats(D){
+  const st = playerStats(D), tb = $("stats");
+  const rows = Object.values(st).sort((x,y) => ({F:0,D:1,G:2}[x.p.pos]-{F:0,D:1,G:2}[y.p.pos]) || y.toi - x.toi);
+  if(!rows.length){ tb.innerHTML = `<tbody><tr><td class="note">Add a roster under Setup.</td></tr></tbody>`; return; }
+  const pct = (a,b) => a+b > 0 ? (100*a/(a+b)).toFixed(0)+"%" : "";
+  const per60 = (v,t) => t > 0 ? (v*3600/t).toFixed(2) : "";
+  tb.innerHTML = `<thead><tr><th>#</th><th>Name</th><th>Pos</th><th class="num">TOI</th><th class="num">Shifts</th>
+    <th class="num">CF</th><th class="num">CA</th><th class="num">GF</th><th class="num">GA</th>
+    <th class="num">xGF</th><th class="num">xGA</th><th class="num">xGF%</th><th class="num">xGF/60</th><th class="num">xGA/60</th></tr></thead><tbody>` +
+    rows.map(r => `<tr><td>${esc(r.p.num)}</td><td>${esc(r.p.name)}</td><td>${r.p.pos}</td><td class="num">${fmt(r.toi)}</td>
+      <td class="num">${r.shifts}</td><td class="num">${r.cf}</td><td class="num">${r.ca}</td><td class="num">${r.gf}</td><td class="num">${r.ga}</td>
+      <td class="num">${r.xgf.toFixed(2)}</td><td class="num">${r.xga.toFixed(2)}</td><td class="num">${pct(r.xgf, r.xga)}</td>
+      <td class="num">${per60(r.xgf, r.toi)}</td><td class="num">${per60(r.xga, r.toi)}</td></tr>`).join("") + `</tbody>`;
+  const unknownOn = new Set(); D.shifts.forEach(s => { if(!st[s.num]) unknownOn.add(s.num); });
+  $("statsNote").innerHTML = `CF/CA count every attempt, blocked ones included. xG leaves blocked shots at 0, as the model does.` +
+    (unknownOn.size ? ` <span class="warnc">Numbers on the ice but not on the roster: ${[...unknownOn].map(esc).join(", ")}.</span>` : "");
+}
+
+function renderShiftList(D){
+  const tb = $("shiftlist");
+  const list = G.changes.map(c => ({c, p:c.p, sec:secOf(c), w:c.w})).sort(cmp);
+  if(!list.length){ tb.innerHTML = `<tbody><tr><td class="note">No changes yet. On the Track view, <kbd>c</kbd> / 9 14 7 22 18 30 <kbd>Enter</kbd> sets the starting lineup.</td></tr></tbody>`; return; }
+  tb.innerHTML = `<thead><tr><th>Per</th><th>Clock</th><th>Off</th><th>On</th><th>Check</th><th></th></tr></thead><tbody>` +
+    list.map(({c, sec}) => { const iss = D.issues[c.id] || [];
+      return `<tr data-id="${c.id}">
+        <td><input data-f="p" value="${c.p}" style="width:48px"></td>
+        <td><input data-f="s" value="${c.s !== undefined && c.s !== null ? fmt(c.s) : ""}" placeholder="${fmt(sec)}" style="width:76px"></td>
+        <td><input data-f="off" value="${esc(c.off.join(" "))}"></td>
+        <td><input data-f="on" value="${esc(c.on.join(" "))}"></td>
+        <td class="iss">${c.forced ? "overridden · " : ""}${iss.map(esc).join(" · ") || (c.forced ? "" : '<span class="okc">ok</span>')}</td>
+        <td><button data-del="${c.id}">Delete</button></td></tr>`; }).join("") + `</tbody>`;
+  tb.querySelectorAll("input").forEach(inp => {
+    const commit = () => {
+      const id = +inp.closest("tr").dataset.id, c = G.changes.find(x => x.id === id), f = inp.dataset.f, v = inp.value.trim();
+      if(!c) return;
+      if(f === "p"){ const p = parseInt(v, 10); if(p >= 1 && p <= 9 && p !== c.p) mutate(() => c.p = p); else inp.value = c.p; }
+      else if(f === "s"){ if(!v) mutate(() => delete c.s); else { const s = parseClock(v);
+        if(s === null || s > periodLen(c.p)) { inp.value = c.s != null ? fmt(c.s) : ""; return; } mutate(() => c.s = s); } }
+      else { const nums = v.split(/[\s,]+/).filter(t => /^\d{1,2}$/.test(t)).map(t => String(+t));
+        if(nums.join(" ") !== c[f].join(" ")) mutate(() => c[f] = nums); }
+    };
+    inp.onchange = commit;
+    inp.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); inp.blur(); } };
+  });
+  tb.querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
+    const id = +b.dataset.del; mutate(() => G.changes = G.changes.filter(c => c.id !== id)); });
+}
+
+function renderSetup(){
+  $("sDate").value = S.date; $("sUs").value = S.us; $("sOpp").value = S.opp;
+  $("sPer").value = S.periodMin; $("sOt").value = S.otMin; $("sOtf").value = S.otFormat;
+  $("sEnd").value = S.usRightP1 ? "R" : "L";
+  $("sRoster").value = S.roster.map(p => [p.num, p.name, p.pos].filter(Boolean).join(" ")).join("\n");
+  $("sLines").innerHTML = LINE_KEYS.map(k => `<label><span class="lab" style="min-width:26px">${k.toUpperCase()}</span>`+
+    `<input data-line="${k}" value="${esc((S.lines[k] || []).join(" "))}" placeholder="${k[0]==="f"?"9 14 7":k[0]==="d"?"22 4":"9 14 7 22 4"}"></label>`).join("");
+}
+
+const POS = {F:"F", C:"F", LW:"F", RW:"F", W:"F", FW:"F", D:"D", LD:"D", RD:"D", G:"G"};
+function readSetup(){
+  const errs = [];
+  const roster = [], seen = {};
+  $("sRoster").value.split("\n").forEach((line, i) => {
+    const t = line.trim().replace(/^#/, "").split(/[\s,]+/).filter(Boolean);
+    if(!t.length) return;
+    if(!/^\d{1,2}$/.test(t[0])){ errs.push(`roster line ${i+1}: starts with "${t[0]}", not a number`); return; }
+    const num = String(+t[0]);
+    let pos = "F";
+    if(t.length > 1 && POS[t[t.length-1].toUpperCase()]){ pos = POS[t.pop().toUpperCase()]; }
+    if(seen[num]) errs.push(`#${num} is listed twice`);
+    seen[num] = 1;
+    roster.push({num, name:t.slice(1).join(" "), pos});
+  });
+  const lines = {};
+  document.querySelectorAll("[data-line]").forEach(inp => {
+    const k = inp.dataset.line;
+    lines[k] = inp.value.split(/[\s,]+/).filter(t => /^\d{1,2}$/.test(t)).map(t => String(+t));
+    lines[k].forEach(n => { if(!seen[n]) errs.push(`${k.toUpperCase()}: #${n} is not on the roster`); });
+    const want = k[0] === "f" ? 3 : k[0] === "d" ? 2 : 5;
+    if(lines[k].length && lines[k].length !== want) errs.push(`${k.toUpperCase()} has ${lines[k].length} players (usually ${want})`);
+  });
+  return {roster, lines, errs};
+}
+
+function render(){
+  const D = derive();
+  renderTop(D);
+  if(view === "track"){ renderRink(D); renderBoard(D); renderShotPanel(D); renderLog(D); renderBar(); }
+  else if(view === "shifts"){ renderStats(D); renderShiftList(D); }
+  document.querySelectorAll(".tabs [data-view]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
+}
+function setView(v){
+  if(barOpen) closeBar();
+  view = v;
+  $("vTrack").classList.toggle("hidden", v !== "track");
+  $("vShifts").classList.toggle("hidden", v !== "shifts");
+  $("vSetup").classList.toggle("hidden", v !== "setup");
+  if(v === "setup") renderSetup();
+  render();
+}
+
+/* ================================================================
+   Export
+================================================================= */
+function download(name, text, type){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], {type: type || "text/csv"}));
+  a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+const cell = v => { const s = String(v === null || v === undefined ? "" : v); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; };
+const csv = rows => rows.map(r => r.map(cell).join(",")).join("\n") + "\n";
+const slug = s => String(s).trim().replace(/[^A-Za-z0-9]+/g, "_").replace(/^_|_$/g, "") || "game";
+const base = () => `${S.date}_${slug(S.us)}_vs_${slug(S.opp)}`;
+
+function exportShots(){
+  const D = derive();
+  const rows = [["Period","Team","Player","Type","X","Y","Shot Type","Strength","Clock","Rebound","Situation","xG","OnIce","Goalie"]];
+  D.ordered.forEach(s => { const I = D.shotInfo[s.id];
+    rows.push([s.p <= 3 ? s.p : "OT", s.team === "us" ? S.us : S.opp, "", RESULT_EXPORT[s.result], s.x, s.y,
+      TYPE_EXPORT[s.type], SIT_TEXT[I.situation] || "", fmt(I.sec), I.rebound ? 1 : 0, I.situation,
+      I.xg === null ? "" : I.xg.toFixed(4), I.onIce.filter(n => n !== I.goalie).join(" "), I.goalie || ""]); });
+  download(base() + "_shots.csv", csv(rows));
+}
+function exportPlayers(){
+  const st = playerStats(derive());
+  const rows = [["Number","Name","Pos","TOI","TOI_sec","Shifts","CF","CA","GF","GA","xGF","xGA","xGF_pct","xGF_60","xGA_60"]];
+  Object.values(st).forEach(r => rows.push([r.p.num, r.p.name, r.p.pos, fmt(r.toi), Math.round(r.toi), r.shifts, r.cf, r.ca, r.gf, r.ga,
+    r.xgf.toFixed(3), r.xga.toFixed(3), r.xgf + r.xga > 0 ? (100*r.xgf/(r.xgf+r.xga)).toFixed(1) : "",
+    r.toi > 0 ? (r.xgf*3600/r.toi).toFixed(3) : "", r.toi > 0 ? (r.xga*3600/r.toi).toFixed(3) : ""]));
+  download(base() + "_players.csv", csv(rows));
+}
+function exportShifts(){
+  const D = derive(), R = rosterMap();
+  const rows = [["Number","Name","Pos","Period_on","Clock_on","Period_off","Clock_off","Seconds"]];
+  D.shifts.slice().sort((a,b) => a.p1 - b.p1 || b.s1 - a.s1).forEach(s => rows.push([s.num, (R[s.num]||{}).name || "", (R[s.num]||{}).pos || "",
+    perLabel(s.p1), fmt(s.s1), perLabel(s.p2), s.open ? "" : fmt(s.s2), Math.round(between(s.p1, s.s1, s.p2, s.s2))]));
+  download(base() + "_shifts.csv", csv(rows));
+}
+function exportBackup(){ download(base() + "_backup.json", JSON.stringify({setup:S, game:G}, null, 1), "application/json"); }
+
+/* ================================================================
+   Input
+================================================================= */
+const rinkPoint = e => {
+  const svg = $("rink"), pt = svg.createSVGPoint();
+  pt.x = e.clientX; pt.y = e.clientY;
+  const q = pt.matrixTransform(svg.getScreenCTM().inverse());
+  return {x: Math.max(-100, Math.min(100, q.x)), y: Math.max(-42.5, Math.min(42.5, -q.y))};
+};
+let drag = null;
+$("rink").addEventListener("pointerdown", e => {
+  const dot = e.target.closest(".dot");
+  if(!dot) return;
+  e.preventDefault();
+  selId = +dot.dataset.id;
+  drag = {id:selId, snap:snapshot(), moved:false};
+  $("rink").setPointerCapture(e.pointerId);
+  render();
+});
+$("rink").addEventListener("pointermove", e => {
+  if(!drag) return;
+  const s = G.shots.find(x => x.id === drag.id), q = rinkPoint(e);
+  if(!s) return;
+  s.x = +q.x.toFixed(1); s.y = +q.y.toFixed(1); drag.moved = true;
+  const el = $("rink").querySelector(`.dot[data-id="${drag.id}"]`);
+  if(el){ el.setAttribute("cx", s.x); el.setAttribute("cy", -s.y); }
+});
+$("rink").addEventListener("pointerup", e => {
+  if(drag){ if(drag.moved){ hist.push(drag.snap); saveGame(); } drag = null; render(); return; }
+  if(e.button !== 0 || e.target.closest(".dot")) return;
+  const q = rinkPoint(e); logShot(q.x, q.y);
+});
+
+$("board").addEventListener("mousedown", e => e.preventDefault());
+$("board").addEventListener("click", e => { const b = e.target.closest(".pbtn"); if(b) barToggle(b.dataset.num); });
+$("barIn").addEventListener("input", () => { renderBar(); renderBoard(derive()); });
+$("barIn").addEventListener("keydown", e => {
+  if(e.key === "Enter"){ e.preventDefault(); commitBar(e.shiftKey); }
+  else if(e.key === "Escape"){ e.preventDefault(); closeBar(); }
+});
+$("barGo").addEventListener("mousedown", e => e.preventDefault());
+$("barGo").onclick = e => commitBar(e.shiftKey);
+$("barX").onclick = closeBar;
+
+function openSet(){ const b = $("setBox"); b.classList.remove("hidden"); b.value = ""; b.focus(); }
+function closeSet(){ const b = $("setBox"); b.classList.add("hidden"); b.blur(); }
+$("setBox").addEventListener("keydown", e => {
+  if(e.key === "Enter"){ e.preventDefault(); const v = parseClock(e.target.value);
+    if(v !== null && v <= periodLen(now().p)){ closeSet(); syncClock(v); } else e.target.style.borderColor = "var(--bad)"; }
+  else if(e.key === "Escape"){ e.preventDefault(); closeSet(); }
+});
+$("setBox").addEventListener("input", e => e.target.style.borderColor = "");
+
+document.querySelectorAll(".top button").forEach(b => b.addEventListener("mousedown", e => e.preventDefault()));
+$("bRun").onclick = toggleClock;
+$("bSet").onclick = openSet;
+$("bNext").onclick = () => { if(confirm(`End ${perLabel(now().p)} and start ${perLabel(now().p+1)}?`)) nextPeriod(); };
+$("strSel").onchange = e => { G.strength = e.target.value; saveGame(); e.target.blur(); render(); };
+$("bAll").onclick = () => { showAll = !showAll; render(); };
+document.querySelectorAll(".tabs [data-view]").forEach(b => b.onclick = () => setView(b.dataset.view));
+$("bHelp").onclick = () => toggleHelp();
+$("help").onclick = e => { if(e.target === $("help")) toggleHelp(false); };
+
+$("xShots").onclick = exportShots; $("xPlayers").onclick = exportPlayers;
+$("xShifts").onclick = exportShifts; $("xBackup").onclick = exportBackup;
+
+$("sSave").onclick = () => {
+  const r = readSetup();
+  Object.assign(S, {date:$("sDate").value || today(), us:$("sUs").value.trim() || "UofT", opp:$("sOpp").value.trim() || "Opponent",
+    periodMin:Math.max(1, +$("sPer").value || 20), otMin:Math.max(1, +$("sOt").value || 5), otFormat:$("sOtf").value,
+    usRightP1:$("sEnd").value === "R", roster:r.roster, lines:r.lines});
+  saveSetup();
+  $("setupNote").innerHTML = (r.errs.length ? `<span class="warnc">${r.errs.map(esc).join("<br>")}</span><br>` : "") +
+    `Saved: ${r.roster.length} players.`;
+  render();
+};
+$("sSwap").onclick = () => {
+  if(G.shots.length && !confirm("Swap ends? Every logged shot keeps its spot on the ice and switches team.")) return;
+  S.usRightP1 = !S.usRightP1; saveSetup();
+  mutate(() => G.shots.forEach(s => s.team = s.team === "us" ? "them" : "us"));
+  renderSetup();
+};
+$("sNew").onclick = () => {
+  if((G.shots.length || G.changes.length) && !confirm("Start a new game? This clears every shot and change. Export first if you need them.")) return;
+  G = blankGame(S); hist.length = 0; selId = null; saveGame(); setView("track");
+};
+$("sImport").onclick = () => $("sFile").click();
+$("sFile").onchange = async e => {
+  const f = e.target.files[0]; if(!f) return;
+  try{ const d = JSON.parse(await f.text());
+    if(!d.setup || !d.game || !Array.isArray(d.game.shots)) throw new Error("not a tracker backup");
+    S = Object.assign(blankSetup(), d.setup); G = d.game; hist.length = 0; saveSetup(); saveGame(); renderSetup(); render();
+    $("setupNote").textContent = `Loaded ${G.shots.length} shots and ${G.changes.length} changes.`;
+  }catch(err){ $("setupNote").textContent = "Couldn't read that file: " + err.message; }
+  e.target.value = "";
+};
+
+document.addEventListener("keydown", e => {
+  if(view === "setup") return;
+  if(e.key === "Tab"){ e.preventDefault(); toggleClock(); return; }
+  const t = e.target, field = t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName);
+  if(field) return;
+  if((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z"){ e.preventDefault(); undo(); return; }
+  if(e.metaKey || e.ctrlKey || e.altKey) return;
+  if(!$("help").classList.contains("hidden")){ if(e.key === "Escape" || e.key === "?") toggleHelp(false); return; }
+  if(e.key === "`"){ e.preventDefault(); setView(view === "track" ? "shifts" : "track"); return; }
+  if(e.key === "?"){ toggleHelp(true); return; }
+  if(e.key === "="){ e.preventDefault(); openSet(); return; }
+  if(e.key === "]"){ e.preventDefault(); if(confirm(`End ${perLabel(now().p)} and start ${perLabel(now().p+1)}?`)) nextPeriod(); return; }
+  if(e.key === "e"){ const i = ["EV","PP","PK"].indexOf(G.strength); G.strength = ["EV","PP","PK"][(i+1) % 3]; saveGame(); render(); return; }
+  if(e.key === " "){ e.preventDefault(); return; }
+  if(view !== "track") return;
+  const D = derive();
+  if(e.key === "c"){ e.preventDefault(); openBar(); return; }
+  if(e.key === "ArrowUp"){ e.preventDefault(); stepSel(-1, D); return; }
+  if(e.key === "ArrowDown"){ e.preventDefault(); stepSel(1, D); return; }
+  if(e.key === "Escape"){ selId = null; render(); return; }
+  if((e.key === "Backspace" || e.key === "Delete") && e.shiftKey){ e.preventDefault();
+    const s = selected(); if(s) mutate(() => { G.shots = G.shots.filter(x => x !== s); selId = null; }); return; }
+  const k = e.key;
+  if(TYPES[k]){ editSel(s => s.type = TYPES[k][0]); return; }
+  if(RESULTS[k]){ editSel(s => s.result = RESULTS[k]); return; }
+  if(k === "r"){ editSel(s => { const auto = D.shotInfo[s.id].autoReb, eff = D.shotInfo[s.id].rebound;
+    s.reb = (!eff) === auto ? null : !eff; }); return; }
+  if(k === "x"){ editSel(s => { s.team = s.team === "us" ? "them" : "us"; s.x = -s.x; s.y = -s.y; }); return; }
+  if(k === "," || k === "<"){ editSel(s => nudge(s, k === "<" ? 5 : 1)); return; }
+  if(k === "." || k === ">"){ editSel(s => nudge(s, k === ">" ? -5 : -1)); return; }
+});
+
+const HELP = [
+  ["Always"],
+  ["Tab","Pause / resume the clock (works everywhere, even in the change bar)"],
+  ["=","Type the scoreboard time (1240 or 12:40, Enter). Also fixes events since the last reading"],
+  ["]","End the period"],
+  ["e","Cycle strength EV, PP, PK (dropdown has 5v3)"],
+  ["Cmd+Z","Undo the last shot, change or edit"],
+  ["`","Switch Track / Shifts"],
+  ["?","This sheet"],
+  ["Shots (click the rink to log one)"],
+  ["w s b t","Wrist/snap, slap, backhand, tip"],
+  ["d a u","Deflection, wrap, unknown"],
+  ["o g m k","On goal, goal, missed, blocked"],
+  ["r","Rebound on/off (overrides the automatic 3-second rule)"],
+  ["x","Wrong end: move the shot to the same spot at the other end, other team"],
+  [", .","Shot 1 s earlier / later (Shift for 5 s)"],
+  ["drag a dot","Move where the shot came from"],
+  ["Shot log"],
+  ["Up / Down","Select an earlier / later shot"],
+  ["Esc","Back to the latest shot"],
+  ["Shift+Delete","Delete the selected shot"],
+  ["Change bar (c)"],
+  ["15 19 34 / 14 9 10","Off / on, numbers separated by spaces"],
+  ["f1-f4 d1-d3 p1 p2","Line presets: who comes off is worked out from positions"],
+  ["s20","It happened 20 game-seconds ago"],
+  ["@12:40","It happened at 12:40 on the scoreboard"],
+  ["Enter","Commit (blocked while the preview is red)"],
+  ["Shift+Enter","Override: commit anyway, flagged on the Shifts view"],
+  ["Esc","Cancel"],
+  ["click players","Adds them to the bar: on-ice to off, bench to on"],
+];
+function toggleHelp(force){
+  const h = $("help"), show = force === undefined ? h.classList.contains("hidden") : force;
+  if(show) $("helpBox").innerHTML = HELP.map(r => r.length === 1 ? `<h3>${esc(r[0])}</h3>`
+    : `<div class="k"><span><kbd>${esc(r[0])}</kbd></span><span>${esc(r[1])}</span></div>`).join("");
+  h.classList.toggle("hidden", !show);
+}
+
+/* ================================================================
+   Boot
+================================================================= */
+async function boot(){
+  if(!MODEL){
+    try{ const r = await fetch("xg_model.json"); if(r.ok) MODEL = await r.json(); }catch(e){}
+  }
+  initModel();
+  const note = $("modelNote");
+  if(!MODEL){ note.innerHTML = `<span class="badc">No model loaded: keep xg_model.js next to this file. Shots and shifts still log; xG fills in once it loads.</span>`; note.classList.remove("hidden"); }
+  else { const m = MODEL.categorical.columns.shot_type;
+    if(m.SNAP && m.WRIST && m.SNAP !== m.WRIST){
+      note.innerHTML = `<span class="warnc">This model still splits wrist and snap, so wrist/snap shots score as wrist (a little low). Rerun xg_model.py and export_model_web.py to refit it merged.</span>`;
+      note.classList.remove("hidden"); } }
+  render();
+  let lastSec = -1;
+  setInterval(() => {
+    const c = now(), s = Math.ceil(c.v);
+    if(s === lastSec) return;
+    lastSec = s; renderTop(null);
+    if(c.run && view === "track" && !drag) renderBoard(derive());
+  }, 150);
+}
+boot();
+})();
+</script>
+</body>
+</html>
