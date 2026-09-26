@@ -74,7 +74,14 @@ kbd{font-family:var(--body); font-size:11px; border:1px solid var(--line-2); bor
 .track{display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:10px; padding:10px 12px}
 .panel{background:var(--card); border:1px solid var(--line); padding:9px}
 .rinkhead{display:flex; justify-content:space-between; gap:8px; align-items:center; margin-bottom:6px; font-size:12px}
-.rinkhead .end{font-family:var(--label); letter-spacing:.06em}
+.rinkhead .end{font-family:var(--label); letter-spacing:.06em; cursor:grab; padding:3px 9px; border:1px dashed var(--line-2);
+  user-select:none; touch-action:none; position:relative; z-index:2; background:var(--card)}
+.rinkhead .end:hover{border-color:var(--us)}
+.rinkhead .end.dragging{cursor:grabbing; border-style:solid; border-color:var(--warn); box-shadow:0 0 12px rgba(255,176,0,.35)}
+.rinkhead .end.armed{border-color:var(--ok); color:var(--ok)}
+.rinkhead .end,.rinkhead button{white-space:nowrap}
+.rinkhead .mid{display:flex; gap:6px; align-items:center; min-width:0}
+#dirNote{font-size:11.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--warn)}
 svg.rink{display:block; width:min(100%, calc((100vh - 330px) * 202 / 87)); height:auto; aspect-ratio:202/87; margin:0 auto; cursor:crosshair; user-select:none; touch-action:none}
 .rink .boards{fill:var(--ice); stroke:var(--line-2); stroke-width:.6}
 .rink .m{fill:none; stroke:var(--paint); stroke-width:.35}
@@ -223,7 +230,8 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
     <div class="rinkhead">
       <span class="end" id="endL"></span>
       <span>
-        <button id="bAll" aria-pressed="false">All periods</button>
+        <span class="mid"><button id="bSwap" title="Swap which end each team attacks, from this period on">&#8644; Swap ends</button>
+        <button id="bAll" aria-pressed="false">All periods</button><span id="dirNote" class="note"></span></span>
       </span>
       <span class="end" id="endR"></span>
     </div>
@@ -365,19 +373,20 @@ function blankSetup(){
   return {date:today(), us:"UofT", opp:"Opponent", periodMin:20, otMin:5, otFormat:"3v3", usRightP1:true, roster:[], lines};
 }
 function blankGame(setup){
-  return {clock:[{w:Date.now(), k:"set", p:1, s:setup.periodMin*60}], strength:"EV", shots:[], changes:[], nextId:1};
+  return {clock:[{w:Date.now(), k:"set", p:1, s:setup.periodMin*60}], strength:"EV", shots:[], changes:[], flips:[], nextId:1};
 }
 let S = blankSetup(), G = null;
 try{ const r = localStorage.getItem(KEY_SETUP); if(r) S = Object.assign(blankSetup(), JSON.parse(r)); }catch(e){}
 try{ const r = localStorage.getItem(KEY_GAME); if(r) G = JSON.parse(r); }catch(e){}
 if(!G) G = blankGame(S);
+if(!Array.isArray(G.flips)) G.flips = [];
 
 let saveFailed = false;
 function saveGame(){ try{ localStorage.setItem(KEY_GAME, JSON.stringify(G)); saveFailed = false; }catch(e){ saveFailed = true; } }
 function saveSetup(){ try{ localStorage.setItem(KEY_SETUP, JSON.stringify(S)); }catch(e){ saveFailed = true; } }
 
 const hist = [];
-const snapshot = () => JSON.stringify({shots:G.shots, changes:G.changes, strength:G.strength, nextId:G.nextId});
+const snapshot = () => JSON.stringify({shots:G.shots, changes:G.changes, strength:G.strength, flips:G.flips, nextId:G.nextId});
 function mutate(fn){ hist.push(snapshot()); if(hist.length > 200) hist.shift(); fn(); saveGame(); render(); }
 function undo(){
   const s = hist.pop(); if(!s) return;
@@ -453,7 +462,19 @@ function between(p1, s1, p2, s2){
 ================================================================= */
 const secOf = e => (e.s !== undefined && e.s !== null) ? e.s : corrected(e.w).v;
 const cmp = (a,b) => a.p - b.p || b.sec - a.sec || a.w - b.w;
-const usAttacksRight = p => S.usRightP1 === (p % 2 === 1);
+/* Ends alternate every period from the Setup choice. A swap made in period p
+   (G.flips) turns that period and every later one around. */
+const usAttacksRight = p => (S.usRightP1 === (p % 2 === 1)) !== (G.flips.filter(q => q <= p).length % 2 === 1);
+function swapEnds(){
+  const p = now().p, moved = G.shots.filter(s => s.p >= p).length;
+  mutate(() => {
+    G.flips = G.flips.includes(p) ? G.flips.filter(q => q !== p) : G.flips.concat([p]);
+    G.shots.forEach(s => { if(s.p >= p) s.team = s.team === "us" ? "them" : "us"; });
+  });
+  const n = $("dirNote");
+  n.textContent = `Swapped from ${perLabel(p)}` + (moved ? ` · ${moved} shot${moved > 1 ? "s" : ""} re-teamed` : "") + " · \u2318Z undo";
+  clearTimeout(swapEnds.t); swapEnds.t = setTimeout(() => n.textContent = "", 5000);
+}
 const attacksRight = (team, p) => (team === "us") === usAttacksRight(p);
 
 function situationFor(team, str, info, p){
@@ -740,6 +761,7 @@ function renderRink(D){
   }).join("");
   $("rink").innerHTML = RINK_BASE + dots;
   const r = usAttacksRight(cur);
+  $("endL").title = $("endR").title = "Drag to the other end to swap ends";
   $("endL").innerHTML = `&larr; <b style="color:var(--${r ? "them" : "us"})">${esc(r ? S.opp : S.us)}</b> shooting left`;
   $("endR").innerHTML = `<b style="color:var(--${r ? "us" : "them"})">${esc(r ? S.us : S.opp)}</b> shooting right &rarr;`;
   $("bAll").setAttribute("aria-pressed", String(showAll));
@@ -1238,6 +1260,34 @@ $("bSet").onclick = openSet;
 $("bNext").onclick = () => { if(confirm(`End ${perLabel(now().p)} and start ${perLabel(now().p+1)}?`)) nextPeriod(); };
 $("strSel").onchange = e => { G.strength = e.target.value; saveGame(); e.target.blur(); render(); };
 $("bAll").onclick = () => { showAll = !showAll; render(); };
+$("bSwap").addEventListener("mousedown", e => e.preventDefault());
+$("bSwap").onclick = swapEnds;
+/* Drag either end label past the middle of the rink to swap ends. */
+["endL","endR"].forEach(id => {
+  const el = $(id);
+  let start = null;
+  el.addEventListener("pointerdown", e => {
+    if(e.button !== 0) return;
+    e.preventDefault(); el.setPointerCapture(e.pointerId);
+    const head = el.parentElement.getBoundingClientRect(), box = el.getBoundingClientRect();
+    start = {x:e.clientX, need: id === "endL" ? head.left + head.width/2 - box.left : head.left + head.width/2 - box.right};
+    el.classList.add("dragging");
+  });
+  el.addEventListener("pointermove", e => {
+    if(!start) return;
+    const dx = e.clientX - start.x, lim = id === "endL" ? Math.max(0, dx) : Math.min(0, dx);
+    el.style.transform = `translateX(${lim}px)`;
+    el.classList.toggle("armed", id === "endL" ? lim >= start.need : lim <= start.need);
+  });
+  const end = () => {
+    if(!start) return;
+    const armed = el.classList.contains("armed");
+    start = null; el.style.transform = ""; el.classList.remove("dragging", "armed");
+    if(armed) swapEnds();
+  };
+  el.addEventListener("pointerup", end);
+  el.addEventListener("pointercancel", end);
+});
 document.querySelectorAll(".tabs [data-view]").forEach(b => b.onclick = () => setView(b.dataset.view));
 $("bHelp").onclick = () => toggleHelp();
 $("help").onclick = e => { if(e.target === $("help")) toggleHelp(false); };
@@ -1270,7 +1320,7 @@ $("sFile").onchange = async e => {
   const f = e.target.files[0]; if(!f) return;
   try{ const d = JSON.parse(await f.text());
     if(!d.setup || !d.game || !Array.isArray(d.game.shots)) throw new Error("not a tracker backup");
-    S = Object.assign(blankSetup(), d.setup); G = d.game; hist.length = 0; saveSetup(); saveGame(); renderSetup(); render();
+    S = Object.assign(blankSetup(), d.setup); G = d.game; if(!Array.isArray(G.flips)) G.flips = []; hist.length = 0; saveSetup(); saveGame(); renderSetup(); render();
     $("setupNote").textContent = `Loaded ${G.shots.length} shots and ${G.changes.length} changes.`;
   }catch(err){ $("setupNote").textContent = "Couldn't read that file: " + err.message; }
   e.target.value = "";
@@ -1325,6 +1375,7 @@ const HELP = [
   ["x","Wrong end: move the shot to the same spot at the other end, other team"],
   [", .","Shot 1 s earlier / later (Shift for 5 s)"],
   ["drag a dot","Move where the shot came from"],
+  ["drag an end label","Swap ends from this period on (logged shots switch team)"],
   ["Shot log"],
   ["Up / Down","Select an earlier / later shot"],
   ["Esc","Back to the latest shot"],

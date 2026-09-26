@@ -199,6 +199,11 @@ line presets (F1-F4, D1-D3, PP1-PP2). During it, the keyboard does the work:
 | `↑ ↓` `Esc` | walk the shot log, back to latest |
 | `` ` `` `?` | Shifts view, full key sheet |
 
+If the ends are wrong, drag either label above the rink ("UofT shooting
+right") to the other side, or click Swap ends. The swap applies from the
+current period on, later periods keep alternating from it, and shots
+already logged there keep their spot and switch team.
+
 Only raw events are stored: clock operations, shots and shift changes. Clock
 times, who was on for each shot, rebounds (same team, within 3 s, the model's
 own definition) and all the stats are derived on every render, so fixing one
