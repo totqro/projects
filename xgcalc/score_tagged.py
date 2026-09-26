@@ -45,7 +45,7 @@ from zone_tagging import GOAL_X, ZONE16_NAMES, geometry, zone16
 # anything blank, which have no NHL shotType equivalent -> UNKNOWN.
 SHOT_TYPES = {
     "wrist shot": "WRIST", "wrist": "WRIST",
-    "snap shot": "SNAP", "snap": "SNAP",
+    "snap shot": "WRIST", "snap": "WRIST", "wrist/snap": "WRIST",
     "slap shot": "SLAP", "slap": "SLAP",
     "backhand": "BACK", "back": "BACK",
     "tip-in": "TIP", "tip in": "TIP", "tip": "TIP", "redirect": "TIP",

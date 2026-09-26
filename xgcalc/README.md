@@ -145,11 +145,13 @@ src/data/schema.py     source columns, feature/label/leak definitions, rink geom
 src/data/clean.py      all cleaning transforms, each documented with what was measured
 src/data/shots.py      locating, downloading and reading raw season files
 score_tagged.py        CLI: score a hand-tagged x/y shot chart with the saved model
-export_model_web.py    flatten the fitted pipeline to web/xg_model.json, with a parity check
+export_model_web.py    flatten the fitted pipeline to web/xg_model.json (+ .js), with a parity check
 zone_tagging.py        the 10- and 16-zone maps for shots you can only eyeball
 web/index.html         the live 16-zone tagger (tier rates, no coordinates needed)
 web/scatter.html       the shot chart — CSV in, the real model on a rink, in the browser
-web/serve.py           static server for previewing both pages locally
+web/tracker.html       live tracker: shots with x/y, scoreboard clock, shifts; TOI, xGF, xGA
+web/xg_model.js        the model as a script, so tracker.html runs from file:// offline
+web/serve.py           static server for previewing the pages locally
 data/                  built dataset + saved model (gitignored — regenerable)
 ```
 
@@ -163,18 +165,71 @@ model = joblib.load("data/xg_model.joblib")
 shots = pd.DataFrame([{ "distance": 8, "angle_from_net": 10,
                         "shot_type": "WRIST", "is_rebound": 0,
                         "situation": "EV_5v5" }])
-shots["xg"] = predict_xg(model, shots)     # 0.1937
+shots["xg"] = predict_xg(model, shots)     # 0.205
 ```
 
-## The two web pages
+## The web pages
 
-Two ways in, one model behind them.
+Three ways in, one model behind them.
 
 **`web/index.html` — the live tagger.** Tap one of 16 rink zones from your
 seat. No coordinates, because nobody can eyeball `x=71.3, y=-8.6` during a
 live game. It prices each shot off the empirical rate for that zone (three
 danger tiers, with multipliers for strength and rebounds), which is the
 honest resolution for tapped-by-eye input.
+
+**`web/tracker.html`: the rinkside tracker.** The one to use when shifts
+matter. Built for a laptop at the rink: click the rink where a shot came from,
+and the page stamps it with the scoreboard clock and whoever is on the ice for
+our team. From that it works out every player's TOI, on-ice xGF and xGA, and
+xGF%. It runs from `file://` with no network, so open it straight from the
+folder (keep `xg_model.js` next to it). Everything saves after each keystroke.
+
+Before the game, **Setup** takes the roster (`14 Smith C`, one per line) and
+line presets (F1-F4, D1-D3, PP1-PP2). During it, the keyboard does the work:
+
+| Key | |
+|---|---|
+| `Tab` | pause / resume the clock, always |
+| `=` | type the scoreboard time (`1240`); also repairs events since the last reading |
+| `c` | change bar: `15 19 34 / 14 9 10`, `f2 d1`, `s20` (20 s ago), `@12:40`; Shift+Enter overrides a red check |
+| `w s b t d a u` | wrist/snap, slap, backhand, tip, deflection, wrap, unknown |
+| `o g m k` | on goal, goal, missed, blocked |
+| `r` `x` `,` `.` | rebound override, wrong end, time -1 s / +1 s |
+| `↑ ↓` `Esc` | walk the shot log, back to latest |
+| `` ` `` `?` | Shifts view, full key sheet |
+
+If the ends are wrong, drag either label above the rink ("UofT shooting
+right") toward the other end: halfway across, the ends swap and both labels
+snap into their new places. Swap ends does the same in one click. The swap applies from the
+current period on, later periods keep alternating from it, and shots
+already logged there keep their spot and switch team.
+
+Only raw events are stored: clock operations, shots and shift changes. Clock
+times, who was on for each shot, rebounds (same team, within 3 s, the model's
+own definition) and all the stats are derived on every render, so fixing one
+change on the Shifts view fixes every shot and total that depended on it.
+
+The clock is corrected retroactively. Each typed scoreboard reading is a sync
+point, and every event before it in the same period is clamped so the clock
+can never read below the reading and can never have run faster than real
+time to reach it. That one rule repairs both live mistakes: a missed pause
+(events in the stoppage snap to the reading) and a missed resume (events in
+play count down to it).
+
+The shots export keeps the shot-plotter columns and adds `Clock`, `Rebound`,
+`Situation`, `xG`, `OnIce` and `Goalie`, so the Shot Chart and
+`score_tagged.py` read it unchanged and give the same xG. Players and shifts
+export as their own CSVs, and a JSON backup restores a whole game.
+
+**Report PDF** (Shifts view) prints two landscape pages for the full game or
+any one period, OT included. Page 1 is the shot map with our team always
+attacking right, totals with xG split by strength, and cumulative xG on a real
+game-clock axis. Page 2 is every skater's on-ice line (TOI, shifts, average
+shift, CF/CA, GF-GA, xGF, xGA, xG +/-, xGF%, per 60), goalies with GSAx, and
+the forward lines and D pairs that played 20+ seconds together; a 3v3 OT
+report lists the three-skater units instead. It uses the browser's print
+dialog, so pick "Save as PDF".
 
 **`web/scatter.html` — the shot chart.** For charts that already carry exact
 coordinates — tagged off film, or exported from another tool. Drop the CSV in
@@ -271,7 +326,7 @@ can be explained to someone who will never read the code:
 |---|---|
 | `distance` | feet from the net |
 | `angle_from_net` | 0° straight on, 90° on the goal line, >90° behind it |
-| `shot_type` | WRIST / SNAP / SLAP / TIP / BACK / DEFL / WRAP / UNKNOWN |
+| `shot_type` | WRIST (wrist or snap) / SLAP / TIP / BACK / DEFL / WRAP / UNKNOWN |
 | `is_rebound` | shot within 3 s of, and close to, a prior shot |
 | `situation` | strength state, with 6v5 split by cause |
 
@@ -282,36 +337,71 @@ have to be right. `--model tree` switches if ranking matters more.
 
 | | AUC | log loss | sum(xG)/goals |
 |---|---|---|---|
-| ours, valid 2024 | 0.7582 | 0.22540 | **0.9989** |
-| ours, test 2025 | 0.7422 | 0.23369 | 1.0732 |
+| ours, valid 2024 | 0.7564 | 0.22592 | 0.9691 |
+| ours, test 2025 | 0.7395 | 0.23389 | **1.0284** |
 | MoneyPuck, valid 2024 | 0.7785 | 0.21825 | 1.0231 |
 | MoneyPuck, test 2025 | 0.7764 | 0.22215 | 1.0150 |
 
-On 2024 the model totals goals almost exactly (0.9989) and beats MoneyPuck on
-calibration while trailing it on AUC — MoneyPuck ranks individual shots
-better, we total them better.
+MoneyPuck ranks individual shots better; our totals land within 3% of actual
+goals on both held-out seasons. The full refit log, from download to export,
+is in `data/retrain_report.txt`.
+
+### Wrist and snap are one level
+
+`SNAP` is folded into `WRIST` before the model is fit (`SHOT_TYPE_MERGE` in
+`xg_model.py`). Nobody tagging live can reliably tell the two apart, and they
+are priced very differently: fit separately, snap came out +0.31 and wrist
+−0.10, about 1.5x in odds from the same spot. A tagger forced to choose is
+wrong about half the time in a consistent direction; the merged level is fit
+on the real mix of both, so it is the honest price of "wrist or snap". The
+dataset keeps the NHL's split, `predict_xg` applies the merge, and the export
+maps `SNAP` onto the merged column so older CSVs still score.
+
+The merged level fits at **+0.008**, between the two it replaces and nearer
+wrist, which is three times as common (470,468 wrist shots to 146,532 snaps).
+What the merge costs and buys, same data, same splits:
+
+| | split wrist/snap | merged |
+|---|---|---|
+| AUC, valid 2024 / test 2025 | 0.7582 / 0.7422 | 0.7564 / 0.7395 |
+| sum(xG)/goals, valid 2024 | 0.9989 | 0.9691 |
+| sum(xG)/goals, test 2025 | 1.0732 | **1.0284** |
+
+It gives up about 0.002 AUC, the value of knowing snap from wrist in NHL
+data where the scorer records it. Totals trade places: 2024 now under-counts
+by 3% and 2025, the season further from training, over-counts by 3% instead
+of 7%. For live tagging the split was never available, so the merged model is
+the one whose numbers mean what they say.
+
+`.github/workflows/xgcalc-retrain.yml` refits and re-exports on GitHub's
+runners whenever the model code changes on a branch, and commits the new
+`web/xg_model.json` and `.js` back to it. Locally the same thing is:
+
+```bash
+./.venv/bin/python xg_model.py && ./.venv/bin/python export_model_web.py
+```
 
 ### What it learned
 
 Coefficients are in log-odds, and the useful ones are not the obvious ones:
 
-- `distance` −1.040 — by far the strongest single term, as it should be.
-- `angle_from_net` −0.303.
-- `SLAP` **+0.397**, the highest of any shot type — even though slap shots
+- `distance` −1.014 — by far the strongest single term, as it should be.
+- `angle_from_net` −0.302.
+- `SLAP` **+0.380**, the highest of any shot type — even though slap shots
   have the *lowest* raw goal rate in the dataset (4.8%). Once distance is
   controlled for, that reverses: slap shots look bad only because they are
   taken from far out. From the same spot a slapper beats a wrist shot
-  (35 ft, 55°: .046 vs .029). This is the kind of thing a five-term model
+  (35 ft, 55°: .046 vs .032 for wrist/snap). This is the kind of thing a five-term model
   can show you and a 40-feature one cannot.
-- `EN_AGAINST` +3.520 — shooting at an empty net, the single largest effect.
+- `EN_AGAINST` +3.383 — shooting at an empty net, the single largest effect.
 
 ### Known weaknesses
 
-- **Test-season over-prediction (1.0732).** 2024 calibrates at 0.999, 2025 at
-  1.073, so this is drift, not bias — see the drift section below. Refit
-  before using on a new season.
-- **The top decile is over-valued** (predicts .258, actual .193). The model
-  over-rates its best chances, driven partly by `EN_AGAINST` (1.211). Shrinking
+- **Season-to-season drift.** 2024 calibrates at 0.969 and 2025 at 1.028,
+  errors in opposite directions a season apart, so this is drift, not bias;
+  see the drift section below. Refit before using on a new season.
+- **The top decile is over-valued** (predicts .245, actual .192). The model
+  over-rates its best chances, driven partly by `EN_AGAINST` (1.171). Shrinking
   extreme predictions, or an isotonic recalibration layer, would help.
 - **Not usable for shot sequences.** One-step lookback only; no rush term.
 

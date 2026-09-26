@@ -2,7 +2,7 @@
 """
 Dump the saved logistic pipeline to JSON so the browser can score shots.
 
-    python export_model_web.py        # writes web/xg_model.json
+    python export_model_web.py        # writes web/xg_model.json and .js
 
 The five-feature logistic model is a scaler, two one-hot maps and 26
 coefficients — small enough to ship as static JSON and evaluate in a few
@@ -24,10 +24,13 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
-from xg_model import CATEGORICAL, FEATURES, MODEL_PATH, NUMERIC
+from xg_model import CATEGORICAL, FEATURES, MODEL_PATH, NUMERIC, SHOT_TYPE_MERGE
 from zone_tagging import GOAL_X, ZONE16_NAMES
 
 OUT = ROOT / "web" / "xg_model.json"
+# Same model as a script, for web/tracker.html: it runs from file:// at the
+# rink with no network, where fetch() of a local JSON file is refused.
+OUT_JS = ROOT / "web" / "xg_model.js"
 
 
 def export() -> dict:
@@ -52,6 +55,13 @@ def export() -> dict:
             if column in names:
                 mapping[str(category)] = column
         cat_columns[feature] = mapping
+
+    # Merged-away types (SNAP) score as the level they were folded into, the
+    # same thing predict_xg does before the pipeline sees them.
+    shot_map = cat_columns["shot_type"]
+    for alias, target in SHOT_TYPE_MERGE.items():
+        if target in shot_map:
+            shot_map[alias] = shot_map[target]
 
     return {
         "features": FEATURES,
@@ -109,9 +119,11 @@ def check(spec: dict) -> None:
 
 def main():
     spec = export()
-    OUT.write_text(json.dumps(spec, separators=(",", ":")))
-    print(f"Wrote {OUT.relative_to(ROOT)} ({OUT.stat().st_size/1000:.1f} KB), "
-          f"{len(spec['columns'])} columns")
+    text = json.dumps(spec, separators=(",", ":"))
+    OUT.write_text(text)
+    OUT_JS.write_text(f"window.XG_MODEL={text};\n")
+    print(f"Wrote {OUT.relative_to(ROOT)} ({OUT.stat().st_size/1000:.1f} KB) "
+          f"and {OUT_JS.relative_to(ROOT)}, {len(spec['columns'])} columns")
     check(spec)
 
 
