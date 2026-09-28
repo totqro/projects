@@ -85,11 +85,11 @@ _RATE_LIMIT_RETRIES = 6
 
 
 def _retry_after_seconds(resp, attempt: int) -> float:
-    """Seconds to wait after a 429: the server's Retry-After if it sent a
-    number, else exponential backoff (2, 4, 8, ... capped at 60)."""
+    """Seconds to wait before retrying: the server's Retry-After if it sent
+    a number, else exponential backoff (2, 4, 8, ... capped at 60)."""
     try:
         return min(float(resp.headers.get("Retry-After", "")), 60.0)
-    except ValueError:
+    except (AttributeError, ValueError):
         return min(2.0 ** (attempt + 1), 60.0)
 
 
@@ -106,14 +106,21 @@ def fetch_team_season_schedule(team: str, season: str) -> list:
         return cached
 
     url = f"{BASE_URL}/club-schedule-season/{team}/{season}"
-    # The NHL API rate-limits bursts (429). Back off and retry rather than
-    # letting the caller lose the team's whole season.
+    # The NHL API rate-limits bursts (429) and drops connections under load.
+    # Back off and retry transient failures rather than letting the caller
+    # lose the team's whole season.
     for attempt in range(_RATE_LIMIT_RETRIES):
-        resp = requests.get(url, timeout=20)
-        if resp.status_code != 429:
+        last = attempt == _RATE_LIMIT_RETRIES - 1
+        try:
+            resp = requests.get(url, timeout=20)
+        except (requests.ConnectionError, requests.Timeout):
+            if last:
+                raise
+            time.sleep(_retry_after_seconds(None, attempt))
+            continue
+        if last or (resp.status_code != 429 and resp.status_code < 500):
             break
-        wait = _retry_after_seconds(resp, attempt)
-        time.sleep(wait)
+        time.sleep(_retry_after_seconds(resp, attempt))
     if resp.status_code == 404:
         _set_cache(cache_key, [])
         return []
