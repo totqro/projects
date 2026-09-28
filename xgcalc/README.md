@@ -192,9 +192,10 @@ line presets (F1-F4, D1-D3, PP1-PP2). During it, the keyboard does the work:
 |---|---|
 | `Tab` | pause / resume the clock, always |
 | `=` | type the scoreboard time (`1240`); also repairs events since the last reading |
-| `c` | change bar: `15 19 34 / 14 9 10`, `f2 d1`, `s20` (20 s ago), `@12:40`; Shift+Enter overrides a red check |
-| `w s b t d a u` | wrist/snap, slap, backhand, tip, deflection, wrap, unknown |
+| `c` or `Enter` | change bar (the 5s/10s/15s/20s buttons by the players add "that long ago"): `15 19 34 / 14 9 10`, `f2 d1`, `s20` (20 s ago), `@12:40`; Shift+Enter overrides a red check |
+| `w s b t a d u` | wrist/snap, slap, backhand, tip/deflection, wrap, scramble, unknown |
 | `o g m k` | on goal, goal, missed, blocked |
+| `pp` `pk` `en` `ev` | in the bar: penalty on them / on us (`pp4` `pk4` double minor, `pp5` `pk5` major), opponent net empty, back to even |
 | `r` `x` `,` `.` | rebound override, wrong end, time -1 s / +1 s |
 | `↑ ↓` `Esc` | walk the shot log, back to latest |
 | `` ` `` `?` | Shifts view, full key sheet |
@@ -205,7 +206,20 @@ snap into their new places. Swap ends does the same in one click. The swap appli
 current period on, later periods keep alternating from it, and shots
 already logged there keep their spot and switch team.
 
-Only raw events are stored: clock operations, shots and shift changes. Clock
+**Strength comes from penalties.** Log a penalty when it's called (the
+Penalties panel, or `pp`/`pk` in the bar, with `s10` if it went up a few
+seconds ago) and the tracker works out the manpower for every second: a
+minor ends at 2:00 or on a power-play goal against it, a double minor
+loses one 2:00 to a PP goal, a major runs its full 5:00, overlaps give 5v3,
+one each side 4v4, and in 3v3 OT a penalty adds a skater to the other side.
+Penalties carry across periods. The strength dropdown (and `e`) overrides by
+hand until the next penalty starts or ends. **Opp net empty** marks their
+goalie pulled, so our shots score as `EN_AGAINST` and their extra attacker's
+as `EN_6v5_PULLED`; our own pulled goalie is read off the board. Every shot's
+situation, and the TOI sheet's opponent-skater column, follow this timeline.
+
+Only raw events are stored: clock operations, shots, shift changes,
+penalties and empty-net toggles. Clock
 times, who was on for each shot, rebounds (same team, within 3 s, the model's
 own definition) and all the stats are derived on every render, so fixing one
 change on the Shifts view fixes every shot and total that depended on it.
