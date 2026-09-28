@@ -105,14 +105,19 @@ svg.rink{display:block; width:min(100%, calc((100vh - var(--hdr, 150px) - 240px)
 .ago{display:flex; gap:4px}
 .ago button{padding:3px 7px; font-size:11px}
 .ago button[aria-pressed="true"]{border-color:var(--warn); color:var(--warn); background:rgba(255,176,0,.12)}
-.pbtn{display:grid; grid-template-columns:auto 1fr; align-items:baseline; padding:3px 6px; text-transform:none; letter-spacing:0; text-align:left; gap:0 6px}
-.pbtn .n{font-family:var(--head); font-size:15px; grid-row:span 2}
+.pbtn{display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:baseline; padding:4px 6px; text-transform:none; letter-spacing:0; text-align:left; gap:0 6px}
+.pbtn .n{font-family:var(--head); font-size:14px}
 .pbtn .nm{font-size:10px; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .pbtn .t{font-size:10px; color:var(--ink-3)}
 .pbtn.on{background:rgba(0,255,136,.12); border-color:var(--ok)}
 .pbtn.on .t{color:var(--ok)}
 .pbtn.poff{outline:2px solid var(--bad)} .pbtn.pon{outline:2px solid var(--ok)}
 
+.pens .row{display:flex; gap:4px; flex-wrap:wrap; align-items:center; margin-top:5px}
+.pens .row button{padding:3px 7px; font-size:11px}
+.pens button.en[aria-pressed="true"]{border-color:var(--warn); color:var(--warn); background:rgba(255,176,0,.12)}
+.pens .act{display:flex; justify-content:space-between; gap:6px; font-size:12px; margin-top:4px}
+.pens .act.pp{color:var(--ok)} .pens .act.pk{color:var(--bad)}
 .shot{display:grid; gap:7px}
 .shot .line{display:flex; gap:6px; flex-wrap:wrap; align-items:center; font-size:12.5px}
 .chip{padding:1px 7px; border:1px solid var(--line-2); background:var(--muted)}
@@ -212,6 +217,7 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
     <select id="strSel" title="e cycles EV / PP / PK" aria-label="Strength">
       <option value="EV">EV</option><option value="PP">PP 5v4</option><option value="PP2">PP 5v3</option>
       <option value="PK">PK 4v5</option><option value="PK2">PK 3v5</option>
+      <option value="4v4">4v4</option><option value="3v3">3v3</option><option value="" id="strNow" disabled hidden></option>
     </select>
   </div>
   <span id="light">board</span>
@@ -256,6 +262,7 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
         <span class="ago" id="ago" title="The change happened this long ago"><span class="lab" style="align-self:center">ago</span><button data-ago="5">5s</button><button data-ago="10">10s</button><button data-ago="15">15s</button><button data-ago="20">20s</button></span></div>
       <div id="board"></div>
     </div>
+    <div class="panel pens" id="penPanel"></div>
     <div class="panel shot" id="shotPanel"></div>
   </div>
 </main>
@@ -270,6 +277,11 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
     <h2>Shift changes</h2>
     <div class="note">Edit any change: time as <b>12:40</b> (blank = the time you logged it), numbers separated by spaces. Every stat above recomputes from this list.</div>
     <div style="overflow:auto; margin-top:8px"><table id="shiftlist" class="shiftlist"></table></div>
+  </div>
+  <div class="panel">
+    <h2>Penalties</h2>
+    <div class="note">Start time as <b>12:40</b> (blank = when you logged it). Ends are worked out from the clock and power-play goals.</div>
+    <div style="overflow:auto; margin-top:8px"><table id="penlist" class="shiftlist"></table></div>
   </div>
   <div class="panel">
     <h2>Export</h2>
@@ -377,10 +389,14 @@ const TYPE_EXPORT = {WRIST:"Wrist/Snap", SLAP:"Slap Shot", BACK:"Backhand", TIP:
 const RESULTS = {o:"SAVE", g:"GOAL", m:"MISS", k:"BLOCK"};
 const RESULT_LABEL = {SAVE:"on goal", GOAL:"GOAL", MISS:"missed", BLOCK:"blocked"};
 const RESULT_EXPORT = {SAVE:"Shot", GOAL:"Goal", MISS:"Miss", BLOCK:"Block"};
-const STRENGTHS = ["EV","PP","PP2","PK","PK2"];
-const STR_LABEL = {EV:"EV", PP:"PP 5v4", PP2:"PP 5v3", PK:"PK 4v5", PK2:"PK 3v5"};
+const STR_LABEL = {EV:"EV", PP:"PP 5v4", PP2:"PP 5v3", PK:"PK 4v5", PK2:"PK 3v5", "4v4":"4v4", "3v3":"3v3"};
+const PEN_LEN = {minor:120, double:240, major:300};
+const PEN_LABEL = {minor:"minor", double:"double minor", major:"major"};
 const SIT_TEXT = {EV_5v5:"5v5", EV_4v4:"4v4", EV_3v3:"3v3", PP_5v4:"5v4", PP_5v3:"5v3", PP_4v3:"4v3",
                   SH_4v5:"4v5", SH_OTHER:"3v5", EN_6v5_PULLED:"6v5", EN_AGAINST:"5v6"};
+const SIT_SHOW = {EN_AGAINST:"empty net", EN_6v5_PULLED:"6v5 pulled", EN_OTHER_PULLED:"goalie pulled",
+                  EN_6v5_DELAYED_PEN:"6v5 delayed", EN_OTHER_DELAYED_PEN:"delayed pen", PP_OTHER:"PP", SH_OTHER:"SH", OTHER:"other"};
+const sitShow = s => SIT_SHOW[s] || SIT_TEXT[s] || s;
 const REBOUND_SECONDS = 3;
 
 /* ================================================================
@@ -395,7 +411,7 @@ function blankSetup(){
   return {date:today(), us:"UofT", opp:"Opponent", periodMin:20, otMin:5, otFormat:"3v3", usRightP1:true, roster:[], lines};
 }
 function blankGame(setup){
-  return {clock:[{w:Date.now(), k:"set", p:1, s:setup.periodMin*60}], strength:"EV", shots:[], changes:[], flips:[], strOps:[], nextId:1};
+  return {clock:[{w:Date.now(), k:"set", p:1, s:setup.periodMin*60}], strength:"EV", shots:[], changes:[], flips:[], strOps:[], pens:[], enOps:[], nextId:1};
 }
 let S = blankSetup(), G = null;
 try{ const r = localStorage.getItem(KEY_SETUP); if(r) S = Object.assign(blankSetup(), JSON.parse(r)); }catch(e){}
@@ -403,13 +419,14 @@ try{ const r = localStorage.getItem(KEY_GAME); if(r) G = JSON.parse(r); }catch(e
 if(!G) G = blankGame(S);
 if(!Array.isArray(G.flips)) G.flips = [];
 G.shots.forEach(s => { if(s.type === "DEFL") s.type = "TIP"; });
+["strOps","pens","enOps"].forEach(k => { if(!Array.isArray(G[k])) G[k] = []; });
 
 let saveFailed = false;
 function saveGame(){ try{ localStorage.setItem(KEY_GAME, JSON.stringify(G)); saveFailed = false; }catch(e){ saveFailed = true; } }
 function saveSetup(){ try{ localStorage.setItem(KEY_SETUP, JSON.stringify(S)); }catch(e){ saveFailed = true; } }
 
 const hist = [];
-const snapshot = () => JSON.stringify({shots:G.shots, changes:G.changes, strength:G.strength, flips:G.flips, strOps:G.strOps, nextId:G.nextId});
+const snapshot = () => JSON.stringify({shots:G.shots, changes:G.changes, flips:G.flips, strOps:G.strOps, pens:G.pens, enOps:G.enOps, nextId:G.nextId});
 function mutate(fn){ hist.push(snapshot()); if(hist.length > 200) hist.shift(); fn(); saveGame(); render(); }
 function undo(){
   const s = hist.pop(); if(!s) return;
@@ -455,11 +472,17 @@ function corrected(w){
 const now = () => pred(Date.now());
 /* Strength changes are kept with their time, so the TOI sheet export can
    fill the opponent skater count for every second. */
-function setStrength(v){
-  if(v === G.strength) return;
-  G.strength = v;
-  (G.strOps = G.strOps || []).push({w:Date.now(), s:v});
-  saveGame(); render();
+function setStrength(v, sec){
+  const c = now();
+  mutate(() => { const x = {w:Date.now(), p:c.p, s:v}; if(sec !== null && sec !== undefined) x.sec = sec; G.strOps.push(x); });
+}
+function addPenalty(team, kind, sec){
+  const c = now();
+  mutate(() => { const x = {id:G.nextId++, w:Date.now(), p:c.p, team, kind}; if(sec !== null && sec !== undefined) x.s = sec; G.pens.push(x); });
+}
+function toggleOppEN(sec){
+  const c = now(), e = elapsed(c.p, sec !== null && sec !== undefined ? sec : c.v), on = !manpower().en(e);
+  mutate(() => { const x = {w:Date.now(), p:c.p, on}; if(sec !== null && sec !== undefined) x.s = sec; G.enOps.push(x); });
 }
 function toggleClock(){ G.clock.push({w:Date.now(), k: now().run ? "pause" : "run"}); saveGame(); render(); }
 function syncClock(sec){ const c = now(); G.clock.push({w:Date.now(), k:"set", p:c.p, s:sec, sync:true}); saveGame(); render(); }
@@ -508,21 +531,71 @@ function swapEnds(){
 }
 const attacksRight = (team, p) => (team === "us") === usAttacksRight(p);
 
-function situationFor(team, str, info, p){
-  const known = info.onIce.length > 0;
-  if(known && !info.goalie) return team === "us" ? "EN_6v5_PULLED" : "EN_AGAINST";
-  const n = known ? info.skaters : null, us = team === "us";
-  const ot3 = p >= 4 && S.otFormat === "3v3";
-  switch(str){
-    case "PP":  return us ? (n === 4 || (n === null && ot3) ? "PP_4v3" : "PP_5v4") : (n === 4 || (n === null && ot3) ? "SH_OTHER" : "SH_4v5");
-    case "PP2": return us ? "PP_5v3" : "SH_OTHER";
-    case "PK":  return us ? (n === 3 ? "SH_OTHER" : "SH_4v5") : (n === 3 ? "PP_4v3" : "PP_5v4");
-    case "PK2": return us ? "SH_OTHER" : "PP_5v3";
-    default:
-      if(n === 4) return "EV_4v4";
-      if(n === 3 || (n === null && ot3)) return "EV_3v3";
-      return "EV_5v5";
+/* ================================================================
+   Manpower. Penalties are logged when they start; each one's end is
+   found by replaying goals in game-time order: a minor ends at 2:00 or
+   on a power-play goal against it, a double minor loses one 2:00 to a
+   PP goal, a major always runs 5:00. Overlaps give 5v3, one each side
+   4v4; in 3v3 OT a penalty adds a skater to the other side instead.
+   A strength picked by hand overrides from its time until the next
+   penalty starts or ends. Opponent net empty toggles, cleared each period.
+================================================================= */
+const otAt = p => p >= 4 && S.otFormat === "3v3";
+const STR_COUNTS = (code, ot3) => ({EV: ot3 ? [3,3] : [5,5], PP: ot3 ? [4,3] : [5,4], PP2:[5,3],
+  PK: ot3 ? [3,4] : [4,5], PK2:[3,5], "4v4":[4,4], "3v3":[3,3]}[code] || (ot3 ? [3,3] : [5,5]));
+function periodOfE(e){
+  let p = 1, t0 = 0;
+  while(e >= t0 + periodLen(p) && p < 9){ t0 += periodLen(p); p++; }
+  return p;
+}
+function countsFor(active, p){
+  const au = active.filter(x => x.o.team === "us").length, at = active.filter(x => x.o.team === "them").length;
+  if(otAt(p)){ const d = at - au; return [3 + Math.max(0, Math.min(2, d)), 3 + Math.max(0, Math.min(2, -d))]; }
+  return [5 - Math.min(2, au), 5 - Math.min(2, at)];
+}
+function manpower(){
+  const pens = G.pens.map(o => { const e0 = elapsed(o.p, secOf(o)); return {o, e0, e1:e0 + PEN_LEN[o.kind], by:null}; })
+    .sort((a,b) => a.e0 - b.e0);
+  const goals = G.shots.filter(s => s.result === "GOAL").map(s => ({team:s.team, e:elapsed(s.p, secOf(s))})).sort((a,b) => a.e - b.e);
+  const activeAt = e => pens.filter(x => x.e0 <= e && e < x.e1);
+  for(const g of goals){
+    const act = activeAt(g.e), [u, th] = countsFor(act, periodOfE(g.e));
+    const adv = g.team === "us" ? u > th : th > u;
+    if(!adv) continue;
+    const victim = act.filter(x => x.o.team !== g.team && x.o.kind !== "major").sort((a,b) => a.e1 - b.e1)[0];
+    if(!victim) continue;
+    victim.e1 = victim.o.kind === "double" && g.e < victim.e0 + 120 ? g.e + 120 : g.e;
+    victim.by = g.e;
   }
+  const manual = G.strOps.map(o => { const c = corrected(o.w); return {e:elapsed(o.p || c.p, o.sec !== undefined ? o.sec : c.v), code:o.s}; })
+    .sort((a,b) => a.e - b.e);
+  const en = G.enOps.map(o => ({p:o.p, e:elapsed(o.p, secOf(o)), on:o.on})).sort((a,b) => a.e - b.e);
+  return {
+    pens,
+    at(e){
+      const p = periodOfE(e), act = activeAt(e);
+      let bound = -1;
+      for(const x of pens){ if(x.e0 <= e) bound = Math.max(bound, x.e0); if(x.e1 <= e) bound = Math.max(bound, x.e1); }
+      let m = null; for(const o of manual) if(o.e <= e) m = o;
+      if(m && m.e >= bound){ const c = STR_COUNTS(m.code, otAt(p)); return {us:c[0], them:c[1], manual:true}; }
+      const c = countsFor(act, p); return {us:c[0], them:c[1], manual:false};
+    },
+    en(e){ const p = periodOfE(e); let on = false; for(const o of en) if(o.p === p && o.e <= e) on = o.on; return on; }
+  };
+}
+function codeFor(us, them, p){
+  const ot3 = otAt(p);
+  for(const k of ["EV","PP","PP2","PK","PK2","4v4","3v3"]){ const c = STR_COUNTS(k, ot3); if(c[0] === us && c[1] === them) return k; }
+  return null;
+}
+function situationFrom(team, us, them, ourPulled, oppEN){
+  const a = us + (ourPulled ? 1 : 0), b = them + (oppEN ? 1 : 0), mine = team === "us";
+  const sk = mine ? a : b, df = mine ? b : a;
+  if(mine ? oppEN : ourPulled) return "EN_AGAINST";
+  if(mine ? ourPulled : oppEN) return sk === 6 && df === 5 ? "EN_6v5_PULLED" : "EN_OTHER_PULLED";
+  if(sk === df) return {5:"EV_5v5", 4:"EV_4v4", 3:"EV_3v3"}[sk] || "OTHER";
+  if(sk > df) return ({"5v4":"PP_5v4", "5v3":"PP_5v3", "4v3":"PP_4v3"})[sk + "v" + df] || "PP_OTHER";
+  return sk === 4 && df === 5 ? "SH_4v5" : "SH_OTHER";
 }
 
 function applyChange(board, c, issues){
@@ -577,6 +650,7 @@ function derive(extraChange){
   });
 
   const ordered = events.filter(e => e.kind === "s").map(e => e.o);
+  const MP = manpower();
   let prev = null;
   for(const s of ordered){
     const I = shotInfo[s.id];
@@ -584,7 +658,10 @@ function derive(extraChange){
                     shotInfo[prev.id].sec - I.sec <= REBOUND_SECONDS && shotInfo[prev.id].sec - I.sec >= 0);
     I.autoReb = auto;
     I.rebound = s.reb === null || s.reb === undefined ? auto : !!s.reb;
-    I.situation = situationFor(s.team, s.str, I, s.p);
+    const e = elapsed(s.p, I.sec), known = I.onIce.length > 0;
+    const cnt = s.str ? STR_COUNTS(s.str, otAt(s.p)) : null, mp = MP.at(e);
+    I.us = cnt ? cnt[0] : mp.us; I.them = cnt ? cnt[1] : mp.them; I.oppEN = MP.en(e);
+    I.situation = situationFrom(s.team, I.us, I.them, known && !I.goalie, I.oppEN);
     const right = attacksRight(s.team, s.p), X = right ? s.x : -s.x, Y = right ? s.y : -s.y;
     const g = geometry(X, Y);
     I.distance = g.d; I.angle = g.a; I.X = X; I.Y = Y;
@@ -592,7 +669,7 @@ function derive(extraChange){
                                                  is_rebound:I.rebound ? 1 : 0, situation:I.situation});
     prev = s;
   }
-  return {ordered, shotInfo, issues, board, shifts, segments, candidate};
+  return {ordered, shotInfo, issues, board, shifts, segments, candidate, MP};
 }
 
 function playerStats(D, scope){
@@ -632,7 +709,7 @@ function teamTotals(D, team, scope){
 ================================================================= */
 function parseBar(text){
   const toks = text.toLowerCase().replace(/\//g, " / ").replace(/,/g, " ").trim().split(/\s+/).filter(Boolean);
-  const out = {off:[], on:[], presets:[], ago:null, at:null, errors:[], slash:false};
+  const out = {off:[], on:[], presets:[], ago:null, at:null, errors:[], slash:false, pens:[], en:false, ev:false};
   for(const t of toks){
     let m;
     if(t === "/"){ if(out.slash) out.errors.push("only one / allowed"); out.slash = true; }
@@ -640,6 +717,9 @@ function parseBar(text){
     else if((m = t.match(/^s(\d{1,3})$/))) out.ago = +m[1];
     else if(t.startsWith("@")){ const v = parseClock(t.slice(1)); if(v === null) out.errors.push(`bad time ${t}`); else out.at = v; }
     else if(LINE_KEYS.includes(t)) out.presets.push(t);
+    else if((m = t.match(/^(pp|pk)([245]?)$/))) out.pens.push({team:m[1] === "pp" ? "them" : "us", kind:{"":"minor","2":"minor","4":"double","5":"major"}[m[2]]});
+    else if(t === "en") out.en = true;
+    else if(t === "ev") out.ev = true;
     else out.errors.push(`don't know "${t}"`);
   }
   if(!out.slash && (out.off.length || out.on.length)) out.errors.push("use / between players off and players on");
@@ -673,14 +753,15 @@ function resolveBar(text){
   const change = {id:"_probe", w, p, s:sec, off:[...off], on:[...on]};
   const D2 = derive(change);
   const errors = P.errors.concat(D2.issues["_probe"] || []);
-  if(!change.off.length && !change.on.length && !P.errors.length) errors.push("nobody coming off or on");
+  const extra = P.pens.length || P.en || P.ev;
+  if(!change.off.length && !change.on.length && !P.errors.length && !extra) errors.push("nobody coming off or on");
 
   let moved = 0;
   if(sec !== null){
     const D1 = derive();
     for(const s of G.shots) if(D1.shotInfo[s.id].onIce.join() !== D2.shotInfo[s.id].onIce.join()) moved++;
   }
-  return {change, errors, sec, ago:P.ago, at:P.at, moved};
+  return {change, errors, sec, ago:P.ago, at:P.at, moved, pens:P.pens, en:P.en, ev:P.ev};
 }
 
 let barOpen = false;
@@ -691,12 +772,19 @@ function commitBar(force){
   if(!text.trim()){ closeBar(); return; }
   const r = resolveBar(text);
   if(r.errors.length && !force){ renderBar(); return; }
-  if(!r.change.off.length && !r.change.on.length){ renderBar(); return; }
+  const players = r.change.off.length || r.change.on.length;
+  if(!players && !r.pens.length && !r.en && !r.ev){ renderBar(); return; }
+  const enOn = r.en ? !manpower().en(elapsed(r.change.p, r.sec !== null ? r.sec : now().v)) : null;
   mutate(() => {
-    const c = {id:G.nextId++, w:r.change.w, p:r.change.p, off:r.change.off, on:r.change.on};
-    if(r.sec !== null) c.s = r.sec;
-    if(r.errors.length) c.forced = true;
-    G.changes.push(c);
+    const w = r.change.w, p = r.change.p, at = x => { if(r.sec !== null) x.s = r.sec; return x; };
+    if(players){
+      const c = at({id:G.nextId++, w, p, off:r.change.off, on:r.change.on});
+      if(r.errors.length) c.forced = true;
+      G.changes.push(c);
+    }
+    r.pens.forEach(x => G.pens.push(at({id:G.nextId++, w, p, team:x.team, kind:x.kind})));
+    if(r.en) G.enOps.push(at({w, p, on:enOn}));
+    if(r.ev){ const o = {w, p, s:"EV"}; if(r.sec !== null) o.sec = r.sec; G.strOps.push(o); }
   });
   closeBar();
 }
@@ -712,13 +800,16 @@ function renderBar(){
   if(!barOpen){ bar.classList.remove("err");
     out.innerHTML = `<span class="note">Press <kbd>c</kbd> or <kbd>Enter</kbd> (or click a player) to make a change</span>`; return; }
   if(!text.trim()){ bar.classList.remove("err");
-    out.innerHTML = `<span class="note">off numbers <kbd>/</kbd> on numbers · presets f1-f4 d1-d3 p1 p2 · <kbd>s20</kbd> = 20 s ago · <kbd>@12:40</kbd> · <kbd>Enter</kbd> commit · <kbd>Shift</kbd>+<kbd>Enter</kbd> override · <kbd>Esc</kbd> cancel</span>`;
+    out.innerHTML = `<span class="note">off numbers <kbd>/</kbd> on numbers · presets f1-f4 d1-d3 p1 p2 · <kbd>pp</kbd> <kbd>pk</kbd> (4 double, 5 major) <kbd>en</kbd> <kbd>ev</kbd> · <kbd>s20</kbd> = 20 s ago · <kbd>@12:40</kbd> · <kbd>Enter</kbd> commit · <kbd>Shift</kbd>+<kbd>Enter</kbd> override · <kbd>Esc</kbd> cancel</span>`;
     return; }
   const r = resolveBar(text);
   const when = r.sec === null ? "live" : `at ${fmt(r.sec)} ${perLabel(r.change.p)}` + (r.ago !== null ? ` (${r.ago}s ago)` : "");
   bar.classList.toggle("err", r.errors.length > 0);
-  out.innerHTML = `<span class="lab">off</span>${chipsFor(r.change.off,"off")}<span>&rarr;</span>`+
-    `<span class="lab">on</span>${chipsFor(r.change.on,"on")}<span class="note">${esc(when)}</span>`+
+  const penChips = r.pens.map(x => `<span class="pchip">${esc(x.team === "them" ? S.opp : S.us)} ${PEN_LABEL[x.kind]} (${x.team === "them" ? "PP" : "PK"})</span>`).join("")
+    + (r.en ? `<span class="pchip">opp net empty on/off</span>` : "") + (r.ev ? `<span class="pchip">back to even</span>` : "");
+  const playersPart = (r.change.off.length || r.change.on.length || !penChips)
+    ? `<span class="lab">off</span>${chipsFor(r.change.off,"off")}<span>&rarr;</span><span class="lab">on</span>${chipsFor(r.change.on,"on")}` : "";
+  out.innerHTML = playersPart + penChips + `<span class="note">${esc(when)}</span>`+
     (r.moved ? `<span class="warnc">changes on-ice for ${r.moved} logged shot${r.moved>1?"s":""}</span>` : "")+
     (r.errors.length ? `<span class="errs">${r.errors.map(esc).join(" · ")} &nbsp;<span class="note">(Shift+Enter to commit anyway)</span></span>` : "");
 }
@@ -756,7 +847,7 @@ function logShot(x, y){
   const team = x >= 0 ? (usAttacksRight(c.p) ? "us" : "them") : (usAttacksRight(c.p) ? "them" : "us");
   mutate(() => {
     G.shots.push({id:G.nextId++, w:Date.now(), p:c.p, x:+x.toFixed(1), y:+y.toFixed(1), team,
-                  type:"UNKNOWN", result:"SAVE", reb:null, str:G.strength});
+                  type:"UNKNOWN", result:"SAVE", reb:null});
     selId = null;
   });
 }
@@ -817,20 +908,19 @@ function renderRink(D){
   $("bAll").setAttribute("aria-pressed", String(showAll));
 }
 
-function expectedSkaters(p){
-  const ot3 = p >= 4 && S.otFormat === "3v3";
-  return {EV: ot3 ? 3 : 5, PP: ot3 ? 4 : 5, PP2: 5, PK: ot3 ? 3 : 4, PK2: 3}[G.strength];
-}
+function nowState(D){ const c = now(), e = elapsed(c.p, c.v); return Object.assign({e, p:c.p, en:D.MP.en(e)}, D.MP.at(e)); }
+function expectedSkaters(D){ return nowState(D).us; }
 function renderLight(D){
   const el = $("light"), on = [...D.board];
-  const g = on.filter(n => posOf(n) === "G").length, sk = on.length - g, exp = expectedSkaters(now().p);
+  const g = on.filter(n => posOf(n) === "G").length, sk = on.length - g, exp = expectedSkaters(D);
   let txt, ok = false;
-  if(!on.length) txt = "board empty: c / numbers for the lineup";
-  else if(g === 0 && sk === exp + 1) txt = `${sk} skaters, goalie pulled`;
-  else if(g !== 1) txt = `${sk} skaters, ${g} goalies`;
-  else if(sk !== exp) txt = `${sk} skaters + G (expected ${exp})`;
+  if(!on.length) txt = "board empty";
+  else if(g === 0 && sk === exp + 1) txt = `${sk} sk, G pulled`;
+  else if(g !== 1) txt = `${sk} sk, ${g} G`;
+  else if(sk !== exp) txt = `${sk}+G, want ${exp}`;
   else { txt = `${sk} + G`; ok = true; }
   el.textContent = txt; el.className = ok ? "ok" : "warn";
+  el.title = !on.length ? "Nobody on the board: c / numbers for the lineup" : `${sk} skaters and ${g} goalie${g === 1 ? "" : "s"} on the board; the strength says ${exp} skaters`;
 }
 
 function renderBoard(D){
@@ -841,8 +931,8 @@ function renderBoard(D){
   const btn = p => {
     const on = D.board.has(p.num);
     const cls = ["pbtn", on ? "on" : "", pending.off.includes(p.num) ? "poff" : "", pending.on.includes(p.num) ? "pon" : ""].join(" ");
-    const t = on ? "shift " + fmt(toiNow[p.num] || 0) : fmt(st[p.num] ? st[p.num].toi : 0);
-    return `<button class="${cls}" data-num="${esc(p.num)}" tabindex="-1"><span class="n">${esc(p.num)}</span>`+
+    const t = on ? fmt(toiNow[p.num] || 0) : fmt(st[p.num] ? st[p.num].toi : 0);
+    return `<button class="${cls}" data-num="${esc(p.num)}" tabindex="-1" title="${on ? "On the ice: this shift" : "Bench: TOI so far"}"><span class="n">${esc(p.num)}</span>`+
            `<span class="nm">${esc(p.name || "")}</span><span class="t mono">${t}</span></button>`;
   };
   /* One row per line preset (F1-F4, D1-D3), then anyone not in a line. */
@@ -865,6 +955,22 @@ function renderBoard(D){
     : `<div class="note" style="margin-top:6px">No roster yet. Add it under <b>Setup</b>.</div>`;
 }
 
+function renderPens(D){
+  const ns = nowState(D), el = $("penPanel");
+  const act = D.MP.pens.filter(x => x.e0 <= ns.e && ns.e < x.e1).sort((a,b) => a.e1 - b.e1);
+  el.innerHTML = `<div class="agohead"><span class="lab">Penalties</span><span class="mono" style="font-size:12px">${ns.us}v${ns.them}${ns.en ? " · opp net empty" : ""}${ns.manual ? " · by hand" : ""}</span></div>
+    <div class="row"><span class="lab" style="width:22px">PP</span><button data-pen="them:minor">2:00</button><button data-pen="them:double">4:00</button><button data-pen="them:major">5:00</button>
+      <button class="en" data-en aria-pressed="${ns.en}" style="margin-left:auto">Opp net empty</button></div>
+    <div class="row"><span class="lab" style="width:22px">PK</span><button data-pen="us:minor">2:00</button><button data-pen="us:double">4:00</button><button data-pen="us:major">5:00</button>
+      ${ns.manual ? `<button data-ev style="margin-left:auto">Clear hand strength</button>` : ""}</div>` +
+    act.map(x => `<div class="act ${x.o.team === "them" ? "pp" : "pk"}"><span>${x.o.team === "them" ? "PP" : "PK"} · ${esc(x.o.team === "them" ? S.opp : S.us)} ${PEN_LABEL[x.o.kind]}</span>
+      <span class="mono">${fmt(x.e1 - ns.e)} left <button class="del" data-delpen="${x.o.id}" title="Remove this penalty">&times;</button></span></div>`).join("");
+  el.querySelectorAll("button").forEach(b => b.addEventListener("mousedown", e => e.preventDefault()));
+  el.querySelectorAll("[data-pen]").forEach(b => b.onclick = () => { const [team, kind] = b.dataset.pen.split(":"); addPenalty(team, kind); });
+  el.querySelector("[data-en]").onclick = () => toggleOppEN();
+  const ev = el.querySelector("[data-ev]"); if(ev) ev.onclick = () => setStrength("EV");
+  el.querySelectorAll("[data-delpen]").forEach(b => b.onclick = () => { const id = +b.dataset.delpen; mutate(() => G.pens = G.pens.filter(x => x.id !== id)); });
+}
 function renderShotPanel(D){
   const s = selected(), el = $("shotPanel");
   if(!s){ el.innerHTML = `<span class="lab">Shot</span><div class="note">Click the rink where a shot came from. The clock time and who is on the ice are taken automatically.</div>`; return; }
@@ -877,14 +983,14 @@ function renderShotPanel(D){
       <span class="chip ${s.type === "UNKNOWN" ? "need" : ""}">${esc(TYPE_LABEL[s.type])}</span>
       <span class="chip">${RESULT_LABEL[s.result]}</span>
       ${I.rebound ? `<span class="chip">rebound${s.reb === null || s.reb === undefined ? " (auto)" : ""}</span>` : ""}
-      <span class="chip">${esc(SIT_TEXT[I.situation] || I.situation)}</span>
+      <span class="chip">${esc(sitShow(I.situation))}</span>
       <span class="mono" style="margin-left:auto">${I.xg === null ? "no model" : I.xg.toFixed(3)+" xG"}</span>
     </div>
     <div class="note">${I.distance.toFixed(0)} ft · ${I.angle.toFixed(0)}° · on ice: ${I.onIce.length ? I.onIce.map(esc).join(" ") : "nobody logged"}</div>
     <div class="edits">
       <select data-f="type">${opt(TYPE_LABEL, s.type)}</select>
       <select data-f="result">${opt(RESULT_LABEL, s.result)}</select>
-      <select data-f="str">${opt(STR_LABEL, s.str)}</select>
+      <select data-f="str"><option value=""${s.str ? "" : " selected"}>Auto (${I.us}v${I.them}${I.oppEN ? ", opp EN" : ""})</option>${opt(STR_LABEL, s.str)}</select>
     </div>
     <div class="note">type <kbd>w</kbd><kbd>s</kbd><kbd>b</kbd><kbd>t</kbd><kbd>a</kbd><kbd>d</kbd><kbd>u</kbd> · result <kbd>o</kbd><kbd>g</kbd><kbd>m</kbd><kbd>k</kbd> · <kbd>r</kbd> rebound · <kbd>x</kbd> other team · <kbd>,</kbd><kbd>.</kbd> time</div>
     <button class="delbtn" id="shotDel">Delete ${s.result === "GOAL" ? "goal" : "shot"} <kbd>Shift</kbd>+<kbd>Delete</kbd></button>`;
@@ -903,7 +1009,7 @@ function renderLog(D){
         <td class="num">${i+1}</td><td>${perLabel(s.p)}</td><td class="mono">${fmt(I.sec)}${s.s !== undefined && s.s !== null ? "*" : ""}</td>
         <td style="color:var(--${s.team})">${esc(s.team === "us" ? S.us : S.opp)}</td>
         <td class="${s.type === "UNKNOWN" ? "warnc" : ""}">${esc(TYPE_LABEL[s.type])}</td><td>${RESULT_LABEL[s.result]}</td>
-        <td>${I.rebound ? "yes" : ""}</td><td>${esc(SIT_TEXT[I.situation] || I.situation)}</td>
+        <td>${I.rebound ? "yes" : ""}</td><td>${esc(sitShow(I.situation))}</td>
         <td class="mono">${I.onIce.map(esc).join(" ")}</td><td class="num">${I.xg === null ? "" : I.xg.toFixed(3)}</td>
         <td><button class="del" data-del="${s.id}" tabindex="-1" title="Delete this ${s.result === "GOAL" ? "goal" : "shot"}" aria-label="Delete">&times;</button></td></tr>`; }).join("") + `</tbody>`;
   tb.querySelectorAll("tr.row").forEach(tr => tr.onclick = () => { selId = +tr.dataset.id; render(); });
@@ -926,8 +1032,12 @@ function renderTop(D){
   clk.className = "mono " + (c.run ? "run" : "stop");
   $("runTag").textContent = c.run ? "RUNNING" : "PAUSED";
   $("bRun").innerHTML = (c.run ? "Pause" : "Start") + " <kbd>Tab</kbd>";
-  $("strSel").value = G.strength;
   if(!D) return;
+  const ns = nowState(D), code = codeFor(ns.us, ns.them, ns.p);
+  const optNow = $("strNow");
+  if(code){ $("strSel").value = code; optNow.hidden = true; }
+  else { optNow.textContent = `${ns.us}v${ns.them}`; optNow.hidden = false; $("strSel").value = ""; }
+  $("strSel").title = `${ns.us}v${ns.them}${ns.en ? ", opp net empty" : ""}${ns.manual ? " (set by hand)" : ""} · e cycles EV / PP / PK`;
   const a = teamTotals(D, "us"), b = teamTotals(D, "them");
   const need = G.shots.filter(s => s.type === "UNKNOWN").length;
   $("score").innerHTML =
@@ -986,6 +1096,30 @@ function renderShiftList(D){
     const id = +b.dataset.del; mutate(() => G.changes = G.changes.filter(c => c.id !== id)); });
 }
 
+function renderPenList(D){
+  const tb = $("penlist");
+  if(!D.MP.pens.length){ tb.innerHTML = `<tbody><tr><td class="note">No penalties logged.</td></tr></tbody>`; return; }
+  const toClock = e => { const p = periodOfE(e); return perLabel(p) + " " + fmt(periodLen(p) - (e - elapsed(p, periodLen(p)))); };
+  tb.innerHTML = `<thead><tr><th>Per</th><th>Start</th><th>Penalty on</th><th>Type</th><th>Ends</th><th></th></tr></thead><tbody>` +
+    D.MP.pens.map(x => { const o = x.o;
+      return `<tr data-id="${o.id}"><td><input data-f="p" value="${o.p}" style="width:48px"></td>
+        <td><input data-f="s" value="${o.s !== undefined && o.s !== null ? fmt(o.s) : ""}" placeholder="${fmt(secOf(o))}" style="width:76px"></td>
+        <td><select data-f="team"><option value="them"${o.team === "them" ? " selected" : ""}>${esc(S.opp)} (our PP)</option><option value="us"${o.team === "us" ? " selected" : ""}>${esc(S.us)} (our PK)</option></select></td>
+        <td><select data-f="kind">${Object.entries(PEN_LABEL).map(([k,l]) => `<option value="${k}"${o.kind === k ? " selected" : ""}>${l}</option>`).join("")}</select></td>
+        <td class="iss">${x.by !== null ? "PP goal, " : ""}${toClock(x.e1)}</td>
+        <td><button data-delpen="${o.id}">Delete</button></td></tr>`; }).join("") + `</tbody>`;
+  tb.querySelectorAll("input,select").forEach(inp => {
+    inp.onchange = () => {
+      const o = G.pens.find(x => x.id === +inp.closest("tr").dataset.id), f = inp.dataset.f, v = inp.value.trim();
+      if(!o) return;
+      if(f === "p"){ const p = parseInt(v, 10); if(p >= 1 && p <= 9) mutate(() => o.p = p); }
+      else if(f === "s"){ if(!v) mutate(() => delete o.s); else { const s = parseClock(v); if(s !== null && s <= periodLen(o.p)) mutate(() => o.s = s); else render(); } }
+      else mutate(() => o[f] = v);
+    };
+    if(inp.tagName === "INPUT") inp.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); inp.blur(); } };
+  });
+  tb.querySelectorAll("[data-delpen]").forEach(b => b.onclick = () => { const id = +b.dataset.delpen; mutate(() => G.pens = G.pens.filter(x => x.id !== id)); });
+}
 function renderSetup(){
   $("sDate").value = S.date; $("sUs").value = S.us; $("sOpp").value = S.opp;
   $("sPer").value = S.periodMin; $("sOt").value = S.otMin; $("sOtf").value = S.otFormat;
@@ -1024,8 +1158,8 @@ function readSetup(){
 function render(){
   const D = derive();
   renderTop(D);
-  if(view === "track"){ renderRink(D); renderBoard(D); renderShotPanel(D); renderLog(D); renderBar(); }
-  else if(view === "shifts"){ renderStats(D); renderShiftList(D); renderScopeSelect(D); }
+  if(view === "track"){ renderRink(D); renderBoard(D); renderPens(D); renderShotPanel(D); renderLog(D); renderBar(); }
+  else if(view === "shifts"){ renderStats(D); renderShiftList(D); renderPenList(D); renderScopeSelect(D); }
   document.querySelectorAll(".tabs [data-view]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
 }
 function setView(v){
@@ -1090,10 +1224,8 @@ const TOI_BLOCKS = [[1,1200],[2,1200],[3,1200],[4,420]];
 function toiSheetRows(){
   const D = derive(), R = rosterMap(), rows = [];
   const segs = D.segments.slice().sort((a,b) => a.p - b.p || b.s1 - a.s1);
-  const ops = (G.strOps || []).map(o => { const c = corrected(o.w); return {p:c.p, sec:c.v, s:o.s}; })
-    .sort((a,b) => a.p - b.p || b.sec - a.sec);
   const shots = D.ordered.map(s => ({s, p:s.p, sec:D.shotInfo[s.id].sec}));
-  let slots = [0,0,0,0,0], gslot = 0, strI = -1, n = 0;
+  let slots = [0,0,0,0,0], gslot = 0, n = 0;
   for(const [p, len] of TOI_BLOCKS){
     for(let c = len; c >= 1; c--){
       const m = c - 0.5, r = rows.length + 2;
@@ -1110,10 +1242,8 @@ function toiSheetRows(){
         const k = slots.indexOf(0);
         if(k >= 0) slots[k] = x; else if(!gslot) gslot = x;
       }
-      while(strI + 1 < ops.length && (ops[strI+1].p < p || (ops[strI+1].p === p && ops[strI+1].sec >= m))) strI++;
-      const str = strI >= 0 ? ops[strI].s : "EV";
-      const ot3 = p >= 4 && S.otFormat === "3v3";
-      const opp = !on.length ? 0 : {EV: ot3 ? 3 : 5, PP: ot3 ? 3 : 4, PP2: 3, PK: ot3 ? 4 : 5, PK2: 5}[str];
+      const em = elapsed(p, m), mp = D.MP.at(em);
+      const opp = !on.length ? 0 : mp.them + (D.MP.en(em) ? 1 : 0);
       const inRow = x => x.p === p && x.sec <= c && x.sec > c - 1;
       const here = shots.filter(inRow).filter(x => x.s.result === "SAVE" || x.s.result === "GOAL");
       const shot = here.some(x => x.s.team === "us") ? "o" : here.length ? "d" : 0;
@@ -1488,7 +1618,7 @@ document.addEventListener("keydown", e => {
   if(e.key === "?"){ toggleHelp(true); return; }
   if(e.key === "="){ e.preventDefault(); openSet(); return; }
   if(e.key === "]"){ e.preventDefault(); if(confirm(`End ${perLabel(now().p)} and start ${perLabel(now().p+1)}?`)) nextPeriod(); return; }
-  if(e.key === "e"){ const i = ["EV","PP","PK"].indexOf(G.strength); setStrength(["EV","PP","PK"][(i+1) % 3]); return; }
+  if(e.key === "e"){ const ns = nowState(derive()), i = ["EV","PP","PK"].indexOf(codeFor(ns.us, ns.them, ns.p)); setStrength(["EV","PP","PK"][(i+1) % 3]); return; }
   if(e.key === " "){ e.preventDefault(); return; }
   if(view !== "track") return;
   const D = derive();
@@ -1513,7 +1643,7 @@ const HELP = [
   ["Tab","Pause / resume the clock (works everywhere, even in the change bar)"],
   ["=","Type the scoreboard time (1240 or 12:40, Enter). Also fixes events since the last reading"],
   ["]","End the period"],
-  ["e","Cycle strength EV, PP, PK (dropdown has 5v3)"],
+  ["e","Set strength by hand: EV, PP, PK (overrides until the next penalty starts or ends)"],
   ["Cmd+Z","Undo the last shot, change or edit"],
   ["`","Switch Track / Shifts"],
   ["?","This sheet"],
@@ -1535,6 +1665,9 @@ const HELP = [
   ["f1-f4 d1-d3 p1 p2","Line presets: who comes off is worked out from positions"],
   ["s20","It happened 20 game-seconds ago"],
   ["@12:40","It happened at 12:40 on the scoreboard"],
+  ["pp pk","Penalty on them / on us: minor; pp4 pk4 double minor, pp5 pk5 major. Ends itself"],
+  ["en","Opponent net empty on / off (clears at the end of the period)"],
+  ["ev","Back to even strength by hand"],
   ["Enter","Commit (blocked while the preview is red)"],
   ["Shift+Enter","Override: commit anyway, flagged on the Shifts view"],
   ["Esc","Cancel"],
@@ -1568,7 +1701,7 @@ async function boot(){
     const c = now(), s = Math.ceil(c.v);
     if(s === lastSec) return;
     lastSec = s; renderTop(null);
-    if(c.run && view === "track" && !drag) renderBoard(derive());
+    if(c.run && view === "track" && !drag){ const D = derive(); renderTop(D); renderBoard(D); renderPens(D); }
   }, 150);
 }
 const hdrObs = new ResizeObserver(() => document.documentElement.style.setProperty("--hdr", document.querySelector(".top").offsetHeight + "px"));
