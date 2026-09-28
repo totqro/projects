@@ -120,8 +120,42 @@ def fetch_standings(date: str = None) -> dict:
             except Exception:
                 continue
 
+    # Off-season, preseason, and possibly opening day: nothing in the last 30
+    # days either. Use the most recent season's final standings, the same way
+    # Elo carries last season's ratings forward. Without this every game is
+    # skipped for want of standings and the run "succeeds" with no predictions.
+    if not standings:
+        standings = _last_season_final_standings(date)
+
     _set_cache(cache_key, standings)
     return standings
+
+
+def _last_season_final_standings(before_date: str) -> dict:
+    """Final standings of the latest season that ended before `before_date`,
+    or {} if the NHL API can't say."""
+    try:
+        resp = requests.get(f"{BASE_URL}/standings-season", timeout=15)
+        resp.raise_for_status()
+        ends = sorted(s["standingsEnd"] for s in resp.json().get("seasons", [])
+                      if s.get("standingsEnd") and s["standingsEnd"] < before_date)
+        if not ends:
+            return {}
+        end = ends[-1]
+        cache_key = f"standings_{end}"
+        standings = _get_cached(cache_key, max_age_hours=24 * 365)
+        if not standings:
+            resp = requests.get(f"{BASE_URL}/standings/{end}", timeout=15)
+            resp.raise_for_status()
+            standings = _parse_standings_raw(resp.json())
+            if standings:
+                _set_cache(cache_key, standings)
+        if standings:
+            print(f"  [standings] No current standings — using last season's final standings ({end})")
+        return standings or {}
+    except Exception as e:
+        print(f"  [standings] Could not load last season's final standings: {e}")
+        return {}
 
 
 def fetch_schedule(date: str = None) -> list:
