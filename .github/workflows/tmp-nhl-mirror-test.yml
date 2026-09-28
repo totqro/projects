@@ -72,8 +72,8 @@ jobs:
 
       - name: Early season (should be Elo)
         working-directory: nhllines
-        run: python /tmp/harness.py now
+        run: PYTHONPATH=. python /tmp/harness.py now
 
       - name: Full season state (should be xG)
         working-directory: nhllines
-        run: python /tmp/harness.py lastseason
+        run: PYTHONPATH=. python /tmp/harness.py lastseason
