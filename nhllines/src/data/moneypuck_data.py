@@ -2,7 +2,7 @@
 MoneyPuck shot-level expected-goals (xG) data.
 ================================================
 Source: MoneyPuck's public shots dataset, one zip per season
-(https://moneypuck.com/moneypuck/playerData/shots/shots_{YEAR}.zip, ~20MB
+(shots_{YEAR}.zip from SHOTS_URLS below, ~20MB
 zipped CSV). Every row is one shot, tagged with game_id, xGoal,
 homeTeamCode/awayTeamCode, teamCode (the shooting team), isHomeTeam, score
 state (home/awayTeamGoals at the time of the shot), and strength state
@@ -53,6 +53,14 @@ def _current_season_start_year() -> int:
 
 MONEYPUCK_SHOTS_URL = "https://moneypuck.com/moneypuck/playerData/shots/shots_{year}.zip"
 
+# MoneyPuck's own per-season URL started returning 404 in Sept 2026. The
+# mirror serves the same zips (xgcalc's retrain pulled 2018-2025 from it), so
+# it goes first; the original stays as a fallback in case it comes back.
+SHOTS_URLS = [
+    "https://peter-tanner.com/moneypuck/downloads/shots_{year}.zip",
+    MONEYPUCK_SHOTS_URL,
+]
+
 # MoneyPuck's server 302-redirects to a license page for bare requests
 # without a browser-like User-Agent/Referer.
 _HEADERS = {
@@ -101,10 +109,25 @@ def download_season_shots(year: int) -> Path:
         if age_hours < _CURRENT_SEASON_SHOTS_CACHE_HOURS:
             return csv_path
 
-    url = MONEYPUCK_SHOTS_URL.format(year=year)
-    resp = requests.get(url, headers=_HEADERS, timeout=180)
-    resp.raise_for_status()
-    with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
+    content = None
+    tried = []
+    for template in SHOTS_URLS:
+        url = template.format(year=year)
+        try:
+            resp = requests.get(url, headers=_HEADERS, timeout=180)
+        except requests.RequestException as e:
+            tried.append(f"{url} ({e.__class__.__name__})")
+            continue
+        if resp.status_code == 200 and zipfile.is_zipfile(io.BytesIO(resp.content)):
+            content = resp.content
+            break
+        tried.append(f"{url} ({resp.status_code if resp.status_code != 200 else 'not a zip'})")
+    if content is None:
+        raise RuntimeError(
+            f"Could not download MoneyPuck shots for {year}; tried: "
+            + "; ".join(tried))
+
+    with zipfile.ZipFile(io.BytesIO(content)) as zf:
         names = [n for n in zf.namelist() if n.endswith(".csv")]
         if not names:
             raise ValueError(f"No CSV found in MoneyPuck shots zip for {year}")
