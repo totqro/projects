@@ -81,6 +81,18 @@ def _season_is_complete(season: str) -> bool:
     return (now.year, now.month) >= (end_year, 7)
 
 
+_RATE_LIMIT_RETRIES = 6
+
+
+def _retry_after_seconds(resp, attempt: int) -> float:
+    """Seconds to wait after a 429: the server's Retry-After if it sent a
+    number, else exponential backoff (2, 4, 8, ... capped at 60)."""
+    try:
+        return min(float(resp.headers.get("Retry-After", "")), 60.0)
+    except ValueError:
+        return min(2.0 ** (attempt + 1), 60.0)
+
+
 def fetch_team_season_schedule(team: str, season: str) -> list:
     """
     Fetch one team's full season schedule from the NHL API.
@@ -94,7 +106,14 @@ def fetch_team_season_schedule(team: str, season: str) -> list:
         return cached
 
     url = f"{BASE_URL}/club-schedule-season/{team}/{season}"
-    resp = requests.get(url, timeout=20)
+    # The NHL API rate-limits bursts (429). Back off and retry rather than
+    # letting the caller lose the team's whole season.
+    for attempt in range(_RATE_LIMIT_RETRIES):
+        resp = requests.get(url, timeout=20)
+        if resp.status_code != 429:
+            break
+        wait = _retry_after_seconds(resp, attempt)
+        time.sleep(wait)
     if resp.status_code == 404:
         _set_cache(cache_key, [])
         return []
@@ -109,14 +128,20 @@ def fetch_season_games_full(season: str, verbose: bool = True) -> list:
     """
     Fetch ALL completed regular-season games for a season (~1300 games).
     Deduplicates across the 32 per-team schedules by game id.
+
+    Raises if any team's schedule can't be fetched: a season missing some
+    teams' games would silently corrupt every rating and feature built from
+    it (a rate-limited run once produced ratings for 0 teams and served them).
     """
     seen = {}
+    failed = []
     for team in NHL_TEAMS:
         try:
             raw_games = fetch_team_season_schedule(team, season)
         except Exception as e:
             if verbose:
                 print(f"  ⚠ {team} {season}: {e}")
+            failed.append(f"{team}: {e}")
             continue
 
         for g in raw_games:
@@ -148,6 +173,11 @@ def fetch_season_games_full(season: str, verbose: bool = True) -> list:
                 # REG / OT / SO — loser earns a point in OT/SO
                 "last_period_type": g.get("gameOutcome", {}).get("lastPeriodType", "REG"),
             }
+
+    if failed:
+        raise RuntimeError(
+            f"Could not fetch {len(failed)} team schedule(s) for {season}; "
+            f"refusing to build state from a partial season. First: {failed[0]}")
 
     games = sorted(seen.values(), key=lambda g: (g["date"], g["id"]))
     if verbose:

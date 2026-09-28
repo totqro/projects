@@ -43,7 +43,8 @@ jobs:
                       print(f"TEST: using {len(games)} games on {d}")
                       return games
               raise SystemExit("no games in the next 14 days")
-          main.fetch_todays_games = next_games
+          _games = next_games()  # before main.py's own burst of requests
+          main.fetch_todays_games = lambda: _games
 
           if mode == "lastseason":
               # Pretend 2025-26 is the current season: every team has 82 GP,

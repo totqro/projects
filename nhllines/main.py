@@ -193,16 +193,20 @@ def run_analysis(
         return result
 
     with ThreadPoolExecutor(max_workers=4) as executor:
-        rating_futures = [executor.submit(_load_elo_ratings)]
-        if use_xg:
-            rating_futures.append(executor.submit(_load_xg_state))
+        # One task, in sequence: both replay the same season schedules, so
+        # the second reads the first's on-disk cache instead of doubling the
+        # burst of NHL API requests (which gets rate-limited).
+        def _load_ratings():
+            if use_xg:
+                _load_xg_state()
+            _load_elo_ratings()
+        rating_future = executor.submit(_load_ratings)
         goalie_future = executor.submit(_fetch_goalies)
         injury_future = executor.submit(_fetch_injuries)
 
         goalie_starters = goalie_future.result()
         all_injuries = injury_future.result()
-        for f in rating_futures:
-            f.result()  # Wait for live ratings/state to finish computing
+        rating_future.result()  # Wait for live ratings/state to finish computing
 
     def _elo_win_prob(home: str, away: str, home_rest_days: float, away_rest_days: float,
                       home_b2b: bool, away_b2b: bool) -> tuple:
