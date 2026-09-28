@@ -192,8 +192,8 @@ line presets (F1-F4, D1-D3, PP1-PP2). During it, the keyboard does the work:
 |---|---|
 | `Tab` | pause / resume the clock, always |
 | `=` | type the scoreboard time (`1240`); also repairs events since the last reading |
-| `c` | change bar: `15 19 34 / 14 9 10`, `f2 d1`, `s20` (20 s ago), `@12:40`; Shift+Enter overrides a red check |
-| `w s b t d a u` | wrist/snap, slap, backhand, tip, deflection, wrap, unknown |
+| `c` or `Enter` | change bar (the 5s/10s/15s/20s buttons by the players add "that long ago"): `15 19 34 / 14 9 10`, `f2 d1`, `s20` (20 s ago), `@12:40`; Shift+Enter overrides a red check |
+| `w s b t a d u` | wrist/snap, slap, backhand, tip/deflection, wrap, scramble, unknown |
 | `o g m k` | on goal, goal, missed, blocked |
 | `r` `x` `,` `.` | rebound override, wrong end, time -1 s / +1 s |
 | `↑ ↓` `Esc` | walk the shot log, back to latest |

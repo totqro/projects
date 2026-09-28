@@ -101,6 +101,10 @@ svg.rink{display:block; width:min(100%, calc((100vh - var(--hdr, 150px) - 240px)
 .side{display:grid; gap:10px; align-content:start; max-height:calc(100vh - var(--hdr, 150px) - 20px); overflow-y:auto; position:sticky; top:calc(var(--hdr, 150px) + 10px)}
 .board .grp{display:grid; grid-template-columns:repeat(var(--cols,3),1fr); gap:5px; margin:4px 0 8px}
 .board .gap{visibility:hidden}
+.agohead{display:flex; justify-content:space-between; align-items:center; gap:6px}
+.ago{display:flex; gap:4px}
+.ago button{padding:3px 7px; font-size:11px}
+.ago button[aria-pressed="true"]{border-color:var(--warn); color:var(--warn); background:rgba(255,176,0,.12)}
 .pbtn{display:grid; grid-template-columns:auto 1fr; align-items:baseline; padding:3px 6px; text-transform:none; letter-spacing:0; text-align:left; gap:0 6px}
 .pbtn .n{font-family:var(--head); font-size:15px; grid-row:span 2}
 .pbtn .nm{font-size:10px; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
@@ -248,7 +252,8 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
   </div>
   <div class="side">
     <div class="panel board">
-      <span class="lab">On ice · click to build a change</span>
+      <div class="agohead"><span class="lab" title="Click players to build a change">On ice</span>
+        <span class="ago" id="ago" title="The change happened this long ago"><span class="lab" style="align-self:center">ago</span><button data-ago="5">5s</button><button data-ago="10">10s</button><button data-ago="15">15s</button><button data-ago="20">20s</button></span></div>
       <div id="board"></div>
     </div>
     <div class="panel shot" id="shotPanel"></div>
@@ -360,11 +365,15 @@ const GOAL_X = 89;
 function geometry(x,y){ const dx = GOAL_X-x, ya = Math.abs(y);
   return {d:Math.hypot(dx,ya), a:Math.atan2(ya,dx)*180/Math.PI}; }
 
-const TYPES = {w:["WRIST","Wrist/Snap"], s:["SLAP","Slap"], b:["BACK","Backhand"], t:["TIP","Tip"],
-               d:["DEFL","Deflection"], a:["WRAP","Wrap"], u:["UNKNOWN","Unknown"]};
+/* Tip and deflection are one tag: the model prices them within 0.01 of
+   each other. Scramble has no NHL shot type; it scores as the NHL's own
+   unrecorded bucket (UNKNOWN), which is mostly net-front chaos. */
+const TYPES = {w:["WRIST","Wrist/Snap"], s:["SLAP","Slap"], b:["BACK","Backhand"], t:["TIP","Tip/Deflection"],
+               a:["WRAP","Wrap"], d:["SCRAMBLE","Scramble"], u:["UNKNOWN","Unknown"]};
+const MODEL_TYPE = {SCRAMBLE:"UNKNOWN"};
 const TYPE_LABEL = {}; Object.values(TYPES).forEach(([c,l]) => TYPE_LABEL[c] = l);
-const TYPE_EXPORT = {WRIST:"Wrist/Snap", SLAP:"Slap Shot", BACK:"Backhand", TIP:"Tip-In",
-                     DEFL:"Deflection", WRAP:"Wrap-around", UNKNOWN:""};
+const TYPE_EXPORT = {WRIST:"Wrist/Snap", SLAP:"Slap Shot", BACK:"Backhand", TIP:"Tip/Deflection",
+                     WRAP:"Wrap-around", SCRAMBLE:"Scramble", UNKNOWN:""};
 const RESULTS = {o:"SAVE", g:"GOAL", m:"MISS", k:"BLOCK"};
 const RESULT_LABEL = {SAVE:"on goal", GOAL:"GOAL", MISS:"missed", BLOCK:"blocked"};
 const RESULT_EXPORT = {SAVE:"Shot", GOAL:"Goal", MISS:"Miss", BLOCK:"Block"};
@@ -393,6 +402,7 @@ try{ const r = localStorage.getItem(KEY_SETUP); if(r) S = Object.assign(blankSet
 try{ const r = localStorage.getItem(KEY_GAME); if(r) G = JSON.parse(r); }catch(e){}
 if(!G) G = blankGame(S);
 if(!Array.isArray(G.flips)) G.flips = [];
+G.shots.forEach(s => { if(s.type === "DEFL") s.type = "TIP"; });
 
 let saveFailed = false;
 function saveGame(){ try{ localStorage.setItem(KEY_GAME, JSON.stringify(G)); saveFailed = false; }catch(e){ saveFailed = true; } }
@@ -578,7 +588,7 @@ function derive(extraChange){
     const right = attacksRight(s.team, s.p), X = right ? s.x : -s.x, Y = right ? s.y : -s.y;
     const g = geometry(X, Y);
     I.distance = g.d; I.angle = g.a; I.X = X; I.Y = Y;
-    I.xg = s.result === "BLOCK" ? 0 : scoreShot({distance:g.d, angle_from_net:g.a, shot_type:s.type,
+    I.xg = s.result === "BLOCK" ? 0 : scoreShot({distance:g.d, angle_from_net:g.a, shot_type:MODEL_TYPE[s.type] || s.type,
                                                  is_rebound:I.rebound ? 1 : 0, situation:I.situation});
     prev = s;
   }
@@ -697,8 +707,10 @@ function chipsFor(list, cls){
 }
 function renderBar(){
   const text = $("barIn").value, bar = $("bar"), out = $("barPrev");
+  const ago = barOpen ? agoOf(text) : null;
+  document.querySelectorAll("#ago [data-ago]").forEach(x => x.setAttribute("aria-pressed", String(+x.dataset.ago === ago)));
   if(!barOpen){ bar.classList.remove("err");
-    out.innerHTML = `<span class="note">Press <kbd>c</kbd> (or click a player) to make a change</span>`; return; }
+    out.innerHTML = `<span class="note">Press <kbd>c</kbd> or <kbd>Enter</kbd> (or click a player) to make a change</span>`; return; }
   if(!text.trim()){ bar.classList.remove("err");
     out.innerHTML = `<span class="note">off numbers <kbd>/</kbd> on numbers · presets f1-f4 d1-d3 p1 p2 · <kbd>s20</kbd> = 20 s ago · <kbd>@12:40</kbd> · <kbd>Enter</kbd> commit · <kbd>Shift</kbd>+<kbd>Enter</kbd> override · <kbd>Esc</kbd> cancel</span>`;
     return; }
@@ -709,6 +721,16 @@ function renderBar(){
     `<span class="lab">on</span>${chipsFor(r.change.on,"on")}<span class="note">${esc(when)}</span>`+
     (r.moved ? `<span class="warnc">changes on-ice for ${r.moved} logged shot${r.moved>1?"s":""}</span>` : "")+
     (r.errors.length ? `<span class="errs">${r.errors.map(esc).join(" · ")} &nbsp;<span class="note">(Shift+Enter to commit anyway)</span></span>` : "");
+}
+/* The ago buttons set the bar's one time token: s5..s20, replacing any
+   s or @ token already there; the same button again clears it. */
+const agoOf = text => { const m = text.match(/(?:^|\s)s(\d{1,3})(?=\s|$)/i); return m ? +m[1] : null; };
+function barSetAgo(n){
+  if(!barOpen) openBar();
+  const inp = $("barIn"), had = agoOf(inp.value);
+  let v = inp.value.replace(/(?:^|\s)(?:s\d{1,3}|@\S+)(?=\s|$)/gi, " ").replace(/\s+/g, " ").trim();
+  if(had !== n) v = (v ? v + " " : "") + "s" + n;
+  inp.value = v; inp.focus(); renderBar(); renderBoard(derive());
 }
 function barToggle(n){
   if(!barOpen) openBar();
@@ -864,7 +886,7 @@ function renderShotPanel(D){
       <select data-f="result">${opt(RESULT_LABEL, s.result)}</select>
       <select data-f="str">${opt(STR_LABEL, s.str)}</select>
     </div>
-    <div class="note">type <kbd>w</kbd><kbd>s</kbd><kbd>b</kbd><kbd>t</kbd><kbd>d</kbd><kbd>a</kbd><kbd>u</kbd> · result <kbd>o</kbd><kbd>g</kbd><kbd>m</kbd><kbd>k</kbd> · <kbd>r</kbd> rebound · <kbd>x</kbd> other team · <kbd>,</kbd><kbd>.</kbd> time</div>
+    <div class="note">type <kbd>w</kbd><kbd>s</kbd><kbd>b</kbd><kbd>t</kbd><kbd>a</kbd><kbd>d</kbd><kbd>u</kbd> · result <kbd>o</kbd><kbd>g</kbd><kbd>m</kbd><kbd>k</kbd> · <kbd>r</kbd> rebound · <kbd>x</kbd> other team · <kbd>,</kbd><kbd>.</kbd> time</div>
     <button class="delbtn" id="shotDel">Delete ${s.result === "GOAL" ? "goal" : "shot"} <kbd>Shift</kbd>+<kbd>Delete</kbd></button>`;
   $("shotDel").addEventListener("mousedown", e => e.preventDefault());
   $("shotDel").onclick = () => deleteShot(s.id);
@@ -1334,6 +1356,8 @@ $("rink").addEventListener("pointerup", e => {
 });
 
 $("board").addEventListener("mousedown", e => e.preventDefault());
+$("ago").addEventListener("mousedown", e => e.preventDefault());
+$("ago").addEventListener("click", e => { const b = e.target.closest("[data-ago]"); if(b) barSetAgo(+b.dataset.ago); });
 $("board").addEventListener("click", e => { const b = e.target.closest(".pbtn"); if(b) barToggle(b.dataset.num); });
 $("barIn").addEventListener("input", () => { renderBar(); renderBoard(derive()); });
 $("barIn").addEventListener("focus", () => { if(!barOpen) openBar(); });
@@ -1445,7 +1469,8 @@ $("sFile").onchange = async e => {
   const f = e.target.files[0]; if(!f) return;
   try{ const d = JSON.parse(await f.text());
     if(!d.setup || !d.game || !Array.isArray(d.game.shots)) throw new Error("not a tracker backup");
-    S = Object.assign(blankSetup(), d.setup); G = d.game; if(!Array.isArray(G.flips)) G.flips = []; hist.length = 0; saveSetup(); saveGame(); renderSetup(); render();
+    S = Object.assign(blankSetup(), d.setup); G = d.game; if(!Array.isArray(G.flips)) G.flips = [];
+G.shots.forEach(s => { if(s.type === "DEFL") s.type = "TIP"; }); hist.length = 0; saveSetup(); saveGame(); renderSetup(); render();
     $("setupNote").textContent = `Loaded ${G.shots.length} shots and ${G.changes.length} changes.`;
   }catch(err){ $("setupNote").textContent = "Couldn't read that file: " + err.message; }
   e.target.value = "";
@@ -1467,7 +1492,7 @@ document.addEventListener("keydown", e => {
   if(e.key === " "){ e.preventDefault(); return; }
   if(view !== "track") return;
   const D = derive();
-  if(e.key === "c"){ e.preventDefault(); openBar(); return; }
+  if(e.key === "c" || e.key === "Enter"){ e.preventDefault(); openBar(); return; }
   if(e.key === "ArrowUp"){ e.preventDefault(); stepSel(-1, D); return; }
   if(e.key === "ArrowDown"){ e.preventDefault(); stepSel(1, D); return; }
   if(e.key === "Escape"){ selId = null; render(); return; }
@@ -1493,8 +1518,8 @@ const HELP = [
   ["`","Switch Track / Shifts"],
   ["?","This sheet"],
   ["Shots (click the rink to log one)"],
-  ["w s b t","Wrist/snap, slap, backhand, tip"],
-  ["d a u","Deflection, wrap, unknown"],
+  ["w s b","Wrist/snap, slap, backhand"],
+  ["t a d u","Tip/deflection, wrap, scramble, unknown"],
   ["o g m k","On goal, goal, missed, blocked"],
   ["r","Rebound on/off (overrides the automatic 3-second rule)"],
   ["x","Wrong end: move the shot to the same spot at the other end, other team"],
@@ -1505,7 +1530,7 @@ const HELP = [
   ["Up / Down","Select an earlier / later shot"],
   ["Esc","Back to the latest shot"],
   ["Shift+Delete","Delete the selected shot (or the × on its row)"],
-  ["Change bar (c)"],
+  ["Change bar (c or Enter)"],
   ["15 19 34 / 14 9 10","Off / on, numbers separated by spaces"],
   ["f1-f4 d1-d3 p1 p2","Line presets: who comes off is worked out from positions"],
   ["s20","It happened 20 game-seconds ago"],
@@ -1514,6 +1539,7 @@ const HELP = [
   ["Shift+Enter","Override: commit anyway, flagged on the Shifts view"],
   ["Esc","Cancel"],
   ["click players","Adds them to the bar: on-ice to off, bench to on"],
+  ["5s 10s 15s 20s","Buttons by the players: the change happened that long ago (click again to clear)"],
 ];
 function toggleHelp(force){
   const h = $("help"), show = force === undefined ? h.classList.contains("hidden") : force;

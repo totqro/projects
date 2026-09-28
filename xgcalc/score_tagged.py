@@ -48,7 +48,8 @@ SHOT_TYPES = {
     "snap shot": "WRIST", "snap": "WRIST", "wrist/snap": "WRIST",
     "slap shot": "SLAP", "slap": "SLAP",
     "backhand": "BACK", "back": "BACK",
-    "tip-in": "TIP", "tip in": "TIP", "tip": "TIP", "redirect": "TIP",
+    "tip-in": "TIP", "tip in": "TIP", "tip": "TIP", "tip/deflection": "TIP",
+    "redirect": "TIP",
     "deflected": "DEFL", "deflection": "DEFL",
     "wrap-around": "WRAP", "wrap around": "WRAP", "wraparound": "WRAP",
 }
