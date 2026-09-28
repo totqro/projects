@@ -1,0 +1,79 @@
+name: TEMP NHL early-season Elo fallback test
+
+# Temporary: runs main.py end to end on a gameless day by pointing it at the
+# next date with games. Delete after it passes.
+on:
+  push:
+    branches: [claude/sweet-heisenberg-6hz9ni]
+    paths: ['.github/workflows/tmp-nhl-mirror-test.yml']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+          cache-dependency-path: nhllines/requirements.txt
+      - run: pip install -r nhllines/requirements.txt scipy
+      - run: mkdir -p nhllines/data nhllines/ml_models nhllines/cache
+
+      - name: Write test harness
+        working-directory: nhllines
+        run: |
+          cat > /tmp/harness.py <<'EOF'
+          import json, sys
+          from datetime import datetime, timedelta
+          from pathlib import Path
+          import main
+          from src.data.nhl_data import fetch_schedule
+          from src.models import xg_production
+          from src.models.calibration import DEFAULT_SEASONS
+
+          mode = sys.argv[1]  # "now" or "lastseason"
+
+          def next_games():
+              for i in range(1, 15):
+                  d = (datetime.now() + timedelta(days=i)).strftime("%Y-%m-%d")
+                  games = [g for g in fetch_schedule(d) if g["date"] == d]
+                  if games:
+                      print(f"TEST: using {len(games)} games on {d}")
+                      return games
+              raise SystemExit("no games in the next 14 days")
+          main.fetch_todays_games = next_games
+
+          if mode == "lastseason":
+              # Pretend 2025-26 is the current season: every team has 82 GP,
+              # so the xG model should serve every game.
+              real = xg_production.get_live_feature_state
+              xg_production.get_live_feature_state = lambda seasons=None: real(DEFAULT_SEASONS[:-1])
+
+          log = Path("data/predictions_log.jsonl")
+          log.unlink(missing_ok=True)
+          sys.argv = ["main.py", "--no-odds", "--stake", "0.50"]
+          main.main()
+
+          rows = [json.loads(l) for l in log.read_text().splitlines()]
+          versions = {r["model_version"] for r in rows}
+          probs = [r["home_win_prob"] for r in rows]
+          print(f"TEST: {len(rows)} logged, versions {versions}")
+          for r in rows:
+              print(f"TEST:   {r['away_team']} @ {r['home_team']}: {r['home_win_prob']:.3f}  {r['model_version']}")
+          assert rows, "nothing logged"
+          want = "elo-platt-v1" if mode == "now" else "xg-dropgoalie-platt-v1"
+          assert all(v.startswith(want) for v in versions), f"expected {want}, got {versions}"
+          assert len({round(p, 3) for p in probs}) > 1 or len(probs) == 1, "all predictions identical"
+          assert all(0.15 < p < 0.85 for p in probs), "implausible probability"
+          print(f"TEST {mode.upper()} OK")
+          EOF
+
+      - name: Early season (should be Elo)
+        working-directory: nhllines
+        run: python /tmp/harness.py now
+
+      - name: Full season state (should be xG)
+        working-directory: nhllines
+        run: python /tmp/harness.py lastseason
