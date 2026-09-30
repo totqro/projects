@@ -296,7 +296,7 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
       <button id="xToiFile">TOI sheet rows (.tsv)</button>
       <span class="note" id="toiNote" style="align-self:center">In the TOI Live Stats workbook, click cell <b>A2</b> on the <b>TOI TRACKER</b> sheet and paste.</span>
     </div>
-    <div class="note" style="margin-top:4px">Fills all 4,020 rows (P1 to P3 and the 7:00 OT block): players E to J, shots on net in L (o us, d them), the score in P and Q, opponent skaters in S from the strength you set. Possession (K) keeps its copy-down formula for you to fill; penalties and the goal scorer column stay blank.</div>
+    <div class="note" style="margin-top:4px">Fills all 4,020 rows (P1 to P3 and the 7:00 OT block): players E to J, the score in P and Q, opponent skaters in S from the strength you set. Possession (K) keeps its copy-down formula for you to fill; shots (L), penalties and the goal scorer column stay blank.</div>
     <div class="actions">
       <select id="rScope" aria-label="Report scope"></select>
       <button class="primary" id="xReport">Report PDF</button>
@@ -747,6 +747,14 @@ function resolveBar(text){
       if((pos === null || np === pos) && !members.includes(n)) off.add(n);
     }
     for(const n of members) if(!before.has(n)) on.add(n);
+  }
+  /* A full unit coming on (exactly 3 F or exactly 2 D from the bench)
+     with nobody of that position named off: the ones out there come off. */
+  for(const [pos, size] of [["F",3],["D",2]]){
+    const of = n => (R[n] || {}).pos === pos;
+    const coming = [...on].filter(n => of(n) && !before.has(n));
+    if(coming.length === size && ![...off].some(of))
+      for(const n of before) if(of(n) && !on.has(n)) off.add(n);
   }
   for(const n of [...off]) if(on.has(n)){ off.delete(n); on.delete(n); }
 
@@ -1244,14 +1252,11 @@ function toiSheetRows(){
       }
       const em = elapsed(p, m), mp = D.MP.at(em);
       const opp = !on.length ? 0 : mp.them + (D.MP.en(em) ? 1 : 0);
-      const inRow = x => x.p === p && x.sec <= c && x.sec > c - 1;
-      const here = shots.filter(inRow).filter(x => x.s.result === "SAVE" || x.s.result === "GOAL");
-      const shot = here.some(x => x.s.team === "us") ? "o" : here.length ? "d" : 0;
       const upTo = team => shots.filter(x => x.s.team === team && x.s.result === "GOAL" &&
         (x.p < p || (x.p === p && x.sec > c - 1))).length;
       n++;
       rows.push([n, p, Math.floor(c/60), c % 60, ...slots, gslot,
-        r === 2 ? "" : `=K${r-1}`, shot, "", "", "", upTo("us"), upTo("them"),
+        r === 2 ? "" : `=K${r-1}`, "", "", "", "", upTo("us"), upTo("them"),
         `=COUNTIF(E${r}:I${r},">0")`, opp, `=IF(R${r}=S${r},"even",IF(R${r}>S${r},"pp","sh"))`]);
     }
   }
@@ -1663,6 +1668,7 @@ const HELP = [
   ["Change bar (c or Enter)"],
   ["15 19 34 / 14 9 10","Off / on, numbers separated by spaces"],
   ["f1-f4 d1-d3 p1 p2","Line presets: who comes off is worked out from positions"],
+  ["/ 14 9 10","Exactly 3 F (or 2 D) on with no F (or D) named off: the ones out there come off"],
   ["s20","It happened 20 game-seconds ago"],
   ["@12:40","It happened at 12:40 on the scoreboard"],
   ["pp pk","Penalty on them / on us: minor; pp4 pk4 double minor, pp5 pk5 major. Ends itself"],
@@ -1671,7 +1677,7 @@ const HELP = [
   ["Enter","Commit (blocked while the preview is red)"],
   ["Shift+Enter","Override: commit anyway, flagged on the Shifts view"],
   ["Esc","Cancel"],
-  ["click players","Adds them to the bar: on-ice to off, bench to on"],
+  ["click players","Adds them to the bar: on-ice to off, bench to on. Click 3 bench F or 2 bench D and the ones out there come off"],
   ["5s 10s 15s 20s","Buttons by the players: the change happened that long ago (click again to clear)"],
 ];
 function toggleHelp(force){

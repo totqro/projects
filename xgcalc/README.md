@@ -243,8 +243,8 @@ and its Totals sheet counts a player's rows across E:J for TOI and new numbers
 between rows for shifts. So the export writes every row, zeros where nobody
 played; a partial paste would leave the template's copy-down formulas
 carrying the last lineup into seconds that were never played. Players keep
-their column for the whole shift, shots on net go in L (`o` for us, `d` for
-them), the running score in P:Q, and the opponent's skater count in S from
+their column for the whole shift, the shot column (L) stays blank, the
+running score in P:Q, and the opponent's skater count in S from
 the strength timeline, which is what the sheet's even/pp/sh column needs.
 Possession (K) keeps its copy-down formula for hand entry. Pasted into the
 real workbook and recalculated, its Totals sheet reproduces the tracker's TOI
