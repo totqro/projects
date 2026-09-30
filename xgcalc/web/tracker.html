@@ -161,37 +161,44 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
   display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 26px}
 .help h3{grid-column:1/-1; font-family:var(--head); font-size:13px; margin:8px 0 2px; color:var(--us)}
 .help .k{display:flex; gap:10px; font-size:12.5px} .help .k > span:first-child{min-width:130px}
-/* ---- printable report: literal colours, a dark page still prints on white ---- */
-#reportOut{display:none; background:#fff; color:#141D26; font-size:11px; line-height:1.45;
+/* ---- printable report: one landscape page, literal colours so a dark page
+   still prints on white. exportReport() zooms it down if a long game overflows. ---- */
+#reportOut{display:none; background:#fff; color:#141D26; font-size:10px; line-height:1.35;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-#reportOut .rp + .rp{break-before:page; page-break-before:always}
-#reportOut .head{display:flex; align-items:baseline; gap:14px; margin-bottom:8px; border-bottom:1.5px solid #141D26; padding-bottom:5px}
-#reportOut .head h1{margin:0; font-size:20px; letter-spacing:-.02em; font-family:inherit}
-#reportOut .head .game{font-size:13px; font-weight:600}
-#reportOut .head .scope{font-size:15px; font-weight:700; margin-left:auto}
-#reportOut .head .when{font-size:9.5px; color:#7B8B9C}
-#reportOut .rinkfull{display:block; width:100%; max-width:7.1in; height:auto; margin:0 auto}
-#reportOut .keys{display:flex; gap:14px; flex-wrap:wrap; align-items:center; justify-content:center;
-  margin-top:6px; padding-top:6px; border-top:1px solid #E3E8ED; font-size:10.5px; color:#48586A}
-#reportOut .rkey{display:inline-flex; align-items:center; gap:5px}
-#reportOut .rkeyi{width:15px; height:15px; flex:none}
-#reportOut .keys .sep{width:1px; height:12px; background:#D3DBE2}
-#reportOut .keys b{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px}
-#reportOut .lower{display:grid; grid-template-columns:minmax(230px,.8fr) minmax(0,1.2fr); gap:18px; align-items:start; margin-top:8px}
-#reportOut .three{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; align-items:start; margin-top:12px}
-#reportOut h2{font-size:9.5px; letter-spacing:.11em; text-transform:uppercase; color:#7B8B9C; margin:0 0 4px; font-weight:700; font-family:inherit}
-#reportOut table{border-collapse:collapse; width:100%; font-size:11px}
-#reportOut th,#reportOut td{padding:2.2px 5px; text-align:left; border-bottom:1px solid #E3E8ED; white-space:nowrap;
-  position:static; background:none; color:#141D26; font-family:inherit; letter-spacing:normal; text-transform:none; font-size:11px}
-#reportOut th{font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:#7B8B9C; font-weight:600}
+#reportOut .rp{width:10.25in}
+#reportOut .head{display:flex; align-items:baseline; gap:14px; margin-bottom:6px; border-bottom:1.5px solid #141D26; padding-bottom:4px}
+#reportOut .head h1{margin:0; font-size:18px; letter-spacing:-.02em; font-family:inherit}
+#reportOut .head .game{font-size:12px; font-weight:600}
+#reportOut .head .final{font-size:16px; font-weight:800; font-variant-numeric:tabular-nums}
+#reportOut .head .scope{font-size:14px; font-weight:700; margin-left:auto}
+#reportOut .head .when{font-size:9px; color:#7B8B9C}
+#reportOut .upper{display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr); gap:14px; align-items:start}
+#reportOut .rinkfull{display:block; width:100%; height:auto}
+#reportOut .keys{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:center;
+  margin-top:3px; padding-top:3px; border-top:1px solid #E3E8ED; font-size:9.5px; color:#48586A}
+#reportOut .rkey{display:inline-flex; align-items:center; gap:4px}
+#reportOut .rkeyi{width:12px; height:12px; flex:none}
+#reportOut .keys .sep{width:1px; height:11px; background:#D3DBE2}
+#reportOut .keys b{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px}
+#reportOut .flow{margin-top:8px}
+#reportOut .four{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; align-items:start; margin-top:8px}
+#reportOut .stack{display:grid; gap:8px; align-content:start}
+#reportOut h2{font-size:8.5px; letter-spacing:.11em; text-transform:uppercase; color:#7B8B9C; margin:0 0 3px; font-weight:700; font-family:inherit}
+#reportOut h2 .sub{letter-spacing:.02em; text-transform:none; font-weight:400}
+#reportOut table{border-collapse:collapse; width:100%; font-size:10px}
+#reportOut th,#reportOut td{padding:1.6px 4px; text-align:left; border-bottom:1px solid #E3E8ED; white-space:nowrap;
+  position:static; background:none; color:#141D26; font-family:inherit; letter-spacing:normal; text-transform:none; font-size:10px}
+#reportOut th{font-size:8.5px; letter-spacing:.05em; text-transform:uppercase; color:#7B8B9C; font-weight:600}
 #reportOut td.n,#reportOut th.n{text-align:right; font-variant-numeric:tabular-nums}
+#reportOut td.nm{max-width:1.05in; overflow:hidden; text-overflow:ellipsis}
 #reportOut tr.hl td{font-weight:700}
-#reportOut tr.grp td{font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:#7B8B9C; font-weight:700; padding-top:6px}
+#reportOut tr.grp td{font-size:8.5px; letter-spacing:.08em; text-transform:uppercase; color:#7B8B9C; font-weight:700; padding-top:4px}
+#reportOut tr.tot td{border-top:1px solid #B8C4CF; font-weight:700}
 #reportOut td.pos{color:#1E7B4A; font-weight:700} #reportOut td.neg{color:#B0293C; font-weight:700}
 #reportOut tbody tr:last-child td{border-bottom:0}
-#reportOut .flowmini{display:block; width:100%; height:auto; margin-top:2px}
-#reportOut .empty{color:#7B8B9C; font-size:10.5px; margin:4px 0}
-#reportOut .foot{margin-top:8px; padding-top:5px; border-top:1px solid #E3E8ED; font-size:9px; color:#7B8B9C;
+#reportOut .flowsvg{display:block; width:100%; height:auto}
+#reportOut .empty{color:#7B8B9C; font-size:9.5px; margin:3px 0}
+#reportOut .foot{margin-top:6px; padding-top:4px; border-top:1px solid #E3E8ED; font-size:8.5px; color:#7B8B9C;
   display:flex; justify-content:space-between; gap:16px}
 @media print{
   @page{ size:letter landscape; margin:9mm }
@@ -300,7 +307,7 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
     <div class="actions">
       <select id="rScope" aria-label="Report scope"></select>
       <button class="primary" id="xReport">Report PDF</button>
-      <span class="note" style="align-self:center">Opens the print dialog: choose <b>Save as PDF</b>. Two pages, shots then players.</span>
+      <span class="note" style="align-self:center">Opens the print dialog: choose <b>Save as PDF</b>. One landscape page.</span>
     </div>
     <div class="note" style="margin-top:6px">The shots CSV keeps the shot-plotter columns, so Shot Chart and <code>score_tagged.py</code> read it as-is, plus clock, rebound, situation, xG and who was on the ice.</div>
   </div>
@@ -1261,10 +1268,12 @@ const toiSheetTSV = () => toiSheetRows().map(r => r.join("\t")).join("\n") + "\n
 function exportBackup(){ download(base() + "_backup.json", JSON.stringify({setup:S, game:G}, null, 1), "application/json"); }
 
 /* ================================================================
-   Report: two printable pages built on Shot Chart's layout. Page 1 is
-   the shot map (we always shoot right, since the tracker knows the
-   ends), totals, and cumulative xG on a real game-clock axis. Page 2
-   is on-ice results per player, goalies, and the forward lines and D
+   Report: one printable landscape page built on Shot Chart's layout.
+   Top row: the shot map (we always shoot right, since the tracker knows
+   the ends), totals, the period split and goalies with GSAx. Middle:
+   cumulative xG on the game clock, power plays shaded from the penalty
+   timeline. Bottom: the skaters with the most and least xG on the ice
+   for us, results against time at each strength, and the lines and
    pairs that actually played together.
 ================================================================= */
 const RC_US = "#1E62B8", RC_THEM = "#B0293C";
@@ -1280,6 +1289,32 @@ function zone16(x, y){
 }
 const periodsInGame = D => [...new Set(D.ordered.map(s => s.p).concat(D.segments.map(s => s.p)))].sort((a,b) => a-b);
 const elapsed = (p, sec) => { let t = 0; for(let q = 1; q < p; q++) t += periodLen(q); return t + periodLen(p) - sec; };
+const sg2 = v => (v >= 0 ? "+" : "") + v.toFixed(2);
+const pctOf = (a, b) => a + b > 0 ? (100*a/(a+b)).toFixed(0) + "%" : "";
+const signCls = v => v > 0.005 ? "pos" : v < -0.005 ? "neg" : "";
+const strOf = (mine, theirs) => mine > theirs ? "PP" : mine < theirs ? "PK" : "EV";
+const pname = p => `${esc(p.num)} ${esc(p.name)}`;
+
+/* The game clock a report covers, cut at the clock now so a report
+   printed at an intermission doesn't count time not yet played. */
+function reportSpan(D, scope){
+  const periods = scope ? [scope] : periodsInGame(D);
+  if(!periods.length) return null;
+  const t0 = elapsed(periods[0], periodLen(periods[0])), t1 = elapsed(periods[periods.length-1], 0), c = now();
+  return {periods, t0, t1, played:Math.max(t0, Math.min(t1, elapsed(c.p, c.v)))};
+}
+/* Our manpower second by second from the penalty timeline, merged into
+   runs. Each PP or PK run is one power play, however many penalties
+   (5v3 into 5v4) make it up. */
+function strengthRuns(D, a, b){
+  const runs = [], secs = {EV:0, PP:0, PK:0};
+  for(let e = a; e < b; e++){
+    const m = D.MP.at(e + 0.5), k = strOf(m.us, m.them), len = Math.min(1, b - e), last = runs[runs.length-1];
+    secs[k] += len;
+    if(last && last.k === k && last.b === e) last.b = e + len; else runs.push({k, a:e, b:e + len});
+  }
+  return {runs, secs};
+}
 
 function starMark(cx, cy, ro, ri, col){
   const pts = [];
@@ -1322,63 +1357,125 @@ function reportKeys(){
   const ic = k => `<svg viewBox="-3.6 -3.6 7.2 7.2" class="rkeyi">${iconMark(k, 0, 0, "#48586A")}</svg>`;
   return `<div class="keys"><span class="rkey">${ic("GOAL")} Goal</span><span class="rkey">${ic("SAVE")} Shot</span>
     <span class="rkey">${ic("BLOCK")} Block</span><span class="rkey">${ic("MISS")} Miss</span><span class="sep"></span>
-    <span><b style="background:${RC_US}"></b>${esc(S.us)}</span><span><b style="background:${RC_THEM}"></b>${esc(S.opp)}</span>
-    <span class="sep"></span><span>Ends held fixed across periods</span></div>`;
+    <span><b style="background:${RC_US}"></b>${esc(S.us)}</span><span><b style="background:${RC_THEM}"></b>${esc(S.opp)}</span></div>`;
 }
-const SIT_GROUP = s => s.startsWith("PP") ? "PP" : s.startsWith("SH") ? "SH" : s.startsWith("EN") ? "EN" : "EV";
+/* Shots into an empty net are kept apart so the opponent's GSAx only
+   counts shots their goalie could have stopped. */
 function teamSummary(D, shots, team){
-  const r = {g:0, xg:0, hd:0, sog:0, miss:0, blk:0, att:0, ev:0, pp:0, sh:0};
+  const r = {g:0, xg:0, hd:0, sog:0, att:0, reb:0, ppg:0, eng:0, enxg:0, ensog:0};
   for(const s of shots){ if(s.team !== team) continue;
-    const I = D.shotInfo[s.id], xg = I.xg || 0, grp = SIT_GROUP(I.situation);
+    const I = D.shotInfo[s.id], xg = I.xg || 0, goal = s.result === "GOAL", onNet = goal || s.result === "SAVE";
     r.att++; r.xg += xg;
-    if(s.result === "GOAL") r.g++;
-    if(s.result === "GOAL" || s.result === "SAVE") r.sog++;
-    if(s.result === "MISS") r.miss++;
-    if(s.result === "BLOCK") r.blk++;
+    if(goal) r.g++;
+    if(onNet) r.sog++;
+    if(I.rebound && s.result !== "BLOCK") r.reb++;
     if(TIER_OF[zone16(I.X, I.Y)] === "HIGH" && s.result !== "BLOCK") r.hd++;
-    if(grp === "EV") r.ev += xg; else if(grp === "PP") r.pp += xg; else if(grp === "SH") r.sh += xg;
+    if(goal && (team === "us" ? strOf(I.us, I.them) : strOf(I.them, I.us)) === "PP") r.ppg++;
+    if(I.situation === "EN_AGAINST"){ r.enxg += xg; if(goal) r.eng++; if(onNet) r.ensog++; }
   }
   return r;
 }
-function totalsTable(D, shots){
-  const a = teamSummary(D, shots, "us"), b = teamSummary(D, shots, "them"), sg = v => (v >= 0 ? "+" : "") + v.toFixed(2);
+function totalsTable(a, b){
   const row = (l, x, y, cls) => `<tr${cls ? ` class="${cls}"` : ""}><td>${esc(l)}</td><td class="n">${x}</td><td class="n">${y}</td></tr>`;
+  const shPct = t => t.sog ? (100*t.g/t.sog).toFixed(1) + "%" : "";
   return `<table><thead><tr><th></th><th class="n" style="color:${RC_US}">${esc(S.us)}</th><th class="n" style="color:${RC_THEM}">${esc(S.opp)}</th></tr></thead><tbody>
     ${row("Goals", a.g, b.g, "hl")}${row("xG", a.xg.toFixed(2), b.xg.toFixed(2), "hl")}
-    ${row("xG share", a.xg + b.xg > 0 ? (100*a.xg/(a.xg+b.xg)).toFixed(0) + "%" : "", a.xg + b.xg > 0 ? (100*b.xg/(a.xg+b.xg)).toFixed(0) + "%" : "")}
-    ${row("G − xG", sg(a.g - a.xg), sg(b.g - b.xg))}
-    ${row("xG even strength", a.ev.toFixed(2), b.ev.toFixed(2))}${row("xG power play", a.pp.toFixed(2), b.pp.toFixed(2))}${row("xG shorthanded", a.sh.toFixed(2), b.sh.toFixed(2))}
-    ${row("High-danger chances", a.hd, b.hd, "hl")}${row("Shots on net", a.sog, b.sog)}${row("Missed", a.miss, b.miss)}
-    ${row("Blocked", a.blk, b.blk)}${row("Total attempts", a.att, b.att)}</tbody></table>`;
+    ${row("xG share", pctOf(a.xg, b.xg), pctOf(b.xg, a.xg))}${row("Goals − xG", sg2(a.g - a.xg), sg2(b.g - b.xg))}
+    ${row("Shots on net", a.sog, b.sog)}${row("Shooting %", shPct(a), shPct(b))}${row("Attempts", a.att, b.att)}
+    ${row("High-danger chances", a.hd, b.hd, "hl")}${row("Rebound shots", a.reb, b.reb)}
+    ${row("Power plays (goals)", `${a.ppo} (${a.ppg})`, `${b.ppo} (${b.ppg})`)}</tbody></table>`;
+}
+function periodTable(D, shots){
+  const ps = [...new Set(shots.map(s => s.p))].sort((a,b) => a-b);
+  if(ps.length < 2) return "";
+  return `<div><h2>By period</h2><table><thead><tr><th></th><th class="n">Goals</th><th class="n">SOG</th><th class="n">xGF</th><th class="n">xGA</th><th class="n">xGF%</th></tr></thead><tbody>` +
+    ps.map(p => { const sh = shots.filter(s => s.p === p), a = teamSummary(D, sh, "us"), b = teamSummary(D, sh, "them");
+      return `<tr><td>${perLabel(p)}</td><td class="n">${a.g}-${b.g}</td><td class="n">${a.sog}-${b.sog}</td><td class="n">${a.xg.toFixed(2)}</td>
+        <td class="n">${b.xg.toFixed(2)}</td><td class="n">${pctOf(a.xg, b.xg)}</td></tr>`; }).join("") + `</tbody></table></div>`;
+}
+/* GSAx is xG against (unblocked attempts) minus goals against. Ours come
+   from the goalie on the board for each shot; theirs from our shots,
+   empty-net ones left out. */
+function goalieTable(st, a){
+  const row = (who, toi, sa, ga, xga) => { const gsax = xga - ga;
+    return `<tr><td class="nm">${who}</td><td class="n">${toi}</td><td class="n">${sa}</td><td class="n">${ga}</td>
+      <td class="n">${sa ? (1 - ga/sa).toFixed(3).replace(/^0/, "") : ""}</td><td class="n">${xga.toFixed(2)}</td>
+      <td class="n ${signCls(gsax)}">${sg2(gsax)}</td></tr>`; };
+  const ours = Object.values(st).filter(r => r.p.pos === "G" && r.toi > 0).sort((x,y) => y.toi - x.toi);
+  return `<div><h2>Goalies <span class="sub">· GSAx = xGA − GA</span></h2><table><thead><tr><th>Goalie</th><th class="n">TOI</th><th class="n">SA</th><th class="n">GA</th><th class="n">SV%</th><th class="n">xGA</th><th class="n">GSAx</th></tr></thead><tbody>` +
+    (ours.length ? ours.map(r => row(pname(r.p), fmt(r.toi), r.sa, r.ga, r.xga)).join("")
+                 : `<tr><td colspan="7" class="empty">No ${esc(S.us)} goalie logged on the ice.</td></tr>`) +
+    row(esc(S.opp), "", a.sog - a.ensog, a.g - a.eng, a.xg - a.enxg) + `</tbody></table></div>`;
 }
 function niceStep(max){ const raw = max/4, mag = Math.pow(10, Math.floor(Math.log10(raw))), f = raw/mag;
   return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * mag; }
-function flowChart(D, shots, scope){
-  const periods = scope ? [scope] : periodsInGame(D);
-  if(!periods.length) return `<p class="empty">Nothing logged in this scope.</p>`;
-  const t0 = elapsed(periods[0], periodLen(periods[0])), t1 = elapsed(periods[periods.length-1], 0);
-  const seq = shots.filter(s => s.result !== "BLOCK").map(s => ({s, t:elapsed(s.p, D.shotInfo[s.id].sec), xg:D.shotInfo[s.id].xg || 0}));
-  const W = 320, H = 118, L = 28, R = 8, T = 8, B = 18;
+function flowChart(D, shots, span, tl){
+  if(!span) return `<p class="empty">Nothing logged in this scope.</p>`;
+  const {periods, t0, t1, played} = span;
+  const seq = shots.filter(s => s.result !== "BLOCK").map(s => ({s, t:elapsed(s.p, D.shotInfo[s.id].sec), xg:D.shotInfo[s.id].xg || 0}))
+    .sort((a,b) => a.t - b.t);
+  const W = 980, H = 190, L = 30, R = 96, T = 8, B = 16;
   const tot = {us:0, them:0}; seq.forEach(e => tot[e.s.team] += e.xg);
-  const top = Math.max(0.3, tot.us, tot.them), step = niceStep(top);
+  const top = Math.max(0.3, tot.us, tot.them) * 1.04, step = niceStep(top);
   const x = t => L + (t - t0) / Math.max(1, t1 - t0) * (W - L - R), y = v => H - B - v/top*(H - T - B);
-  const p = [];
+  const f = v => v.toFixed(1), p = [], over = [];
+  tl.runs.filter(r => r.k !== "EV").forEach(r => p.push(`<rect x="${f(x(r.a))}" y="${T}" width="${f(Math.max(.8, x(r.b) - x(r.a)))}" height="${H-T-B}" fill="${r.k === "PP" ? "rgba(30,98,184,.11)" : "rgba(176,41,60,.10)"}"/>`));
   for(let v = step; v <= top + 1e-9; v += step)
-    p.push(`<line x1="${L}" y1="${y(v).toFixed(1)}" x2="${W-R}" y2="${y(v).toFixed(1)}" stroke="#D3DBE2" stroke-dasharray="3 3"/><text x="${L-4}" y="${(y(v)+3).toFixed(1)}" text-anchor="end" font-size="8" fill="#7B8B9C">${v.toFixed(v < 1 ? 2 : 1)}</text>`);
-  periods.forEach(q => { const xa = x(elapsed(q, periodLen(q))), xb = x(elapsed(q, 0));
-    if(q !== periods[0]) p.push(`<line x1="${xa.toFixed(1)}" y1="${T}" x2="${xa.toFixed(1)}" y2="${H-B}" stroke="#7B8B9C" stroke-width=".8" stroke-dasharray="2 2"/>`);
-    p.push(`<text x="${((xa+xb)/2).toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="8" fill="#7B8B9C">${perLabel(q)}</text>`); });
+    p.push(`<line x1="${L}" y1="${f(y(v))}" x2="${W-R}" y2="${f(y(v))}" stroke="#D3DBE2" stroke-dasharray="3 3"/><text x="${L-4}" y="${f(y(v)+3)}" text-anchor="end" font-size="8.5" fill="#7B8B9C">${v.toFixed(step < 1 ? (step < .1 ? 2 : 1) : 0)}</text>`);
+  periods.forEach(q => { const xa = x(elapsed(q, periodLen(q)));
+    if(q !== periods[0]) p.push(`<line x1="${f(xa)}" y1="${T}" x2="${f(xa)}" y2="${H-B}" stroke="#7B8B9C" stroke-width=".8" stroke-dasharray="2 2"/>`);
+    p.push(`<text x="${f(xa+4)}" y="${T+9}" font-size="9" font-weight="700" fill="#7B8B9C">${perLabel(q)}</text>`);
+    for(let v = periodLen(q) - 300; v > 0; v -= 300){ const xt = x(elapsed(q, v));
+      p.push(`<line x1="${f(xt)}" y1="${H-B}" x2="${f(xt)}" y2="${H-B+3}" stroke="#B8C4CF"/><text x="${f(xt)}" y="${H-B+11}" text-anchor="middle" font-size="8" fill="#7B8B9C">${fmt(v)}</text>`); } });
+  if(played < t1 - 1) p.push(`<text x="${f(x(played)+4)}" y="${H-B-4}" font-size="8" fill="#7B8B9C">clock now</text>`);
+  const ends = [];
   ["us","them"].forEach(team => {
-    let run = 0, d = `M ${x(t0).toFixed(1)} ${y(0).toFixed(1)}`;
-    seq.filter(e => e.s.team === team).forEach(e => { d += ` L ${x(e.t).toFixed(1)} ${y(run).toFixed(1)}`; run += e.xg; d += ` L ${x(e.t).toFixed(1)} ${y(run).toFixed(1)}`;
-      if(e.s.result === "GOAL") p.push(`<circle cx="${x(e.t).toFixed(1)}" cy="${y(run).toFixed(1)}" r="3" fill="${team === "us" ? RC_US : RC_THEM}" stroke="#fff" stroke-width="1.2"/>`); });
-    d += ` L ${x(t1).toFixed(1)} ${y(run).toFixed(1)}`;
-    p.unshift(`<path d="${d}" fill="none" stroke="${team === "us" ? RC_US : RC_THEM}" stroke-width="1.8" stroke-linejoin="round"/>`);
+    const col = team === "us" ? RC_US : RC_THEM;
+    let run = 0, d = `M ${f(x(t0))} ${f(y(0))}`;
+    seq.filter(e => e.s.team === team).forEach(e => { d += ` L ${f(x(e.t))} ${f(y(run))}`; run += e.xg; d += ` L ${f(x(e.t))} ${f(y(run))}`; });
+    d += ` L ${f(x(played))} ${f(y(run))}`;
+    p.push(`<path d="${d}" fill="none" stroke="${col}" stroke-width="1.9" stroke-linejoin="round"/>`);
+    ends.push({team, col, run, yy:y(run)});
   });
-  p.push(`<line x1="${L}" y1="${H-B}" x2="${W-R}" y2="${H-B}" stroke="#D3DBE2"/>`);
-  return `<svg viewBox="0 0 ${W} ${H}" class="flowmini">${p.join("")}</svg>`;
+  /* Goals carry the running score, ours first. */
+  let gu = 0, gt = 0; const run = {us:0, them:0};
+  seq.forEach(e => { run[e.s.team] += e.xg; if(e.s.result !== "GOAL") return;
+    if(e.s.team === "us") gu++; else gt++;
+    const cx = x(e.t), cy = y(run[e.s.team]), col = e.s.team === "us" ? RC_US : RC_THEM;
+    over.push(`<circle cx="${f(cx)}" cy="${f(cy)}" r="3.4" fill="${col}" stroke="#fff" stroke-width="1.2"/><text x="${f(cx)}" y="${f(cy-6)}" text-anchor="middle" font-size="8.5" font-weight="700" fill="${col}">${gu}-${gt}</text>`); });
+  ends.sort((a,b) => a.yy - b.yy);
+  if(ends.length === 2 && ends[1].yy - ends[0].yy < 11){ const m = (ends[0].yy + ends[1].yy)/2; ends[0].yy = m - 5.5; ends[1].yy = m + 5.5; }
+  ends.forEach(e => over.push(`<text x="${f(x(played)+5)}" y="${f(e.yy+3)}" font-size="9" font-weight="700" fill="${e.col}">${esc(e.team === "us" ? S.us : S.opp)} ${e.run.toFixed(2)}</text>`));
+  p.push(`<line x1="${L}" y1="${H-B}" x2="${W-R}" y2="${H-B}" stroke="#B8C4CF"/>`);
+  return `<svg viewBox="0 0 ${W} ${H}" class="flowsvg">${p.join("")}${over.join("")}</svg>`;
 }
-
+/* Ranked by on-ice xGF. The lowest list skips anyone under half the
+   median skater's TOI, so a player who barely dressed doesn't top it. */
+function leaderTables(st){
+  const sk = Object.values(st).filter(r => r.p.pos !== "G" && r.toi > 0).sort((a,b) => b.xgf - a.xgf || b.toi - a.toi);
+  const tois = sk.map(r => r.toi).sort((a,b) => a-b), med = tois.length ? tois[Math.floor(tois.length/2)] : 0;
+  const nTop = Math.min(5, Math.ceil(sk.length/2)), best = sk.slice(0, nTop);
+  const worst = sk.slice(nTop).filter(r => r.toi >= med/2).slice(-5).reverse();
+  const table = (title, sub, rows) => `<div><h2>${title} <span class="sub">${sub}</span></h2>` + (rows.length
+    ? `<table><thead><tr><th>Skater</th><th class="n">TOI</th><th class="n">xGF</th><th class="n">xGA</th><th class="n">xG +/-</th></tr></thead><tbody>` +
+      rows.map(r => `<tr><td class="nm">${pname(r.p)}</td><td class="n">${fmt(r.toi)}</td><td class="n">${r.xgf.toFixed(2)}</td><td class="n">${r.xga.toFixed(2)}</td>
+        <td class="n ${signCls(r.xgf - r.xga)}">${sg2(r.xgf - r.xga)}</td></tr>`).join("") + `</tbody></table>`
+    : `<p class="empty">No shifts logged in this scope.</p>`) + `</div>`;
+  return table("Highest on-ice xG", "· xG for with them on", best) + table("Lowest on-ice xG", "· regulars only", worst);
+}
+function strengthTable(D, shots, tl){
+  const rows = {EV:{}, PP:{}, PK:{}}; Object.values(rows).forEach(r => Object.assign(r, {xgf:0, xga:0, gf:0, ga:0}));
+  for(const s of shots){ const I = D.shotInfo[s.id], r = rows[strOf(I.us, I.them)], xg = I.xg || 0, goal = s.result === "GOAL";
+    if(s.team === "us"){ r.xgf += xg; if(goal) r.gf++; } else { r.xga += xg; if(goal) r.ga++; } }
+  const per60 = (v, t) => t >= 30 ? (v*3600/t).toFixed(2) : "";
+  const line = (k, r, t, cls) => `<tr${cls ? ` class="${cls}"` : ""}><td>${k}</td><td class="n">${fmt(t)}</td><td class="n">${r.gf}-${r.ga}</td><td class="n">${r.xgf.toFixed(2)}</td>
+    <td class="n">${r.xga.toFixed(2)}</td><td class="n">${per60(r.xgf, t)}</td><td class="n">${per60(r.xga, t)}</td></tr>`;
+  const keys = ["EV","PP","PK"].filter(k => tl.secs[k] >= 1 || rows[k].xgf + rows[k].xga > 0);
+  const all = {xgf:0, xga:0, gf:0, ga:0}; keys.forEach(k => ["xgf","xga","gf","ga"].forEach(f => all[f] += rows[k][f]));
+  const secs = tl.secs.EV + tl.secs.PP + tl.secs.PK;
+  return `<div><h2>By strength <span class="sub">· clock time</span></h2><table><thead><tr><th></th><th class="n">Time</th><th class="n">G</th><th class="n">xGF</th><th class="n">xGA</th><th class="n">xGF/60</th><th class="n">xGA/60</th></tr></thead><tbody>` +
+    keys.map(k => line(k, rows[k], tl.secs[k])).join("") + line("All", all, secs, "tot") + `</tbody></table></div>`;
+}
 function unitStats(D, shots, scope, pos, size){
   const R = rosterMap(), units = {};
   const keyOf = list => { const m = list.filter(n => pos ? (R[n] || {}).pos === pos : (R[n] || {}).pos !== "G").sort((a,b) => a-b); return m.length === size ? m.join(" ") : null; };
@@ -1390,65 +1487,60 @@ function unitStats(D, shots, scope, pos, size){
     if(s.team === "us"){ u.xgf += xg; if(s.result === "GOAL") u.gf++; } else { u.xga += xg; if(s.result === "GOAL") u.ga++; } }
   return Object.entries(units).filter(([,u]) => u.toi >= 20).sort((a,b) => b[1].toi - a[1].toi);
 }
-function unitTable(title, rows, limit){
-  if(!rows.length) return `<div><h2>${esc(title)}</h2><p class="empty">No combination with 20+ seconds together.</p></div>`;
-  return `<div><h2>${esc(title)}</h2><table><thead><tr><th>Players</th><th class="n">TOI</th><th class="n">xGF</th><th class="n">xGA</th><th class="n">xGF%</th><th class="n">GF-GA</th></tr></thead><tbody>` +
-    rows.slice(0, limit).map(([k,u]) => `<tr><td>${esc(k.split(" ").join(" · "))}</td><td class="n">${fmt(u.toi)}</td><td class="n">${u.xgf.toFixed(2)}</td><td class="n">${u.xga.toFixed(2)}</td>
-      <td class="n">${u.xgf + u.xga > 0 ? (100*u.xgf/(u.xgf+u.xga)).toFixed(0) + "%" : ""}</td><td class="n">${u.gf}-${u.ga}</td></tr>`).join("") + `</tbody></table></div>`;
+function unitTable(groups){
+  const body = groups.map(([label, rows]) => `<tr class="grp"><td colspan="5">${esc(label)}</td></tr>` + (rows.length
+    ? rows.map(([k,u]) => `<tr><td>${esc(k.split(" ").join(" · "))}</td><td class="n">${fmt(u.toi)}</td><td class="n">${u.xgf.toFixed(2)}</td>
+      <td class="n">${u.xga.toFixed(2)}</td><td class="n">${pctOf(u.xgf, u.xga)}</td></tr>`).join("")
+    : `<tr><td colspan="5" class="empty">None with 20+ seconds together.</td></tr>`)).join("");
+  return `<div><h2>Units <span class="sub">· most time together</span></h2><table><thead><tr><th></th><th class="n">TOI</th><th class="n">xGF</th><th class="n">xGA</th><th class="n">xGF%</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
-function skaterTable(st){
-  const rows = Object.values(st).filter(r => r.p.pos !== "G" && (r.toi > 0 || r.cf + r.ca > 0));
-  if(!rows.length) return `<p class="empty">No shifts logged in this scope.</p>`;
-  const pct = (a,b) => a+b > 0 ? (100*a/(a+b)).toFixed(0) + "%" : "";
-  const d = v => (v >= 0 ? "+" : "") + v.toFixed(2);
-  const body = pos => rows.filter(r => r.p.pos === pos).sort((a,b) => b.toi - a.toi).map(r => {
-    const net = r.xgf - r.xga;
-    return `<tr><td>${esc(r.p.num)}</td><td>${esc(r.p.name)}</td><td class="n">${fmt(r.toi)}</td><td class="n">${r.shifts}</td>
-      <td class="n">${r.shifts ? fmt(r.toi / r.shifts) : ""}</td><td class="n">${r.cf}</td><td class="n">${r.ca}</td><td class="n">${r.gf}-${r.ga}</td>
-      <td class="n">${r.xgf.toFixed(2)}</td><td class="n">${r.xga.toFixed(2)}</td><td class="n ${net > 0.005 ? "pos" : net < -0.005 ? "neg" : ""}">${d(net)}</td>
-      <td class="n">${pct(r.xgf, r.xga)}</td><td class="n">${r.toi > 0 ? (r.xgf*3600/r.toi).toFixed(2) : ""}</td><td class="n">${r.toi > 0 ? (r.xga*3600/r.toi).toFixed(2) : ""}</td></tr>`; }).join("");
-  return `<table><thead><tr><th>#</th><th>Name</th><th class="n">TOI</th><th class="n">Shifts</th><th class="n">Avg</th><th class="n">CF</th><th class="n">CA</th>
-    <th class="n">GF-GA</th><th class="n">xGF</th><th class="n">xGA</th><th class="n">xG +/-</th><th class="n">xGF%</th><th class="n">xGF/60</th><th class="n">xGA/60</th></tr></thead><tbody>
-    <tr class="grp"><td colspan="14">Forwards</td></tr>${body("F")}<tr class="grp"><td colspan="14">Defence</td></tr>${body("D")}</tbody></table>`;
-}
-function goalieTable(st){
-  const rows = Object.values(st).filter(r => r.p.pos === "G" && r.toi > 0);
-  if(!rows.length) return `<div><h2>Goalies</h2><p class="empty">No goalie logged on the ice.</p></div>`;
-  return `<div><h2>Goalies</h2><table><thead><tr><th>#</th><th>Name</th><th class="n">TOI</th><th class="n">SA</th><th class="n">GA</th><th class="n">SV%</th><th class="n">xGA</th><th class="n">GSAx</th></tr></thead><tbody>` +
-    rows.map(r => { const gsax = r.xga - r.ga;
-      return `<tr><td>${esc(r.p.num)}</td><td>${esc(r.p.name)}</td><td class="n">${fmt(r.toi)}</td><td class="n">${r.sa}</td><td class="n">${r.ga}</td>
-      <td class="n">${r.sa ? (1 - r.ga/r.sa).toFixed(3).replace(/^0/, "") : ""}</td><td class="n">${r.xga.toFixed(2)}</td>
-      <td class="n ${gsax > 0.005 ? "pos" : gsax < -0.005 ? "neg" : ""}">${(gsax >= 0 ? "+" : "") + gsax.toFixed(2)}</td></tr>`; }).join("") + `</tbody></table></div>`;
-}
-function reportHead(title, scopeLabel){
+function reportHead(title, scopeLabel, a, b){
   const when = new Date().toLocaleString([], {year:"numeric", month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"});
-  return `<div class="head"><h1>${esc(title)}</h1><span class="game">${esc(S.us)} vs ${esc(S.opp)} &middot; ${esc(S.date)}</span>
+  return `<div class="head"><h1>${esc(title)}</h1><span class="game">${esc(S.date)}</span>
+    <span class="final"><span style="color:${RC_US}">${esc(S.us)}</span> ${a.g} &ndash; ${b.g} <span style="color:${RC_THEM}">${esc(S.opp)}</span></span>
     <span class="scope">${esc(scopeLabel)}</span><span class="when">${esc(when)}</span></div>`;
 }
 function buildReport(scope){
   const D = derive(), shots = D.ordered.filter(s => !scope || s.p === scope);
   const st = playerStats(D, scope), label = scope ? (scope <= 3 ? "Period " + scope : perLabel(scope)) : "Full Game";
+  const span = reportSpan(D, scope), tl = span ? strengthRuns(D, span.t0, span.played) : {runs:[], secs:{EV:0, PP:0, PK:0}};
+  const a = teamSummary(D, shots, "us"), b = teamSummary(D, shots, "them");
+  a.ppo = tl.runs.filter(r => r.k === "PP").length; b.ppo = tl.runs.filter(r => r.k === "PK").length;
   const flagged = G.changes.filter(c => c.forced || (D.issues[c.id] || []).length).length;
   const untyped = shots.filter(s => s.type === "UNKNOWN").length;
   const caveats = [flagged ? `${flagged} shift change${flagged > 1 ? "s" : ""} flagged on the Shifts view` : "",
                    untyped ? `${untyped} shot${untyped > 1 ? "s" : ""} with no type (scored as unknown)` : ""].filter(Boolean).join(" · ");
   const ot3 = scope && scope >= 4 && S.otFormat === "3v3";
-  const units = ot3 ? unitTable("3v3 units", unitStats(D, shots, scope, null, 3), 8)
-    : unitTable("Forward lines", unitStats(D, shots, scope, "F", 3), 6) + unitTable("D pairs", unitStats(D, shots, scope, "D", 2), 4);
-  const foot = `<div class="foot"><span>xG from a five-feature model fit on 905,483 NHL attempts; blocks are placed but not scored. On-ice numbers come from tracked shifts, and one game is a small sample.</span><span>${esc(caveats)}</span></div>`;
-  return `<section class="rp">${reportHead("Shot Report", label)}${reportRink(D, shots)}${reportKeys()}
-      <div class="lower"><div><h2>Totals</h2>${totalsTable(D, shots)}</div><div><h2>Cumulative xG by game clock</h2>${flowChart(D, shots, scope)}</div></div>${foot}</section>
-    <section class="rp">${reportHead("Player Report", label)}<h2>${esc(S.us)} skaters, on-ice</h2>${skaterTable(st)}
-      <div class="three">${goalieTable(st)}${units}</div>${foot}</section>`;
+  const units = ot3 ? unitTable([["3v3 units", unitStats(D, shots, scope, null, 3).slice(0, 6)]])
+    : unitTable([["Forward lines", unitStats(D, shots, scope, "F", 3).slice(0, 4)], ["D pairs", unitStats(D, shots, scope, "D", 2).slice(0, 3)]]);
+  const foot = `<div class="foot"><span>xG from a five-feature model fit on 905,483 NHL attempts; blocks are placed but not scored. On-ice numbers come from tracked shifts,
+    strength time from the clock and logged penalties. One game is a small sample.</span><span>${esc(caveats)}</span></div>`;
+  return `<section class="rp">${reportHead("Game Report", label, a, b)}
+    <div class="upper"><div>${reportRink(D, shots)}${reportKeys()}</div><div><h2>Totals</h2>${totalsTable(a, b)}</div>
+      <div class="stack">${periodTable(D, shots)}${goalieTable(st, a)}</div></div>
+    <div class="flow"><h2>Cumulative xG by game clock <span class="sub">· shaded: <span style="color:${RC_US}">${esc(S.us)} power play</span>,
+      <span style="color:${RC_THEM}">${esc(S.opp)} power play</span> · labels are the score after each goal</span></h2>${flowChart(D, shots, span, tl)}</div>
+    <div class="four">${leaderTables(st)}${strengthTable(D, shots, tl)}${units}</div>${foot}</section>`;
 }
 function renderScopeSelect(D){
   const sel = $("rScope"), cur = sel.value, ps = periodsInGame(D);
   sel.innerHTML = `<option value="">Full game</option>` + ps.map(p => `<option value="${p}">${p <= 3 ? "Period " + p : perLabel(p)}</option>`).join("");
   sel.value = [...sel.options].some(o => o.value === cur) ? cur : "";
 }
+/* One page, always: lay the report out offscreen at the printable size of
+   a landscape letter page and zoom it down if a long game runs over. */
+function fitReport(out){
+  const page = out.querySelector(".rp"), fit = (8.5 - 2*9/25.4) * 96 - 6;
+  page.style.zoom = "";
+  out.style.cssText = "display:block; position:absolute; left:-20000px; top:0";
+  const h = page.getBoundingClientRect().height;
+  out.style.cssText = "";
+  if(h > fit) page.style.zoom = (fit / h).toFixed(3);
+}
 function exportReport(){
   const v = $("rScope").value;
   $("reportOut").innerHTML = buildReport(v ? +v : null);
+  fitReport($("reportOut"));
   window.print();
 }
 

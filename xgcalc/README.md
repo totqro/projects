@@ -250,14 +250,21 @@ Possession (K) keeps its copy-down formula for hand entry. Pasted into the
 real workbook and recalculated, its Totals sheet reproduces the tracker's TOI
 to the workbook's own 0.1-minute rounding.
 
-**Report PDF** (Shifts view) prints two landscape pages for the full game or
-any one period, OT included. Page 1 is the shot map with our team always
-attacking right, totals with xG split by strength, and cumulative xG on a real
-game-clock axis. Page 2 is every skater's on-ice line (TOI, shifts, average
-shift, CF/CA, GF-GA, xGF, xGA, xG +/-, xGF%, per 60), goalies with GSAx, and
-the forward lines and D pairs that played 20+ seconds together; a 3v3 OT
-report lists the three-skater units instead. It uses the browser's print
-dialog, so pick "Save as PDF".
+**Report PDF** (Shifts view) prints one landscape page for the full game or
+any one period, OT included; if a long game runs over, the page zooms itself
+down to fit. The top row is the shot map with our team always attacking right,
+totals (goals, xG, xG share, goals minus xG, shooting %, high-danger chances,
+rebounds, power plays and PP goals), the period split, and goalies with GSAx
+(xGA minus GA): ours from whoever was on the board for each shot, theirs from
+our shots with empty-net ones left out. The middle is cumulative xG on the
+game clock, with each power play shaded from the penalty timeline and every
+goal marked with the score. The bottom row is the five skaters with the most
+and the least xG for on the ice (the lowest list skips anyone under half the
+median skater's TOI), xG for and against by strength next to the clock time
+spent at each (per 60 too), and the forward lines and D pairs that played
+20+ seconds together; a 3v3 OT report lists the three-skater units instead.
+Printed mid-game, it stops at the clock. It uses the browser's print dialog,
+so pick "Save as PDF".
 
 **`web/scatter.html` — the shot chart.** For charts that already carry exact
 coordinates — tagged off film, or exported from another tool. Drop the CSV in
