@@ -232,7 +232,7 @@ time to reach it. That one rule repairs both live mistakes: a missed pause
 play count down to it).
 
 The shots export keeps the shot-plotter columns and adds `Clock`, `Rebound`,
-`Situation`, `xG`, `OnIce` and `Goalie`, so the Shot Chart and
+`Situation`, `xG`, `OnIce`, `Goalie` and `OnIceTeam`, so the Shot Chart and
 `score_tagged.py` read it unchanged and give the same xG. Players and shifts
 export as their own CSVs, and a JSON backup restores a whole game.
 
@@ -276,6 +276,23 @@ and strength.
 Period,Team,Player,Type,X,Y,Shot Type,Strength
 1,Away,,Shot,77.11,-2.44,Backhand,5v5
 ```
+
+**A Rinkside Tracker export does more.** When every row has a `Clock`,
+game flow runs on the real game clock instead of shot order. `Situation`
+(worked out from penalties and empty nets) replaces the coarser `Strength`
+tag, so the xG matches the tracker's exactly. `OnIce`, `Goalie` and
+`OnIceTeam` feed the report's on-ice xG per skater and GSAx per goalie. An
+older export without `OnIceTeam` gets a picker for whose players those are.
+
+**Export PDF** prints a one-page landscape game report for the full game or
+any period: the full rink with home and away held on their own ends, totals,
+the period split, goaltending with GSAx (xGA minus GA, empty-net shots left
+out; one row per goalie when the file names them, otherwise one per team),
+cumulative xG with the score at each goal, and a bottom row of the skaters
+with the highest and lowest on-ice xG, top shooters when the file has a
+`Player` column, xG by strength, and the six best chances. The shots file
+carries no TOI, so the lowest list keeps to skaters on the ice for at least
+half the median skater's attempts.
 
 X/Y are raw NHL rink feet. Shots at the left end are mirrored onto the
 attacking-right frame (net at x = 89) — flipping x flips y with it, or every

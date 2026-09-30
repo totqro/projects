@@ -1196,11 +1196,11 @@ const base = () => `${S.date}_${slug(S.us)}_vs_${slug(S.opp)}`;
 
 function exportShots(){
   const D = derive();
-  const rows = [["Period","Team","Player","Type","X","Y","Shot Type","Strength","Clock","Rebound","Situation","xG","OnIce","Goalie"]];
+  const rows = [["Period","Team","Player","Type","X","Y","Shot Type","Strength","Clock","Rebound","Situation","xG","OnIce","Goalie","OnIceTeam"]];
   D.ordered.forEach(s => { const I = D.shotInfo[s.id];
     rows.push([s.p <= 3 ? s.p : "OT", s.team === "us" ? S.us : S.opp, "", RESULT_EXPORT[s.result], s.x, s.y,
       TYPE_EXPORT[s.type], SIT_TEXT[I.situation] || "", fmt(I.sec), I.rebound ? 1 : 0, I.situation,
-      I.xg === null ? "" : I.xg.toFixed(4), I.onIce.filter(n => n !== I.goalie).join(" "), I.goalie || ""]); });
+      I.xg === null ? "" : I.xg.toFixed(4), I.onIce.filter(n => n !== I.goalie).join(" "), I.goalie || "", S.us]); });
   download(base() + "_shots.csv", csv(rows));
 }
 function exportPlayers(){

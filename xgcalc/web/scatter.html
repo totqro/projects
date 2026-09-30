@@ -229,43 +229,52 @@ tr.shotrow.sel td{background:color-mix(in srgb, var(--accent) 17%, transparent)}
 .hidden{display:none !important}
 #reportCard select{width:auto}
 
-/* ---- printable period report ----
+/* ---- printable game report ----
    The report is built into a container on this page rather than a pop-up:
    pop-ups are blocked by default in exactly the place this gets used, on a
    phone in the stands. It stays display:none until the print stylesheet
    swaps it in for everything else. Colours are literal, not themed — a
-   dark-mode page still has to print on white paper. */
-#reportOut{display:none; background:#fff; color:#141D26; font-size:11px; line-height:1.45;
+   dark-mode page still has to print on white paper. One landscape page:
+   exportReport() zooms it down if a long game runs over. */
+#reportOut{display:none; background:#fff; color:#141D26; font-size:10px; line-height:1.35;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-#reportOut .head{display:flex; align-items:baseline; gap:14px; margin-bottom:10px;
-  border-bottom:1.5px solid #141D26; padding-bottom:6px}
-#reportOut .head h1{margin:0; font-size:21px; letter-spacing:-.02em; font-family:inherit}
-#reportOut .head .scope{font-size:16px; font-weight:700; margin-left:auto}
-#reportOut .head .when{font-size:10px; color:#7B8B9C}
-#reportOut .rinkfull{display:block; width:100%; max-width:7.25in; height:auto; margin:0 auto}
-#reportOut .keys{display:flex; gap:16px; flex-wrap:wrap; align-items:center; justify-content:center;
-  margin-top:8px; padding-top:7px; border-top:1px solid #E3E8ED; font-size:11px; color:#48586A}
+#reportOut .rp{width:10.25in}
+#reportOut .head{display:flex; align-items:baseline; gap:14px; margin-bottom:6px;
+  border-bottom:1.5px solid #141D26; padding-bottom:4px}
+#reportOut .head h1{margin:0; font-size:18px; letter-spacing:-.02em; font-family:inherit; color:#141D26; text-shadow:none; text-transform:none; background:none; -webkit-text-fill-color:#141D26}
+#reportOut .head .final{font-size:16px; font-weight:800; font-variant-numeric:tabular-nums}
+#reportOut .head .scope{font-size:14px; font-weight:700; margin-left:auto}
+#reportOut .head .when{font-size:9px; color:#7B8B9C}
+#reportOut .upper{display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr); gap:14px; align-items:start}
+#reportOut .rinkfull{display:block; width:100%; height:auto}
+#reportOut .keys{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:center;
+  margin-top:3px; padding-top:3px; border-top:1px solid #E3E8ED; font-size:9.5px; color:#48586A}
 /* rkey/rkeyi, not lg/lgi: the page already owns those class names. */
-#reportOut .rkey{display:inline-flex; align-items:center; gap:5px}
-#reportOut .rkeyi{width:16px; height:16px; flex:none}
-#reportOut .keys .sep{width:1px; height:13px; background:#D3DBE2}
-#reportOut .keys b{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px}
-#reportOut .lower{display:grid; grid-template-columns:minmax(210px,.82fr) minmax(0,1.18fr);
-  gap:20px; align-items:start; margin-top:10px}
-#reportOut h2{font-size:10px; letter-spacing:.11em; text-transform:uppercase; color:#7B8B9C;
-  margin:0 0 5px; font-weight:700; font-family:inherit}
-#reportOut table.stats{border-collapse:collapse; width:100%; font-size:11.5px}
-#reportOut table.stats th,#reportOut table.stats td{padding:2.4px 5px; text-align:left;
-  border-bottom:1px solid #E3E8ED; white-space:nowrap; position:static; background:none;
-  font-family:inherit; color:#141D26; letter-spacing:normal; text-transform:none; font-size:11.5px}
-#reportOut table.stats th{font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:#7B8B9C}
-#reportOut table.stats td.n,#reportOut table.stats th.n{text-align:right; font-variant-numeric:tabular-nums}
-#reportOut table.stats tr.hl td{font-weight:700}
-#reportOut table.stats tbody tr:last-child td{border-bottom:0}
-#reportOut .flowmini{display:block; width:100%; height:auto; margin-top:2px}
-#reportOut .empty{color:#7B8B9C; font-size:10.5px; margin:4px 0}
-#reportOut .foot{margin-top:10px; padding-top:6px; border-top:1px solid #E3E8ED;
-  font-size:9.5px; color:#7B8B9C; display:flex; justify-content:space-between}
+#reportOut .rkey{display:inline-flex; align-items:center; gap:4px}
+#reportOut .rkeyi{width:12px; height:12px; flex:none}
+#reportOut .keys .sep{width:1px; height:11px; background:#D3DBE2}
+#reportOut .keys b{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px}
+#reportOut .flowbox{margin-top:8px}
+#reportOut .four{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; align-items:start; margin-top:8px}
+#reportOut .stack{display:grid; gap:8px; align-content:start}
+#reportOut h2{font-size:8.5px; letter-spacing:.11em; text-transform:uppercase; color:#7B8B9C;
+  margin:0 0 3px; font-weight:700; font-family:inherit; text-shadow:none}
+#reportOut h2 .sub{letter-spacing:.02em; text-transform:none; font-weight:400}
+#reportOut table{border-collapse:collapse; width:100%; font-size:10px}
+#reportOut th,#reportOut td{padding:1.6px 4px; text-align:left; border-bottom:1px solid #E3E8ED; white-space:nowrap;
+  position:static; background:none; font-family:inherit; color:#141D26; letter-spacing:normal;
+  text-transform:none; font-size:10px; cursor:auto}
+#reportOut th{font-size:8.5px; letter-spacing:.05em; text-transform:uppercase; color:#7B8B9C; font-weight:600}
+#reportOut td.n,#reportOut th.n{text-align:right; font-variant-numeric:tabular-nums}
+#reportOut td.nm{max-width:1.05in; overflow:hidden; text-overflow:ellipsis}
+#reportOut tr.hl td{font-weight:700}
+#reportOut tr.tot td{border-top:1px solid #B8C4CF; font-weight:700}
+#reportOut td.pos{color:#1E7B4A; font-weight:700} #reportOut td.neg{color:#B0293C; font-weight:700}
+#reportOut tbody tr:last-child td{border-bottom:0}
+#reportOut .flowsvg{display:block; width:100%; height:auto}
+#reportOut .empty{color:#7B8B9C; font-size:9.5px; margin:3px 0}
+#reportOut .foot{margin-top:6px; padding-top:4px; border-top:1px solid #E3E8ED;
+  font-size:8.5px; color:#7B8B9C; display:flex; justify-content:space-between; gap:16px}
 @media print{
   @page{ size:letter landscape; margin:9mm }
   html,body{background:#fff !important; margin:0 !important; padding:0 !important}
@@ -326,7 +335,7 @@ tr.shotrow.sel td{background:color-mix(in srgb, var(--accent) 17%, transparent)}
 
     <div class="card cy-panel hidden" id="flowCard">
       <div class="flow-head">
-        <span class="eyebrow">Game flow &mdash; cumulative xG by shot order</span>
+        <span class="eyebrow" id="flowTitle">Game flow &mdash; cumulative xG by shot order</span>
         <span class="readout" id="readout"></span>
       </div>
       <svg class="flow" id="flow" viewBox="0 0 720 210" role="img"
@@ -357,13 +366,14 @@ tr.shotrow.sel td{background:color-mix(in srgb, var(--accent) 17%, transparent)}
     </div>
 
     <div class="card cy-panel hidden" id="reportCard">
-      <span class="eyebrow">Period Report</span>
-      <div class="note" style="margin-bottom:9px">Full rink, home and away on opposite ends,
-        normalized so both sides stay put across periods. Goals, shots, blocks and misses each
-        get their own icon.</div>
+      <span class="eyebrow">Game Report</span>
+      <div class="note" style="margin-bottom:9px">One landscape page: full rink with home and away
+        held on their own ends, totals, goaltending with GSAx, cumulative xG, xG by strength and
+        the best chances. A Rinkside Tracker export adds the game clock and on-ice xG per player.</div>
       <div style="display:flex; gap:8px; flex-wrap:wrap">
         <select id="pdfScope" style="flex:1; min-width:120px; padding:6px 8px"></select>
         <select id="pdfHome" title="Home team" style="flex:1; min-width:120px; padding:6px 8px"></select>
+        <select id="pdfOnIce" title="Team the OnIce numbers belong to" class="hidden" style="flex:1; min-width:120px; padding:6px 8px"></select>
         <button class="primary" id="pdfBtn" style="padding:6px 11px;font-size:13px">Export PDF</button>
       </div>
     </div>
@@ -493,6 +503,17 @@ function parseCSV(text){
 
 const REQUIRED=["period","team","type","x","y","shot_type","strength"];
 
+/* The Rinkside Tracker's export adds Clock, Situation, OnIce, Goalie and
+   OnIceTeam. Situation is the model's own vocabulary, worked out from
+   penalties and empty nets, so it wins over the coarser Strength tag and
+   the xG here matches the tracker's. */
+const SITUATION_RE=/^((EV|PP|SH|EN)_[A-Z0-9_]+|OTHER)$/;
+function parseClock(str){
+  const m=String(str||"").trim().match(/^(\d{1,2}):(\d{2})$/);
+  return m&&+m[2]<60 ? +m[1]*60+ +m[2] : null;
+}
+function fmtClock(sec){ const v=Math.max(0,Math.round(sec)); return Math.floor(v/60)+":"+String(v%60).padStart(2,"0"); }
+
 function loadShots(text){
   const raw=parseCSV(text);
   if(!raw.length) throw new Error("That file has no rows.");
@@ -509,7 +530,8 @@ function loadShots(text){
     const flip=x<0, X=flip?-x:x, Y=flip?-y:y;
     const g=geometry(X,Y), z=zone16(X,Y);
     const tagType=String(r.shot_type||"").trim();
-    const tagStr=String(r.strength||"").trim();
+    const tagStr=String(r.strength||"").trim(), tagSit=String(r.situation||"").trim();
+    const onIce=String(r.onice||"").trim();
     out.push({
       i:out.length, period:r.period||"", team:String(r.team||"").trim()||"—",
       player:String(r.player||"").trim(), event:event, raw_i:i+2,
@@ -517,7 +539,9 @@ function loadShots(text){
       distance:g.d, angle_from_net:g.a, zone:z, zone_name:ZONE_NAMES[z],
       tier:TIER_OF[z]||"LOW",
       shot_type:SHOT_TYPES[tagType.toLowerCase()]||"UNKNOWN", tagged_type:tagType,
-      situation:SITUATIONS[tagStr.toLowerCase()]||"EV_5v5", tagged_strength:tagStr,
+      situation:SITUATION_RE.test(tagSit)?tagSit:(SITUATIONS[tagStr.toLowerCase()]||"EV_5v5"), tagged_strength:tagStr,
+      sec:parseClock(r.clock), on_ice:onIce?onIce.split(/\s+/):[], goalie:String(r.goalie||"").trim(),
+      onice_team:String(r.oniceteam||"").trim(),
       is_rebound:("rebound" in r && /^(1|true|yes|y)$/i.test(r.rebound))?1:0,
       goal:event==="goal"?1:0, unblocked:!!UNBLOCKED[event], blocked:!!BLOCKED[event]
     });
@@ -526,9 +550,32 @@ function loadShots(text){
   const scored=out.filter(s=>s.unblocked);
   scored.forEach(s=>{ s.xg=scoreShot(s); });
   const odd=out.filter(s=>!s.unblocked&&!s.blocked);
+  const hasOnIce=out.some(s=>s.on_ice.length);
   return {all:out, scored:scored, blocked:out.filter(s=>s.blocked).length,
+          clock:gameClock(out), hasOnIce,
+          onIceTeam:hasOnIce?(out.find(s=>s.onice_team)||{}).onice_team||"":"",
           unrecognised:[...new Set(odd.map(s=>s.event||"(blank)"))],
           unrecognisedCount:odd.length};
+}
+
+/* Game time for every row, when every row carries a scoreboard clock.
+   Regulation periods run 20:00 and OT 5:00 unless a clock reading says
+   the period was longer. Numeric periods missing from the file (a period
+   with no shots) still take their place on the axis. */
+function gameClock(rows){
+  if(!rows.length||rows.some(s=>s.sec===null)) return null;
+  const isNum=p=>/^\d+$/.test(String(p).trim());
+  const seen=[...new Set(rows.map(s=>String(s.period)))];
+  const maxNum=Math.max(0,...seen.filter(isNum).map(Number));
+  const periods=sortPeriods([...new Set(seen.concat(Array.from({length:maxNum},(_,k)=>String(k+1))))]);
+  const len={}, start={}; let t=0;
+  periods.forEach(p=>{
+    const base=isNum(p)&&+p<=3?1200:300;
+    const top=Math.max(0,...rows.filter(s=>String(s.period)===p).map(s=>s.sec));
+    len[p]=Math.max(base,Math.ceil(top/60)*60); start[p]=t; t+=len[p];
+  });
+  rows.forEach(s=>{ const p=String(s.period); s.t=start[p]+len[p]-s.sec; });
+  return {periods,len,start,total:t};
 }
 
 /* ---------------- state ---------------- */
@@ -760,6 +807,9 @@ function renderNotes(){
       carry is the rebound flag, which is where a scramble's danger actually
       lives: on a 6 ft shot that flag is worth +0.07 xG.</div>`);
   }
+  if(DATA.clock||DATA.hasOnIce) n.push(`<div class="note"><span class="flag ok">tracker export</span>
+    ${DATA.clock?"Every row has a scoreboard clock, so game flow runs on the game clock. ":""}${
+    DATA.hasOnIce?"The OnIce column gives on-ice xG per skater and GSAx per goalie in the report.":""}</div>`);
   const mir=s.filter(r=>r.mirrored).length;
   if(mir) n.push(`<div class="note"><b>${mir}</b> shot${mir===1?"":"s"} had x &lt; 0 and
     ${mir===1?"was":"were"} mirrored onto the attacking-right frame.</div>`);
@@ -776,19 +826,18 @@ function renderNotes(){
 
 
 /* ---------------- game flow ----------------
-   The export carries no clock, but rows come out in tagging order, so shot
-   sequence is a faithful x-axis: the same momentum read with "shots" along
-   the bottom instead of "minutes". Filters apply to the lines — they only
-   step at shots still in play — while x stays each shot's true position in
-   the game, so filtering never compresses the timeline.
-
-   What this cannot show, and a clock could: a five-shot flurry inside ninety
-   seconds looks identical to five shots spread across a period. */
+   With a Clock column (the Rinkside Tracker writes one) the x-axis is the
+   game clock, so a five-shot flurry inside ninety seconds reads as one.
+   Without it, rows come out in tagging order, so shot sequence is the
+   next-best axis. Filters apply to the lines — they only step at shots
+   still in play — while x stays each shot's true position in the game,
+   so filtering never compresses the timeline. */
 const FLOW={W:720, H:210, padL:34, padR:12, padT:10, padB:22};
 let TEAMCOL={};
 
+const flowSeq=()=>DATA.clock ? DATA.scored.slice().sort((a,b)=>a.t-b.t||a.i-b.i) : DATA.scored;
 function flowSeries(){
-  const seq=DATA.scored, vis=new Set(visible().map(s=>s.i));
+  const seq=flowSeq(), vis=new Set(visible().map(s=>s.i));
   const teams=[...new Set(seq.map(s=>s.team))].sort();
   const n=seq.length, curve={}, run={}, goals=[];
   teams.forEach(t=>{ curve[t]=new Float64Array(n); run[t]=0; });
@@ -813,7 +862,8 @@ function renderFlow(){
   const svg=document.getElementById("flow"), {W,H,padL,padR,padT,padB}=FLOW;
   const S=flowSeries(), n=S.n;
   if(!n){ svg.innerHTML=""; return; }
-  const x=i => n<2 ? (padL+W-padR)/2 : padL+(i/(n-1))*(W-padL-padR);
+  const seq=flowSeq(), C=DATA.clock, tx=t=>padL+t/C.total*(W-padL-padR);
+  const x=C ? i=>tx(seq[i].t) : i => n<2 ? (padL+W-padR)/2 : padL+(i/(n-1))*(W-padL-padR);
   const top=Math.max(0.5, ...S.teams.map(t=>S.curve[t][n-1]));
   const y=v => H-padB-(v/top)*(H-padT-padB);
 
@@ -824,28 +874,38 @@ function renderFlow(){
   });
   p.push(`<line class="axis" x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}"/>`);
 
-  /* Period breaks are the only real time anchor the file has. */
-  const seq=DATA.scored;
-  for(let i=1;i<n;i++){
-    if(String(seq[i].period)!==String(seq[i-1].period)){
-      const px=x(i).toFixed(1);
-      p.push(`<line class="grid" x1="${px}" y1="${padT}" x2="${px}" y2="${H-padB}"/>`);
-      p.push(`<text class="perlabel" x="${(+px+3).toFixed(1)}" y="${padT+8}">P${esc(seq[i].period)}</text>`);
+  document.getElementById("flowTitle").innerHTML=`Game flow &mdash; cumulative xG by ${C?"game clock":"shot order"}`;
+  const pl=v=>/^\d+$/.test(v)?"P"+v:v;
+  if(C){
+    C.periods.forEach((q,k)=>{
+      const px=tx(C.start[q]).toFixed(1);
+      if(k) p.push(`<line class="grid" x1="${px}" y1="${padT}" x2="${px}" y2="${H-padB}"/>`);
+      p.push(`<text class="perlabel" x="${(+px+3).toFixed(1)}" y="${padT+8}">${esc(pl(q))}</text>`);
+    });
+    p.push(`<text class="axlabel" x="${W-padR}" y="${H-6}" text-anchor="end">game clock &rarr;</text>`);
+  } else {
+    /* Period breaks are the only real time anchor the file has. */
+    for(let i=1;i<n;i++){
+      if(String(seq[i].period)!==String(seq[i-1].period)){
+        const px=x(i).toFixed(1);
+        p.push(`<line class="grid" x1="${px}" y1="${padT}" x2="${px}" y2="${H-padB}"/>`);
+        p.push(`<text class="perlabel" x="${(+px+3).toFixed(1)}" y="${padT+8}">${esc(pl(String(seq[i].period)))}</text>`);
+      }
     }
+    p.push(`<text class="axlabel" x="${W-padR}" y="${H-6}" text-anchor="end">${n} shots in order &rarr;</text>`);
+    p.push(`<text class="perlabel" x="${padL+3}" y="${padT+8}">${esc(pl(String(seq[0].period)))}</text>`);
   }
-  p.push(`<text class="axlabel" x="${W-padR}" y="${H-6}" text-anchor="end">${n} shots in order &rarr;</text>`);
-  p.push(`<text class="perlabel" x="${padL+3}" y="${padT+8}">P${esc(seq[0].period)}</text>`);
 
   S.teams.forEach(t=>{
     const c=S.curve[t];
-    let d=`M ${x(0).toFixed(1)} ${y(0).toFixed(1)}`, prev=0;
+    let d=`M ${(C?padL:x(0)).toFixed(1)} ${y(0).toFixed(1)}`, prev=0;
     for(let i=0;i<n;i++){
       if(c[i]!==prev){
         d+=` L ${x(i).toFixed(1)} ${y(prev).toFixed(1)} L ${x(i).toFixed(1)} ${y(c[i]).toFixed(1)}`;
         prev=c[i];
       }
     }
-    d+=` L ${x(n-1).toFixed(1)} ${y(prev).toFixed(1)}`;
+    d+=` L ${(C?Math.max(x(n-1),tx(C.total)):x(n-1)).toFixed(1)} ${y(prev).toFixed(1)}`;
     p.push(`<path class="series" d="${d}" stroke="${TEAMCOL[t]||"var(--ink-3)"}"/>`);
   });
 
@@ -864,14 +924,15 @@ function renderFlow(){
     guide.setAttribute("x1",x(idx)); guide.setAttribute("x2",x(idx));
     guide.style.display="";
     document.getElementById("readout").innerHTML=
-      `shot <b>${idx+1}</b> &middot; P${esc(seq[idx].period)} &nbsp; `+
+      `shot <b>${idx+1}</b> &middot; ${esc(pl(String(seq[idx].period)))}${C?" "+fmtClock(seq[idx].sec):""} &nbsp; `+
       S.teams.map(t=>`<span style="color:${TEAMCOL[t]}">${esc(t)}</span> <b>${S.curve[t][idx].toFixed(2)}</b>`)
         .join(" &ndash; ");
   };
   hit.onmousemove=e=>{
     const box=svg.getBoundingClientRect();
     const vx=(e.clientX-box.left)/box.width*W;
-    at(Math.max(0, Math.min(n-1, Math.round((vx-padL)/(W-padL-padR)*(n-1)))));
+    if(C){ let best=0; for(let i=1;i<n;i++) if(Math.abs(x(i)-vx)<Math.abs(x(best)-vx)) best=i; at(best); }
+    else at(Math.max(0, Math.min(n-1, Math.round((vx-padL)/(W-padL-padR)*(n-1)))));
   };
   hit.onmouseleave=()=>{ guide.style.display="none"; showFinal(S); };
   showFinal(S);
@@ -1105,90 +1166,208 @@ function reportRinkSVG(events, flips, home, away){
 }
 
 /* ---- numbers ---- */
+const sg2=v=>(v>=0?"+":"")+v.toFixed(2);
+const pctOf=(a,b)=>a+b>0?(100*a/(a+b)).toFixed(0)+"%":"";
+const signCls=v=>v>0.005?"pos":v<-0.005?"neg":"";
+const teamCol=(t,home)=>t===home?REPORT_HOME_COL:REPORT_AWAY_COL;
+/* EN_AGAINST is a shot at an empty net: no goalie to credit or blame. */
+const intoEmptyNet=s=>s.situation==="EN_AGAINST";
+const strGroup=s=>{ const k=s.situation.slice(0,2); return k==="PP"?"PP":k==="SH"?"SH":k==="EN"?"EN":"EV"; };
+
 function summarize(events, team){
-  const evs=events.filter(s=>s.team===team);
-  const kinds=evs.map(classify);
-  const goals=kinds.filter(k=>k==="goal").length;
-  const xg=evs.filter(s=>s.unblocked).reduce((a,s)=>a+(s.xg||0),0);
-  return {goals,
-    onNet:goals+kinds.filter(k=>k==="shot").length,
-    misses:kinds.filter(k=>k==="miss").length,
-    blocks:kinds.filter(k=>k==="block").length,
-    attempts:evs.length, xg:xg, diff:goals-xg,
-    hdc:evs.filter(s=>s.tier==="HIGH").length};
+  const r={goals:0, onNet:0, attempts:0, xg:0, hdc:0, reb:0, ppg:0, enGoals:0, enNet:0, enXg:0};
+  events.forEach(s=>{
+    if(s.team!==team) return;
+    const kind=classify(s), xg=s.unblocked?(s.xg||0):0, net=kind==="goal"||kind==="shot";
+    r.attempts++; r.xg+=xg;
+    if(kind==="goal") r.goals++;
+    if(net) r.onNet++;
+    if(s.unblocked&&s.tier==="HIGH") r.hdc++;
+    if(s.unblocked&&s.is_rebound) r.reb++;
+    if(kind==="goal"&&strGroup(s)==="PP") r.ppg++;
+    if(intoEmptyNet(s)){ r.enXg+=xg; if(kind==="goal") r.enGoals++; if(net) r.enNet++; }
+  });
+  r.diff=r.goals-r.xg;
+  return r;
 }
 
-function statsTable(events, home, away){
-  const h=summarize(events,home), a=summarize(events,away);
-  const sg=v=>(v>=0?"+":"")+v.toFixed(2);
+function statsTable(h, a, home, away){
+  const shPct=t=>t.onNet?(100*t.goals/t.onNet).toFixed(1)+"%":"";
   const row=(label,hv,av,cls)=>`<tr${cls?` class="${cls}"`:""}><td>${esc(label)}</td>`+
     `<td class="n">${hv}</td><td class="n">${av}</td></tr>`;
-  return `<table class="stats">
+  return `<table>
     <thead><tr><th></th>
       <th class="n" style="color:${REPORT_HOME_COL}">${esc(home)}</th>
       <th class="n" style="color:${REPORT_AWAY_COL}">${esc(away)}</th></tr></thead>
     <tbody>
       ${row("Goals", h.goals, a.goals, "hl")}
       ${row("xG", h.xg.toFixed(2), a.xg.toFixed(2), "hl")}
-      ${row("G − xG", sg(h.diff), sg(a.diff))}
-      ${row("High-danger chances", h.hdc, a.hdc, "hl")}
+      ${row("xG share", pctOf(h.xg,a.xg), pctOf(a.xg,h.xg))}
+      ${row("Goals − xG", sg2(h.diff), sg2(a.diff))}
       ${row("Shots on net", h.onNet, a.onNet)}
-      ${row("Missed", h.misses, a.misses)}
-      ${row("Blocked", h.blocks, a.blocks)}
-      ${row("Total attempts", h.attempts, a.attempts)}
+      ${row("Shooting %", shPct(h), shPct(a))}
+      ${row("Attempts", h.attempts, a.attempts)}
+      ${row("High-danger chances", h.hdc, a.hdc, "hl")}
+      ${row("Rebound shots", h.reb, a.reb)}
+      ${row("Power-play goals", h.ppg, a.ppg)}
     </tbody></table>`;
 }
 
-/* Same read as the on-screen flow chart: cumulative xG in tagging order.
-   Blocks carry no xG, so they are not steps on these lines. */
-function miniFlowSVG(events, home, away){
-  const seq=events.filter(s=>s.unblocked).slice().sort((a,b)=>a.i-b.i), n=seq.length;
+function periodTable(events, home, away){
+  const ps=sortPeriods([...new Set(events.map(s=>String(s.period)))]);
+  if(ps.length<2) return "";
+  return `<div><h2>By period</h2><table><thead><tr><th></th><th class="n">Goals</th><th class="n">SOG</th>`+
+    `<th class="n" style="color:${REPORT_HOME_COL}">xG</th><th class="n" style="color:${REPORT_AWAY_COL}">xG</th><th class="n">xG%</th></tr></thead><tbody>`+
+    ps.map(p=>{ const ev=events.filter(s=>String(s.period)===p), h=summarize(ev,home), a=summarize(ev,away);
+      return `<tr><td>${esc(/^\d+$/.test(p)?"P"+p:p)}</td><td class="n">${h.goals}-${a.goals}</td><td class="n">${h.onNet}-${a.onNet}</td>`+
+        `<td class="n">${h.xg.toFixed(2)}</td><td class="n">${a.xg.toFixed(2)}</td><td class="n">${pctOf(h.xg,a.xg)}</td></tr>`; }).join("")+
+    `</tbody></table></div>`;
+}
+
+/* GSAx = xG against (unblocked attempts) minus goals against, empty-net
+   shots left out. A tracker export names the goalie in net for every shot,
+   so the tracked team gets a row per goalie; everyone else gets one. */
+function goalieTable(events, home, away, tracked){
+  const line=(who, col, shots)=>{
+    const sa=shots.filter(s=>s.goal||classify(s)==="shot").length, ga=shots.filter(s=>s.goal).length;
+    const xga=shots.reduce((v,s)=>v+(s.unblocked?(s.xg||0):0),0), gsax=xga-ga;
+    return `<tr><td class="nm" style="color:${col}">${who}</td><td class="n">${sa}</td><td class="n">${ga}</td>`+
+      `<td class="n">${sa?(1-ga/sa).toFixed(3).replace(/^0/,""):""}</td><td class="n">${xga.toFixed(2)}</td>`+
+      `<td class="n ${signCls(gsax)}">${sg2(gsax)}</td></tr>`;
+  };
+  const rows=[];
+  [home,away].forEach(t=>{
+    const against=events.filter(s=>s.team!==t&&!intoEmptyNet(s)), col=teamCol(t,home);
+    const nums=t===tracked?[...new Set(against.map(s=>s.goalie).filter(Boolean))]:[];
+    if(nums.length) nums.forEach(g=>rows.push(line(`#${esc(g)} ${esc(t)}`, col, against.filter(s=>s.goalie===g))));
+    else rows.push(line(esc(t), col, against));
+  });
+  return `<div><h2>Goaltending <span class="sub">&middot; GSAx = xGA &minus; GA</span></h2><table><thead><tr><th>Goalie</th>`+
+    `<th class="n">SA</th><th class="n">GA</th><th class="n">SV%</th><th class="n">xGA</th><th class="n">GSAx</th></tr></thead>`+
+    `<tbody>${rows.join("")}</tbody></table></div>`;
+}
+
+/* Cumulative xG for the report: on the game clock when the file has one,
+   in shot order when it doesn't. Goals carry the running score. */
+function reportFlowSVG(events, home, away){
+  const C=DATA.clock;
+  const seq=events.filter(s=>s.unblocked).slice().sort(C?(a,b)=>a.t-b.t||a.i-b.i:(a,b)=>a.i-b.i), n=seq.length;
   if(!n) return `<p class="empty">No scored attempts in this scope.</p>`;
-  const W=300,H=104,padL=28,padR=8,padT=8,padB=17;
-  const run={}, curve={}; [home,away].forEach(t=>{ run[t]=0; curve[t]=new Float64Array(n); });
-  const goals=[];
-  seq.forEach((s,i)=>{
-    if(run[s.team]!==undefined){
-      run[s.team]+=s.xg||0;
-      if(s.goal) goals.push({team:s.team, i:i, v:run[s.team]});
-    }
-    [home,away].forEach(t=>{ curve[t][i]=run[t]; });
+  const W=980, H=190, L=30, R=96, T=8, B=16;
+  const ps=C?C.periods.filter(p=>events.some(s=>String(s.period)===p)||events.length===DATA.all.length):[];
+  const t0=C?C.start[ps[0]]:0, t1=C?C.start[ps[ps.length-1]]+C.len[ps[ps.length-1]]:0;
+  const x=C ? i=>L+(seq[i].t-t0)/Math.max(1,t1-t0)*(W-L-R) : i=>n<2?(L+W-R)/2:L+(i/(n-1))*(W-L-R);
+  const xEnd=C?W-R:x(n-1), xStart=C?L:x(0);
+  const tot={}; [home,away].forEach(t=>tot[t]=0); seq.forEach(s=>{ if(s.team in tot) tot[s.team]+=s.xg||0; });
+  const top=Math.max(0.3,tot[home],tot[away])*1.04;
+  const y=v=>H-B-(v/top)*(H-T-B), f=v=>v.toFixed(1), p=[], over=[];
+  niceTicks(top).filter(v=>v>0).forEach(v=>{
+    p.push(`<line x1="${L}" y1="${f(y(v))}" x2="${W-R}" y2="${f(y(v))}" stroke="#D3DBE2" stroke-dasharray="3 3"/>`+
+      `<text x="${L-4}" y="${f(y(v)+3)}" text-anchor="end" font-size="8.5" fill="#7B8B9C">${v.toFixed(2)}</text>`);
   });
-  const top=Math.max(0.3, curve[home][n-1], curve[away][n-1]);
-  const x=i=> n<2 ? (padL+W-padR)/2 : padL+(i/(n-1))*(W-padL-padR);
-  const y=v=> H-padB-(v/top)*(H-padT-padB);
-  const p=[];
-  niceTicks(top).forEach(v=>{
-    p.push(`<line x1="${padL}" y1="${y(v).toFixed(1)}" x2="${W-padR}" y2="${y(v).toFixed(1)}" `+
-           `stroke="#D3DBE2" stroke-width="1" stroke-dasharray="3 3"/>`);
-    p.push(`<text x="${padL-4}" y="${(y(v)+3).toFixed(1)}" text-anchor="end" font-size="8" `+
-           `fill="#7B8B9C">${v.toFixed(2)}</text>`);
-  });
-  for(let i=1;i<n;i++){
-    if(String(seq[i].period)!==String(seq[i-1].period)){
-      p.push(`<line x1="${x(i).toFixed(1)}" y1="${padT}" x2="${x(i).toFixed(1)}" y2="${H-padB}" `+
-             `stroke="#7B8B9C" stroke-width=".8" stroke-dasharray="2 2"/>`);
-      p.push(`<text x="${(x(i)+3).toFixed(1)}" y="${padT+7}" font-size="7.5" fill="#7B8B9C">P${esc(seq[i].period)}</text>`);
-    }
-  }
-  [[home,REPORT_HOME_COL],[away,REPORT_AWAY_COL]].forEach(([t,col])=>{
-    const c=curve[t];
-    let d=`M ${x(0).toFixed(1)} ${y(0).toFixed(1)}`, prev=0;
-    for(let i=0;i<n;i++){
-      if(c[i]!==prev){
-        d+=` L ${x(i).toFixed(1)} ${y(prev).toFixed(1)} L ${x(i).toFixed(1)} ${y(c[i]).toFixed(1)}`;
-        prev=c[i];
+  const pl=q=>/^\d+$/.test(q)?"P"+q:q;
+  if(C){
+    ps.forEach((q,k)=>{
+      const xa=L+(C.start[q]-t0)/Math.max(1,t1-t0)*(W-L-R);
+      if(k) p.push(`<line x1="${f(xa)}" y1="${T}" x2="${f(xa)}" y2="${H-B}" stroke="#7B8B9C" stroke-width=".8" stroke-dasharray="2 2"/>`);
+      p.push(`<text x="${f(xa+4)}" y="${T+9}" font-size="9" font-weight="700" fill="#7B8B9C">${esc(pl(q))}</text>`);
+      for(let v=C.len[q]-300; v>0; v-=300){
+        const xt=L+(C.start[q]+C.len[q]-v-t0)/Math.max(1,t1-t0)*(W-L-R);
+        p.push(`<line x1="${f(xt)}" y1="${H-B}" x2="${f(xt)}" y2="${H-B+3}" stroke="#B8C4CF"/>`+
+          `<text x="${f(xt)}" y="${H-B+11}" text-anchor="middle" font-size="8" fill="#7B8B9C">${fmtClock(v)}</text>`);
       }
+    });
+  } else {
+    p.push(`<text x="${f(x(0)+4)}" y="${T+9}" font-size="9" font-weight="700" fill="#7B8B9C">${esc(pl(String(seq[0].period)))}</text>`);
+    for(let i=1;i<n;i++) if(String(seq[i].period)!==String(seq[i-1].period)){
+      p.push(`<line x1="${f(x(i))}" y1="${T}" x2="${f(x(i))}" y2="${H-B}" stroke="#7B8B9C" stroke-width=".8" stroke-dasharray="2 2"/>`+
+        `<text x="${f(x(i)+4)}" y="${T+9}" font-size="9" font-weight="700" fill="#7B8B9C">${esc(pl(String(seq[i].period)))}</text>`);
     }
-    d+=` L ${x(n-1).toFixed(1)} ${y(prev).toFixed(1)}`;
-    p.push(`<path d="${d}" fill="none" stroke="${col}" stroke-width="1.8" stroke-linejoin="round"/>`);
+    p.push(`<text x="${W-R}" y="${H-3}" text-anchor="end" font-size="8" fill="#7B8B9C">${n} attempts in order &rarr; (no clock in this file)</text>`);
+  }
+  const ends=[];
+  [home,away].forEach(t=>{
+    const col=teamCol(t,home);
+    let run=0, d=`M ${f(xStart)} ${f(y(0))}`;
+    seq.forEach((s,i)=>{ if(s.team!==t) return; d+=` L ${f(x(i))} ${f(y(run))}`; run+=s.xg||0; d+=` L ${f(x(i))} ${f(y(run))}`; });
+    d+=` L ${f(xEnd)} ${f(y(run))}`;
+    p.push(`<path d="${d}" fill="none" stroke="${col}" stroke-width="1.9" stroke-linejoin="round"/>`);
+    ends.push({t, col, run, yy:y(run)});
   });
-  goals.forEach(g=>p.push(`<circle cx="${x(g.i).toFixed(1)}" cy="${y(g.v).toFixed(1)}" r="3" `+
-    `fill="${g.team===home?REPORT_HOME_COL:REPORT_AWAY_COL}" stroke="#fff" stroke-width="1.2"/>`));
-  p.push(`<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="#D3DBE2" stroke-width="1"/>`);
-  p.push(`<text x="${W-padR}" y="${H-5}" text-anchor="end" font-size="7.5" fill="#7B8B9C">`+
-         `${n} attempts in order →</text>`);
-  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="flowmini">${p.join("")}</svg>`;
+  const run={[home]:0,[away]:0}, sc={[home]:0,[away]:0};
+  seq.forEach((s,i)=>{
+    if(!(s.team in run)) return;
+    run[s.team]+=s.xg||0; if(!s.goal) return; sc[s.team]++;
+    const cx=x(i), cy=y(run[s.team]), col=teamCol(s.team,home);
+    over.push(`<circle cx="${f(cx)}" cy="${f(cy)}" r="3.4" fill="${col}" stroke="#fff" stroke-width="1.2"/>`+
+      `<text x="${f(cx)}" y="${f(cy-6)}" text-anchor="middle" font-size="8.5" font-weight="700" fill="${col}">${sc[home]}-${sc[away]}</text>`);
+  });
+  ends.sort((a,b)=>a.yy-b.yy);
+  if(ends[1].yy-ends[0].yy<11){ const m=(ends[0].yy+ends[1].yy)/2; ends[0].yy=m-5.5; ends[1].yy=m+5.5; }
+  ends.forEach(e=>over.push(`<text x="${f(xEnd+5)}" y="${f(e.yy+3)}" font-size="9" font-weight="700" fill="${e.col}">${esc(e.t)} ${e.run.toFixed(2)}</text>`));
+  p.push(`<line x1="${L}" y1="${H-B}" x2="${W-R}" y2="${H-B}" stroke="#B8C4CF"/>`);
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="flowsvg">${p.join("")}${over.join("")}</svg>`;
+}
+
+/* On-ice xG for the tracked team's skaters, from the OnIce column. The
+   shots file carries no TOI, so the lowest list skips anyone on the ice for
+   fewer than half the median skater's attempts, and ranks the rest. */
+function onIceTables(events, tracked){
+  const st={};
+  events.forEach(s=>{
+    const xg=s.unblocked?(s.xg||0):0, mine=s.team===tracked;
+    s.on_ice.forEach(num=>{
+      const r=st[num]=st[num]||{num, cf:0, ca:0, gf:0, ga:0, xgf:0, xga:0};
+      if(mine){ r.cf++; r.xgf+=xg; if(s.goal) r.gf++; } else { r.ca++; r.xga+=xg; if(s.goal) r.ga++; }
+    });
+  });
+  const sk=Object.values(st).sort((a,b)=>b.xgf-a.xgf||(b.cf+b.ca)-(a.cf+a.ca));
+  const vol=sk.map(r=>r.cf+r.ca).sort((a,b)=>a-b), med=vol.length?vol[Math.floor(vol.length/2)]:0;
+  const nTop=Math.min(5,Math.ceil(sk.length/2)), best=sk.slice(0,nTop);
+  const worst=sk.slice(nTop).filter(r=>r.cf+r.ca>=med/2).slice(-5).reverse();
+  const table=(title,sub,rows)=>`<div><h2>${title} <span class="sub">${sub}</span></h2>`+(rows.length
+    ? `<table><thead><tr><th>Skater</th><th class="n">CF-CA</th><th class="n">GF-GA</th><th class="n">xGF</th><th class="n">xGA</th><th class="n">xG +/-</th></tr></thead><tbody>`+
+      rows.map(r=>`<tr><td>#${esc(r.num)}</td><td class="n">${r.cf}-${r.ca}</td><td class="n">${r.gf}-${r.ga}</td><td class="n">${r.xgf.toFixed(2)}</td>`+
+        `<td class="n">${r.xga.toFixed(2)}</td><td class="n ${signCls(r.xgf-r.xga)}">${sg2(r.xgf-r.xga)}</td></tr>`).join("")+`</tbody></table>`
+    : `<p class="empty">No on-ice data in this scope.</p>`)+`</div>`;
+  return [table("Highest on-ice xG", `&middot; ${esc(tracked)}`, best), table("Lowest on-ice xG", "&middot; regulars only", worst)];
+}
+
+/* Individual shooters, when the file names them (the tracker leaves
+   Player blank; shot-plotter exports usually fill it). */
+function shooterTable(events, home){
+  const by={};
+  events.forEach(s=>{ if(!s.player) return;
+    const k=s.team+"\u0000"+s.player, r=by[k]=by[k]||{team:s.team, player:s.player, att:0, g:0, xg:0};
+    r.att++; if(s.goal) r.g++; if(s.unblocked) r.xg+=s.xg||0; });
+  const rows=Object.values(by).sort((a,b)=>b.xg-a.xg).slice(0,6);
+  if(!rows.length) return "";
+  return `<div><h2>Top shooters <span class="sub">&middot; individual xG</span></h2><table><thead><tr><th>Player</th><th class="n">Att</th><th class="n">G</th><th class="n">xG</th></tr></thead><tbody>`+
+    rows.map(r=>`<tr><td class="nm" style="color:${teamCol(r.team,home)}">${esc(r.player)}</td><td class="n">${r.att}</td><td class="n">${r.g}</td><td class="n">${r.xg.toFixed(2)}</td></tr>`).join("")+
+    `</tbody></table></div>`;
+}
+
+/* Goals and xG by the shooter's strength state. */
+function strengthTable(events, home, away){
+  const LAB={EV:"Even", PP:"Power play", SH:"Shorthanded", EN:"Empty net / pulled"};
+  const cell=(t,k)=>{ const ev=events.filter(s=>s.team===t&&(!k||strGroup(s)===k));
+    return {g:ev.filter(s=>s.goal).length, xg:ev.reduce((v,s)=>v+(s.unblocked?(s.xg||0):0),0), n:ev.length}; };
+  const line=(label,k,cls)=>{ const h=cell(home,k), a=cell(away,k);
+    return `<tr${cls?` class="${cls}"`:""}><td>${label}</td><td class="n">${h.g}</td><td class="n">${h.xg.toFixed(2)}</td><td class="n">${a.g}</td><td class="n">${a.xg.toFixed(2)}</td></tr>`; };
+  const keys=["EV","PP","SH","EN"].filter(k=>events.some(s=>strGroup(s)===k));
+  return `<div><h2>By strength <span class="sub">&middot; shooter's state</span></h2><table><thead><tr><th></th>`+
+    `<th class="n" style="color:${REPORT_HOME_COL}">G</th><th class="n" style="color:${REPORT_HOME_COL}">xG</th>`+
+    `<th class="n" style="color:${REPORT_AWAY_COL}">G</th><th class="n" style="color:${REPORT_AWAY_COL}">xG</th></tr></thead><tbody>`+
+    keys.map(k=>line(LAB[k],k)).join("")+line("All",null,"tot")+`</tbody></table></div>`;
+}
+
+function bestChances(events, home){
+  const rows=events.filter(s=>s.unblocked).slice().sort((a,b)=>b.xg-a.xg).slice(0,6);
+  const pl=q=>/^\d+$/.test(q)?"P"+q:q, C=DATA.clock;
+  return `<div><h2>Best chances</h2><table><thead><tr><th>When</th><th>Team</th><th>Type</th><th>Result</th><th class="n">xG</th></tr></thead><tbody>`+
+    (rows.map(s=>`<tr><td>${esc(pl(String(s.period)))}${C?" "+fmtClock(s.sec):""}</td><td class="nm" style="color:${teamCol(s.team,home)}">${esc(s.team)}</td>`+
+      `<td>${esc(s.tagged_type||s.shot_type)}</td><td>${s.goal?"<b>Goal</b>":esc(classify(s))}</td><td class="n">${s.xg.toFixed(2)}</td></tr>`).join("")||
+      `<tr><td colspan="5" class="empty">No scored attempts.</td></tr>`)+`</tbody></table></div>`;
 }
 
 function keysHTML(home, away){
@@ -1201,29 +1380,36 @@ function keysHTML(home, away){
     <span class="sep"></span>
     <span><b style="background:${REPORT_HOME_COL}"></b>${esc(home)}</span>
     <span><b style="background:${REPORT_AWAY_COL}"></b>${esc(away)}</span>
-    <span class="sep"></span>
-    <span>Ends held fixed across periods</span>
   </div>`;
 }
 
-function buildReportMarkup(events, home, away, flips, scopeLabel){
+function buildReportMarkup(events, home, away, flips, scopeLabel, tracked){
   const when=new Date().toLocaleString([], {year:"numeric", month:"short", day:"numeric",
     hour:"2-digit", minute:"2-digit"});
-  return `<div class="head">
-    <h1>Shot Report</h1>
+  const h=summarize(events,home), a=summarize(events,away);
+  const onIce=DATA.hasOnIce&&tracked&&events.some(s=>s.on_ice.length);
+  const blocks=(onIce?onIceTables(events,tracked):[]).concat([shooterTable(events,home), strengthTable(events,home,away), bestChances(events,home)])
+    .filter(Boolean).slice(0,4);
+  const notes=[DATA.clock?"xG plotted on the game clock":"No Clock column, so xG is plotted in shot order",
+    onIce?`on-ice numbers from the OnIce column (${esc(tracked)})`:""].filter(Boolean).join(" · ");
+  return `<section class="rp">
+  <div class="head">
+    <h1>Game Report</h1>
+    <span class="final"><span style="color:${REPORT_HOME_COL}">${esc(home)}</span> ${h.goals} &ndash; ${a.goals} <span style="color:${REPORT_AWAY_COL}">${esc(away)}</span></span>
     <span class="scope">${esc(scopeLabel)}</span>
     <span class="when">${esc(when)}</span>
   </div>
-  ${reportRinkSVG(events, flips, home, away)}
-  ${keysHTML(home, away)}
-  <div class="lower">
-    <div><h2>Totals</h2>${statsTable(events, home, away)}</div>
-    <div><h2>Momentum &mdash; cumulative xG</h2>${miniFlowSVG(events, home, away)}</div>
+  <div class="upper">
+    <div>${reportRinkSVG(events, flips, home, away)}${keysHTML(home, away)}</div>
+    <div><h2>Totals</h2>${statsTable(h, a, home, away)}</div>
+    <div class="stack">${periodTable(events, home, away)}${goalieTable(events, home, away, tracked)}</div>
   </div>
+  <div class="flowbox"><h2>Cumulative xG <span class="sub">&middot; labels are the score after each goal</span></h2>${reportFlowSVG(events, home, away)}</div>
+  <div class="four">${blocks.join("")}</div>
   <div class="foot">
-    <span>xG from a five-feature model fit on 905,483 NHL attempts. Blocks are placed but not scored.</span>
+    <span>xG from a five-feature model fit on 905,483 NHL attempts. Blocks are placed but not scored. ${notes}.</span>
     <span>lknox.web.app/xgcalc</span>
-  </div>`;
+  </div></section>`;
 }
 
 /* "3" reads as Period 3; "OT" already says what it is. */
@@ -1238,19 +1424,36 @@ function buildScopeSelect(){
   const teams=teamsOf(), sel=document.getElementById("pdfHome");
   sel.innerHTML=teams.map(t=>`<option value="${esc(t)}">Home: ${esc(t)}</option>`).join("");
   sel.value=guessHome(teams);
+  /* Older tracker exports have OnIce but not OnIceTeam: ask whose it is. */
+  const oi=document.getElementById("pdfOnIce"), ask=DATA.hasOnIce&&!teams.includes(DATA.onIceTeam);
+  oi.innerHTML=teams.map(t=>`<option value="${esc(t)}">On ice: ${esc(t)}</option>`).join("");
+  oi.classList.toggle("hidden",!ask);
+}
+
+/* One page, always: lay the report out offscreen at the printable size of
+   a landscape letter page and zoom it down if a long game runs over. */
+function fitReport(out){
+  const page=out.querySelector(".rp"), fit=(8.5-2*9/25.4)*96-6;
+  page.style.zoom="";
+  out.style.cssText="display:block; position:absolute; left:-20000px; top:0";
+  const h=page.getBoundingClientRect().height;
+  out.style.cssText="";
+  if(h>fit) page.style.zoom=(fit/h).toFixed(3);
 }
 
 function exportReport(){
   if(!DATA) return;
-  const scope=document.getElementById("pdfScope").value;
-  const {home,away}=detectSides(teamsOf());
+  const scope=document.getElementById("pdfScope").value, teams=teamsOf();
+  const {home,away}=detectSides(teams);
   const flips=computeFlips(DATA.all, home);
-  /* DATA.all, not visible(): a period report has to carry the blocks, and
-     they never enter the filtered set. */
+  const tracked=!DATA.hasOnIce?"":teams.includes(DATA.onIceTeam)?DATA.onIceTeam:document.getElementById("pdfOnIce").value;
+  /* DATA.all, not visible(): a report has to carry the blocks, and they
+     never enter the filtered set. */
   const events=DATA.all.filter(s=>scope==="__all__"||String(s.period)===scope);
   const label=scope==="__all__" ? "Full Game" : periodLabel(scope);
-  document.getElementById("reportOut").innerHTML=
-    buildReportMarkup(events, home, away, flips, label);
+  const out=document.getElementById("reportOut");
+  out.innerHTML=buildReportMarkup(events, home, away, flips, label, tracked);
+  fitReport(out);
   window.print();
 }
 
