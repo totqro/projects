@@ -1461,7 +1461,7 @@ function leaderTables(st){
       rows.map(r => `<tr><td class="nm">${pname(r.p)}</td><td class="n">${fmt(r.toi)}</td><td class="n">${r.xgf.toFixed(2)}</td><td class="n">${r.xga.toFixed(2)}</td>
         <td class="n ${signCls(r.xgf - r.xga)}">${sg2(r.xgf - r.xga)}</td></tr>`).join("") + `</tbody></table>`
     : `<p class="empty">No shifts logged in this scope.</p>`) + `</div>`;
-  return table("Highest on-ice xG", "· xG for with them on", best) + table("Lowest on-ice xG", "· regulars only", worst);
+  return table("Highest on-ice xG", "· xG for with them on", best) + table("Lowest on-ice xG", "", worst);
 }
 function strengthTable(D, shots, tl){
   const rows = {EV:{}, PP:{}, PK:{}}; Object.values(rows).forEach(r => Object.assign(r, {xgf:0, xga:0, gf:0, ga:0}));

@@ -1325,12 +1325,12 @@ function onIceTables(events, tracked){
   const vol=sk.map(r=>r.cf+r.ca).sort((a,b)=>a-b), med=vol.length?vol[Math.floor(vol.length/2)]:0;
   const nTop=Math.min(5,Math.ceil(sk.length/2)), best=sk.slice(0,nTop);
   const worst=sk.slice(nTop).filter(r=>r.cf+r.ca>=med/2).slice(-5).reverse();
-  const table=(title,sub,rows)=>`<div><h2>${title} <span class="sub">${sub}</span></h2>`+(rows.length
+  const table=(title,rows)=>`<div><h2>${title}</h2>`+(rows.length
     ? `<table><thead><tr><th>Skater</th><th class="n">CF-CA</th><th class="n">GF-GA</th><th class="n">xGF</th><th class="n">xGA</th><th class="n">xG +/-</th></tr></thead><tbody>`+
       rows.map(r=>`<tr><td>#${esc(r.num)}</td><td class="n">${r.cf}-${r.ca}</td><td class="n">${r.gf}-${r.ga}</td><td class="n">${r.xgf.toFixed(2)}</td>`+
         `<td class="n">${r.xga.toFixed(2)}</td><td class="n ${signCls(r.xgf-r.xga)}">${sg2(r.xgf-r.xga)}</td></tr>`).join("")+`</tbody></table>`
     : `<p class="empty">No on-ice data in this scope.</p>`)+`</div>`;
-  return [table("Highest on-ice xG", `&middot; ${esc(tracked)}`, best), table("Lowest on-ice xG", "&middot; regulars only", worst)];
+  return [table("Highest on-ice xG", best), table("Lowest on-ice xG", worst)];
 }
 
 /* Individual shooters, when the file names them (the tracker leaves
@@ -1355,7 +1355,7 @@ function strengthTable(events, home, away){
   const line=(label,k,cls)=>{ const h=cell(home,k), a=cell(away,k);
     return `<tr${cls?` class="${cls}"`:""}><td>${label}</td><td class="n">${h.g}</td><td class="n">${h.xg.toFixed(2)}</td><td class="n">${a.g}</td><td class="n">${a.xg.toFixed(2)}</td></tr>`; };
   const keys=["EV","PP","SH","EN"].filter(k=>events.some(s=>strGroup(s)===k));
-  return `<div><h2>By strength <span class="sub">&middot; shooter's state</span></h2><table><thead><tr><th></th>`+
+  return `<div><h2>By strength</h2><table><thead><tr><th></th>`+
     `<th class="n" style="color:${REPORT_HOME_COL}">G</th><th class="n" style="color:${REPORT_HOME_COL}">xG</th>`+
     `<th class="n" style="color:${REPORT_AWAY_COL}">G</th><th class="n" style="color:${REPORT_AWAY_COL}">xG</th></tr></thead><tbody>`+
     keys.map(k=>line(LAB[k],k)).join("")+line("All",null,"tot")+`</tbody></table></div>`;
