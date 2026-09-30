@@ -52,6 +52,11 @@ kbd{font-family:var(--body); font-size:11px; border:1px solid var(--line-2); bor
 .ctl{display:flex; gap:6px; align-items:center}
 #light{font-family:var(--label); font-size:12px; letter-spacing:.06em; padding:4px 9px; border:1px solid var(--line)}
 #light.ok{color:var(--ok); border-color:rgba(0,255,136,.45)}
+#poss{font-family:var(--label); font-size:12px; letter-spacing:.06em; padding:4px 9px; border:1px solid var(--line); color:var(--ink-3)}
+#poss.us{color:var(--bg); background:var(--us); border-color:var(--us); font-weight:700}
+#poss.them{color:var(--bg); background:var(--them); border-color:var(--them); font-weight:700}
+.rinkhead .end.oz-us{border-style:solid; border-color:var(--us); box-shadow:0 0 10px rgba(0,212,255,.35)}
+.rinkhead .end.oz-them{border-style:solid; border-color:var(--them); box-shadow:0 0 10px rgba(255,51,102,.35)}
 #light.warn{color:var(--warn); border-color:rgba(255,176,0,.5); background:rgba(255,176,0,.08)}
 .score{display:flex; gap:12px; margin-left:auto; font-size:11.5px}
 .score b{font-family:var(--head); font-size:15px}
@@ -228,6 +233,7 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
     </select>
   </div>
   <span id="light">board</span>
+  <span id="poss" title="Offensive-zone possession: Left / Right arrow for the team attacking that end, Up / Down to end it">OZ &mdash;</span>
   <div class="score" id="score"></div>
   <div class="tabs">
     <button data-view="track" aria-pressed="true">Track</button>
@@ -303,7 +309,7 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
       <button id="xToiFile">TOI sheet rows (.tsv)</button>
       <span class="note" id="toiNote" style="align-self:center">In the TOI Live Stats workbook, click cell <b>A2</b> on the <b>TOI TRACKER</b> sheet and paste.</span>
     </div>
-    <div class="note" style="margin-top:4px">Fills all 4,020 rows (P1 to P3 and the 7:00 OT block): players E to J, shots on net in L (o us, d them), the score in P and Q, opponent skaters in S from the strength you set. Possession (K) keeps its copy-down formula for you to fill; penalties and the goal scorer column stay blank.</div>
+    <div class="note" style="margin-top:4px">Fills all 4,020 rows (P1 to P3 and the 7:00 OT block): players E to J, o-zone possession in K (o us, d them, 0 otherwise, from the arrow keys), shots on net in L (o us, d them), the score in P and Q, opponent skaters in S from the strength you set. Penalties and the goal scorer column stay blank.</div>
     <div class="actions">
       <select id="rScope" aria-label="Report scope"></select>
       <button class="primary" id="xReport">Report PDF</button>
@@ -418,7 +424,7 @@ function blankSetup(){
   return {date:today(), us:"UofT", opp:"Opponent", periodMin:20, otMin:5, otFormat:"3v3", usRightP1:true, roster:[], lines};
 }
 function blankGame(setup){
-  return {clock:[{w:Date.now(), k:"set", p:1, s:setup.periodMin*60}], strength:"EV", shots:[], changes:[], flips:[], strOps:[], pens:[], enOps:[], nextId:1};
+  return {clock:[{w:Date.now(), k:"set", p:1, s:setup.periodMin*60}], strength:"EV", shots:[], changes:[], flips:[], strOps:[], pens:[], enOps:[], poss:[], nextId:1};
 }
 let S = blankSetup(), G = null;
 try{ const r = localStorage.getItem(KEY_SETUP); if(r) S = Object.assign(blankSetup(), JSON.parse(r)); }catch(e){}
@@ -426,14 +432,14 @@ try{ const r = localStorage.getItem(KEY_GAME); if(r) G = JSON.parse(r); }catch(e
 if(!G) G = blankGame(S);
 if(!Array.isArray(G.flips)) G.flips = [];
 G.shots.forEach(s => { if(s.type === "DEFL") s.type = "TIP"; });
-["strOps","pens","enOps"].forEach(k => { if(!Array.isArray(G[k])) G[k] = []; });
+["strOps","pens","enOps","poss"].forEach(k => { if(!Array.isArray(G[k])) G[k] = []; });
 
 let saveFailed = false;
 function saveGame(){ try{ localStorage.setItem(KEY_GAME, JSON.stringify(G)); saveFailed = false; }catch(e){ saveFailed = true; } }
 function saveSetup(){ try{ localStorage.setItem(KEY_SETUP, JSON.stringify(S)); }catch(e){ saveFailed = true; } }
 
 const hist = [];
-const snapshot = () => JSON.stringify({shots:G.shots, changes:G.changes, flips:G.flips, strOps:G.strOps, pens:G.pens, enOps:G.enOps, nextId:G.nextId});
+const snapshot = () => JSON.stringify({shots:G.shots, changes:G.changes, flips:G.flips, strOps:G.strOps, pens:G.pens, enOps:G.enOps, poss:G.poss, nextId:G.nextId});
 function mutate(fn){ hist.push(snapshot()); if(hist.length > 200) hist.shift(); fn(); saveGame(); render(); }
 function undo(){
   const s = hist.pop(); if(!s) return;
@@ -590,6 +596,26 @@ function manpower(){
     en(e){ const p = periodOfE(e); let on = false; for(const o of en) if(o.p === p && o.e <= e) on = o.on; return on; }
   };
 }
+/* ================================================================
+   Offensive-zone possession. The arrows name an end, not a team: left
+   means the team attacking left has the puck in its offensive zone,
+   right the other, up or down ends it. The end is turned into a team
+   on every read, so swapping ends later re-teams possession the same
+   way it re-teams shots. Each period starts with nobody in the zone.
+================================================================= */
+const sideTeam = (side, p) => side ? ((side === "R") === usAttacksRight(p) ? "us" : "them") : null;
+function possession(){
+  const by = {};
+  G.poss.map(o => ({p:o.p, sec:secOf(o), w:o.w, side:o.side})).sort(cmp).forEach(o => (by[o.p] = by[o.p] || []).push(o));
+  /* Who holds the zone during the second read at clock m of period p. */
+  return (p, m) => { let side = null; for(const o of by[p] || []){ if(o.sec <= m) break; side = o.side; } return sideTeam(side, p); };
+}
+function setPoss(side){
+  const c = now(), cur = possession()(c.p, c.v - 0.01);
+  if(cur === sideTeam(side, c.p)) return;
+  mutate(() => G.poss.push({w:Date.now(), p:c.p, side}));
+}
+
 function codeFor(us, them, p){
   const ot3 = otAt(p);
   for(const k of ["EV","PP","PP2","PK","PK2","4v4","3v3"]){ const c = STR_COUNTS(k, ot3); if(c[0] === us && c[1] === them) return k; }
@@ -676,7 +702,7 @@ function derive(extraChange){
                                                  is_rebound:I.rebound ? 1 : 0, situation:I.situation});
     prev = s;
   }
-  return {ordered, shotInfo, issues, board, shifts, segments, candidate, MP};
+  return {ordered, shotInfo, issues, board, shifts, segments, candidate, MP, poss:possession()};
 }
 
 function playerStats(D, scope){
@@ -1053,6 +1079,12 @@ function renderTop(D){
     (need ? `<span class="warnc">${need} need a type</span>` : "")+
     (saveFailed ? `<span class="badc">NOT SAVING: export a backup</span>` : "");
   renderLight(D);
+  const oz = D.poss(c.p, c.v - 0.01), pe = $("poss");
+  pe.className = oz || "";
+  pe.innerHTML = oz ? `OZ ${esc(oz === "us" ? S.us : S.opp)} ${(oz === "us") === usAttacksRight(c.p) ? "&rarr;" : "&larr;"}` : "OZ &mdash;";
+  const right = usAttacksRight(c.p);
+  $("endL").classList.toggle("oz-us", oz === "us" && !right); $("endL").classList.toggle("oz-them", oz === "them" && right);
+  $("endR").classList.toggle("oz-us", oz === "us" && right);  $("endR").classList.toggle("oz-them", oz === "them" && !right);
 }
 
 function renderStats(D){
@@ -1254,11 +1286,12 @@ function toiSheetRows(){
       const inRow = x => x.p === p && x.sec <= c && x.sec > c - 1;
       const here = shots.filter(inRow).filter(x => x.s.result === "SAVE" || x.s.result === "GOAL");
       const shot = here.some(x => x.s.team === "us") ? "o" : here.length ? "d" : 0;
+      const holder = c <= periodLen(p) ? D.poss(p, m) : null, oz = holder === "us" ? "o" : holder === "them" ? "d" : 0;
       const upTo = team => shots.filter(x => x.s.team === team && x.s.result === "GOAL" &&
         (x.p < p || (x.p === p && x.sec > c - 1))).length;
       n++;
       rows.push([n, p, Math.floor(c/60), c % 60, ...slots, gslot,
-        r === 2 ? "" : `=K${r-1}`, shot, "", "", "", upTo("us"), upTo("them"),
+        oz, shot, "", "", "", upTo("us"), upTo("them"),
         `=COUNTIF(E${r}:I${r},">0")`, opp, `=IF(R${r}=S${r},"even",IF(R${r}>S${r},"pp","sh"))`]);
     }
   }
@@ -1307,13 +1340,14 @@ function reportSpan(D, scope){
    runs. Each PP or PK run is one power play, however many penalties
    (5v3 into 5v4) make it up. */
 function strengthRuns(D, a, b){
-  const runs = [], secs = {EV:0, PP:0, PK:0};
+  const runs = [], secs = {EV:0, PP:0, PK:0}, oz = {us:0, them:0};
   for(let e = a; e < b; e++){
     const m = D.MP.at(e + 0.5), k = strOf(m.us, m.them), len = Math.min(1, b - e), last = runs[runs.length-1];
-    secs[k] += len;
+    const q = periodOfE(e + 0.5), holder = D.poss(q, elapsed(q, 0) - (e + 0.5));
+    secs[k] += len; if(holder) oz[holder] += len;
     if(last && last.k === k && last.b === e) last.b = e + len; else runs.push({k, a:e, b:e + len});
   }
-  return {runs, secs};
+  return {runs, secs, oz};
 }
 
 function starMark(cx, cy, ro, ri, col){
@@ -1383,7 +1417,8 @@ function totalsTable(a, b){
     ${row("xG share", pctOf(a.xg, b.xg), pctOf(b.xg, a.xg))}${row("Goals − xG", sg2(a.g - a.xg), sg2(b.g - b.xg))}
     ${row("Shots on net", a.sog, b.sog)}${row("Shooting %", shPct(a), shPct(b))}${row("Attempts", a.att, b.att)}
     ${row("High-danger chances", a.hd, b.hd, "hl")}${row("Rebound shots", a.reb, b.reb)}
-    ${row("Power plays (goals)", `${a.ppo} (${a.ppg})`, `${b.ppo} (${b.ppg})`)}</tbody></table>`;
+    ${row("Power plays (goals)", `${a.ppo} (${a.ppg})`, `${b.ppo} (${b.ppg})`)}
+    ${G.poss.length ? row("O-zone time", `${fmt(a.oz)} (${pctOf(a.oz, b.oz)})`, `${fmt(b.oz)} (${pctOf(b.oz, a.oz)})`, "hl") : ""}</tbody></table>`;
 }
 function periodTable(D, shots){
   const ps = [...new Set(shots.map(s => s.p))].sort((a,b) => a-b);
@@ -1503,8 +1538,9 @@ function reportHead(title, scopeLabel, a, b){
 function buildReport(scope){
   const D = derive(), shots = D.ordered.filter(s => !scope || s.p === scope);
   const st = playerStats(D, scope), label = scope ? (scope <= 3 ? "Period " + scope : perLabel(scope)) : "Full Game";
-  const span = reportSpan(D, scope), tl = span ? strengthRuns(D, span.t0, span.played) : {runs:[], secs:{EV:0, PP:0, PK:0}};
+  const span = reportSpan(D, scope), tl = span ? strengthRuns(D, span.t0, span.played) : {runs:[], secs:{EV:0, PP:0, PK:0}, oz:{us:0, them:0}};
   const a = teamSummary(D, shots, "us"), b = teamSummary(D, shots, "them");
+  a.oz = tl.oz.us; b.oz = tl.oz.them;
   a.ppo = tl.runs.filter(r => r.k === "PP").length; b.ppo = tl.runs.filter(r => r.k === "PK").length;
   const flagged = G.changes.filter(c => c.forced || (D.issues[c.id] || []).length).length;
   const untyped = shots.filter(s => s.type === "UNKNOWN").length;
@@ -1692,6 +1728,7 @@ $("sFile").onchange = async e => {
   try{ const d = JSON.parse(await f.text());
     if(!d.setup || !d.game || !Array.isArray(d.game.shots)) throw new Error("not a tracker backup");
     S = Object.assign(blankSetup(), d.setup); G = d.game; if(!Array.isArray(G.flips)) G.flips = [];
+    ["strOps","pens","enOps","poss"].forEach(k => { if(!Array.isArray(G[k])) G[k] = []; });
 G.shots.forEach(s => { if(s.type === "DEFL") s.type = "TIP"; }); hist.length = 0; saveSetup(); saveGame(); renderSetup(); render();
     $("setupNote").textContent = `Loaded ${G.shots.length} shots and ${G.changes.length} changes.`;
   }catch(err){ $("setupNote").textContent = "Couldn't read that file: " + err.message; }
@@ -1715,8 +1752,9 @@ document.addEventListener("keydown", e => {
   if(view !== "track") return;
   const D = derive();
   if(e.key === "c" || e.key === "Enter"){ e.preventDefault(); openBar(); return; }
-  if(e.key === "ArrowUp"){ e.preventDefault(); stepSel(-1, D); return; }
-  if(e.key === "ArrowDown"){ e.preventDefault(); stepSel(1, D); return; }
+  if(e.key === "ArrowUp" || e.key === "ArrowDown"){ e.preventDefault();
+    if(e.shiftKey) stepSel(e.key === "ArrowUp" ? -1 : 1, D); else setPoss(null); return; }
+  if(e.key === "ArrowLeft" || e.key === "ArrowRight"){ e.preventDefault(); setPoss(e.key === "ArrowLeft" ? "L" : "R"); return; }
   if(e.key === "Escape"){ selId = null; render(); return; }
   if((e.key === "Backspace" || e.key === "Delete") && e.shiftKey){ e.preventDefault();
     const s = selected(); if(s) deleteShot(s.id); return; }
@@ -1748,8 +1786,11 @@ const HELP = [
   [", .","Shot 1 s earlier / later (Shift for 5 s)"],
   ["drag a dot","Move where the shot came from"],
   ["drag an end label","Swap ends from this period on (logged shots switch team)"],
+  ["O-zone possession"],
+  ["Left / Right","The team attacking that end has the puck in its offensive zone"],
+  ["Up / Down","Possession over: neutral zone, stoppage, change of control"],
   ["Shot log"],
-  ["Up / Down","Select an earlier / later shot"],
+  ["Shift+Up / Down","Select an earlier / later shot"],
   ["Esc","Back to the latest shot"],
   ["Shift+Delete","Delete the selected shot (or the × on its row)"],
   ["Change bar (c or Enter)"],

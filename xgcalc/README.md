@@ -197,7 +197,9 @@ line presets (F1-F4, D1-D3, PP1-PP2). During it, the keyboard does the work:
 | `o g m k` | on goal, goal, missed, blocked |
 | `pp` `pk` `en` `ev` | in the bar: penalty on them / on us (`pp4` `pk4` double minor, `pp5` `pk5` major), opponent net empty, back to even |
 | `r` `x` `,` `.` | rebound override, wrong end, time -1 s / +1 s |
-| `↑ ↓` `Esc` | walk the shot log, back to latest |
+| `←` `→` | o-zone possession for the team attacking that end |
+| `↑` `↓` | possession over (neutral zone, stoppage) |
+| `Shift+↑ ↓` `Esc` | walk the shot log, back to latest |
 | `` ` `` `?` | Shifts view, full key sheet |
 
 If the ends are wrong, drag either label above the rink ("UofT shooting
@@ -218,8 +220,15 @@ goalie pulled, so our shots score as `EN_AGAINST` and their extra attacker's
 as `EN_6v5_PULLED`; our own pulled goalie is read off the board. Every shot's
 situation, and the TOI sheet's opponent-skater column, follow this timeline.
 
+**O-zone possession** is three keys: `←` when the team attacking the left
+end gets the puck into its offensive zone, `→` for the right end, `↑` or `↓`
+when it's over. The arrows name an end, not a team, so a later end swap
+re-teams possession the same way it re-teams shots. The **OZ** tag in the
+top bar and the glowing end label show who has it now; each period starts
+with nobody. The report adds o-zone time and share to the totals.
+
 Only raw events are stored: clock operations, shots, shift changes,
-penalties and empty-net toggles. Clock
+penalties, empty-net toggles and possession changes. Clock
 times, who was on for each shot, rebounds (same team, within 3 s, the model's
 own definition) and all the stats are derived on every render, so fixing one
 change on the Shifts view fixes every shot and total that depended on it.
@@ -246,7 +255,9 @@ carrying the last lineup into seconds that were never played. Players keep
 their column for the whole shift, shots on net go in L (`o` for us, `d` for
 them), the running score in P:Q, and the opponent's skater count in S from
 the strength timeline, which is what the sheet's even/pp/sh column needs.
-Possession (K) keeps its copy-down formula for hand entry. Pasted into the
+Column K is offensive-zone possession from the arrow keys: `o` while we have
+the puck in our offensive zone, `d` while they have it in theirs, `0` the
+rest of the time. Pasted into the
 real workbook and recalculated, its Totals sheet reproduces the tracker's TOI
 to the workbook's own 0.1-minute rounding.
 
