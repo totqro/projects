@@ -982,13 +982,27 @@ function homeKey(teams){ return "xgcalc.home."+teams.join("|"); }
 function guessHome(teams){
   const lab=teams.find(t=>/^home$/i.test(t));
   if(lab) return lab;
-  try{ const v=localStorage.getItem(homeKey(teams)); if(v&&teams.includes(v)) return v; }catch(e){}
+  try{
+    const v=localStorage.getItem(homeKey(teams));
+    if(v&&(teams.includes(v)||(v===OTHER&&teams.length===1))) return v;
+  }catch(e){}
   return teams[0];
 }
+/* Literal Home/Away labels fix the sides even when only one of them
+   tagged anything, which is when falling back to "the other team" would
+   name the same team twice. */
+function labelledSides(teams){
+  const home=teams.find(t=>/^home$/i.test(t)), away=teams.find(t=>/^away$/i.test(t));
+  return (home||away) ? {home:home||"Home", away:away||"Away"} : null;
+}
+const OTHER="__other__";   // picker value: the one tagged team is the away side
 function detectSides(teams){
+  const fixed=labelledSides(teams);
+  if(fixed) return fixed;
   const pick=document.getElementById("pdfHome").value;
+  if(pick===OTHER&&teams.length===1) return {home:"Opponent", away:teams[0]};
   const home=teams.includes(pick)?pick:guessHome(teams);
-  return {home, away:teams.find(t=>t!==home)||home};
+  return {home, away:teams.find(t=>t!==home)||"Opponent"};
 }
 
 /* Numeric periods in order, then OT/SO and anything else after them. */
@@ -1236,8 +1250,10 @@ function buildScopeSelect(){
     periods.map(p=>`<option value="${esc(p)}">${esc(periodLabel(p))}</option>`).join("");
   document.getElementById("pdfScope").value=periods.length?periods[periods.length-1]:"__all__";
   const teams=teamsOf(), sel=document.getElementById("pdfHome");
-  sel.innerHTML=teams.map(t=>`<option value="${esc(t)}">Home: ${esc(t)}</option>`).join("");
+  sel.innerHTML=teams.map(t=>`<option value="${esc(t)}">Home: ${esc(t)}</option>`).join("")+
+    (teams.length===1 ? `<option value="${OTHER}">Away: ${esc(teams[0])}</option>` : "");
   sel.value=guessHome(teams);
+  sel.style.display=labelledSides(teams) ? "none" : "";
 }
 
 function exportReport(){
