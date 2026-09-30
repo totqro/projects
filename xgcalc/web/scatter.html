@@ -373,7 +373,7 @@ tr.shotrow.sel td{background:color-mix(in srgb, var(--accent) 17%, transparent)}
       <div style="display:flex; gap:8px; flex-wrap:wrap">
         <select id="pdfScope" style="flex:1; min-width:120px; padding:6px 8px"></select>
         <select id="pdfHome" title="Home team" style="flex:1; min-width:120px; padding:6px 8px"></select>
-        <select id="pdfOnIce" title="Team the OnIce numbers belong to" class="hidden" style="flex:1; min-width:120px; padding:6px 8px"></select>
+        <select id="pdfOnIce" title="The team whose players and goalie the tracker logged on the ice" class="hidden" style="flex:1; min-width:120px; padding:6px 8px"></select>
         <button class="primary" id="pdfBtn" style="padding:6px 11px;font-size:13px">Export PDF</button>
       </div>
     </div>
@@ -1040,6 +1040,17 @@ const MISS_EVENTS={"miss":1,"missed":1,"missed shot":1,"wide":1,"post":1,"crossb
    picker decides, and the choice is remembered per matchup. */
 function teamsOf(){ return [...new Set(DATA.all.map(s=>s.team))].sort(); }
 function homeKey(teams){ return "xgcalc.home."+teams.join("|"); }
+/* The tracker only ever records its own team on the ice. Newer exports say
+   which team that is (OnIceTeam); for older ones, use the pick remembered
+   for this matchup, then the last team any export named, then the
+   tracker's default team, and only then the alphabet. */
+const ONICE_LAST="xgcalc.onice.last";
+function onIceKey(teams){ return "xgcalc.onice."+teams.join("|"); }
+function guessOnIce(teams){
+  const get=k=>{ try{ return localStorage.getItem(k); }catch(e){ return null; } };
+  for(const v of [get(onIceKey(teams)), get(ONICE_LAST), "UofT"]) if(v&&teams.includes(v)) return v;
+  return teams[0];
+}
 function guessHome(teams){
   const lab=teams.find(t=>/^home$/i.test(t));
   if(lab) return lab;
@@ -1426,8 +1437,10 @@ function buildScopeSelect(){
   sel.value=guessHome(teams);
   /* Older tracker exports have OnIce but not OnIceTeam: ask whose it is. */
   const oi=document.getElementById("pdfOnIce"), ask=DATA.hasOnIce&&!teams.includes(DATA.onIceTeam);
-  oi.innerHTML=teams.map(t=>`<option value="${esc(t)}">On ice: ${esc(t)}</option>`).join("");
+  oi.innerHTML=teams.map(t=>`<option value="${esc(t)}">Tracked team: ${esc(t)}</option>`).join("");
+  oi.value=guessOnIce(teams);
   oi.classList.toggle("hidden",!ask);
+  if(teams.includes(DATA.onIceTeam)){ try{ localStorage.setItem(ONICE_LAST, DATA.onIceTeam); }catch(e){} }
 }
 
 /* One page, always: lay the report out offscreen at the printable size of
@@ -1474,6 +1487,9 @@ document.getElementById("paste").oninput=e=>{
 document.getElementById("resetBtn").onclick=()=>{ resetFilters(); SEL=null; render(); };
 document.getElementById("exportBtn").onclick=exportCSV;
 document.getElementById("pdfBtn").onclick=exportReport;
+document.getElementById("pdfOnIce").onchange=e=>{
+  try{ localStorage.setItem(onIceKey(teamsOf()), e.target.value); localStorage.setItem(ONICE_LAST, e.target.value); }catch(err){}
+};
 document.getElementById("pdfHome").onchange=e=>{
   try{ localStorage.setItem(homeKey(teamsOf()), e.target.value); }catch(err){}
 };
