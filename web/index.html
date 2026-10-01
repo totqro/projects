@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#0a0a0f">
-  <meta name="description" content="Luc Knox — predictive models for hockey and baseball, a rinkside shot tagger, and an iOS golf-swing coach.">
+  <meta name="description" content="Luc Knox — predictive models for hockey, baseball and football, a rinkside shot tagger, and an iOS golf-swing coach.">
   <title>Luc Knox</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -313,6 +313,7 @@
       <div class="hud__row"><span class="cy-label">live dashboards</span><span class="hud__val cy-num" id="hud-live">0</span></div>
       <div class="hud__row"><span class="cy-label">nhl feed</span><span class="hud__val cy-num" id="hud-nhl">&hellip;</span></div>
       <div class="hud__row"><span class="cy-label">mlb feed</span><span class="hud__val cy-num" id="hud-mlb">&hellip;</span></div>
+      <div class="hud__row"><span class="cy-label">nfl feed</span><span class="hud__val cy-num" id="hud-nfl">&hellip;</span></div>
       <div class="hud__row"><span class="cy-label">refresh</span><span class="hud__val">daily · gh actions → firebase</span></div>
       <div class="hud__signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <div class="hud__sweep" aria-hidden="true"></div>
@@ -373,6 +374,23 @@
         </div>
         <p class="card-desc">Starter-aware win model that beats Elo + home field on held-out seasons. Probable pitchers, bullpens, park factors, pre-game data only.</p>
         <div class="card-feed" data-feed="mlb"></div>
+        <div class="card-footer">
+          <div class="tags">
+            <span class="cy-tag">scikit-learn</span>
+            <span class="cy-tag">Python</span>
+            <span class="cy-tag">Firebase</span>
+          </div>
+          <span class="card-arrow" aria-hidden="true">&gt;&gt;</span>
+        </div>
+      </a>
+
+      <a href="/nfllines" class="project-card cy-panel cy-panel--hover cy-card" data-id="nfl" data-category="active" draggable="false" style="--cy-panel-line: var(--cy-pink);">
+        <div class="card-header">
+          <span class="card-title cy-h3">NFL Game Predictions</span>
+          <span class="cy-badge cy-badge--ok" data-status="live"><span class="cy-led"></span>Live</span>
+        </div>
+        <p class="card-desc">QB-adjusted Elo, opponent-adjusted efficiency and injury reports. Every game logged after its final injury report and before kickoff, then scored against the closing line.</p>
+        <div class="card-feed" data-feed="nfl"></div>
         <div class="card-footer">
           <div class="tags">
             <span class="cy-tag">scikit-learn</span>
@@ -466,7 +484,7 @@
 <pre class="cy-term"><span class="in">whoami</span>
 <span class="out">luc knox &mdash; ml models, hockey analytics, ios</span>
 <span class="in">ls projects/</span>
-<span class="out">nhllines/  mlblines/  xgcalc/  swingai/</span>
+<span class="out">nhllines/  mlblines/  nfllines/  xgcalc/  swingai/</span>
 <span class="in">tail -n 1 deploy.log</span>
 <span class="out"><span class="ok">[ok]</span> predictions rebuilt daily by github actions, pushed to firebase hosting</span>
 <span class="out">type <span class="ok">help</span> for commands</span></pre>
@@ -484,7 +502,7 @@
         <button class="cy-btn cy-btn--ghost cy-btn--sm" type="button" id="kb-close">esc</button>
       </div>
       <div class="kb__grid">
-        <span><kbd>1</kbd>–<kbd>5</kbd></span><span>open the nth project in the current tab</span>
+        <span><kbd>1</kbd>–<kbd>9</kbd></span><span>open the nth project in the current tab</span>
         <span><kbd>a</kbd> <kbd>c</kbd> <kbd>o</kbd></span><span>switch tab: active / completed / old</span>
         <span><kbd>/</kbd></span><span>jump to the terminal</span>
         <span><kbd>t</kbd></span><span>cycle the accent colour</span>
@@ -630,13 +648,18 @@
         if (!r.ok) throw new Error(r.status);
         const d = await r.json();
         const games = (d.games_analyzed || []).length, picks = (d.recommendations || []).length;
+        const week = d.week, logged = d.logged;
         const ageMs = d.timestamp ? Date.now() - new Date(d.timestamp) : NaN;
         const age = d.timestamp ? ago(d.timestamp) : '?';
         // No games and nothing new for a week: the daily job is running but the league is not.
         const offseason = games === 0 && ageMs > 7 * 864e5;
         const stale = !offseason && ageMs > 36 * 36e5;
-        feeds[key] = { games, picks, age, stale, offseason, timestamp: d.timestamp };
+        feeds[key] = { games, picks, week, logged, age, stale, offseason, timestamp: d.timestamp };
         if (offseason) show('cy-text-muted', `offseason · last run <b>${fmtDay(d.timestamp)}</b>`, 'offseason', 'cy-text-muted');
+        // The NFL feed has no picks; it reports the week and how many games are logged.
+        else if (week != null) show(stale ? 'cy-text-warn' : 'cy-text-ok',
+          `updated <b>${age}</b> ago</span><span>week <b>${week}</b></span><span>logged <b>${logged}/${games}</b>`,
+          `wk${week} · ${logged}/${games} · ${age}`, stale ? 'cy-text-warn' : '');
         else show(stale ? 'cy-text-warn' : 'cy-text-ok',
           `updated <b>${age}</b> ago</span><span>games <b>${games}</b></span><span>picks <b>${picks}</b>`,
           `${games}g · ${picks}p · ${age}`, stale ? 'cy-text-warn' : '');
@@ -647,6 +670,7 @@
     }
     loadFeed('nhl', '/nhllines/latest_analysis.json');
     loadFeed('mlb', '/mlblines/latest_analysis.json');
+    loadFeed('nfl', '/nfllines/latest_analysis.json');
 
     // ── Accent picker ──────────────────────────────────────────────────
     const ACCENTS = ['green', 'cyan', 'magenta', 'amber', 'pink'];
@@ -669,6 +693,7 @@
     const PROJECTS = {
       nhl:     { href: '/nhllines',            name: 'NHL Game Predictions' },
       mlb:     { href: '/mlblines',            name: 'MLB Game Predictions' },
+      nfl:     { href: '/nfllines',            name: 'NFL Game Predictions' },
       xgcalc:  { href: '/xgcalc',              name: 'Rinkside Shot Tagger' },
       shots:   { href: '/xgcalc/scatter.html', name: 'Shot Chart' },
       swingai: { href: '/swingai',             name: 'SwingAI' },
@@ -693,7 +718,7 @@
     const COMMANDS = {
       help() {
         out('commands: <span class="ok">help ls open cd status whoami date theme field reset clear echo history neofetch</span>');
-        out('open &lt;name&gt; &mdash; nhl · mlb · xgcalc · shots · swingai · github');
+        out('open &lt;name&gt; &mdash; nhl · mlb · nfl · xgcalc · shots · swingai · github');
         out('theme &lt;colour&gt; &mdash; ' + ACCENTS.join(' · '));
       },
       ls(args) {
@@ -709,11 +734,12 @@
       clear() { term.replaceChildren(); },
       history() { history.slice().reverse().forEach((h, i) => out(`${String(i + 1).padStart(3)}  ${esc(h)}`)); },
       status() {
-        ['nhl', 'mlb'].forEach(k => {
+        ['nhl', 'mlb', 'nfl'].forEach(k => {
           const f = feeds[k];
           if (!f) out(`${k}: fetching&hellip;`);
           else if (f.error) err(`${k}: feed unavailable (${esc(f.error)})`);
           else if (f.offseason) out(`${k}: <span class="warn">[offseason]</span> daily job runs, no games scheduled · last run ${fmtDay(f.timestamp)}`);
+          else if (f.week != null) out(`${k}: <span class="${f.stale ? 'warn' : 'ok'}">[${f.stale ? 'stale' : 'ok'}]</span> week ${f.week} · ${f.logged}/${f.games} logged · updated ${f.age} ago`);
           else out(`${k}: <span class="${f.stale ? 'warn' : 'ok'}">[${f.stale ? 'stale' : 'ok'}]</span> ${f.games} games · ${f.picks} picks · updated ${f.age} ago`);
         });
         out(`projects: ${active.length} active · ${live.length} live · ${progress.length} in progress`);
@@ -873,6 +899,8 @@
       const order = store.get('lk-order');
       if (!Array.isArray(order)) return;
       order.forEach(id => { const c = grid.querySelector(`.project-card[data-id="${id}"]`); if (c) grid.insertBefore(c, emptyEl); });
+      // Cards added since the order was saved go after the saved ones, not ahead of them.
+      grid.querySelectorAll('.project-card').forEach(c => { if (!order.includes(c.dataset.id)) grid.insertBefore(c, emptyEl); });
     })();
     const saveOrder = () => store.set('lk-order', [...grid.querySelectorAll('.project-card')].map(c => c.dataset.id));
     grid.addEventListener('dragstart', e => e.preventDefault());

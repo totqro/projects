@@ -5,7 +5,7 @@ on:
   # NOTE: GitHub Actions GITHUB_TOKEN pushes don't trigger push events in other
   # workflows — workflow_run is the correct way to chain workflows.
   workflow_run:
-    workflows: ["Daily NHL Game Predictions", "Daily MLB Game Predictions"]
+    workflows: ["Daily NHL Game Predictions", "Daily MLB Game Predictions", "NFL Predictions"]
     types: [completed]
   # Also trigger on direct pushes (manual deploys, code changes)
   push:
@@ -14,6 +14,7 @@ on:
       - 'web/**'
       - 'nhllines/web/**'
       - 'mlblines/web/**'
+      - 'nfllines/web/**'
       - 'xgcalc/web/**'
       - 'swingai/**'
       - 'retired-site/**'
@@ -31,8 +32,9 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Skip if triggered by a failed analysis workflow
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    # Skip if triggered by a failed analysis workflow, or by the NFL
+    # workflow's pull-request dry run (it commits nothing)
+    if: ${{ github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event != 'pull_request') }}
 
     steps:
       - name: Checkout repository
@@ -41,7 +43,7 @@ jobs:
       - name: Build deploy folder
         run: |
           rm -rf build
-          mkdir -p build/nhllines build/mlblines build/swingai build/xgcalc
+          mkdir -p build/nhllines build/mlblines build/nfllines build/swingai build/xgcalc
           # Root hub page + the shared stylesheets every page links from the site root
           cp web/index.html build/index.html
           cp web/cyber.css web/dashboard.css build/
@@ -73,6 +75,10 @@ jobs:
           cp mlblines/mlbdata/analysis_history.json build/mlblines/ 2>/dev/null || true
           cp mlblines/mlbdata/parlay_results.json build/mlblines/ 2>/dev/null || true
           cp mlblines/mlbdata/backtest_results.json build/mlblines/ 2>/dev/null || true
+          # NFL (data written by nfllines/export_web.py in the NFL Predictions workflow)
+          cp nfllines/web/index.html nfllines/web/app.js nfllines/web/styles.css build/nfllines/
+          cp nfllines/data/latest_analysis.json build/nfllines/ 2>/dev/null || echo '{"games_analyzed":[],"recommendations":[],"timestamp":""}' > build/nfllines/latest_analysis.json
+          cp nfllines/data/performance.json build/nfllines/ 2>/dev/null || true
 
       - name: Verify build
         run: |
@@ -81,7 +87,7 @@ jobs:
           echo ""
           # Fail loudly rather than deploying a site with a page missing.
           for page in index.html cyber.css dashboard.css \
-                      nhllines/index.html mlblines/index.html \
+                      nhllines/index.html mlblines/index.html nfllines/index.html \
                       swingai/index.html xgcalc/index.html xgcalc/scatter.html; do
             if [ ! -s "build/$page" ]; then
               echo "::error::build/$page is missing or empty — refusing to deploy"
@@ -100,7 +106,7 @@ jobs:
           echo ""
           python3 -c "
           import json
-          for sport, path in [('NHL', 'build/nhllines/latest_analysis.json'), ('MLB', 'build/mlblines/latest_analysis.json')]:
+          for sport, path in [('NHL', 'build/nhllines/latest_analysis.json'), ('MLB', 'build/mlblines/latest_analysis.json'), ('NFL', 'build/nfllines/latest_analysis.json')]:
               try:
                   d = json.load(open(path))
                   print(f'{sport}: {d.get(\"timestamp\", \"no timestamp\")}')
