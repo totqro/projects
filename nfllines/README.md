@@ -293,14 +293,16 @@ nfllines/
 ## Running it every week (GitHub Actions)
 
 `.github/workflows/nfl-predictions.yml` runs `predict.py` on a schedule and
-commits `data/predictions_log.jsonl` and the website data: Tuesday 6 pm,
-Wednesday 7 pm, Thursday 6 pm, Friday 7 pm, Saturday 6 pm, Sunday 8 am and
-Monday 10 am ET. Each run logs only the
-games that are ready (final injury report out, not kicked off; see
-`src/readiness.py`), so the Wednesday run logs the Thursday game and the
-Friday and Saturday runs log Sunday and Monday. The extra runs are backups:
-repeating a run never double-logs a day, and a game logged on several days
-is scored on its last pre-kickoff row. Each run's predictions and the season
+commits `data/predictions_log.jsonl` and the website data. GitHub starts
+scheduled runs 2-3 hours late on weekday evenings and up to 4.5 hours late on
+Sunday mornings (measured September 2026), so the schedule (ET, during
+daylight time) gives every deadline early runs and retries: Tuesday 5:17 pm;
+Wednesday 5:17 pm; Thursday 9:17 am, 2:17 pm and 4:47 pm; Friday 5:17 pm;
+Saturday 9:17 am and 5:17 pm; Sunday 1:17 am and 7:17 am; Monday 9:17 am.
+Each run logs only the games that are ready (final injury report out, not
+kicked off; see `src/readiness.py`). Repeating a run never double-logs a
+day, and a game logged on several days is scored on its last pre-kickoff
+row. Each run's predictions and the season
 scorecard appear in the run's summary page. A failed run sends an email
 because a missed pre-kickoff run cannot be made up. On a pull request the
 workflow runs the tests and a dry run, and commits nothing.
@@ -325,8 +327,8 @@ writes two files that the page in `web/` reads:
 
 The workflow commits both files, and `deploy.yml` chains off "NFL
 Predictions" to copy `web/` and the JSON into `build/nfllines/` and deploy to
-Firebase. A Monday 10 am ET run scores Sunday's games; Tuesday's run picks up
-Monday night. Scores are always shown away @ home.
+Firebase. The Monday morning run scores Sunday's games; Tuesday's run picks
+up Monday night. Scores are always shown away @ home.
 
 ## Quick start
 

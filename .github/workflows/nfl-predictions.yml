@@ -11,13 +11,24 @@ name: NFL Predictions
 on:
   schedule:
     # UTC. ET = UTC-4 until Nov 1, UTC-5 after.
-    - cron: '0 22 * * 2'   # Tue 6pm ET  — Wednesday games (Christmas)
-    - cron: '0 23 * * 3'   # Wed 7pm ET  — Thursday game (report due Wed 4pm)
-    - cron: '0 22 * * 4'   # Thu 6pm ET  — Thursday backup; Saturday games (report due Thu)
-    - cron: '0 23 * * 5'   # Fri 7pm ET  — Sunday games (report due Fri 4pm)
-    - cron: '0 22 * * 6'   # Sat 6pm ET  — Sunday + Monday (Monday report due Sat 4pm)
-    - cron: '0 12 * * 0'   # Sun 8am ET  — backup before London and 1pm kickoffs
-    - cron: '0 14 * * 1'   # Mon 10am ET — scores Sunday's games on the website
+    # GitHub starts scheduled runs late: 2-3 hours on weekday evenings and
+    # 4.5 hours on Sunday morning in Sept 2026 (a 6pm ET Thursday run
+    # started at 8:12pm, 3 minutes before kickoff). So every deadline gets
+    # runs set early enough to land in time even 3-4 hours late, minutes
+    # are off the congested :00, and each game has more than one chance.
+    # Extra runs are harmless: a game not ready is skipped, a game is logged
+    # once per day, and the last pre-kickoff row is the one scored.
+    - cron: '17 21 * * 2'  # Tue  5:17pm ET: Wednesday games (Christmas)
+    - cron: '17 21 * * 3'  # Wed  5:17pm ET: Thursday game (report due Wed 4pm)
+    - cron: '17 13 * * 4'  # Thu  9:17am ET: Thursday game retry
+    - cron: '17 18 * * 4'  # Thu  2:17pm ET: Thursday retry; Saturday games (report due Thu 4pm)
+    - cron: '47 20 * * 4'  # Thu  4:47pm ET: last Thursday retry, lands by ~8pm if 3h late
+    - cron: '17 21 * * 5'  # Fri  5:17pm ET: Sunday games (report due Fri 4pm)
+    - cron: '17 13 * * 6'  # Sat  9:17am ET: Sunday games retry
+    - cron: '17 21 * * 6'  # Sat  5:17pm ET: Monday games (report due Sat 4pm); Sunday retry
+    - cron: '17 5 * * 0'   # Sun  1:17am ET: last Sunday retry, lands before London 9:30am
+    - cron: '17 11 * * 0'  # Sun  7:17am ET: Sunday 1pm games, Monday retry
+    - cron: '17 13 * * 1'  # Mon  9:17am ET: scores Sunday on the website; Monday retry
   workflow_dispatch:
   # On a PR: the same run, dry (nothing logged or committed), plus the tests.
   pull_request:
