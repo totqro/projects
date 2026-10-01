@@ -28,13 +28,13 @@ from pathlib import Path
 import requests
 
 from .nhl_data import NHL_TEAMS, _get_cached, _set_cache, BASE_URL
-from .moneypuck_data import load_moneypuck_xg
+from .xg_sources import load_game_xg
 
-# MoneyPuck shot-level xG data is only published for these season-start
-# years (see moneypuck_data.py). Games in a covered season MUST join onto
-# MoneyPuck data (hard failure if not — see build_point_in_time_rows);
-# games outside this range (a season MoneyPuck hasn't published yet) fall
-# back to neutral xG-feature defaults, same as the goalie-priors pattern.
+# Seasons whose games MUST all join onto xG data when
+# build_point_in_time_rows() is called without xg_required_seasons (used by
+# model_gate.py). build_training_set() loads xG for every season through
+# xg_sources.load_game_xg() (MoneyPuck, then NHL play-by-play) and enforces
+# coverage itself, so this list no longer limits which seasons get xG.
 MONEYPUCK_YEARS = [2022, 2023, 2024, 2025]
 MONEYPUCK_SEASONS = frozenset(f"{y}{y + 1}" for y in MONEYPUCK_YEARS)
 
@@ -455,7 +455,8 @@ XG_FEATURE_COLUMNS = [c for c in FEATURE_COLUMNS if c not in GOALIE_FEATURE_COLU
 
 
 def build_point_in_time_rows(games: list, min_gp: int = 5, starters: dict = None,
-                              xg_data: dict = None) -> list:
+                              xg_data: dict = None,
+                              xg_required_seasons: frozenset = None) -> list:
     """
     Walk games chronologically and emit one feature row per game, computed
     strictly from prior games. Team season stats reset at season boundaries;
@@ -478,10 +479,17 @@ def build_point_in_time_rows(games: list, min_gp: int = 5, starters: dict = None
     MONEYPUCK_SEASONS (a season MoneyPuck hasn't published yet) simply get
     no xG update that game — the team's xG state falls back to the
     neutral defaults in _TeamState.snapshot() until data exists.
+
+    `xg_required_seasons` overrides which seasons get that hard check
+    (default MONEYPUCK_SEASONS). build_training_set() passes an empty set
+    because it checks coverage per season up front, with a small tolerance
+    for play-by-play games that failed to fetch.
     """
     games = sorted(games, key=lambda g: (g["date"], g["id"]))
     starters = starters or {}
     xg_data = xg_data or {}
+    if xg_required_seasons is None:
+        xg_required_seasons = MONEYPUCK_SEASONS
 
     team_states = {}                    # (season, team) -> _TeamState
     goalie_states = {}                  # goalie_id -> _GoalieState (career, cross-season)
@@ -503,8 +511,8 @@ def build_point_in_time_rows(games: list, min_gp: int = 5, starters: dict = None
                    if away_starter else None)
 
         home_xg = away_xg = None
-        if season in MONEYPUCK_SEASONS:
-            game_xg = xg_data.get(g["id"])
+        game_xg = xg_data.get(g["id"])
+        if season in xg_required_seasons:
             if game_xg is None or home not in game_xg or away not in game_xg:
                 raise ValueError(
                     f"MoneyPuck xG data missing for game {g['id']} "
@@ -512,6 +520,7 @@ def build_point_in_time_rows(games: list, min_gp: int = 5, starters: dict = None
                     f"in MONEYPUCK_SEASONS so coverage should be total. "
                     f"Refusing to silently drop xG signal for this game."
                 )
+        if game_xg is not None and home in game_xg and away in game_xg:
             home_xg, away_xg = game_xg[home], game_xg[away]
 
         if hs.gp >= min_gp and as_.gp >= min_gp:
@@ -679,6 +688,29 @@ def write_csv(rows: list, out_path: str):
             writer.writerow(row)
 
 
+# A completed season may be missing at most this share of games' xG (a few
+# play-by-play fetches failing). More than that means a source is broken,
+# and fitting on it would quietly train on placeholder xG instead.
+_MAX_MISSING_XG_SHARE = 0.01
+
+
+def _check_xg_coverage(coverage: dict, verbose: bool = True):
+    """Raise if any completed season is badly covered. The in-progress
+    season is exempt: its newest games can legitimately lag."""
+    bad = []
+    for season, (have, total) in sorted(coverage.items()):
+        if verbose:
+            print(f"  xG coverage {season}: {have}/{total} games")
+        if season != current_season() and total and (total - have) / total > _MAX_MISSING_XG_SHARE:
+            bad.append(f"{season} ({have}/{total})")
+    if bad:
+        raise RuntimeError(
+            f"xG coverage too low for completed season(s) {', '.join(bad)}: "
+            f"both MoneyPuck and NHL play-by-play failed for more than "
+            f"{_MAX_MISSING_XG_SHARE:.0%} of games. Not refitting on "
+            f"placeholder xG; the committed models stay in place.")
+
+
 def build_training_set(seasons: list, min_gp: int = 5,
                        out_path: str = None, verbose: bool = True,
                        with_goalies: bool = True, with_xg: bool = True) -> list:
@@ -698,14 +730,15 @@ def build_training_set(seasons: list, min_gp: int = 5,
 
     xg_data = None
     if with_xg:
-        mp_seasons = sorted(set(seasons) & MONEYPUCK_SEASONS)
-        if mp_seasons:
-            if verbose:
-                print(f"Fetching MoneyPuck xG data for {', '.join(mp_seasons)}...")
-            xg_data = load_moneypuck_xg(mp_seasons)
+        if verbose:
+            print(f"Loading xG for {', '.join(seasons)} "
+                  f"(MoneyPuck, NHL play-by-play fallback)...")
+        xg_data, coverage = load_game_xg(all_games, seasons, verbose=verbose)
+        _check_xg_coverage(coverage, verbose=verbose)
 
     rows = build_point_in_time_rows(all_games, min_gp=min_gp, starters=starters,
-                                     xg_data=xg_data)
+                                     xg_data=xg_data,
+                                     xg_required_seasons=frozenset())
     if verbose:
         print(f"\n✓ Built {len(rows)} training rows from {len(all_games)} games "
               f"({len(all_games) - len(rows)} skipped: teams under {min_gp} GP)")

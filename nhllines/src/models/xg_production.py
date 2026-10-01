@@ -52,8 +52,7 @@ from src.data.historical_dataset import (
     fetch_season_games_full,
     snapshot_team_state,
 )
-from src.data.moneypuck_data import load_moneypuck_xg
-from src.data.nhl_pbp_xg import load_pbp_xg
+from src.data.xg_sources import load_game_xg
 from src.models.calibration import DEFAULT_SEASONS, fit_production_calibrator, load_calibrator
 
 ML_MODELS_DIR = Path(__file__).resolve().parents[2] / "ml_models"
@@ -165,17 +164,8 @@ def get_live_feature_state(seasons: list = None) -> dict:
     # Only the current season's xG can reach a prediction: team state resets
     # every season and compute_serving_features() snapshots seasons[-1]. So
     # past seasons are never downloaded here (that's training's job).
-    # MoneyPuck first, since the model was trained on its xG; any game it
-    # doesn't cover (publishing lag, or the season not posted at all) falls
-    # back to NHL play-by-play scored with the repo's own xG model.
-    current = seasons[-1]
-    xg_data = load_moneypuck_xg([current], strict=False)
-    missing = [g["id"] for g in all_games
-               if g["season"] == current and g["id"] not in xg_data]
-    if missing:
-        print(f"  {len(missing)} {current} games not in MoneyPuck, "
-              f"scoring them from NHL play-by-play")
-        xg_data.update(load_pbp_xg(missing))
+    # Same source order as training (see xg_sources.py).
+    xg_data, _ = load_game_xg(all_games, [seasons[-1]])
 
     team_states, h2h_results = build_live_state(all_games, xg_data=xg_data)
     return {
