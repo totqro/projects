@@ -47,13 +47,13 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
 from src.data.historical_dataset import (
-    MONEYPUCK_SEASONS,
     XG_FEATURE_COLUMNS,
     build_live_state,
     fetch_season_games_full,
     snapshot_team_state,
 )
 from src.data.moneypuck_data import load_moneypuck_xg
+from src.data.nhl_pbp_xg import load_pbp_xg
 from src.models.calibration import DEFAULT_SEASONS, fit_production_calibrator, load_calibrator
 
 ML_MODELS_DIR = Path(__file__).resolve().parents[2] / "ml_models"
@@ -162,8 +162,20 @@ def get_live_feature_state(seasons: list = None) -> dict:
     for season in seasons:
         all_games.extend(fetch_season_games_full(season, verbose=False))
 
-    xg_seasons = sorted(set(seasons) & MONEYPUCK_SEASONS)
-    xg_data = load_moneypuck_xg(xg_seasons, strict=False) if xg_seasons else {}
+    # Only the current season's xG can reach a prediction: team state resets
+    # every season and compute_serving_features() snapshots seasons[-1]. So
+    # past seasons are never downloaded here (that's training's job).
+    # MoneyPuck first, since the model was trained on its xG; any game it
+    # doesn't cover (publishing lag, or the season not posted at all) falls
+    # back to NHL play-by-play scored with the repo's own xG model.
+    current = seasons[-1]
+    xg_data = load_moneypuck_xg([current], strict=False)
+    missing = [g["id"] for g in all_games
+               if g["season"] == current and g["id"] not in xg_data]
+    if missing:
+        print(f"  {len(missing)} {current} games not in MoneyPuck, "
+              f"scoring them from NHL play-by-play")
+        xg_data.update(load_pbp_xg(missing))
 
     team_states, h2h_results = build_live_state(all_games, xg_data=xg_data)
     return {

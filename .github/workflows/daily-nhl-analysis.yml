@@ -53,6 +53,17 @@ jobs:
       - name: Create required directories
         run: mkdir -p nhllines/data nhllines/ml_models nhllines/cache
 
+      # Per-game xG scored from NHL play-by-play (the fallback for games
+      # MoneyPuck hasn't published). A completed game never changes, so the
+      # cache only grows: each run restores the latest copy and saves a new
+      # one, instead of re-fetching every game of the season daily.
+      - name: Restore play-by-play xG cache
+        uses: actions/cache@v4
+        with:
+          path: nhllines/cache/nhl_pbp_xg
+          key: nhl-pbp-xg-${{ github.run_id }}
+          restore-keys: nhl-pbp-xg-
+
       - name: Check for games today
         id: check-games
         working-directory: nhllines
