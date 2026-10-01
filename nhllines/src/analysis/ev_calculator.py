@@ -90,12 +90,12 @@ def evaluate_all_bets(
     """
     bets = []
     # Totals/spreads come from the similarity model and use its confidence;
-    # moneylines come from the calibrated win model and use ml_confidence
-    # (falls back to the shared one for callers that don't set it). Each
-    # market is gated on its own confidence, so a weak totals model no
-    # longer blocks moneyline bets on the same game.
+    # moneylines come from the calibrated win model and use its season data
+    # weight (main.moneyline_data_weight; falls back to the shared value for
+    # callers that don't set it). Each market is gated on its own value, so
+    # a weak totals model no longer blocks moneyline bets on the same game.
     confidence = blended_probs.get("model_confidence", 0)
-    ml_confidence = blended_probs.get("ml_confidence", confidence)
+    ml_confidence = blended_probs.get("ml_data_weight", confidence)
     ml_ok = ml_confidence >= min_confidence
     totals_ok = confidence >= min_confidence
     if not ml_ok and not totals_ok:
@@ -380,7 +380,7 @@ def _evaluate_thescore_odds(
                 "book": "thescore",
                 "odds": thescore["ml_home"],
                 **ev_data,
-                "confidence": blended_probs.get("ml_confidence", blended_probs.get("model_confidence", 0)),
+                "confidence": blended_probs.get("ml_data_weight", blended_probs.get("model_confidence", 0)),
             }
 
     if "ml_away" in thescore:
@@ -393,7 +393,7 @@ def _evaluate_thescore_odds(
                 "book": "thescore",
                 "odds": thescore["ml_away"],
                 **ev_data,
-                "confidence": blended_probs.get("ml_confidence", blended_probs.get("model_confidence", 0)),
+                "confidence": blended_probs.get("ml_data_weight", blended_probs.get("model_confidence", 0)),
             }
 
     if home_ts_bet and away_ts_bet:
@@ -445,7 +445,7 @@ def format_recommendations(all_bets: list, top_n: int = 15, quota_info: dict = N
         lines.append(f"     Model prob: {bet['true_prob']:.1%} vs Implied: {bet['implied_prob']:.1%}")
         lines.append(f"     Edge: {bet['edge']:.1%} | EV per $1: ${bet['ev']:.4f} | ROI: {bet['roi']:.2%}")
         kelly_pct = bet.get('kelly_stake', 0)
-        lines.append(f"     Confidence: {bet['confidence']:.0%} | Kelly: {kelly_pct:.1f}% of bankroll")
+        lines.append(f"     Kelly: {kelly_pct:.1f}% of bankroll")
         lines.append("")
 
     # Summary stats

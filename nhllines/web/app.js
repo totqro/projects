@@ -4,7 +4,14 @@ const $ = id => document.getElementById(id);
 const $$ = sel => document.querySelectorAll(sel);
 const pct = (v, d=1) => (v*100).toFixed(d) + '%';
 
-function getGrade(conf) { return conf>=.75?'A':conf>=.60?'B+':conf>=.50?'B':'C+'; }
+// Grades by edge, same thresholds as bet_tracker.get_grade (the old
+// confidence-based grades read a model-weight number as if it were a
+// probability). "Strong" = B+ or better.
+function getGrade(edge) { return edge>=.07?'A':edge>=.04?'B+':edge>=.03?'B':'C+'; }
+const STRONG_EDGE = 0.04;
+const startMs = g => { const t = Date.parse(g.start_time || ''); return isNaN(t) ? Infinity : t; };
+const startLabel = g => { const t = Date.parse(g.start_time || ''); return isNaN(t) ? '' :
+    new Date(t).toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', timeZone:'America/New_York'}) + ' ET'; };
 function getGradeClass(g) { return {A:'grade-a','B+':'grade-b-plus',B:'grade-b','C+':'grade-c-plus'}[g]||'grade-c-plus'; }
 
 const TABS = ['today', 'performance', 'bracket'];
@@ -54,12 +61,12 @@ function displayAnalysis(data) {
     allGames = data.games_analyzed;
     allRecommendations = data.recommendations;
 
-    const strong = allRecommendations.filter(r => r.confidence >= 0.60);
+    const strong = allRecommendations.filter(r => (r.edge||0) >= STRONG_EDGE);
     $('bets-found').textContent = strong.length;
 
     if (allRecommendations.length) {
-        const avgConf = allRecommendations.reduce((s, b) => s + (b.confidence||0), 0) / allRecommendations.length;
-        $('expected-roi').textContent = pct(avgConf, 0);
+        const avgEdge = allRecommendations.reduce((s, b) => s + (b.edge||0), 0) / allRecommendations.length;
+        $('expected-roi').textContent = pct(avgEdge, 1);
     } else {
         $('expected-roi').textContent = 'N/A';
     }
@@ -68,7 +75,7 @@ function displayAnalysis(data) {
 }
 
 function applySort() {
-    const sortBy = $('sort-games')?.value || 'confidence';
+    const sortBy = $('sort-games')?.value || 'time';
     const strongOnly = $('strong-only')?.checked || false;
 
     const recsByGame = {};
@@ -81,17 +88,17 @@ function applySort() {
 
     if (strongOnly) {
         const strongGames = new Set(
-            allRecommendations.filter(r => r.confidence >= 0.60).map(r => r.game)
+            allRecommendations.filter(r => (r.edge||0) >= STRONG_EDGE).map(r => r.game)
         );
         games = games.filter(g => strongGames.has(g.game));
     }
 
-    if (sortBy === 'confidence') {
-        games.sort((a, b) => {
-            const ca = Math.max(...(recsByGame[a.game]||[]).map(r => r.confidence||0), (a.blended_probs||a.model_probs)?.confidence||0);
-            const cb = Math.max(...(recsByGame[b.game]||[]).map(r => r.confidence||0), (b.blended_probs||b.model_probs)?.confidence||0);
-            return cb - ca;
-        });
+    if (sortBy === 'time') {
+        // Earliest puck drop first; games without a start time go last.
+        games.sort((a, b) => startMs(a) - startMs(b));
+    } else if (sortBy === 'edge') {
+        const bestEdge = g => Math.max(0, ...(recsByGame[g.game]||[]).map(r => r.edge||0));
+        games.sort((a, b) => bestEdge(b) - bestEdge(a));
     } else {
         games.sort((a, b) => {
             const pa = a.blended_probs || a.model_probs;
@@ -120,12 +127,11 @@ function renderGameCard(g, i, gameRecs) {
     const awayProb = bp.away_win_prob;
     const expectedTotal = mp.expected_total;
     const totalLine = mp.total_line;
-    const conf = bp.confidence || mp.confidence || 0;
-
     const totalRec = gameRecs.find(r => r.bet_type === 'Total');
-    const topConf = gameRecs.length ? Math.max(...gameRecs.map(r => r.confidence||0)) : 0;
-    const isStrong = topConf >= 0.60;
-    const grade = isStrong ? getGrade(topConf) : null;
+    const topEdge = gameRecs.length ? Math.max(...gameRecs.map(r => r.edge||0)) : 0;
+    const isStrong = topEdge >= STRONG_EDGE;
+    const grade = isStrong ? getGrade(topEdge) : null;
+    const timeLabel = startLabel(g);
     const gradeClass = grade ? getGradeClass(grade) : '';
 
     let ouHtml = '';
@@ -136,7 +142,6 @@ function renderGameCard(g, i, gameRecs) {
 
     const homePct = (homeProb*100).toFixed(0);
     const awayPct = (awayProb*100).toFixed(0);
-    const confPct = (conf*100).toFixed(0);
     const homeWins = homeProb > awayProb;
     const contextHtml = renderContextIndicators(ci);
 
@@ -146,6 +151,7 @@ function renderGameCard(g, i, gameRecs) {
                 <span class="${!homeWins?'gc-pick-team':''}">${g.away}</span>
                 <span class="gc-sep">@</span>
                 <span class="${homeWins?'gc-pick-team':''}">${g.home}</span>
+                ${timeLabel ? `<span class="gc-sep">· ${timeLabel}</span>` : ''}
             </div>
             ${grade ? `<span class="grade ${gradeClass} gc-grade">${grade}</span>` : ''}
         </div>
@@ -166,11 +172,6 @@ function renderGameCard(g, i, gameRecs) {
                 <span class="gc-total-num">${expectedTotal ? expectedTotal.toFixed(1) : '—'}</span>
                 <span class="gc-total-unit">exp. goals</span>
                 ${totalLine ? `<span class="gc-line">Line ${totalLine}${ouHtml}</span>` : ''}
-            </div>
-            <div class="gc-conf">
-                <span class="gc-conf-label">Conf</span>
-                <div class="confidence-bar gc-conf-bar"><div class="confidence-fill" style="width:${confPct}%"></div></div>
-                <span class="gc-conf-pct">${confPct}%</span>
             </div>
         </div>
         ${contextHtml ? `<div class="gc-context" onclick="toggleGC(${i})">${contextHtml}</div>` : ''}

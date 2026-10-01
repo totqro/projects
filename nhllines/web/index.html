@@ -63,7 +63,7 @@
                         <span class="stat-value cy-stat__value cy-stat__value--accent" id="bets-found">-</span>
                     </div>
                     <div class="stat cy-stat">
-                        <span class="stat-label cy-stat__label">Avg Confidence</span>
+                        <span class="stat-label cy-stat__label">Avg Edge</span>
                         <span class="stat-value cy-stat__value" id="expected-roi">-</span>
                     </div>
                 </div>
@@ -73,7 +73,8 @@
                 <label class="cy-field cy-field--select">
                     <span class="cy-sr-only">Sort games</span>
                     <select id="sort-games" class="filter-select cy-select" onchange="applySort()">
-                        <option value="confidence">Sort by Confidence</option>
+                        <option value="time" selected>Sort by Start Time</option>
+                        <option value="edge">Sort by Best Edge</option>
                         <option value="prob">Sort by Win Probability</option>
                     </select>
                 </label>
@@ -189,6 +190,6 @@
         <a href="https://github.com/totqro" target="_blank" rel="noopener">GitHub</a>
     </footer>
 
-    <script src="app.js?v=17.0"></script>
+    <script src="app.js?v=17.1"></script>
 </body>
 </html>
