@@ -53,6 +53,17 @@ jobs:
       - name: Create required directories
         run: mkdir -p nhllines/data nhllines/ml_models nhllines/cache
 
+      # Per-game xG scored from NHL play-by-play (the fallback for games
+      # MoneyPuck hasn't published). A completed game never changes, so the
+      # cache only grows: each run restores the latest copy and saves a new
+      # one, instead of re-fetching every game of the season daily.
+      - name: Restore play-by-play xG cache
+        uses: actions/cache@v4
+        with:
+          path: nhllines/cache/nhl_pbp_xg
+          key: nhl-pbp-xg-${{ github.run_id }}
+          restore-keys: nhl-pbp-xg-
+
       - name: Check for games today
         id: check-games
         working-directory: nhllines
@@ -78,8 +89,13 @@ jobs:
             echo "is_sunday=false" >> $GITHUB_OUTPUT
           fi
 
+      # A failed refit must not cost the day's predictions: the committed
+      # models are still valid, so carry on with them and fail the run at the
+      # very end instead (see "Fail if the weekly refit failed").
       - name: Rebuild training set + refit production models (weekly)
+        id: refit
         if: steps.check-day.outputs.is_sunday == 'true' || github.event.inputs.force_weekly_refit == 'true'
+        continue-on-error: true
         working-directory: nhllines
         run: python build_training_set.py
 
@@ -178,6 +194,12 @@ jobs:
 
       # No upload-artifact step: the model is committed above. The old one
       # wrote an artifact after every run that nothing could ever read back.
+
+      - name: Fail if the weekly refit failed
+        if: steps.refit.outcome == 'failure'
+        run: |
+          echo "::error::Weekly refit failed (see the refit step). Predictions ran on the previously committed models."
+          exit 1
 
       - name: Notify on failure
         if: failure()

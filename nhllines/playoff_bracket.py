@@ -42,12 +42,11 @@ from pathlib import Path
 import requests
 
 from src.data.historical_dataset import (
-    MONEYPUCK_SEASONS,
     build_live_state,
     fetch_season_games_full,
     seasons_through_current,
 )
-from src.data.moneypuck_data import load_moneypuck_xg
+from src.data.xg_sources import load_game_xg
 from src.models import xg_production
 
 BASE = Path(__file__).resolve().parent
@@ -146,8 +145,8 @@ def build_pre_playoff_state(season: str, verbose: bool = True) -> dict:
     for s in seasons:
         all_games.extend(fetch_season_games_full(s, verbose=verbose))
 
-    xg_seasons = sorted(set(seasons) & MONEYPUCK_SEASONS)
-    xg_data = load_moneypuck_xg(xg_seasons) if xg_seasons else {}
+    # Only `season`'s state is snapshotted, so only its xG matters.
+    xg_data, _ = load_game_xg(all_games, [season], verbose=verbose)
     team_states, h2h_results = build_live_state(all_games, xg_data=xg_data)
 
     return {
