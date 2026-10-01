@@ -75,22 +75,22 @@ from src.analysis import (
 # (build_training_set's min_gp), so it only serves once both teams do.
 XG_MIN_GP = 5
 
-# Moneyline confidence: how far to trust the calibrated win model over the
-# market. It used to be the similarity model's confidence, which has nothing
-# to do with the win model and, after the feedback scaling, sat at its 0.30
-# floor for nearly every game: under every bet gate (0.35 in
-# evaluate_all_bets, 0.42 in should_take_bet), so no moneyline could ever be
-# recommended. The win model is already calibrated; what it lacks early in a
-# season is data. So confidence ramps with the fewer games played of the two
-# teams: ML_CONF_MIN with no games, ML_CONF_MAX once both have ML_CONF_FULL_GP.
-ML_CONF_MIN = 0.35
-ML_CONF_MAX = 0.95
-ML_CONF_FULL_GP = 20
+# Moneyline data weight: how far to trust the calibrated win model over the
+# market, given how much of this season it has seen. Not a probability and
+# not shown as "confidence" (it used to be: the similarity model's
+# confidence, stuck at its 0.30 floor and read as "30% chance"). It ramps
+# with the fewer games played of the two teams, ML_WEIGHT_MIN with no games
+# to ML_WEIGHT_MAX once both have ML_WEIGHT_FULL_GP, scaling the blend weight
+# (blend_model_and_market) and gating moneyline bets early in the season.
+# Past ML_WEIGHT_FULL_GP it no longer changes anything.
+ML_WEIGHT_MIN = 0.35
+ML_WEIGHT_MAX = 0.95
+ML_WEIGHT_FULL_GP = 20
 
 
-def moneyline_confidence(home_gp: int, away_gp: int) -> float:
-    frac = min(1.0, max(0, min(home_gp, away_gp)) / ML_CONF_FULL_GP)
-    return ML_CONF_MIN + (ML_CONF_MAX - ML_CONF_MIN) * frac
+def moneyline_data_weight(home_gp: int, away_gp: int) -> float:
+    frac = min(1.0, max(0, min(home_gp, away_gp)) / ML_WEIGHT_FULL_GP)
+    return ML_WEIGHT_MIN + (ML_WEIGHT_MAX - ML_WEIGHT_MIN) * frac
 
 
 def run_analysis(
@@ -526,7 +526,7 @@ def run_analysis(
             )
             model_probs["home_win_prob"] = elo_home_win_prob
             model_probs["away_win_prob"] = 1 - elo_home_win_prob
-            model_probs["ml_confidence"] = moneyline_confidence(
+            model_probs["ml_data_weight"] = moneyline_data_weight(
                 standings.get(home, {}).get("games_played", 0),
                 standings.get(away, {}).get("games_played", 0))
 
@@ -653,8 +653,7 @@ def run_analysis(
 
             print(f"    Model{ml_labels[served_by]}: {home} {model_probs['home_win_prob']:.1%} / "
                   f"{away} {model_probs['away_win_prob']:.1%} "
-                  f"(confidence: {model_probs['ml_confidence']:.0%}, "
-                  f"totals {model_probs['confidence']:.0%}){player_context}{goalie_context}{injury_context}{context_factors_text}")
+                  f"(model weight {blended['ml_model_weight']:.0%}){player_context}{goalie_context}{injury_context}{context_factors_text}")
             print(f"    Market: {home} {market_probs['home_win_prob']:.1%} / "
                   f"{away} {market_probs['away_win_prob']:.1%}")
             print(f"    Blended: {home} {blended['home_win_prob']:.1%} / "
@@ -833,6 +832,7 @@ def run_analysis(
                 "game": game_label,
                 "home": home,
                 "away": away,
+                "start_time": game_data.get("commence_time", ""),
                 "model_probs": model_probs,
                 "market_probs": market_probs,
                 "blended_probs": blended,
@@ -904,7 +904,7 @@ def run_analysis(
             )
             model_probs["home_win_prob"] = elo_home_win_prob
             model_probs["away_win_prob"] = 1 - elo_home_win_prob
-            model_probs["ml_confidence"] = moneyline_confidence(
+            model_probs["ml_data_weight"] = moneyline_data_weight(
                 standings.get(home, {}).get("games_played", 0),
                 standings.get(away, {}).get("games_played", 0))
 
@@ -921,14 +921,13 @@ def run_analysis(
             print(f"    Model{ml_labels[served_by]}: {home} {model_probs['home_win_prob']:.1%} / "
                   f"{away} {model_probs['away_win_prob']:.1%}")
             print(f"    Expected total: {model_probs['expected_total']:.1f} goals")
-            print(f"    Confidence: {model_probs['ml_confidence']:.0%} "
-                  f"(totals {model_probs['confidence']:.0%})")
             print(f"    Based on {len(similar)} similar games")
 
             game_analyses.append({
                 "game": game_label,
                 "home": home,
                 "away": away,
+                "start_time": game.get("start_time", ""),
                 "model_probs": model_probs,
             })
 
