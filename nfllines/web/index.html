@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#0a0a0f">
+    <title>NFL Game Predictions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/cyber.css">
+    <link rel="stylesheet" href="/dashboard.css">
+    <link rel="stylesheet" href="styles.css?v=1.0">
+</head>
+<body>
+    <nav class="cy-nav">
+        <a class="cy-brand cy-cursor" href="/">LK</a>
+        <div class="cy-nav__links">
+            <span class="cy-badge cy-badge--accent cy-hide-sm"><span class="cy-led"></span>NFL</span>
+            <a href="/" class="back-link cy-btn cy-btn--ghost cy-btn--sm">&lt; All projects</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="dash-header cy-panel cy-panel--terminal cy-card">
+            <p class="cy-label cy-label--accent cy-prompt">nfllines // weekly model output</p>
+            <h1 class="cy-h2 cy-rgb">&#127944; NFL Game Predictions</h1>
+            <p class="subtitle cy-label">QB-adjusted Elo, efficiency &amp; injury-aware win probabilities &middot; logged after the final injury report, before kickoff</p>
+        </header>
+
+        <div class="tabs cy-tabs" role="tablist">
+            <button class="tab-button cy-tab active" onclick="showTab('week')">This Week</button>
+            <button class="tab-button cy-tab" onclick="showTab('performance')">Performance</button>
+        </div>
+
+        <div id="loading" class="loading cy-empty">
+            <div class="spinner cy-spinner"></div>
+            <p class="cy-cursor">Loading predictions</p>
+        </div>
+
+        <div id="error" class="error cy-alert" style="display: none;"></div>
+
+        <!-- This Week -->
+        <div id="week-tab" class="tab-content" style="display: none;">
+            <section class="summary-card cy-panel cy-card">
+                <h2 class="cy-label cy-slash" id="week-title">This Week</h2>
+                <div class="stats-grid">
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Last Updated</span>
+                        <span class="stat-value cy-stat__value cy-stat__value--text" id="timestamp">-</span>
+                    </div>
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Games</span>
+                        <span class="stat-value cy-stat__value" id="games-count">-</span>
+                    </div>
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Predictions Logged</span>
+                        <span class="stat-value cy-stat__value cy-stat__value--accent" id="logged-count">-</span>
+                    </div>
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Week Record</span>
+                        <span class="stat-value cy-stat__value" id="week-record">-</span>
+                    </div>
+                </div>
+                <p class="parlay-subtitle">A game's prediction posts once its final injury report is out: Wednesday evening for Thursday, Friday evening for Sunday, Saturday evening for Monday. Logged numbers never change after kickoff.</p>
+            </section>
+
+            <div class="games-filter-bar">
+                <label class="cy-field cy-field--select">
+                    <span class="cy-sr-only">Sort games</span>
+                    <select id="sort-games" class="filter-select cy-select" onchange="renderWeek()">
+                        <option value="kickoff">Sort by Kickoff</option>
+                        <option value="confidence">Sort by Confidence</option>
+                    </select>
+                </label>
+            </div>
+
+            <div id="games-list"></div>
+        </div>
+
+        <!-- Performance -->
+        <div id="performance-tab" class="tab-content" style="display: none;">
+            <section class="summary-card cy-panel cy-card">
+                <h2 class="cy-label cy-slash" id="perf-title">Season Accuracy</h2>
+                <div class="stats-grid">
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Games Scored</span>
+                        <span class="stat-value cy-stat__value" id="perf-n">-</span>
+                    </div>
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Winner Accuracy</span>
+                        <span class="stat-value cy-stat__value cy-stat__value--accent" id="perf-acc">-</span>
+                    </div>
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Log Loss (Market)</span>
+                        <span class="stat-value cy-stat__value cy-stat__value--text" id="perf-ll">-</span>
+                    </div>
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Total Pts MAE</span>
+                        <span class="stat-value cy-stat__value" id="perf-total">-</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="summary-card cy-panel cy-card">
+                <h2 class="cy-label cy-slash">Benchmarks</h2>
+                <p class="parlay-subtitle" id="bench-note">Only predictions logged before kickoff count. Market = closing moneyline, de-vigged. Lower log loss and Brier are better; accuracy alone rewards overconfidence.</p>
+                <div id="bench-table"></div>
+            </section>
+
+            <section class="summary-card cy-panel cy-card">
+                <h2 class="cy-label cy-slash">By Week</h2>
+                <div id="weeks-table"></div>
+            </section>
+
+            <section class="summary-card cy-panel cy-card">
+                <h2 class="cy-label cy-slash">Backtest (2024-2025, scored once)</h2>
+                <p class="parlay-subtitle">The held-out test: every modelling choice was frozen on 2015-2023 before these 569 games were scored, one time.</p>
+                <div id="test-table"></div>
+            </section>
+
+            <section class="recent-results cy-panel cy-panel--terminal cy-card">
+                <div class="cy-termbar">performance.json <span class="cy-termbar__right">all games</span></div>
+                <h2 class="cy-label cy-slash">Game Results</h2>
+                <div id="recent-results-list"></div>
+            </section>
+        </div>
+    </div>
+
+    <footer class="cy-footer">
+        <span>Luc Knox &middot; 2026</span>
+        <span class="cy-text-muted" aria-hidden="true">// EOF</span>
+        <a href="https://github.com/totqro" target="_blank" rel="noopener">GitHub</a>
+    </footer>
+
+    <script src="app.js?v=1.0"></script>
+</body>
+</html>

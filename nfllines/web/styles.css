@@ -1,0 +1,24 @@
+/* NFL dashboard — sits on top of /cyber.css and /dashboard.css.
+   Only the sport accent and NFL-only components live here. */
+:root {
+  --cy-accent:   var(--cy-pink);
+  --cy-accent-2: var(--cy-cyan);
+  --cy-accent-3: var(--cy-amber);
+}
+
+/* Kickoff / status line on a game card */
+.gc-status { font-family: var(--cy-font-label); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--cy-muted-fg); }
+.gc-status.ok   { color: var(--cy-ok); }
+.gc-status.bad  { color: var(--cy-danger); }
+.gc-status.live { color: var(--cy-warn); }
+.gc.gc-pending .gc-bar { opacity: .25; }
+/* Finished games get a fourth column for the score */
+.gc-team-row.gc-final { grid-template-columns: 68px 1fr 48px 32px; }
+.gc-score { font-family: var(--cy-font-head); font-size: .9rem; font-weight: 700; text-align: right; color: var(--cy-muted-fg); font-variant-numeric: tabular-nums; }
+.gc-score.won { color: var(--cy-fg); }
+@media (max-width: 768px) { .gc-team-row.gc-final { grid-template-columns: 54px 1fr 40px 28px; } }
+
+/* Benchmark and per-week tables (Performance tab) */
+.bench-row { grid-template-columns: 1fr auto auto; }
+.bench-row--model .pred-result-matchup { color: var(--cy-accent); }
+.week-row { grid-template-columns: 70px 1fr auto auto; }
