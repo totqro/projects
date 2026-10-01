@@ -2,14 +2,27 @@ name: Daily NHL Game Predictions
 
 on:
   schedule:
-    # Run at 12:00 PM EST (17:00 UTC) every day
-    - cron: '0 17 * * *'
+    # GitHub delays top-of-the-hour crons when its scheduler is busy: the old
+    # '0 17' started 2-5 hours late every day in Sept 2026 (19:13 to 22:26
+    # UTC), sometimes near puck drop. Off-the-hour minutes are picked up far
+    # more reliably. Two runs: midday (12:23 PM EDT), and a pre-game refresh
+    # (5:41 PM EDT) that reprices with closer-to-close odds and covers a
+    # midday run that was delayed or failed. The prediction log dedups by
+    # game and day, so the second run doesn't double-log.
+    - cron: '23 16 * * *'
+    - cron: '41 21 * * *'
   workflow_dispatch: # Allow manual trigger
     inputs:
       force_weekly_refit:
         description: 'Run the weekly training-set rebuild + model refit regardless of day (manual catch-up / testing)'
         type: boolean
         default: false
+
+# Queue, don't overlap: a delayed midday run and the pre-game run would both
+# commit and push the same data files.
+concurrency:
+  group: daily-nhl-analysis
+  cancel-in-progress: false
 
 jobs:
   analyze:
@@ -80,10 +93,12 @@ jobs:
             echo "No NHL games scheduled today, skipping analysis"
           fi
 
+      # Weekly steps (refit, backtest) run once on Sunday: on the midday
+      # scheduled run or a manual run, not again on the pre-game refresh.
       - name: Check day of week
         id: check-day
         run: |
-          if [ "$(date +%u)" == "7" ]; then
+          if [ "$(date +%u)" == "7" ] && [ "${{ github.event.schedule }}" != "41 21 * * *" ]; then
             echo "is_sunday=true" >> $GITHUB_OUTPUT
           else
             echo "is_sunday=false" >> $GITHUB_OUTPUT

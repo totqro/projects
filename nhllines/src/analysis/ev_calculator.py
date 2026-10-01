@@ -89,10 +89,16 @@ def evaluate_all_bets(
     conservative mode: only totals and moneylines, higher min edge
     """
     bets = []
+    # Totals/spreads come from the similarity model and use its confidence;
+    # moneylines come from the calibrated win model and use ml_confidence
+    # (falls back to the shared one for callers that don't set it). Each
+    # market is gated on its own confidence, so a weak totals model no
+    # longer blocks moneyline bets on the same game.
     confidence = blended_probs.get("model_confidence", 0)
-
-    # Skip if confidence is too low
-    if confidence < min_confidence:
+    ml_confidence = blended_probs.get("ml_confidence", confidence)
+    ml_ok = ml_confidence >= min_confidence
+    totals_ok = confidence >= min_confidence
+    if not ml_ok and not totals_ok:
         return bets
 
     # In conservative mode, raise edge bar but NOT confidence
@@ -159,7 +165,7 @@ def evaluate_all_bets(
     home_ml_bet = None
     away_ml_bet = None
 
-    if best_odds["moneyline"]["home"] and _book_allowed(best_odds["moneyline"]["home"]["book"]):
+    if ml_ok and best_odds["moneyline"]["home"] and _book_allowed(best_odds["moneyline"]["home"]["book"]):
         home_odds = best_odds["moneyline"]["home"]["price"]
         required_edge = underdog_min_edge if home_odds > 0 else min_edge
         ev_data = calculate_ev(
@@ -175,10 +181,10 @@ def evaluate_all_bets(
                 "book": best_odds["moneyline"]["home"]["book"],
                 "odds": home_odds,
                 **ev_data,
-                "confidence": confidence,
+                "confidence": ml_confidence,
             }
 
-    if best_odds["moneyline"]["away"] and _book_allowed(best_odds["moneyline"]["away"]["book"]):
+    if ml_ok and best_odds["moneyline"]["away"] and _book_allowed(best_odds["moneyline"]["away"]["book"]):
         away_odds = best_odds["moneyline"]["away"]["price"]
         required_edge = underdog_min_edge if away_odds > 0 else min_edge
         ev_data = calculate_ev(
@@ -194,7 +200,7 @@ def evaluate_all_bets(
                 "book": best_odds["moneyline"]["away"]["book"],
                 "odds": away_odds,
                 **ev_data,
-                "confidence": confidence,
+                "confidence": ml_confidence,
             }
     
     # Only add the ML bet with higher edge (don't recommend both sides)
@@ -212,7 +218,7 @@ def evaluate_all_bets(
     # Skip spreads entirely in conservative mode (model isn't reliable enough)
     # Spreads use reduced confidence (harder to predict margin than winner)
     spread_confidence = confidence * 0.6
-    if not conservative:
+    if not conservative and totals_ok:
         # Evaluate both but only keep the one with higher edge (if any)
         home_spread_bet = None
         away_spread_bet = None
@@ -290,7 +296,7 @@ def evaluate_all_bets(
                              best_odds["total"]["under"]["point"], best_odds["total"]["under"]["price"]))
 
     for book, side, point, price in all_total_lines:
-        if not _book_allowed(book):
+        if not totals_ok or not _book_allowed(book):
             continue
         # Skip .0 lines — they can push (refund), which the EV calc doesn't account for
         if point == int(point):
@@ -374,7 +380,7 @@ def _evaluate_thescore_odds(
                 "book": "thescore",
                 "odds": thescore["ml_home"],
                 **ev_data,
-                "confidence": blended_probs.get("model_confidence", 0),
+                "confidence": blended_probs.get("ml_confidence", blended_probs.get("model_confidence", 0)),
             }
 
     if "ml_away" in thescore:
@@ -387,7 +393,7 @@ def _evaluate_thescore_odds(
                 "book": "thescore",
                 "odds": thescore["ml_away"],
                 **ev_data,
-                "confidence": blended_probs.get("model_confidence", 0),
+                "confidence": blended_probs.get("ml_confidence", blended_probs.get("model_confidence", 0)),
             }
 
     if home_ts_bet and away_ts_bet:

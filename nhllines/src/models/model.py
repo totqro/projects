@@ -526,8 +526,15 @@ def blend_model_and_market(
     The feedback system can raise this back up as calibration improves.
 
     Confidence scaling uses sqrt for steeper penalty on low confidence.
+
+    The moneyline and the totals/spread come from different models, so they
+    carry separate confidences: "ml_confidence" (how much season data the
+    calibrated win model has, see main.moneyline_confidence) weights the
+    moneyline, "confidence" (the similarity model's) weights totals and
+    spreads. Without "ml_confidence" both use "confidence", as before.
     """
     confidence = model_probs.get("confidence", 0)
+    ml_confidence = model_probs.get("ml_confidence", confidence)
 
     # Scale model weight by confidence using square root for steeper scaling
     # At confidence 0.40: sqrt=0.63 vs cbrt=0.74 — stronger penalty
@@ -535,13 +542,14 @@ def blend_model_and_market(
     # At confidence 0.95: sqrt=0.97 vs cbrt=0.98 — nearly identical
     # This ensures low-confidence predictions defer more to the market
     effective_weight = model_weight * (confidence ** 0.5)
+    ml_weight = model_weight * (ml_confidence ** 0.5)
 
     blended = {}
 
     # Moneyline
     blended["home_win_prob"] = (
-        effective_weight * model_probs["home_win_prob"] +
-        (1 - effective_weight) * market_probs.get("home_win_prob", 0.5)
+        ml_weight * model_probs["home_win_prob"] +
+        (1 - ml_weight) * market_probs.get("home_win_prob", 0.5)
     )
     blended["away_win_prob"] = 1 - blended["home_win_prob"]
 
@@ -566,6 +574,8 @@ def blend_model_and_market(
 
     blended["expected_total"] = model_probs.get("expected_total", 6.0)
     blended["model_confidence"] = confidence
+    blended["ml_confidence"] = ml_confidence
     blended["effective_model_weight"] = effective_weight
+    blended["ml_model_weight"] = ml_weight
 
     return blended
