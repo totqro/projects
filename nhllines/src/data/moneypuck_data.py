@@ -53,6 +53,14 @@ def _current_season_start_year() -> int:
 
 MONEYPUCK_SHOTS_URL = "https://moneypuck.com/moneypuck/playerData/shots/shots_{year}.zip"
 
+# MoneyPuck has moved the shots downloads before (the old path started
+# returning 404 for completed seasons), so try each known location in order.
+# The data.htm download links point at the peter-tanner.com host.
+MONEYPUCK_SHOTS_URLS = [
+    MONEYPUCK_SHOTS_URL,
+    "https://peter-tanner.com/moneypuck/downloads/shots_{year}.zip",
+]
+
 # MoneyPuck's server 302-redirects to a license page for bare requests
 # without a browser-like User-Agent/Referer.
 _HEADERS = {
@@ -101,10 +109,33 @@ def download_season_shots(year: int) -> Path:
         if age_hours < _CURRENT_SEASON_SHOTS_CACHE_HOURS:
             return csv_path
 
-    url = MONEYPUCK_SHOTS_URL.format(year=year)
-    resp = requests.get(url, headers=_HEADERS, timeout=180)
-    resp.raise_for_status()
-    with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
+    content, errors = None, []
+    for url_tpl in MONEYPUCK_SHOTS_URLS:
+        url = url_tpl.format(year=year)
+        try:
+            resp = requests.get(url, headers=_HEADERS, timeout=180)
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            errors.append(f"{url}: {e}")
+            continue
+        if not zipfile.is_zipfile(io.BytesIO(resp.content)):
+            # A license/redirect page comes back as HTML with a 200.
+            errors.append(f"{url}: response was not a zip file")
+            continue
+        content = resp.content
+        break
+
+    if content is None:
+        if csv_path.exists():
+            # Stale current-season cache beats no data at all.
+            print(f"  Warning: MoneyPuck shots download failed for {year}, "
+                  f"using cached copy from {csv_path}")
+            return csv_path
+        raise RuntimeError(
+            f"Could not download MoneyPuck shots for {year}:\n  "
+            + "\n  ".join(errors))
+
+    with zipfile.ZipFile(io.BytesIO(content)) as zf:
         names = [n for n in zf.namelist() if n.endswith(".csv")]
         if not names:
             raise ValueError(f"No CSV found in MoneyPuck shots zip for {year}")
@@ -208,17 +239,27 @@ def aggregate_season_game_team_xg(year: int) -> dict:
 _SEASON_CACHE = {}  # year -> aggregated dict, in-process memoization
 
 
-def load_moneypuck_xg(seasons: list) -> dict:
+def load_moneypuck_xg(seasons: list, strict: bool = True) -> dict:
     """
     Load and merge per-game team xG aggregates for every season in
     `seasons` (season strings like '20222023', matching
     historical_dataset.py's season format). Returns
     {nhl_game_id: {team_abbrev: {...}}}.
+
+    strict=True (training) raises if any season can't be downloaded.
+    strict=False (serving) warns and skips that season instead, so a
+    MoneyPuck outage degrades the xG features rather than killing the run.
     """
     merged = {}
     for season in seasons:
         year = int(season[:4])
         if year not in _SEASON_CACHE:
-            _SEASON_CACHE[year] = aggregate_season_game_team_xg(year)
+            try:
+                _SEASON_CACHE[year] = aggregate_season_game_team_xg(year)
+            except (requests.RequestException, RuntimeError) as e:
+                if strict:
+                    raise
+                print(f"  Warning: skipping MoneyPuck xG for {season}: {e}")
+                continue
         merged.update(_SEASON_CACHE[year])
     return merged

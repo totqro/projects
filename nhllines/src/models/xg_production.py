@@ -163,7 +163,7 @@ def get_live_feature_state(seasons: list = None) -> dict:
         all_games.extend(fetch_season_games_full(season, verbose=False))
 
     xg_seasons = sorted(set(seasons) & MONEYPUCK_SEASONS)
-    xg_data = load_moneypuck_xg(xg_seasons) if xg_seasons else {}
+    xg_data = load_moneypuck_xg(xg_seasons, strict=False) if xg_seasons else {}
 
     team_states, h2h_results = build_live_state(all_games, xg_data=xg_data)
     return {
