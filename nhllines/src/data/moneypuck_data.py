@@ -2,7 +2,7 @@
 MoneyPuck shot-level expected-goals (xG) data.
 ================================================
 Source: MoneyPuck's public shots dataset, one zip per season
-(https://moneypuck.com/moneypuck/playerData/shots/shots_{YEAR}.zip, ~20MB
+(https://peter-tanner.com/moneypuck/downloads/shots_{YEAR}.zip, ~20MB
 zipped CSV). Every row is one shot, tagged with game_id, xGoal,
 homeTeamCode/awayTeamCode, teamCode (the shooting team), isHomeTeam, score
 state (home/awayTeamGoals at the time of the shot), and strength state
@@ -53,12 +53,12 @@ def _current_season_start_year() -> int:
 
 MONEYPUCK_SHOTS_URL = "https://moneypuck.com/moneypuck/playerData/shots/shots_{year}.zip"
 
-# MoneyPuck has moved the shots downloads before (the old path started
-# returning 404 for completed seasons), so try each known location in order.
-# The data.htm download links point at the peter-tanner.com host.
+# MoneyPuck's data page now serves the shots zips from peter-tanner.com
+# (the old moneypuck.com path 404s), so try that first and keep the old
+# path as a fallback in case it comes back.
 MONEYPUCK_SHOTS_URLS = [
-    MONEYPUCK_SHOTS_URL,
     "https://peter-tanner.com/moneypuck/downloads/shots_{year}.zip",
+    MONEYPUCK_SHOTS_URL,
 ]
 
 # MoneyPuck's server 302-redirects to a license page for bare requests
