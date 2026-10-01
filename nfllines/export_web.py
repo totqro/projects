@@ -39,9 +39,9 @@ TEST_SET = {
     "seasons": "2024-2025",
     "n": 569,
     "rows": [
-        {"name": "Market (closing moneyline)", "log_loss": 0.5981, "brier": 0.2059, "accuracy": 0.684},
+        {"name": "Vegas (odds at kickoff)", "log_loss": 0.5981, "brier": 0.2059, "accuracy": 0.684},
         {"name": "This model", "log_loss": 0.6119, "brier": 0.2117, "accuracy": 0.687, "model": True},
-        {"name": "Elo baseline", "log_loss": 0.6224, "brier": 0.2164, "accuracy": 0.654},
+        {"name": "Simple team ratings (Elo)", "log_loss": 0.6224, "brier": 0.2164, "accuracy": 0.654},
     ],
 }
 

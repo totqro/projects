@@ -87,7 +87,7 @@ function renderGameCard(g, i) {
             <span class="gc-tpct">${has ? (p*100).toFixed(0) + '%' : '—'}</span>
             ${final ? `<span class="gc-score${won ? ' won' : ''}">${score}</span>` : ''}
         </div>`;
-    const mkt = g.market_home_prob != null ? `<span class="gc-line">Market ${g.home} ${(g.market_home_prob*100).toFixed(0)}%</span>` : '';
+    const mkt = g.market_home_prob != null ? `<span class="gc-line">Vegas: ${vegasFav(g)}</span>` : '';
     return `<div class="gc cy-panel${isStrong ? ' gc-strong' : ''}${has ? '' : ' gc-pending'}" id="gc-${i}">
         <div class="gc-header" onclick="toggleGC(${i})">
             <div class="gc-matchup">
@@ -103,13 +103,12 @@ function renderGameCard(g, i) {
         </div>
         <div class="gc-footer" onclick="toggleGC(${i})">
             <div class="gc-total">
-                <span class="gc-total-num">${has ? g.expected_total.toFixed(1) : '—'}</span>
-                <span class="gc-total-unit">exp. points</span>
-                ${has ? `<span class="gc-line">${g.away} ${g.expected_away_points.toFixed(1)} · ${g.home} ${g.expected_home_points.toFixed(1)}</span>` : ''}
+                <span class="gc-total-unit">Projected</span>
+                <span class="gc-total-num">${has ? `${g.away} ${Math.round(g.expected_away_points)} - ${g.home} ${Math.round(g.expected_home_points)}` : '—'}</span>
                 ${mkt}
             </div>
             <div class="gc-conf">
-                <span class="gc-conf-label">Pick</span>
+                <span class="gc-conf-label">${has ? `Pick: ${homeFav ? g.home : g.away}` : 'Pick'}</span>
                 <div class="confidence-bar gc-conf-bar"><div class="confidence-fill" style="width:${has ? (conf*100).toFixed(0) : 0}%"></div></div>
                 <span class="gc-conf-pct">${has ? (conf*100).toFixed(0) + '%' : '—'}</span>
             </div>
@@ -117,6 +116,13 @@ function renderGameCard(g, i) {
         <div class="gc-context" onclick="toggleGC(${i})">${statusLine(g)}</div>
         <div class="gc-expanded" id="gced-${i}" style="display:none">${renderGameDetails(g)}</div>
     </div>`;
+}
+
+// Vegas's favourite and its win chance, from the de-vigged moneyline.
+function vegasFav(g) {
+    const p = g.market_home_prob;
+    if (p == null) return '-';
+    return `${p >= 0.5 ? g.home : g.away} ${pct(Math.max(p, 1 - p), 0)}`;
 }
 
 function toggleGC(i) {
@@ -131,21 +137,21 @@ function renderGameDetails(g) {
         return `<div class="details-section"><p class="parlay-subtitle">The model's number for this game is held until the final injury report is published (${fmtKick(g.report_due || g.kickoff)}). The model was trained on final reports, so a mid-week prediction would not be the same model.</p></div>`;
     }
     const fav = g.home_win_prob > 0.5 ? g.home : g.away;
-    const margin = Math.abs(g.expected_margin).toFixed(1);
     const card = (label, val) => `<div class="advanced-stat-card"><div class="advanced-stat-label">${label}</div><div class="advanced-stat-value">${val}</div></div>`;
-    let h = `<div class="details-section"><h3>Model vs Market</h3><div class="advanced-stats-grid">
-        ${card(`Model ${g.home}`, pct(g.home_win_prob))}
-        ${card(`Market ${g.home}`, g.market_home_prob != null ? pct(g.market_home_prob) : '-')}
-        ${card('Expected margin', `${fav} by ${margin}`)}
-        ${card('Expected total', g.expected_total.toFixed(1))}
+    const modelFav = `${fav} ${pct(Math.max(g.home_win_prob, 1 - g.home_win_prob), 0)}`;
+    let h = `<div class="details-section"><h3>Model vs Vegas</h3><div class="advanced-stats-grid">
+        ${card('Model favours', modelFav)}
+        ${card('Vegas favours', vegasFav(g))}
+        ${card('Projected winning margin', `${fav} by ${Math.round(Math.abs(g.expected_margin))}`)}
+        ${card('Projected total points', Math.round(g.expected_total))}
     </div></div>`;
     if (g.status === 'final') {
         const m = g.home_score - g.away_score;
         h += `<div class="details-section"><h3>Result</h3><div class="advanced-stats-grid">
             ${card('Final', `${g.away} ${g.away_score} @ ${g.home} ${g.home_score}`)}
-            ${card('Actual margin', m === 0 ? 'tie' : `${m > 0 ? g.home : g.away} by ${Math.abs(m)}`)}
-            ${card('Actual total', g.home_score + g.away_score)}
-            ${card('Logged', fmtDay(g.logged_at))}
+            ${card('Actual winning margin', m === 0 ? 'tie' : `${m > 0 ? g.home : g.away} by ${Math.abs(m)}`)}
+            ${card('Actual total points', g.home_score + g.away_score)}
+            ${card('Prediction posted', fmtDay(g.logged_at))}
         </div></div>`;
     }
     return h;
@@ -162,61 +168,96 @@ async function loadPerformance() {
     } catch (e) { console.error(e); noPerformance(); }
 }
 
+const rec = (w, n) => `${w}-${n - w}`;
+const tbl = rows => rows.map(([a, b, c, strong]) => `<div class="pred-result-row bench-row${strong ? ' bench-row--model' : ''}">
+        <span class="pred-result-matchup">${a}</span>
+        <span class="pred-result-winner">${b}</span>
+        <span class="pred-result-winner"><span class="score">${c}</span></span>
+    </div>`).join('');
+
 function displayPerformance(d) {
     const s = d.season_summary || {};
     if (!s.n) { noPerformance(); renderTestSet(d.test_set); return; }
-    $('perf-title').textContent = `${d.season} Season Accuracy`;
-    $('perf-n').textContent = s.n;
-    $('perf-acc').textContent = `${pct(s.model.accuracy)}`;
-    $('perf-ll').textContent = s.market ? `${s.model.log_loss.toFixed(3)} (${s.market.log_loss.toFixed(3)})` : s.model.log_loss.toFixed(3);
-    $('perf-total').textContent = s.total_mae != null ? s.total_mae.toFixed(1) : '-';
+    const results = d.results || [];
+    const m = s.model, v = s.market;
+    $('perf-title').textContent = `How It's Doing: ${d.season} Season`;
+    $('perf-acc').textContent = `${m.correct} of ${m.n} (${pct(m.accuracy, 0)})`;
+    $('perf-vegas').textContent = v ? `${v.correct} of ${v.n} (${pct(v.accuracy, 0)})` : '-';
+    const conf = results.filter(r => r.correct != null && r.pick_prob >= 0.70);
+    const confW = conf.filter(r => r.correct).length;
+    $('perf-confident').textContent = conf.length ? `${confW} of ${conf.length}` : 'none yet';
+    $('perf-miss').textContent = s.margin_mae != null ? `${s.margin_mae.toFixed(1)} pts` : '-';
 
-    const row = (label, m, strong, extra='') => m && m.n ? `<div class="pred-result-row bench-row${strong ? ' bench-row--model' : ''}">
-            <span class="pred-result-matchup">${label}<span class="pred-result-date"> · ${m.n}</span></span>
-            <span class="pred-result-winner">${m.correct != null && extra !== 'nocount' ? `${m.correct}/${m.n} · ${pct(m.accuracy)}` : ''}</span>
-            <span class="pred-result-winner">LL ${m.log_loss.toFixed(4)}<span class="score"> · Brier ${m.brier.toFixed(4)}</span></span>
-        </div>` : '';
-    let h = row('This model', s.model, true) + row('Market close', s.market) + row('Coin flip', s.coin_flip, false, 'nocount');
-    if (s.favourite_agreement != null) h += `<p class="parlay-subtitle" style="margin-top:12px">Same favourite as the market in ${pct(s.favourite_agreement, 0)} of games.`
-        + ` Points: margin MAE ${s.margin_mae} (market spread ${s.market_margin_mae ?? '-'}), total MAE ${s.total_mae} (market total ${s.market_total_mae ?? '-'}).</p>`;
-    if (s.n < d.min_games_for_verdict) h += `<p class="parlay-subtitle">${s.n} games is under ${d.min_games_for_verdict}: any model-vs-market gap here is noise, not evidence.</p>`;
+    // One plain sentence on where things stand, honest about sample size.
+    let verdict = '';
+    if (v) {
+        const diff = m.correct - v.correct;
+        verdict = diff > 0 ? `So far the model has picked ${diff} more winner${diff > 1 ? 's' : ''} than Vegas. `
+                : diff < 0 ? `So far Vegas has picked ${-diff} more winner${diff < -1 ? 's' : ''} than the model. `
+                : 'So far the model and Vegas have picked the same number of winners. ';
+    }
+    if (s.n < d.min_games_for_verdict) verdict += `That is only ${s.n} games, so a couple of upsets either way can swing it. It takes about ${d.min_games_for_verdict} games (most of a season) before the comparison really means something.`;
+    $('perf-verdict').textContent = verdict;
+
+    // Confidence check, from every scored game.
+    const buckets = [[0.5, 0.6, 'Toss-ups (50-59%)'], [0.6, 0.7, 'Leans (60-69%)'], [0.7, 0.8, 'Confident (70-79%)'], [0.8, 1.01, 'Strong (80%+)']];
+    $('calibration-table').innerHTML = tbl(buckets.map(([lo, hi, label]) => {
+        const b = results.filter(r => r.correct != null && r.pick_prob >= lo && r.pick_prob < hi);
+        if (!b.length) return [label, 'no games yet', ''];
+        const w = b.filter(r => r.correct).length;
+        const said = b.reduce((t, r) => t + r.pick_prob, 0) / b.length;
+        return [`${label}<span class="pred-result-date"> · ${b.length} game${b.length > 1 ? 's' : ''}</span>`,
+                `favourite won ${w} of ${b.length} (${pct(w / b.length, 0)})`, `model said ${pct(said, 0)}`];
+    })) + `<p class="parlay-subtitle" style="margin-top:10px">With only a handful of games per row, expect these to bounce around until late in the season.</p>`;
+
+    // Model vs Vegas in plain terms.
+    const dis = results.filter(r => r.market_pick && r.pick !== r.market_pick && r.correct != null);
+    const disW = dis.filter(r => r.correct).length;
+    let bench = [['Model', `record ${rec(m.correct, m.n)}`, `${pct(m.accuracy, 0)} right`, true]];
+    if (v) bench.push(['Vegas', `record ${rec(v.correct, v.n)}`, `${pct(v.accuracy, 0)} right`]);
+    bench.push(['Always pick the home team', `record ${rec(results.filter(r => r.correct != null && r.home_score > r.away_score).length, results.filter(r => r.correct != null).length)}`, 'the no-skill baseline']);
+    let h = tbl(bench);
+    const lines = [];
+    if (s.favourite_agreement != null) lines.push(`The model and Vegas picked the same team in ${pct(s.favourite_agreement, 0)} of games.`);
+    if (dis.length) lines.push(`When they disagreed (${dis.length} game${dis.length > 1 ? 's' : ''}), the model was right ${disW} time${disW === 1 ? '' : 's'} and Vegas ${dis.length - disW}.`);
+    if (s.market_margin_mae != null) lines.push(`On the final score, the model's projected margin missed by ${s.margin_mae.toFixed(1)} points on average; the Vegas point spread missed by ${s.market_margin_mae.toFixed(1)}.`);
+    if (s.market_total_mae != null) lines.push(`On total points, the model missed by ${s.total_mae.toFixed(1)} on average; the Vegas over/under missed by ${s.market_total_mae.toFixed(1)}.`);
+    h += lines.map(l => `<p class="parlay-subtitle" style="margin-top:10px">${l}</p>`).join('');
     $('bench-table').innerHTML = h;
 
-    $('weeks-table').innerHTML = (d.weeks || []).slice().reverse().map(w => `<div class="pred-result-row week-row">
-            <span class="pred-result-date">Week ${w.week}</span>
-            <span class="pred-result-matchup">${w.model.correct}-${w.n - w.model.correct}<span class="pred-result-date"> · mkt ${w.market ? `${w.market.correct}-${w.market.n - w.market.correct}` : '-'}</span></span>
-            <span class="pred-result-winner">LL ${w.model.log_loss.toFixed(3)}</span>
-            <span class="pred-result-winner"><span class="score">mkt ${w.market ? w.market.log_loss.toFixed(3) : '-'}</span></span>
-        </div>`).join('');
+    $('weeks-table').innerHTML = tbl((d.weeks || []).slice().reverse().map(w => [
+        `Week ${w.week}`, `model ${rec(w.model.correct, w.n)}`,
+        w.market ? `Vegas ${rec(w.market.correct, w.market.n)}` : '']));
 
     renderTestSet(d.test_set);
 
-    $('recent-results-list').innerHTML = (d.results || []).map(r => {
+    const nerd = (label, x, strong) => x && x.n ? [`${label}<span class="pred-result-date"> · ${x.n}</span>`, `log loss ${x.log_loss.toFixed(4)}`, `Brier ${x.brier.toFixed(4)}`, strong] : null;
+    $('nerd-table').innerHTML = tbl([nerd('Model, this season', m, true), nerd('Vegas, this season', v), nerd('Coin flip', s.coin_flip)].filter(Boolean))
+        + `<p class="parlay-subtitle" style="margin-top:10px">2024-2025 test: ${(d.test_set?.rows || []).map(r => `${r.name} ${r.log_loss.toFixed(4)} / ${r.brier.toFixed(4)}`).join(' · ')}.</p>`;
+
+    $('recent-results-list').innerHTML = results.map(r => {
         const icon = r.correct == null ? '➖' : r.correct ? '✅' : '❌';
         const mIcon = r.market_correct == null ? '' : r.market_correct ? '✅' : '❌';
         const aw = r.away_score > r.home_score, hw = r.home_score > r.away_score;
-        const team = (t, s, won) => won ? `<b>${t} ${s}</b>` : `${t} ${s}`;
+        const team = (t, sc, won) => won ? `<b>${t} ${sc}</b>` : `${t} ${sc}`;
         return `<div class="pred-result-row">
             <span class="pred-result-date">Wk ${r.week}</span>
             <span class="pred-result-matchup">${team(r.away, r.away_score, aw)} @ ${team(r.home, r.home_score, hw)}</span>
             <span class="pred-result-winner">${icon} ${r.pick} ${(r.pick_prob*100).toFixed(0)}%</span>
-            <span class="pred-result-total"><span class="actual">mkt ${r.market_pick ? `${mIcon} ${r.market_pick} ${(r.market_pick_prob*100).toFixed(0)}%` : '-'}</span></span>
+            <span class="pred-result-total"><span class="actual">Vegas ${r.market_pick ? `${mIcon} ${r.market_pick} ${(r.market_pick_prob*100).toFixed(0)}%` : '-'}</span></span>
         </div>`;
     }).join('');
 }
 
 function renderTestSet(t) {
     if (!t) return;
-    $('test-table').innerHTML = t.rows.map(r => `<div class="pred-result-row bench-row${r.model ? ' bench-row--model' : ''}">
-            <span class="pred-result-matchup">${r.name}<span class="pred-result-date"> · ${t.n}</span></span>
-            <span class="pred-result-winner">${pct(r.accuracy)}</span>
-            <span class="pred-result-winner">LL ${r.log_loss.toFixed(4)}<span class="score"> · Brier ${r.brier.toFixed(4)}</span></span>
-        </div>`).join('');
+    $('test-table').innerHTML = tbl(t.rows.map(r => [r.name, `picked the winner ${pct(r.accuracy, 1)}`, `${Math.round(r.accuracy * t.n)} of ${t.n}`, r.model]))
+        + `<p class="parlay-subtitle" style="margin-top:10px">The model matched Vegas on picking winners, but Vegas was a bit better at judging how likely each result was, so the model is not a way to beat the betting market. It also beat the simple team rating system (Elo) it was built on top of, and did so in all nine earlier seasons it was checked on.</p>`;
 }
 
 function noPerformance() {
     $('recent-results-list').innerHTML = `<div class="no-data"><div class="no-data-icon">📊</div><p>No scored games yet this season.</p></div>`;
-    ['perf-n','perf-acc','perf-ll','perf-total'].forEach(id => $(id).textContent = '-');
+    ['perf-acc','perf-vegas','perf-confident','perf-miss'].forEach(id => $(id).textContent = '-');
 }
 
 (function(){

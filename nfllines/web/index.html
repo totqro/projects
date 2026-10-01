@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/cyber.css">
     <link rel="stylesheet" href="/dashboard.css">
-    <link rel="stylesheet" href="styles.css?v=1.0">
+    <link rel="stylesheet" href="styles.css?v=1.1">
 </head>
 <body>
     <nav class="cy-nav">
@@ -26,7 +26,7 @@
         <header class="dash-header cy-panel cy-panel--terminal cy-card">
             <p class="cy-label cy-label--accent cy-prompt">nfllines // weekly model output</p>
             <h1 class="cy-h2 cy-rgb">&#127944; NFL Game Predictions</h1>
-            <p class="subtitle cy-label">QB-adjusted Elo, efficiency &amp; injury-aware win probabilities &middot; logged after the final injury report, before kickoff</p>
+            <p class="subtitle cy-label">Win chances and projected scores for every game &middot; built from team strength, quarterback play and injury reports</p>
         </header>
 
         <div class="tabs cy-tabs" role="tablist">
@@ -55,7 +55,7 @@
                         <span class="stat-value cy-stat__value" id="games-count">-</span>
                     </div>
                     <div class="stat cy-stat">
-                        <span class="stat-label cy-stat__label">Predictions Logged</span>
+                        <span class="stat-label cy-stat__label">Predictions Posted</span>
                         <span class="stat-value cy-stat__value cy-stat__value--accent" id="logged-count">-</span>
                     </div>
                     <div class="stat cy-stat">
@@ -63,15 +63,15 @@
                         <span class="stat-value cy-stat__value" id="week-record">-</span>
                     </div>
                 </div>
-                <p class="parlay-subtitle">A game's prediction posts once its final injury report is out: Wednesday evening for Thursday, Friday evening for Sunday, Saturday evening for Monday. Logged numbers never change after kickoff.</p>
+                <p class="parlay-subtitle">Each game's prediction posts once the teams' final injury reports are out: Wednesday evening for Thursday games, Friday evening for Sunday, Saturday evening for Monday. Once posted, a prediction is locked and is never changed after kickoff. The percentage is the model's chance that team wins; the letter grade shows how sure it is (A = 75%+, B+ = 65%+, B = 55%+, C+ = close to a coin flip).</p>
             </section>
 
             <div class="games-filter-bar">
                 <label class="cy-field cy-field--select">
                     <span class="cy-sr-only">Sort games</span>
                     <select id="sort-games" class="filter-select cy-select" onchange="renderWeek()">
-                        <option value="kickoff">Sort by Kickoff</option>
-                        <option value="confidence">Sort by Confidence</option>
+                        <option value="kickoff">By kickoff time</option>
+                        <option value="confidence">Most confident first</option>
                     </select>
                 </label>
             </div>
@@ -82,47 +82,61 @@
         <!-- Performance -->
         <div id="performance-tab" class="tab-content" style="display: none;">
             <section class="summary-card cy-panel cy-card">
-                <h2 class="cy-label cy-slash" id="perf-title">Season Accuracy</h2>
+                <h2 class="cy-label cy-slash" id="perf-title">How It's Doing</h2>
                 <div class="stats-grid">
                     <div class="stat cy-stat">
-                        <span class="stat-label cy-stat__label">Games Scored</span>
-                        <span class="stat-value cy-stat__value" id="perf-n">-</span>
-                    </div>
-                    <div class="stat cy-stat">
-                        <span class="stat-label cy-stat__label">Winner Accuracy</span>
+                        <span class="stat-label cy-stat__label">Picked the Winner</span>
                         <span class="stat-value cy-stat__value cy-stat__value--accent" id="perf-acc">-</span>
                     </div>
                     <div class="stat cy-stat">
-                        <span class="stat-label cy-stat__label">Log Loss (Market)</span>
-                        <span class="stat-value cy-stat__value cy-stat__value--text" id="perf-ll">-</span>
+                        <span class="stat-label cy-stat__label">Vegas Picked the Winner</span>
+                        <span class="stat-value cy-stat__value" id="perf-vegas">-</span>
                     </div>
                     <div class="stat cy-stat">
-                        <span class="stat-label cy-stat__label">Total Pts MAE</span>
-                        <span class="stat-value cy-stat__value" id="perf-total">-</span>
+                        <span class="stat-label cy-stat__label">Confident Picks (70%+)</span>
+                        <span class="stat-value cy-stat__value" id="perf-confident">-</span>
+                    </div>
+                    <div class="stat cy-stat">
+                        <span class="stat-label cy-stat__label">Avg Miss on Winning Margin</span>
+                        <span class="stat-value cy-stat__value cy-stat__value--text" id="perf-miss">-</span>
                     </div>
                 </div>
+                <p class="parlay-subtitle" id="perf-verdict"></p>
             </section>
 
             <section class="summary-card cy-panel cy-card">
-                <h2 class="cy-label cy-slash">Benchmarks</h2>
-                <p class="parlay-subtitle" id="bench-note">Only predictions logged before kickoff count. Market = closing moneyline, de-vigged. Lower log loss and Brier are better; accuracy alone rewards overconfidence.</p>
+                <h2 class="cy-label cy-slash">Does It Mean What It Says?</h2>
+                <p class="parlay-subtitle">When the model gives a team a 70% chance, that team should win about 7 times out of 10. Here is how often the favourite actually won at each confidence level.</p>
+                <div id="calibration-table"></div>
+            </section>
+
+            <section class="summary-card cy-panel cy-card">
+                <h2 class="cy-label cy-slash">Model vs Vegas</h2>
+                <p class="parlay-subtitle">Vegas is the betting odds at kickoff, the toughest benchmark there is. The model never sees the odds; they are only used to grade it.</p>
                 <div id="bench-table"></div>
             </section>
 
             <section class="summary-card cy-panel cy-card">
-                <h2 class="cy-label cy-slash">By Week</h2>
+                <h2 class="cy-label cy-slash">Week by Week</h2>
                 <div id="weeks-table"></div>
             </section>
 
             <section class="summary-card cy-panel cy-card">
-                <h2 class="cy-label cy-slash">Backtest (2024-2025, scored once)</h2>
-                <p class="parlay-subtitle">The held-out test: every modelling choice was frozen on 2015-2023 before these 569 games were scored, one time.</p>
+                <h2 class="cy-label cy-slash">Track Record: 2024 &amp; 2025 Seasons</h2>
+                <p class="parlay-subtitle">Before going live, the model was built on 2015-2023 only, then tested once on the 569 games of the 2024 and 2025 seasons it had never seen.</p>
                 <div id="test-table"></div>
             </section>
 
+            <details class="summary-card cy-panel cy-card nerd">
+                <summary class="cy-label cy-slash">For the stats nerds</summary>
+                <p class="parlay-subtitle">Winner accuracy ignores how confident a pick was. These two scores also reward being sure when right and punish being sure when wrong. Lower is better for both; a coin flip scores 0.693 and 0.250.</p>
+                <div id="nerd-table"></div>
+            </details>
+
             <section class="recent-results cy-panel cy-panel--terminal cy-card">
-                <div class="cy-termbar">performance.json <span class="cy-termbar__right">all games</span></div>
-                <h2 class="cy-label cy-slash">Game Results</h2>
+                <div class="cy-termbar">every game <span class="cy-termbar__right">newest first</span></div>
+                <h2 class="cy-label cy-slash">Game by Game</h2>
+                <p class="parlay-subtitle">Final score (away @ home, winner in bold), the model's pick with its win chance, and Vegas's pick.</p>
                 <div id="recent-results-list"></div>
             </section>
         </div>
@@ -134,6 +148,6 @@
         <a href="https://github.com/totqro" target="_blank" rel="noopener">GitHub</a>
     </footer>
 
-    <script src="app.js?v=1.0"></script>
+    <script src="app.js?v=1.1"></script>
 </body>
 </html>
