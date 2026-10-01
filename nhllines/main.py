@@ -32,6 +32,7 @@ from pathlib import Path
 
 from src.data import (
     fetch_standings,
+    fetch_schedule,
     fetch_season_games,
     fetch_todays_games,
     get_team_recent_form,
@@ -69,7 +70,26 @@ from src.analysis import (
     log_predictions,
     WIN_MODEL_VERSIONS,
     TOTALS_MODEL_VERSION,
+    LEAGUE_AVG_TOTALS_VERSION,
 )
+from src.data.historical_dataset import snapshot_team_state
+
+
+def _league_average_total() -> float:
+    """League-average total goals over the completed seasons before the current
+    one — the only totals forecast that has ever passed the totals gate
+    (model_gate.py --totals). Used when the similarity model has no standings
+    to run on. Computed from the same team schedules the feature state already
+    fetched (cached), not from data/training_set.csv, which is gitignored and
+    absent on most CI runs."""
+    from src.data.historical_dataset import current_season, fetch_season_games_full
+    from src.models.calibration import DEFAULT_SEASONS
+    prior = [s for s in DEFAULT_SEASONS if s < current_season()]
+    totals = [g["total_goals"] for s in prior
+              for g in fetch_season_games_full(s, verbose=False)]
+    if not totals:
+        raise RuntimeError(f"No completed games found in seasons {prior}")
+    return sum(totals) / len(totals)
 
 
 def run_analysis(
@@ -145,12 +165,18 @@ def run_analysis(
         print("  !! here, the checkout or the weekly refit is broken.")
         print("  !! Predictions will be logged as elo-platt-v1, not xG.")
         print("  " + "!" * 66)
-        if not elo_production.production_model_exists():
-            print("  No persisted Elo calibrator found either, fitting one now "
-                  "(normally done weekly by build_training_set.py)...")
-            elo_production.fit_and_persist()
-        elo_coefs, elo_calibrator = elo_production.load_production_model()
-        print(f"  Loaded Elo coefficients + {elo_calibrator.method} calibrator")
+
+    # Elo is always needed: it is the fallback when the xG artifacts are
+    # missing, and the model served for any game where a team has fewer than
+    # the xG model's training minimum of games this season (preseason, the
+    # first days of the year) — Elo carries ratings across seasons, the xG
+    # state does not.
+    if not elo_production.production_model_exists():
+        print("  No persisted Elo calibrator found, fitting one now "
+              "(normally done weekly by build_training_set.py)...")
+        elo_production.fit_and_persist()
+    elo_coefs, elo_calibrator = elo_production.load_production_model()
+    print(f"  Loaded Elo coefficients + {elo_calibrator.method} calibrator")
 
     # Run goalie fetch, injury fetch, and live rating/feature computation in
     # parallel — independent operations that together take several seconds.
@@ -185,13 +211,16 @@ def run_analysis(
         return result
 
     with ThreadPoolExecutor(max_workers=4) as executor:
-        rating_future = executor.submit(_load_xg_state if use_xg else _load_elo_ratings)
+        elo_future = executor.submit(_load_elo_ratings)
+        rating_future = executor.submit(_load_xg_state) if use_xg else None
         goalie_future = executor.submit(_fetch_goalies)
         injury_future = executor.submit(_fetch_injuries)
 
         goalie_starters = goalie_future.result()
         all_injuries = injury_future.result()
-        rating_future.result()  # Wait for live ratings/state to finish computing
+        elo_future.result()  # Wait for live ratings/state to finish computing
+        if rating_future:
+            rating_future.result()
 
     def _elo_win_prob(home: str, away: str, home_rest_days: float, away_rest_days: float,
                       home_b2b: bool, away_b2b: bool) -> float:
@@ -226,13 +255,62 @@ def run_analysis(
         p_cal, _ = xg_production.predict_calibrated(xg_coefs, xg_calibrator, features)
         return p_cal
 
-    _win_prob = _xg_win_prob if use_xg else _elo_win_prob
-    ml_indicator = " (xG+Platt)" if use_xg else " (Elo+Platt)"
+    def _win_prob(home, away, home_rest_days, away_rest_days, home_b2b, away_b2b):
+        """(P(home win), model key). xG when it is available AND both teams
+        have played enough games this season for its training distribution to
+        cover them; otherwise Elo."""
+        if use_xg:
+            gp = _season_gp(home, away)
+            if gp >= xg_production.TRAINING_MIN_GP:
+                return _xg_win_prob(home, away, home_rest_days, away_rest_days,
+                                    home_b2b, away_b2b), "xg"
+        return _elo_win_prob(home, away, home_rest_days, away_rest_days,
+                             home_b2b, away_b2b), "elo"
+
+    def _season_gp(home, away):
+        """Fewer games played this season of the two teams."""
+        season = xg_state["current_season"]
+        snap = lambda t: snapshot_team_state(
+            xg_state["team_states"], season, t, xg_state["as_of_date"])["gp"]
+        return min(snap(home), snap(away))
+
     # Stamp every logged prediction with the model that actually served it —
     # the fallback path must not write rows claiming the xG model, or the
-    # season scorecard would score two different models as one.
-    logged_model_version = (
-        f"{WIN_MODEL_VERSIONS['xg' if use_xg else 'elo']}+{TOTALS_MODEL_VERSION}")
+    # season scorecard would score two different models as one. The totals
+    # half of the version is fixed once standings are known (see below).
+    def _model_version(model_key):
+        totals = TOTALS_MODEL_VERSION if standings else LEAGUE_AVG_TOTALS_VERSION
+        return f"{WIN_MODEL_VERSIONS[model_key]}+{totals}"
+
+    # Preseason and opening day: the NHL API serves EMPTY standings until the
+    # regular season has begun, so a standings-keyed team check skips every
+    # game and the run publishes nothing. The shipped win model does not read
+    # standings at all (its state is replayed from completed games), so fall
+    # back to the teams that model knows.
+    model_teams = ({team for _, team in xg_state["team_states"]} if use_xg
+                   else set(elo_ratings))
+    known_teams = set(standings) or model_teams
+    if not standings:
+        print("\n  Standings are empty (preseason / before opening day): "
+              "using model state for team lookup, league-average expected total.")
+    league_total = None if standings else _league_average_total()
+
+    # (date, home, away) -> NHL gameType. fetch_schedule covers the whole week,
+    # so the odds path (which can include tomorrow's early games) is covered.
+    game_types = {}
+    try:
+        for g in fetch_schedule(datetime.now(EST).strftime("%Y-%m-%d")):
+            game_types[(g["date"], g["home_team"], g["away_team"])] = g.get("game_type", 2)
+    except Exception as e:
+        print(f"  Warning: could not load schedule game types: {e}")
+
+    def _find_similar(home, away):
+        # The similarity model is keyed on standings; without them it would
+        # run on neutral defaults and return noise, so return no games.
+        if not standings:
+            return []
+        return find_similar_games(
+            home, away, standings, all_games, team_forms, n_similar=n_similar)
 
     # Step 4: Fetch odds (if enabled)
     odds_games = []
@@ -303,9 +381,9 @@ def run_analysis(
         for game_data in odds_games:
             h = team_name_to_abbrev(game_data["home_team"])
             a = team_name_to_abbrev(game_data["away_team"])
-            if h in standings:
+            if h in known_teams:
                 unique_teams.add(h)
-            if a in standings:
+            if a in known_teams:
                 unique_teams.add(a)
 
         print(f"  Pre-computing splits, advanced stats & streaks for {len(unique_teams)} teams...")
@@ -349,7 +427,7 @@ def run_analysis(
             home = team_name_to_abbrev(home_full)
             away = team_name_to_abbrev(away_full)
 
-            if home not in standings or away not in standings:
+            if home not in known_teams or away not in known_teams:
                 print(f"  Skipping {away_full} @ {home_full} (team not found in standings)")
                 continue
 
@@ -361,10 +439,7 @@ def run_analysis(
             market_probs = get_consensus_no_vig_odds(game_data)
 
             # Find similar historical games
-            similar = find_similar_games(
-                home, away, standings, all_games, team_forms,
-                n_similar=n_similar,
-            )
+            similar = _find_similar(home, away)
             print(f"    Found {len(similar)} similar historical games")
 
             # Get total and spread lines from odds
@@ -390,7 +465,9 @@ def run_analysis(
                 total_line=total_line,
                 spread_line=spread_line,
             )
-            
+            if league_total is not None:
+                model_probs["expected_total"] = league_total
+
             # Get ML predictions and blend with similarity model
             # Fetch player data (rest days, back-to-back, etc.)
             # commence_time is UTC — [:10] would shift every 8 PM ET or later
@@ -402,6 +479,7 @@ def run_analysis(
             commence_utc = datetime.fromisoformat(
                 game_data["commence_time"].replace("Z", "+00:00"))
             game_date = commence_utc.astimezone(EST).strftime("%Y-%m-%d")
+            game_type = game_types.get((game_date, home, away), 2)
             player_data = get_player_data_nhl_api_only(home, away, game_date)
             
             # Add goalie data to player_data
@@ -468,7 +546,7 @@ def run_analysis(
             # missing). Overrides the similarity model's home_win_prob; the
             # similarity model's expected_total/over/under/cover outputs are
             # kept as-is since neither shipped model predicts totals or spreads.
-            elo_home_win_prob = _win_prob(
+            elo_home_win_prob, win_model = _win_prob(
                 home, away,
                 player_data.get('home_rest_days', 1), player_data.get('away_rest_days', 1),
                 player_data.get('home_back_to_back', False), player_data.get('away_back_to_back', False),
@@ -483,6 +561,8 @@ def run_analysis(
                 "away_team": away,
                 "home_win_prob": elo_home_win_prob,
                 "expected_total": model_probs["expected_total"],
+                "game_type": game_type,
+                "model_version": _model_version(win_model),
             })
 
             # Player/context indicators for display only (not fed into a
@@ -596,7 +676,7 @@ def run_analysis(
             
             context_factors_text = ""
 
-            print(f"    Model{ml_indicator}: {home} {model_probs['home_win_prob']:.1%} / "
+            print(f"    Model ({win_model}+Platt): {home} {model_probs['home_win_prob']:.1%} / "
                   f"{away} {model_probs['away_win_prob']:.1%} "
                   f"(confidence: {model_probs['confidence']:.0%}){player_context}{goalie_context}{injury_context}{context_factors_text}")
             print(f"    Market: {home} {market_probs['home_win_prob']:.1%} / "
@@ -609,14 +689,20 @@ def run_analysis(
                       f"(O {blended['over_prob']:.1%} / U {blended['under_prob']:.1%})")
 
             # Find +EV bets
-            game_bets = evaluate_all_bets(
-                game_label, home, away,
-                blended, best_odds,
-                stake=stake, min_edge=min_edge,
-                conservative=conservative,
-                book_filter=book_filter,
-                espn_only=espn_only,
-            )
+            # Preseason lineups are prospect-heavy and the model has no
+            # current-season signal, so its gap to the market is not an edge.
+            # Show the prediction and the market price; recommend nothing.
+            if game_type == 1:
+                game_bets = []
+            else:
+                game_bets = evaluate_all_bets(
+                    game_label, home, away,
+                    blended, best_odds,
+                    stake=stake, min_edge=min_edge,
+                    conservative=conservative,
+                    book_filter=book_filter,
+                    espn_only=espn_only,
+                )
             
             # Filter bets using learned criteria from feedback system
             filtered_bets = []
@@ -777,6 +863,9 @@ def run_analysis(
                 "game": game_label,
                 "home": home,
                 "away": away,
+                "game_type": game_type,
+                "win_model": win_model,
+                "start_time": game_data["commence_time"],
                 "model_probs": model_probs,
                 "market_probs": market_probs,
                 "blended_probs": blended,
@@ -825,23 +914,22 @@ def run_analysis(
             away = game["away_team"]
             game_label = f"{away} @ {home}"
 
-            if home not in standings or away not in standings:
+            if home not in known_teams or away not in known_teams:
                 continue
 
             print(f"\n  Analyzing: {game_label}")
 
-            similar = find_similar_games(
-                home, away, standings, all_games, team_forms,
-                n_similar=n_similar,
-            )
+            similar = _find_similar(home, away)
 
             model_probs = estimate_probabilities(similar, home, away)
+            if league_total is not None:
+                model_probs["expected_total"] = league_total
 
             # Win probability: calibrated production model (model-gate
             # winner), same as the with-odds path. Similarity model keeps
             # supplying expected_total (neither shipped model predicts totals).
             player_data = get_player_data_nhl_api_only(home, away, game.get("date", ""))
-            elo_home_win_prob = _win_prob(
+            elo_home_win_prob, win_model = _win_prob(
                 home, away,
                 player_data.get('home_rest_days', 1), player_data.get('away_rest_days', 1),
                 player_data.get('home_back_to_back', False), player_data.get('away_back_to_back', False),
@@ -856,9 +944,11 @@ def run_analysis(
                 "away_team": away,
                 "home_win_prob": elo_home_win_prob,
                 "expected_total": model_probs["expected_total"],
+                "game_type": game.get("game_type", 2),
+                "model_version": _model_version(win_model),
             })
 
-            print(f"    Model{ml_indicator}: {home} {model_probs['home_win_prob']:.1%} / "
+            print(f"    Model ({win_model}+Platt): {home} {model_probs['home_win_prob']:.1%} / "
                   f"{away} {model_probs['away_win_prob']:.1%}")
             print(f"    Expected total: {model_probs['expected_total']:.1f} goals")
             print(f"    Confidence: {model_probs['confidence']:.0%}")
@@ -868,6 +958,9 @@ def run_analysis(
                 "game": game_label,
                 "home": home,
                 "away": away,
+                "game_type": game.get("game_type", 2),
+                "win_model": win_model,
+                "start_time": game.get("start_time", ""),
                 "model_probs": model_probs,
             })
 
@@ -935,8 +1028,9 @@ def run_analysis(
     # only if logged first"). Deduped by (game_id, run date) so re-running
     # main.py the same day doesn't double-log a game.
     if predictions_to_log:
-        n_logged = log_predictions(predictions_to_log, model_version=logged_model_version)
-        print(f"Logged {n_logged} new prediction(s) as {logged_model_version} "
+        n_logged = log_predictions(predictions_to_log)
+        versions = sorted({p["model_version"] for p in predictions_to_log})
+        print(f"Logged {n_logged} new prediction(s) as {', '.join(versions)} "
               f"to data/predictions_log.jsonl")
 
     # Generate parlay performance data from historical results

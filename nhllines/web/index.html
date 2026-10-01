@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/cyber.css">
     <link rel="stylesheet" href="/dashboard.css">
-    <link rel="stylesheet" href="styles.css?v=17.0">
+    <link rel="stylesheet" href="styles.css?v=18.1">
 </head>
 <body>
     <nav class="cy-nav">
@@ -66,6 +66,10 @@
                 </div>
             </section>
 
+            <div id="preseason-banner" class="cy-alert cy-alert--warn" style="display:none; margin-bottom:16px">
+                <p><strong>Preseason.</strong> Teams are rated from last season, lineups are prospect-heavy, and no picks are made — treat these as low-information. Predictions are logged before puck drop and scored on the Performance tab, separate from the regular-season record.</p>
+            </div>
+
             <div class="games-filter-bar">
                 <label class="cy-field cy-field--select">
                     <span class="cy-sr-only">Sort games</span>
@@ -85,11 +89,19 @@
 
         <!-- Performance History Tab -->
         <div id="performance-tab" class="tab-content" style="display: none;">
+            <div class="games-filter-bar">
+                <label class="cy-field cy-field--select">
+                    <span class="cy-sr-only">Season</span>
+                    <select id="perf-period" class="filter-select cy-select" onchange="selectPeriod(this.value)"></select>
+                </label>
+            </div>
+
             <section class="summary-card cy-panel cy-card">
-                <h2 class="cy-label cy-slash">Prediction Accuracy</h2>
+                <h2 class="cy-label cy-slash">Prediction Accuracy <span id="perf-status" class="perf-status"></span></h2>
+                <p class="parlay-subtitle" id="perf-note"></p>
                 <div class="stats-grid">
                     <div class="stat cy-stat">
-                        <span class="stat-label cy-stat__label">Games Tracked</span>
+                        <span class="stat-label cy-stat__label">Games Scored</span>
                         <span class="stat-value cy-stat__value" id="perf-total-bets">-</span>
                     </div>
                     <div class="stat cy-stat">
@@ -97,14 +109,15 @@
                         <span class="stat-value cy-stat__value cy-stat__value--accent" id="perf-win-rate">-</span>
                     </div>
                     <div class="stat cy-stat">
-                        <span class="stat-label cy-stat__label">Total Within ±1</span>
-                        <span class="stat-value cy-stat__value" id="perf-total-within1">-</span>
+                        <span class="stat-label cy-stat__label">Log Loss</span>
+                        <span class="stat-value cy-stat__value" id="perf-log-loss">-</span>
                     </div>
                     <div class="stat cy-stat">
                         <span class="stat-label cy-stat__label">Avg Goal Error</span>
                         <span class="stat-value cy-stat__value" id="perf-total-exact">-</span>
                     </div>
                 </div>
+                <p class="parlay-subtitle perf-bench" id="perf-bench"></p>
             </section>
 
             <section class="summary-card cy-panel cy-card">
@@ -133,9 +146,10 @@
             </section>
 
             <section class="recent-results cy-panel cy-panel--terminal cy-card">
-                <div class="cy-termbar">backtest_results.json <span class="cy-termbar__right">last 60</span></div>
-                <h2 class="cy-label cy-slash">Recent Game Predictions</h2>
+                <div class="cy-termbar">performance_history.json <span class="cy-termbar__right" id="perf-list-count"></span></div>
+                <h2 class="cy-label cy-slash">Game Predictions</h2>
                 <div id="recent-results-list"></div>
+                <button id="perf-show-all" class="cy-btn cy-btn--ghost cy-btn--sm" style="display:none" onclick="showAllPerf()"></button>
             </section>
         </div>
 
@@ -186,6 +200,6 @@
         <a href="https://github.com/totqro" target="_blank" rel="noopener">GitHub</a>
     </footer>
 
-    <script src="app.js?v=17.0"></script>
+    <script src="app.js?v=18.0"></script>
 </body>
 </html>

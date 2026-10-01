@@ -90,6 +90,13 @@ def fetch_standings(date: str = None) -> dict:
     cached = _get_cached(cache_key, max_age_hours=12)
     if cached:
         return cached
+    # Standings are legitimately empty from the end of the season until the
+    # first regular-season game. An empty result is falsy, so without this
+    # every caller (several per team) would re-walk the 30-day fallback below
+    # and trip the NHL API's rate limit. Trust a cached empty for an hour only,
+    # so opening day isn't masked for long.
+    if _get_cached(cache_key, max_age_hours=1) == {}:
+        return {}
 
     url = f"{BASE_URL}/standings/{date}"
     resp = requests.get(url, timeout=15)
@@ -158,6 +165,8 @@ def fetch_schedule(date: str = None) -> list:
                 "home_score": home.get("score"),
                 "away_score": away.get("score"),
                 "venue": game.get("venue", {}).get("default", ""),
+                # 1 = preseason, 2 = regular season, 3 = playoffs
+                "game_type": game.get("gameType", 2),
             })
 
     _set_cache(cache_key, games)

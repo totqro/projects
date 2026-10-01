@@ -56,6 +56,13 @@ from src.data.historical_dataset import (
 from src.data.moneypuck_data import load_moneypuck_xg
 from src.models.calibration import DEFAULT_SEASONS, fit_production_calibrator, load_calibrator
 
+# The training set drops any game where either team has fewer than this many
+# games played that season (historical_dataset.build_point_in_time_rows), so
+# the coefficients have never seen a row below it. Serving one anyway
+# extrapolates the zero-game neutral prior into nonsense (every home team
+# ~40%), so callers must use a cross-season model until both teams reach it.
+TRAINING_MIN_GP = 5
+
 ML_MODELS_DIR = Path(__file__).resolve().parents[2] / "ml_models"
 CALIBRATOR_PATH = ML_MODELS_DIR / "xg_calibrator.json"
 COEFFICIENTS_PATH = ML_MODELS_DIR / "xg_coefficients.json"

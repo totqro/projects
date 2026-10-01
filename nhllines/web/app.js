@@ -40,7 +40,7 @@ async function loadAnalysis() {
 
 async function loadPerformanceData() {
     try {
-        const r = await fetch(`backtest_results.json?v=${Date.now()}`);
+        const r = await fetch(`performance_history.json?v=${Date.now()}`);
         if (!r.ok) { displayNoPerformanceData(); return; }
         displayPerformance(await r.json());
     } catch(e) { console.error(e); displayNoPerformanceData(); }
@@ -57,7 +57,15 @@ function displayAnalysis(data) {
     const strong = allRecommendations.filter(r => r.confidence >= 0.60);
     $('bets-found').textContent = strong.length;
 
-    if (allRecommendations.length) {
+    const preseason = allGames.length > 0 && allGames.every(g => g.game_type === 1);
+    $('preseason-banner').style.display = preseason ? 'block' : 'none';
+    // Every preseason game has 0 confidence, so that sort would be arbitrary.
+    if (preseason && $('sort-games').value === 'confidence') $('sort-games').value = 'prob';
+
+    if (preseason) {
+        // Preseason: no picks are made, so "confidence" has nothing to average.
+        $('expected-roi').textContent = 'N/A';
+    } else if (allRecommendations.length) {
         const avgConf = allRecommendations.reduce((s, b) => s + (b.confidence||0), 0) / allRecommendations.length;
         $('expected-roi').textContent = pct(avgConf, 0);
     } else {
@@ -121,6 +129,7 @@ function renderGameCard(g, i, gameRecs) {
     const expectedTotal = mp.expected_total;
     const totalLine = mp.total_line;
     const conf = bp.confidence || mp.confidence || 0;
+    const isPre = g.game_type === 1;
 
     const totalRec = gameRecs.find(r => r.bet_type === 'Total');
     const topConf = gameRecs.length ? Math.max(...gameRecs.map(r => r.confidence||0)) : 0;
@@ -148,6 +157,7 @@ function renderGameCard(g, i, gameRecs) {
                 <span class="${homeWins?'gc-pick-team':''}">${g.home}</span>
             </div>
             ${grade ? `<span class="grade ${gradeClass} gc-grade">${grade}</span>` : ''}
+            ${isPre ? `<span class="cy-badge gc-pre">Preseason</span>` : ''}
         </div>
         <div class="gc-probs" onclick="toggleGC(${i})">
             <div class="gc-team-row${!homeWins?' gc-winner':''}">
@@ -167,11 +177,13 @@ function renderGameCard(g, i, gameRecs) {
                 <span class="gc-total-unit">exp. goals</span>
                 ${totalLine ? `<span class="gc-line">Line ${totalLine}${ouHtml}</span>` : ''}
             </div>
-            <div class="gc-conf">
+            ${isPre
+                ? `<div class="gc-conf"><span class="gc-conf-label">${g.win_model === 'elo' ? 'Elo rating' : 'xG model'} · low-info</span></div>`
+                : `<div class="gc-conf">
                 <span class="gc-conf-label">Conf</span>
                 <div class="confidence-bar gc-conf-bar"><div class="confidence-fill" style="width:${confPct}%"></div></div>
                 <span class="gc-conf-pct">${confPct}%</span>
-            </div>
+            </div>`}
         </div>
         ${contextHtml ? `<div class="gc-context" onclick="toggleGC(${i})">${contextHtml}</div>` : ''}
         <div class="gc-expanded" id="gced-${i}" style="display:none">
@@ -242,43 +254,115 @@ function renderGameDetails(g) {
     return h;
 }
 
+let perfPeriods = [], perfCurrent = null, perfShowAll = false;
+const PERF_PAGE = 60;
+
 function displayPerformance(data) {
-    if (!data?.results?.length) { displayNoPerformanceData(); return; }
-    const results = data.results;
-    const n = results.length;
+    perfPeriods = data?.periods || [];
+    if (!perfPeriods.length) { displayNoPerformanceData(); return; }
 
+    // Periods arrive newest season first; group them by season in the picker.
+    const bySeason = [];
+    perfPeriods.forEach(p => {
+        let grp = bySeason.find(g => g.season === p.season);
+        if (!grp) { grp = { season: p.season, label: p.label, items: [] }; bySeason.push(grp); }
+        grp.items.push(p);
+    });
+    $('perf-period').innerHTML = bySeason.map(g =>
+        `<optgroup label="${g.label} season">${g.items.map(p =>
+            `<option value="${p.id}">${p.label} · ${p.phase_label}${p.status === 'in_progress' ? ' (live)' : ''}</option>`
+        ).join('')}</optgroup>`
+    ).join('');
+
+    // Land on the newest period that has something scored; an empty period
+    // (a season that has only just started) stays one click away.
+    const initial = perfPeriods.find(p => p.n_games > 0) || perfPeriods[0];
+    $('perf-period').value = initial.id;
+    selectPeriod(initial.id);
+}
+
+function selectPeriod(id) {
+    const p = perfPeriods.find(x => x.id === id);
+    if (!p) return;
+    perfCurrent = p;
+    perfShowAll = false;
+    renderPeriod(p);
+}
+
+function showAllPerf() { perfShowAll = true; renderPeriod(perfCurrent); }
+
+function renderPeriod(p) {
+    const win = p.win || {}, totals = p.totals || {};
+    const done = p.games.filter(g => g.home_win !== null);
+    const n = done.length;
+
+    $('perf-status').textContent = p.status === 'in_progress' ? '· live' : '';
+    $('perf-note').textContent = p.note || '';
     $('perf-total-bets').textContent = n;
-    $('perf-win-rate').textContent = data.winner_accuracy != null ? pct(data.winner_accuracy) : '-';
-    $('perf-total-within1').textContent = data.within_1_goal != null ? pct(data.within_1_goal) : '-';
-    $('perf-total-exact').textContent = data.avg_total_error != null ? data.avg_total_error.toFixed(2) : '-';
+    $('perf-win-rate').textContent = win.accuracy != null ? pct(win.accuracy) : '-';
+    $('perf-log-loss').textContent = win.log_loss != null ? win.log_loss.toFixed(4) : '-';
+    $('perf-total-exact').textContent = totals.mae != null ? totals.mae.toFixed(2) : '-';
 
-    const diffs = results.map(r => Math.abs(Math.round(r.predicted_total) - r.actual_total));
-    const greenCount = diffs.filter(d => d === 0).length;
-    const yellowCount = diffs.filter(d => d === 1).length;
-    const redCount = diffs.filter(d => d >= 2).length;
+    // Log loss only means something next to a reference: 0.6931 is a coin flip.
+    const bench = [];
+    if (win.log_loss != null) {
+        bench.push('coin flip 0.6931');
+        const elo = p.benchmarks?.elo;
+        if (elo?.log_loss != null) bench.push(`Elo baseline ${elo.log_loss.toFixed(4)}`);
+        const m = p.benchmarks?.market;
+        if (m?.market?.log_loss != null) {
+            bench.push(`market closing line ${m.market.log_loss.toFixed(4)} (model ${m.model.log_loss.toFixed(4)} on the same ${p.benchmarks.market_n} games`
+                + `${p.benchmarks.market_meaningful ? '' : ' — too few to call'})`);
+        }
+        $('perf-bench').textContent = 'Lower log loss is better. Reference: ' + bench.join(' · ') + '.';
+    } else {
+        $('perf-bench').textContent = '';
+    }
 
-    $('total-green').textContent = greenCount;
-    $('total-yellow').textContent = yellowCount;
-    $('total-red').textContent = redCount;
-    $('total-green-pct').textContent = pct(greenCount / n);
-    $('total-yellow-pct').textContent = pct(yellowCount / n);
-    $('total-red-pct').textContent = pct(redCount / n);
+    const diffs = done.filter(g => g.pred_total != null).map(g => Math.abs(Math.round(g.pred_total) - g.total_goals));
+    const dn = diffs.length;
+    const green = diffs.filter(d => d === 0).length;
+    const yellow = diffs.filter(d => d === 1).length;
+    const red = diffs.filter(d => d >= 2).length;
+    $('total-green').textContent = green;
+    $('total-yellow').textContent = yellow;
+    $('total-red').textContent = red;
+    $('total-green-pct').textContent = dn ? pct(green / dn) : '';
+    $('total-yellow-pct').textContent = dn ? pct(yellow / dn) : '';
+    $('total-red-pct').textContent = dn ? pct(red / dn) : '';
 
-    $('recent-results-list').innerHTML = results.slice(0, 60).map(r => {
-        const diff = Math.abs(Math.round(r.predicted_total) - r.actual_total);
-        const dot = diff === 0 ? '🟢' : diff === 1 ? '🟡' : '🔴';
-        const cls = diff === 0 ? 'total-green' : diff === 1 ? 'total-yellow' : 'total-red';
-        const winIcon = r.winner_correct ? '✅' : '❌';
-        const predicted = Math.round(r.predicted_total);
-        const parts = r.actual_score?.split('-') || [];
-        const score = parts.length === 2 ? `${parts[0]}–${parts[1]}` : '';
-        const d = new Date(r.date + 'T12:00:00');
+    const shown = perfShowAll ? p.games : p.games.slice(0, PERF_PAGE);
+    $('perf-list-count').textContent = shown.length < p.games.length
+        ? `latest ${shown.length} of ${p.games.length}` : `${p.games.length} games`;
+    const more = $('perf-show-all');
+    more.style.display = shown.length < p.games.length ? 'inline-flex' : 'none';
+    more.textContent = `Show all ${p.games.length} games`;
+
+    if (!p.games.length) { displayNoPerformanceData('No games in this period yet.'); return; }
+
+    $('recent-results-list').innerHTML = shown.map(g => {
+        const pickHome = g.p_home > 0.5;
+        const pick = pickHome ? g.home : g.away;
+        const pickProb = pickHome ? g.p_home : 1 - g.p_home;
+        const d = new Date(g.date + 'T12:00:00');
         const dateStr = d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+        const isDone = g.home_win !== null;
+        const correct = isDone && (g.home_win === 1) === pickHome;
+        const winIcon = !isDone ? '⏳' : correct ? '✅' : '❌';
+        const winner = isDone ? (g.home_win === 1 ? g.home : g.away) : null;
+
+        let totalHtml = `<span class="pred-result-total">${g.pred_total != null ? Math.round(g.pred_total) : '—'}<span class="actual"> · —</span></span>`;
+        if (isDone && g.pred_total != null) {
+            const diff = Math.abs(Math.round(g.pred_total) - g.total_goals);
+            const dot = diff === 0 ? '🟢' : diff === 1 ? '🟡' : '🔴';
+            const cls = diff === 0 ? 'total-green' : diff === 1 ? 'total-yellow' : 'total-red';
+            totalHtml = `<span class="pred-result-total ${cls}">${dot} ${Math.round(g.pred_total)}<span class="actual"> · ${g.total_goals}</span></span>`;
+        }
         return `<div class="pred-result-row">
             <span class="pred-result-date">${dateStr}</span>
-            <span class="pred-result-matchup">${r.game}</span>
-            <span class="pred-result-winner">${winIcon} ${r.predicted_winner}${score ? `<span class="score"> ${score}</span>` : ''}</span>
-            <span class="pred-result-total ${cls}">${dot} ${predicted}<span class="actual"> · ${r.actual_total}</span></span>
+            <span class="pred-result-matchup">${g.away} @ ${g.home}</span>
+            <span class="pred-result-winner">${winIcon} ${pick} ${pct(pickProb, 0)}${winner ? `<span class="score"> ${winner} won</span>` : ''}</span>
+            ${totalHtml}
         </div>`;
     }).join('');
 }
@@ -413,10 +497,14 @@ function renderTotals(t) {
         </div>`;
 }
 
-function displayNoPerformanceData() {
-    $('recent-results-list').innerHTML = `<div class="no-data"><div class="no-data-icon">📊</div><p>No performance data yet. Run backtest.py to generate.</p></div>`;
-    ['perf-total-bets','perf-win-rate','perf-total-exact','perf-total-within1'].forEach(id => $(id).textContent = '-');
-    ['total-green','total-yellow','total-red'].forEach(id => $(id).textContent = '0');
+function displayNoPerformanceData(msg) {
+    $('recent-results-list').innerHTML = `<div class="no-data"><div class="no-data-icon">📊</div><p>${msg || 'No performance data yet. Run performance_history.py to generate.'}</p></div>`;
+    if (!msg) {
+        ['perf-total-bets','perf-win-rate','perf-total-exact','perf-log-loss'].forEach(id => $(id).textContent = '-');
+        ['total-green','total-yellow','total-red'].forEach(id => $(id).textContent = '0');
+        $('perf-note').textContent = '';
+        $('perf-bench').textContent = '';
+    }
 }
 
 (function(){

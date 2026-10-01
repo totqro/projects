@@ -87,9 +87,12 @@ def season_bounds(season: str) -> tuple:
 # Inputs                                                                       #
 # --------------------------------------------------------------------------- #
 def load_predictions(path: Path = PREDICTIONS_LOG, season: str = None,
-                     model_version: str = None) -> dict:
+                     model_version: str = None,
+                     game_types: tuple = (REGULAR_SEASON,)) -> dict:
     """Read the prediction log and return {game_key: row}, keeping only the
-    last pre-game row per game (rule 1). Rows are returned exactly as logged."""
+    last pre-game row per game (rule 1). Rows are returned exactly as logged.
+    `game_types` defaults to regular season only; performance_history.py asks
+    for preseason (1) separately so it never mixes into the scorecard."""
     if not path.exists():
         return {}
 
@@ -111,6 +114,12 @@ def load_predictions(path: Path = PREDICTIONS_LOG, season: str = None,
         if lo and not (lo <= date <= hi):
             continue
         if model_version and row.get("model_version") != model_version:
+            continue
+        # Preseason predictions are logged (the site shows them) but kept out
+        # of the scorecard: lineups are prospect-heavy, so they say nothing
+        # about the regular-season model it validates. A missing game_type
+        # means a row from before the field existed — regular season.
+        if row.get("game_type", REGULAR_SEASON) not in game_types:
             continue
         # Rule 1: a row logged after the game date is not a prediction.
         run_date = row.get("run_date") or ""

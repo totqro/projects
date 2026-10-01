@@ -33,6 +33,9 @@ WIN_MODEL_VERSIONS = {
     "elo": "elo-platt-v1",
 }
 TOTALS_MODEL_VERSION = "similarity-totals-v1"
+# Served instead of the similarity model when standings are empty (preseason,
+# opening day): the constant league-average total that passed the totals gate.
+LEAGUE_AVG_TOTALS_VERSION = "league-avg-totals-v1"
 
 # Retained as the fallback for callers that don't declare a model (and as the
 # exact string every row written before the xG model shipped carries).
@@ -92,8 +95,15 @@ def log_predictions(games: list, path: Path = LOG_PATH,
                 "away_team": g["away_team"],
                 "home_win_prob": g["home_win_prob"],
                 "expected_total": g["expected_total"],
-                "model_version": model_version,
+                # A row may name its own model: one run can serve xG for teams
+                # with enough games and Elo for the rest.
+                "model_version": g.get("model_version", model_version),
             }
+            # Only written for non-default game types (preseason = 1) so that
+            # every row written before this field existed stays byte-for-byte
+            # comparable; readers treat a missing game_type as regular season.
+            if g.get("game_type") not in (None, 2):
+                record["game_type"] = g["game_type"]
             f.write(json.dumps(record, default=str) + "\n")
             written += 1
     return written
