@@ -71,6 +71,10 @@ from src.analysis import (
     TOTALS_MODEL_VERSION,
 )
 
+# The xG model's training rows require both teams to have this many games
+# (build_training_set's min_gp), so it only serves once both teams do.
+XG_MIN_GP = 5
+
 
 def run_analysis(
     stake: float = 1.00,
@@ -132,6 +136,16 @@ def run_analysis(
     if use_xg:
         xg_coefs, xg_calibrator = xg_production.load_production_model()
         print(f"  Loaded xG drop-goalie coefficients + {xg_calibrator.method} calibrator")
+        # Elo serves early-season games the xG model wasn't trained on (see
+        # XG_MIN_GP below). Its artifacts are committed alongside xG's.
+        if elo_production.production_model_exists():
+            elo_coefs, elo_calibrator = elo_production.load_production_model()
+            print(f"  Loaded Elo coefficients + {elo_calibrator.method} calibrator "
+                  f"(early-season fallback, under {XG_MIN_GP} games played)")
+        else:
+            print("  WARNING: no Elo artifacts, so no early-season fallback: "
+                  "the xG model will serve teams with under "
+                  f"{XG_MIN_GP} games, which it was never trained on.")
     else:
         # The xG artifacts are committed to the repo, so on any normal checkout
         # they are present. Reaching this branch means serving a model that
@@ -185,13 +199,22 @@ def run_analysis(
         return result
 
     with ThreadPoolExecutor(max_workers=4) as executor:
-        rating_future = executor.submit(_load_xg_state if use_xg else _load_elo_ratings)
+        # Sequential, not parallel: both replay the same season schedules, and
+        # the second reads the first's disk cache instead of re-hitting the
+        # rate-limited NHL API.
+        def _load_ratings():
+            if use_xg:
+                _load_xg_state()
+            if elo_coefs is not None:
+                _load_elo_ratings()
+        rating_futures = [executor.submit(_load_ratings)]
         goalie_future = executor.submit(_fetch_goalies)
         injury_future = executor.submit(_fetch_injuries)
 
         goalie_starters = goalie_future.result()
         all_injuries = injury_future.result()
-        rating_future.result()  # Wait for live ratings/state to finish computing
+        for f in rating_futures:
+            f.result()  # Wait for live ratings/state to finish computing
 
     def _elo_win_prob(home: str, away: str, home_rest_days: float, away_rest_days: float,
                       home_b2b: bool, away_b2b: bool) -> float:
@@ -214,25 +237,36 @@ def run_analysis(
         )
         return p_cal
 
-    def _xg_win_prob(home: str, away: str, home_rest_days: float, away_rest_days: float,
-                     home_b2b: bool, away_b2b: bool) -> float:
-        """Calibrated P(home win) from the shipped 44-feature drop-goalie
-        model. Same rest-day conversion as _elo_win_prob, so both shipped
-        models read the live rest-day feed identically."""
-        home_rest = min(home_rest_days + 1, 7)
-        away_rest = min(away_rest_days + 1, 7)
-        features = xg_production.compute_serving_features(
-            xg_state, home, away, home_rest, away_rest, home_b2b, away_b2b)
-        p_cal, _ = xg_production.predict_calibrated(xg_coefs, xg_calibrator, features)
-        return p_cal
+    def _win_prob(home: str, away: str, home_rest_days: float, away_rest_days: float,
+                  home_b2b: bool, away_b2b: bool) -> tuple:
+        """Calibrated P(home win) and which model served it ("xg"/"elo").
 
-    _win_prob = _xg_win_prob if use_xg else _elo_win_prob
-    ml_indicator = " (xG+Platt)" if use_xg else " (Elo+Platt)"
-    # Stamp every logged prediction with the model that actually served it —
-    # the fallback path must not write rows claiming the xG model, or the
-    # season scorecard would score two different models as one.
-    logged_model_version = (
-        f"{WIN_MODEL_VERSIONS['xg' if use_xg else 'elo']}+{TOTALS_MODEL_VERSION}")
+        The 44-feature drop-goalie xG model when both teams have played at
+        least XG_MIN_GP games this season, else Elo + home-ice. The xG model
+        was trained only on rows where both teams had XG_MIN_GP games, so
+        before that its form/win%/xG features are values it never saw (with
+        0 games every team gets the same neutral features and every home team
+        the same ~33% prediction). Elo carries ratings over from last season,
+        so it has real information from game one. Same rest-day conversion
+        in both, so they read the live rest-day feed identically."""
+        if use_xg:
+            home_rest = min(home_rest_days + 1, 7)
+            away_rest = min(away_rest_days + 1, 7)
+            features = xg_production.compute_serving_features(
+                xg_state, home, away, home_rest, away_rest, home_b2b, away_b2b)
+            early = min(features["home_gp"], features["away_gp"]) < XG_MIN_GP
+            if not early or elo_coefs is None:
+                p_cal, _ = xg_production.predict_calibrated(xg_coefs, xg_calibrator, features)
+                return p_cal, "xg"
+        return _elo_win_prob(home, away, home_rest_days, away_rest_days,
+                             home_b2b, away_b2b), "elo"
+
+    ml_labels = {"xg": " (xG+Platt)", "elo": " (Elo+Platt)"}
+    # Stamp every logged prediction with the model that actually served it,
+    # per game: early-season games are Elo even on an xG run, and a row
+    # claiming the wrong model would pool two models in the season scorecard.
+    def _model_version(key: str) -> str:
+        return f"{WIN_MODEL_VERSIONS[key]}+{TOTALS_MODEL_VERSION}"
 
     # Step 4: Fetch odds (if enabled)
     odds_games = []
@@ -468,7 +502,7 @@ def run_analysis(
             # missing). Overrides the similarity model's home_win_prob; the
             # similarity model's expected_total/over/under/cover outputs are
             # kept as-is since neither shipped model predicts totals or spreads.
-            elo_home_win_prob = _win_prob(
+            elo_home_win_prob, served_by = _win_prob(
                 home, away,
                 player_data.get('home_rest_days', 1), player_data.get('away_rest_days', 1),
                 player_data.get('home_back_to_back', False), player_data.get('away_back_to_back', False),
@@ -483,6 +517,7 @@ def run_analysis(
                 "away_team": away,
                 "home_win_prob": elo_home_win_prob,
                 "expected_total": model_probs["expected_total"],
+                "model_version": _model_version(served_by),
             })
 
             # Player/context indicators for display only (not fed into a
@@ -596,7 +631,7 @@ def run_analysis(
             
             context_factors_text = ""
 
-            print(f"    Model{ml_indicator}: {home} {model_probs['home_win_prob']:.1%} / "
+            print(f"    Model{ml_labels[served_by]}: {home} {model_probs['home_win_prob']:.1%} / "
                   f"{away} {model_probs['away_win_prob']:.1%} "
                   f"(confidence: {model_probs['confidence']:.0%}){player_context}{goalie_context}{injury_context}{context_factors_text}")
             print(f"    Market: {home} {market_probs['home_win_prob']:.1%} / "
@@ -841,7 +876,7 @@ def run_analysis(
             # winner), same as the with-odds path. Similarity model keeps
             # supplying expected_total (neither shipped model predicts totals).
             player_data = get_player_data_nhl_api_only(home, away, game.get("date", ""))
-            elo_home_win_prob = _win_prob(
+            elo_home_win_prob, served_by = _win_prob(
                 home, away,
                 player_data.get('home_rest_days', 1), player_data.get('away_rest_days', 1),
                 player_data.get('home_back_to_back', False), player_data.get('away_back_to_back', False),
@@ -856,9 +891,10 @@ def run_analysis(
                 "away_team": away,
                 "home_win_prob": elo_home_win_prob,
                 "expected_total": model_probs["expected_total"],
+                "model_version": _model_version(served_by),
             })
 
-            print(f"    Model{ml_indicator}: {home} {model_probs['home_win_prob']:.1%} / "
+            print(f"    Model{ml_labels[served_by]}: {home} {model_probs['home_win_prob']:.1%} / "
                   f"{away} {model_probs['away_win_prob']:.1%}")
             print(f"    Expected total: {model_probs['expected_total']:.1f} goals")
             print(f"    Confidence: {model_probs['confidence']:.0%}")
@@ -935,8 +971,9 @@ def run_analysis(
     # only if logged first"). Deduped by (game_id, run date) so re-running
     # main.py the same day doesn't double-log a game.
     if predictions_to_log:
-        n_logged = log_predictions(predictions_to_log, model_version=logged_model_version)
-        print(f"Logged {n_logged} new prediction(s) as {logged_model_version} "
+        n_logged = log_predictions(predictions_to_log)
+        versions = sorted({g["model_version"] for g in predictions_to_log})
+        print(f"Logged {n_logged} new prediction(s) ({', '.join(versions)}) "
               f"to data/predictions_log.jsonl")
 
     # Generate parlay performance data from historical results

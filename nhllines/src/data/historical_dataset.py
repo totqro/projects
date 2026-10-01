@@ -27,7 +27,7 @@ from pathlib import Path
 
 import requests
 
-from .nhl_data import NHL_TEAMS, _get_cached, _set_cache, BASE_URL
+from .nhl_data import NHL_TEAMS, _get_cached, _set_cache, BASE_URL, nhl_get
 from .xg_sources import load_game_xg
 
 # Seasons whose games MUST all join onto xG data when
@@ -94,7 +94,7 @@ def fetch_team_season_schedule(team: str, season: str) -> list:
         return cached
 
     url = f"{BASE_URL}/club-schedule-season/{team}/{season}"
-    resp = requests.get(url, timeout=20)
+    resp = nhl_get(url, timeout=20)
     if resp.status_code == 404:
         _set_cache(cache_key, [])
         return []
@@ -105,18 +105,30 @@ def fetch_team_season_schedule(team: str, season: str) -> list:
     return games
 
 
-def fetch_season_games_full(season: str, verbose: bool = True) -> list:
+def fetch_season_games_full(season: str, verbose: bool = True,
+                            strict: bool = False) -> list:
     """
     Fetch ALL completed regular-season games for a season (~1300 games).
     Deduplicates across the 32 per-team schedules by game id.
+
+    A team whose schedule can't be fetched (after nhl_get's retries) is
+    always reported, verbose or not: its games are missing from the result.
+    strict=True raises instead, for callers that would otherwise predict on
+    a silently incomplete season (serving's current season).
     """
     seen = {}
+    failed = []
+    start_year = int(season[:4])
     for team in NHL_TEAMS:
+        # Arizona relocated to Utah for 2024-25. Asking for the franchise
+        # that didn't exist that season is a wasted (rate-limited) request,
+        # and under strict=True any error other than 404 would fail the run.
+        if (team == "ARI" and start_year >= 2024) or (team == "UTA" and start_year < 2024):
+            continue
         try:
             raw_games = fetch_team_season_schedule(team, season)
         except Exception as e:
-            if verbose:
-                print(f"  ⚠ {team} {season}: {e}")
+            failed.append(f"{team} ({e})")
             continue
 
         for g in raw_games:
@@ -148,6 +160,13 @@ def fetch_season_games_full(season: str, verbose: bool = True) -> list:
                 # REG / OT / SO — loser earns a point in OT/SO
                 "last_period_type": g.get("gameOutcome", {}).get("lastPeriodType", "REG"),
             }
+
+    if failed:
+        msg = (f"{season}: schedule fetch failed for {len(failed)} team(s), "
+               f"their games are missing: {'; '.join(failed)}")
+        if strict:
+            raise RuntimeError(msg)
+        print(f"  ⚠ {msg}")
 
     games = sorted(seen.values(), key=lambda g: (g["date"], g["id"]))
     if verbose:
@@ -206,7 +225,7 @@ def fetch_game_starters(game_id) -> tuple:
 
     try:
         url = f"{BASE_URL}/gamecenter/{game_id}/boxscore"
-        resp = requests.get(url, timeout=20)
+        resp = nhl_get(url, timeout=20)
         resp.raise_for_status()
         data = resp.json()
     except Exception:

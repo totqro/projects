@@ -17,6 +17,7 @@ Usage:
 """
 
 import requests
+from src.data.nhl_data import nhl_get, current_season
 from bs4 import BeautifulSoup
 import json
 from pathlib import Path
@@ -78,6 +79,7 @@ TEAM_NAME_MAP = {
     "Tampa Bay Lightning": "TBL",
     "Toronto Maple Leafs": "TOR",
     "Utah Hockey Club": "UTA",
+    "Utah Mammoth": "UTA",
     "Vancouver Canucks": "VAN",
     "Vegas Golden Knights": "VGK",
     "Washington Capitals": "WSH",
@@ -268,12 +270,13 @@ def scrape_dailyfaceoff_goalies(date_str=None):
     return goalies
 
 
-def fetch_goalie_stats_nhl_api(team_abbrev: str, season: str = "20252026"):
+def fetch_goalie_stats_nhl_api(team_abbrev: str, season: str = None):
     """
     Fetch goalie stats from NHL API for a team.
     
     Returns list of goalies with season stats AND recent form (last 10 starts).
     """
+    season = season or current_season()
     cache_key = f"goalie_stats_{team_abbrev}_{season}"
     cached = _get_cached(cache_key, max_age_hours=24)
     if cached:
@@ -282,7 +285,7 @@ def fetch_goalie_stats_nhl_api(team_abbrev: str, season: str = "20252026"):
     try:
         # Get team roster
         url = f"{BASE_URL}/roster/{team_abbrev}/{season}"
-        resp = requests.get(url, timeout=10)
+        resp = nhl_get(url, timeout=10)
         resp.raise_for_status()
         roster = resp.json()
         
@@ -293,7 +296,7 @@ def fetch_goalie_stats_nhl_api(team_abbrev: str, season: str = "20252026"):
             # Get detailed stats for this goalie
             try:
                 stats_url = f"{BASE_URL}/player/{goalie_id}/landing"
-                stats_resp = requests.get(stats_url, timeout=10)
+                stats_resp = nhl_get(stats_url, timeout=10)
                 stats_resp.raise_for_status()
                 stats_data = stats_resp.json()
                 
@@ -348,7 +351,7 @@ def fetch_goalie_stats_nhl_api(team_abbrev: str, season: str = "20252026"):
     except Exception as e:
         print(f"  ⚠️  Could not fetch goalie stats for {team_abbrev}: {e}")
         return []
-def _fetch_goalie_recent_form(goalie_id: int, season: str = "20252026", n_games: int = 10):
+def _fetch_goalie_recent_form(goalie_id: int, season: str = None, n_games: int = 10):
     """
     Fetch recent form for a goalie (last n starts).
 
@@ -358,6 +361,7 @@ def _fetch_goalie_recent_form(goalie_id: int, season: str = "20252026", n_games:
     - quality_starts: Number of quality starts (SV% > .900)
     - games: Number of games in sample
     """
+    season = season or current_season()
     cache_key = f"goalie_recent_{goalie_id}_{season}_{n_games}"
     cached = _get_cached(cache_key, max_age_hours=6)
     if cached:
@@ -366,7 +370,7 @@ def _fetch_goalie_recent_form(goalie_id: int, season: str = "20252026", n_games:
     try:
         # Fetch game log
         url = f"{BASE_URL}/player/{goalie_id}/game-log/{season}/2"  # 2 = regular season
-        resp = requests.get(url, timeout=10)
+        resp = nhl_get(url, timeout=10)
         resp.raise_for_status()
         game_log = resp.json()
 

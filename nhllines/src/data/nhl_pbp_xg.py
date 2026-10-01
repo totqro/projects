@@ -24,14 +24,13 @@ game's play-by-play doesn't change, and the cache is tiny (aggregates only).
 
 import json
 import math
-import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import requests
 
 from .moneypuck_data import HIGH_DANGER_XG_THRESHOLD, _new_team_totals
-from .nhl_data import BASE_URL, CACHE_DIR
+from .nhl_data import BASE_URL, CACHE_DIR, nhl_get
 
 XG_MODEL_PATH = (Path(__file__).resolve().parents[3]
                  / "xgcalc" / "web" / "xg_model.json")
@@ -195,16 +194,8 @@ def _fetch_one(game_id: int):
     path = PBP_CACHE_DIR / f"{game_id}.json"
     if path.exists():
         return game_id, json.loads(path.read_text())
-    url = f"{BASE_URL}/gamecenter/{game_id}/play-by-play"
-    for attempt in range(3):
-        try:
-            resp = requests.get(url, timeout=30)
-            resp.raise_for_status()
-            break
-        except requests.RequestException:
-            if attempt == 2:
-                raise
-            time.sleep(2 ** attempt)
+    resp = nhl_get(f"{BASE_URL}/gamecenter/{game_id}/play-by-play", timeout=30)
+    resp.raise_for_status()
     teams = game_team_xg(resp.json())
     tmp = path.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(teams))

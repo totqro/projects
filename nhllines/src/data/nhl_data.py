@@ -7,6 +7,7 @@ import requests
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
+import threading
 import time
 
 BASE_URL = "https://api-web.nhle.com/v1"
@@ -20,6 +21,61 @@ NHL_TEAMS = [
     "NJD", "NSH", "NYI", "NYR", "OTT", "PHI", "PIT", "SEA",
     "SJS", "STL", "TBL", "TOR", "UTA", "VAN", "VGK", "WPG", "WSH"
 ]
+
+
+# The NHL API answers bursts with 429 Too Many Requests. The daily run makes
+# a few hundred calls from parallel threads (schedules, rosters, goalies), so
+# every call goes through nhl_get(): one shared pace across threads, and a
+# retry with backoff on 429/5xx that honours Retry-After.
+_NHL_MIN_INTERVAL = 0.3   # seconds between request starts, all threads
+_NHL_MAX_RETRIES = 5
+_NHL_MAX_BACKOFF = 30.0
+_nhl_lock = threading.Lock()
+_nhl_next_slot = 0.0
+
+
+def _nhl_wait_turn():
+    global _nhl_next_slot
+    with _nhl_lock:
+        now = time.monotonic()
+        start = max(now, _nhl_next_slot)
+        _nhl_next_slot = start + _NHL_MIN_INTERVAL
+    if start > now:
+        time.sleep(start - now)
+
+
+def nhl_get(url: str, timeout: float = 15, **kwargs) -> requests.Response:
+    """requests.get for the NHL API, paced and retried on 429/5xx. Returns
+    the final response (callers keep their own raise_for_status / 404
+    handling); a network error on the last attempt is raised."""
+    for attempt in range(_NHL_MAX_RETRIES + 1):
+        _nhl_wait_turn()
+        try:
+            resp = requests.get(url, timeout=timeout, **kwargs)
+        except requests.RequestException:
+            if attempt == _NHL_MAX_RETRIES:
+                raise
+            time.sleep(min(_NHL_MAX_BACKOFF, 2 ** attempt))
+            continue
+        if resp.status_code != 429 and resp.status_code < 500:
+            return resp
+        if attempt == _NHL_MAX_RETRIES:
+            return resp
+        try:
+            wait = float(resp.headers.get("Retry-After", ""))
+        except ValueError:
+            wait = 2 ** attempt
+        time.sleep(min(_NHL_MAX_BACKOFF, max(wait, 1.0)))
+    return resp
+
+
+def current_season() -> str:
+    """The NHL season in progress or next up, e.g. "20262027": from July 1
+    the upcoming season, before that the one ending this year. Default for
+    every season= parameter, so nothing goes stale at the rollover."""
+    now = datetime.now()
+    start = now.year if now.month >= 7 else now.year - 1
+    return f"{start}{start + 1}"
 
 
 def _get_cached(key: str, max_age_hours: int = 6):
@@ -92,7 +148,7 @@ def fetch_standings(date: str = None) -> dict:
         return cached
 
     url = f"{BASE_URL}/standings/{date}"
-    resp = requests.get(url, timeout=15)
+    resp = nhl_get(url, timeout=15)
     resp.raise_for_status()
     standings = _parse_standings_raw(resp.json())
 
@@ -109,7 +165,7 @@ def fetch_standings(date: str = None) -> dict:
                 break
             try:
                 fb_url = f"{BASE_URL}/standings/{fallback_date}"
-                fb_resp = requests.get(fb_url, timeout=15)
+                fb_resp = nhl_get(fb_url, timeout=15)
                 fb_resp.raise_for_status()
                 standings = _parse_standings_raw(fb_resp.json())
                 if standings:
@@ -138,7 +194,7 @@ def fetch_schedule(date: str = None) -> list:
         return cached
 
     url = f"{BASE_URL}/schedule/{date}"
-    resp = requests.get(url, timeout=15)
+    resp = nhl_get(url, timeout=15)
     resp.raise_for_status()
     raw = resp.json()
 
@@ -178,7 +234,7 @@ def fetch_scores(date: str = None) -> list:
         return cached
 
     url = f"{BASE_URL}/score/{date}"
-    resp = requests.get(url, timeout=15)
+    resp = nhl_get(url, timeout=15)
     resp.raise_for_status()
     raw = resp.json()
 

@@ -4,6 +4,7 @@ Fetches goalie stats, injuries, and key player information from NHL API.
 """
 
 import requests
+from .nhl_data import nhl_get, current_season
 import json
 from datetime import datetime
 from pathlib import Path
@@ -30,11 +31,12 @@ def _set_cache(key: str, data):
     path.write_text(json.dumps(data, default=str))
 
 
-def fetch_team_roster(team_abbrev: str, season: str = "20252026"):
+def fetch_team_roster(team_abbrev: str, season: str = None):
     """
     Fetch team roster with player stats.
     Returns dict with forwards, defensemen, and goalies.
     """
+    season = season or current_season()
     cache_key = f"roster_{team_abbrev}_{season}"
     cached = _get_cached(cache_key, max_age_hours=24)
     if cached:
@@ -42,7 +44,7 @@ def fetch_team_roster(team_abbrev: str, season: str = "20252026"):
     
     try:
         url = f"{BASE_URL}/roster/{team_abbrev}/{season}"
-        resp = requests.get(url, timeout=10)
+        resp = nhl_get(url, timeout=10)
         resp.raise_for_status()
         roster = resp.json()
         
@@ -74,10 +76,11 @@ def get_goalie_stats(team_abbrev: str):
     return goalies
 
 
-def fetch_player_stats(player_id: int, season: str = "20252026"):
+def fetch_player_stats(player_id: int, season: str = None):
     """
     Fetch detailed stats for a specific player.
     """
+    season = season or current_season()
     cache_key = f"player_{player_id}_{season}"
     cached = _get_cached(cache_key, max_age_hours=24)
     if cached:
@@ -86,7 +89,7 @@ def fetch_player_stats(player_id: int, season: str = "20252026"):
     try:
         # Note: This endpoint might need adjustment based on NHL API structure
         url = f"{BASE_URL}/player/{player_id}/landing"
-        resp = requests.get(url, timeout=10)
+        resp = nhl_get(url, timeout=10)
         resp.raise_for_status()
         stats = resp.json()
         
@@ -144,11 +147,12 @@ def extract_player_features(home_team: str, away_team: str):
     return features
 
 
-def get_goalie_season_stats(team_abbrev: str, season: str = "20252026"):
+def get_goalie_season_stats(team_abbrev: str, season: str = None):
     """
     Get aggregated goalie stats for the season.
     This would include save %, GAA, wins, etc.
     """
+    season = season or current_season()
     # This would require accessing game-by-game logs
     # Placeholder for now
     return {
