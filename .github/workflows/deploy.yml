@@ -47,6 +47,8 @@ jobs:
           # Root hub page + the shared stylesheets every page links from the site root
           cp web/index.html build/index.html
           cp web/cyber.css web/dashboard.css build/
+          # Tab icons: one per page, SVG plus PNG for browsers without SVG favicons
+          cp -r web/icons build/icons
           # SwingAI
           cp swingai/index.html build/swingai/
           # xgcalc — static, no daily data. This step runs on every deploy
@@ -88,7 +90,8 @@ jobs:
           # Fail loudly rather than deploying a site with a page missing.
           for page in index.html cyber.css dashboard.css \
                       nhllines/index.html mlblines/index.html nfllines/index.html \
-                      swingai/index.html xgcalc/index.html xgcalc/scatter.html; do
+                      swingai/index.html xgcalc/index.html xgcalc/scatter.html \
+                      icons/hub.svg icons/nhl.svg icons/mlb.svg icons/nfl.svg; do
             if [ ! -s "build/$page" ]; then
               echo "::error::build/$page is missing or empty — refusing to deploy"
               exit 1
