@@ -159,7 +159,10 @@ def get_live_feature_state(seasons: list = None) -> dict:
     seasons = seasons or DEFAULT_SEASONS
     all_games = []
     for season in seasons:
-        all_games.extend(fetch_season_games_full(season, verbose=False))
+        # Strict for the current season: every feature is snapshotted from
+        # it, so a missing team would silently predict from no games.
+        all_games.extend(fetch_season_games_full(
+            season, verbose=False, strict=(season == seasons[-1])))
 
     # Only the current season's xG can reach a prediction: team state resets
     # every season and compute_serving_features() snapshots seasons[-1]. So

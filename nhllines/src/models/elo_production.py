@@ -82,7 +82,10 @@ def get_live_elo_ratings(seasons: list = None) -> dict:
     seasons = seasons or DEFAULT_SEASONS
     all_games = []
     for season in seasons:
-        all_games.extend(fetch_season_games_full(season, verbose=False))
+        # Strict for the current season: a team missing from it would get a
+        # stale rating with no warning.
+        all_games.extend(fetch_season_games_full(
+            season, verbose=False, strict=(season == seasons[-1])))
     return compute_live_ratings(all_games, current_season=seasons[-1])
 
 

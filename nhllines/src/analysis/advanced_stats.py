@@ -17,6 +17,7 @@ Usage:
 """
 
 import requests
+from src.data.nhl_data import current_season
 import json
 from pathlib import Path
 from datetime import datetime, timedelta
@@ -44,15 +45,17 @@ def _set_cache(key: str, data):
     path.write_text(json.dumps(data, default=str))
 
 
-def fetch_moneypuck_team_stats(season: str = "20252026"):
+def fetch_moneypuck_team_stats(season: str = None):
     """
     Fetch team-level advanced stats from MoneyPuck.
     
     Returns dict with xG, HDCF, Corsi, Fenwick for all teams.
     MoneyPuck provides free API access to advanced metrics.
     
-    Season format: "20252026" for 2025-26 season
+    Season format: "20262027" (NHL style); MoneyPuck's URL uses the start
+    year, so it is converted below.
     """
+    season = season or current_season()
     cache_key = f"moneypuck_teams_{season}"
     cached = _get_cached(cache_key, max_age_hours=24)
     if cached:
@@ -60,7 +63,7 @@ def fetch_moneypuck_team_stats(season: str = "20252026"):
     
     try:
         # MoneyPuck CSV download endpoint (they provide CSV files, not JSON API)
-        url = f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{season}/regular/teams.csv"
+        url = f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{season[:4]}/regular/teams.csv"
         
         headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -231,7 +234,7 @@ def fetch_special_teams_stats():
         return {}
 
 
-def get_team_advanced_stats(team_abbrev: str, season: str = "20252026"):
+def get_team_advanced_stats(team_abbrev: str, season: str = None):
     """
     Get comprehensive advanced stats for a team.
     
@@ -241,6 +244,7 @@ def get_team_advanced_stats(team_abbrev: str, season: str = "20252026"):
     - Shooting/save percentages
     - PDO (luck indicator)
     """
+    season = season or current_season()
     all_teams = fetch_moneypuck_team_stats(season)
     
     if team_abbrev not in all_teams:

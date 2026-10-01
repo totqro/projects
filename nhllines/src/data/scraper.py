@@ -4,6 +4,7 @@ Scrapes starting goalies, injuries, and schedule info from free sources.
 """
 
 import requests
+from .nhl_data import nhl_get
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import json
@@ -160,7 +161,7 @@ def get_team_schedule_from_nhl_api(team_abbrev: str, days_back=7, days_forward=7
         # NHL API schedule endpoint
         url = f"https://api-web.nhle.com/v1/club-schedule/{team_abbrev}/week/now"
         
-        resp = requests.get(url, timeout=10)
+        resp = nhl_get(url, timeout=10)
         resp.raise_for_status()
         schedule = resp.json()
         

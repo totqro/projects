@@ -69,7 +69,8 @@ def log_predictions(games: list, path: Path = LOG_PATH,
 
     `model_version` should name the win model that actually served this run
     (see WIN_MODEL_VERSIONS); it defaults to the Elo string for callers
-    predating the xG model.
+    predating the xG model. A game dict's own "model_version" wins over it,
+    for runs where different games were served by different models.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     existing = _existing_keys(path)
@@ -92,7 +93,7 @@ def log_predictions(games: list, path: Path = LOG_PATH,
                 "away_team": g["away_team"],
                 "home_win_prob": g["home_win_prob"],
                 "expected_total": g["expected_total"],
-                "model_version": model_version,
+                "model_version": g.get("model_version", model_version),
             }
             f.write(json.dumps(record, default=str) + "\n")
             written += 1

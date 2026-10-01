@@ -18,6 +18,7 @@ Usage:
 """
 
 import requests
+from src.data.nhl_data import nhl_get, current_season
 from bs4 import BeautifulSoup
 import json
 from pathlib import Path
@@ -210,13 +211,14 @@ def scrape_dailyfaceoff_injuries():
     return injuries
 
 
-def fetch_team_roster_with_stats(team_abbrev: str, season: str = "20252026"):
+def fetch_team_roster_with_stats(team_abbrev: str, season: str = None):
     """
     Fetch team roster WITH actual player statistics from the NHL API.
     Uses /club-stats/ endpoint which returns GP, G, A, P, TOI, etc.
 
     Returns list of players with stats for importance scoring.
     """
+    season = season or current_season()
     cache_key = f"roster_stats_v2_{team_abbrev}_{season}"
     cached = _get_cached(cache_key, max_age_hours=24)
     if cached:
@@ -227,7 +229,7 @@ def fetch_team_roster_with_stats(team_abbrev: str, season: str = "20252026"):
     # ── 1. Fetch skater stats ─────────────────────────────────────────────
     try:
         url = f"{BASE_URL}/club-stats/{team_abbrev}/now"
-        resp = requests.get(url, timeout=10)
+        resp = nhl_get(url, timeout=10)
         resp.raise_for_status()
         data = resp.json()
 
@@ -286,7 +288,7 @@ def fetch_team_roster_with_stats(team_abbrev: str, season: str = "20252026"):
         # Fall back to basic roster
         try:
             url = f"{BASE_URL}/roster/{team_abbrev}/{season}"
-            resp = requests.get(url, timeout=10)
+            resp = nhl_get(url, timeout=10)
             resp.raise_for_status()
             roster = resp.json()
             for group, pos in [("forwards", "F"), ("defensemen", "D"), ("goalies", "G")]:
