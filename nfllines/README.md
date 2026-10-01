@@ -7,8 +7,9 @@ features, one code path for history and serving, leave-one-season-out gating on
 proper scoring rules, and a single, one-time test-set evaluation against the
 betting market.
 
-**Status:** built September 2026. Test set scored once. Not wired into the site,
-CI, or deploy scripts. Not a betting tool: no stakes, no edges, no picks.
+**Status:** built September 2026. Test set scored once. Live at
+[lknox.web.app/nfllines](https://lknox.web.app/nfllines) (see "The website" below).
+Not a betting tool: no stakes, no edges, no picks.
 
 ---
 
@@ -276,6 +277,8 @@ nfllines/
   predict.py            # serving: same engine, stopped before the target week; coherent output;
                         #   logs only games whose final injury report is out (src/readiness.py)
   scorecard.py          # logged pre-kickoff predictions vs results vs closing market
+  export_web.py         # the website's JSON (this week + season performance)
+  web/                  # the lknox.web.app/nfllines page (index.html, app.js, styles.css)
   src/config.py         # every frozen constant, with the experiment that chose it
   src/data/             # nflverse loaders + cache, game_type filter, team-game stats, injury context
   src/features/         # elo, qb, efficiency, week1_prior, injuries, engine, build
@@ -290,8 +293,9 @@ nfllines/
 ## Running it every week (GitHub Actions)
 
 `.github/workflows/nfl-predictions.yml` runs `predict.py` on a schedule and
-commits `data/predictions_log.jsonl`: Tuesday 6 pm, Wednesday 7 pm, Thursday
-6 pm, Friday 7 pm, Saturday 6 pm and Sunday 8 am ET. Each run logs only the
+commits `data/predictions_log.jsonl` and the website data: Tuesday 6 pm,
+Wednesday 7 pm, Thursday 6 pm, Friday 7 pm, Saturday 6 pm, Sunday 8 am and
+Monday 10 am ET. Each run logs only the
 games that are ready (final injury report out, not kicked off; see
 `src/readiness.py`), so the Wednesday run logs the Thursday game and the
 Friday and Saturday runs log Sunday and Monday. The extra runs are backups:
@@ -305,6 +309,24 @@ CI never rebuilds or refits anything. It serves the frozen models straight
 from `ml_models/*.json` (identical to the fitted models to machine
 precision), and caches completed nflverse seasons between runs. The current
 season is always re-downloaded.
+
+## The website (lknox.web.app/nfllines)
+
+`export_web.py` runs after `predict.py` in every scheduled workflow run and
+writes two files that the page in `web/` reads:
+
+* `data/latest_analysis.json`: the current week (the earliest week with a
+  game not yet final). Logged games show the last pre-kickoff prediction;
+  games not logged yet show when their final injury report is due; finished
+  games show the score and whether the pick was right.
+* `data/performance.json`: the season scorecard under the same rules as
+  `scorecard.py` (only pre-kickoff rows count), per-week numbers, every scored
+  game, and the one-time 2024-2025 test.
+
+The workflow commits both files, and `deploy.yml` chains off "NFL
+Predictions" to copy `web/` and the JSON into `build/nfllines/` and deploy to
+Firebase. A Monday 10 am ET run scores Sunday's games; Tuesday's run picks up
+Monday night. Scores are always shown away @ home.
 
 ## Quick start
 
