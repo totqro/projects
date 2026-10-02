@@ -1376,14 +1376,18 @@ function reportSpan(D, scope){
    runs. Each PP or PK run is one power play, however many penalties
    (5v3 into 5v4) make it up. */
 function strengthRuns(D, a, b){
-  const runs = [], secs = {EV:0, PP:0, PK:0}, oz = {us:0, them:0};
+  const runs = [], secs = {EV:0, PP:0, PK:0}, oz = {us:0, them:0}, ozp = {}, pr = [];
   for(let e = a; e < b; e++){
     const m = D.MP.at(e + 0.5), k = strOf(m.us, m.them), len = Math.min(1, b - e), last = runs[runs.length-1];
     const q = periodOfE(e + 0.5), holder = D.poss(q, elapsed(q, 0) - (e + 0.5));
-    secs[k] += len; if(holder) oz[holder] += len;
+    secs[k] += len;
+    if(holder){ oz[holder] += len; (ozp[q] = ozp[q] || {us:0, them:0})[holder] += len;
+      /* One possession is an unbroken stretch in the zone by one team. */
+      const lp = pr[pr.length-1];
+      if(lp && lp.t === holder && lp.b === e) lp.b = e + len; else pr.push({t:holder, a:e, b:e + len}); }
     if(last && last.k === k && last.b === e) last.b = e + len; else runs.push({k, a:e, b:e + len});
   }
-  return {runs, secs, oz};
+  return {runs, secs, oz, ozp, pr};
 }
 
 function starMark(cx, cy, ro, ri, col){
@@ -1456,13 +1460,31 @@ function totalsTable(a, b){
     ${row("Power plays (goals)", `${a.ppo} (${a.ppg})`, `${b.ppo} (${b.ppg})`)}
     ${G.poss.length ? row("O-zone time", `${fmt(a.oz)} (${pctOf(a.oz, b.oz)})`, `${fmt(b.oz)} (${pctOf(b.oz, a.oz)})`, "hl") : ""}</tbody></table>`;
 }
-function periodTable(D, shots){
+function periodTable(D, shots, tl){
   const ps = [...new Set(shots.map(s => s.p))].sort((a,b) => a-b);
   if(ps.length < 2) return "";
-  return `<div><h3>By period</h3><table><thead><tr><th></th><th class="n">Goals</th><th class="n">SOG</th><th class="n">xGF</th><th class="n">xGA</th><th class="n">xGF%</th></tr></thead><tbody>` +
+  const oz = G.poss.length, ozCell = p => { const z = tl.ozp[p]; return `<td class="n">${z && z.us + z.them > 0 ? pctOf(z.us, z.them) : ""}</td>`; };
+  return `<div><h3>By period</h3><table><thead><tr><th></th><th class="n">Goals</th><th class="n">SOG</th><th class="n">xGF</th><th class="n">xGA</th><th class="n">xGF%</th>${oz ? `<th class="n">OZ%</th>` : ""}</tr></thead><tbody>` +
     ps.map(p => { const sh = shots.filter(s => s.p === p), a = teamSummary(D, sh, "us"), b = teamSummary(D, sh, "them");
       return `<tr><td>${perLabel(p)}</td><td class="n">${a.g}-${b.g}</td><td class="n">${a.sog}-${b.sog}</td><td class="n">${a.xg.toFixed(2)}</td>
-        <td class="n">${b.xg.toFixed(2)}</td><td class="n">${pctOf(a.xg, b.xg)}</td></tr>`; }).join("") + `</tbody></table></div>`;
+        <td class="n">${b.xg.toFixed(2)}</td><td class="n">${pctOf(a.xg, b.xg)}</td>${oz ? ozCell(p) : ""}</tr>`; }).join("") + `</tbody></table></div>`;
+}
+/* Offensive-zone possession from the arrow keys: each team's zone time,
+   how many separate possessions that was, and what they made of them.
+   A shot counts as in-zone when its own team held the zone at that clock. */
+function possTable(D, shots, tl){
+  if(!G.poss.length) return "";
+  const T = {us:{t:tl.oz.us, n:0, long:0, att:0, xg:0}, them:{t:tl.oz.them, n:0, long:0, att:0, xg:0}};
+  for(const r of tl.pr){ const x = T[r.t]; x.n++; x.long = Math.max(x.long, r.b - r.a); }
+  for(const s of shots){ const I = D.shotInfo[s.id];
+    if(D.poss(s.p, I.sec - 0.01) !== s.team) continue;
+    T[s.team].att++; T[s.team].xg += I.xg || 0; }
+  const a = T.us, b = T.them, avg = x => x.n ? fmt(x.t/x.n) : "", per = x => x.n ? (x.xg/x.n).toFixed(2) : "";
+  const row = (l, x, y, cls) => `<tr${cls ? ` class="${cls}"` : ""}><td>${esc(l)}</td><td class="n">${x}</td><td class="n">${y}</td></tr>`;
+  return `<div><h3>Possession <span class="sub">&middot; offensive zone</span></h3><table><thead><tr><th></th><th class="n" style="color:${RC_US}">${esc(S.us)}</th><th class="n" style="color:${RC_THEM}">${esc(S.opp)}</th></tr></thead><tbody>
+    ${row("O-zone time", fmt(a.t), fmt(b.t), "hl")}${row("Zone share", pctOf(a.t, b.t), pctOf(b.t, a.t))}
+    ${row("Possessions", a.n, b.n)}${row("Avg / longest", `${avg(a)} / ${fmt(a.long)}`, `${avg(b)} / ${fmt(b.long)}`)}
+    ${row("Attempts in zone", a.att, b.att)}${row("xG in zone", a.xg.toFixed(2), b.xg.toFixed(2))}${row("xG per possession", per(a), per(b))}</tbody></table></div>`;
 }
 /* GSAx is xG against (unblocked attempts) minus goals against. Ours come
    from the goalie on the board for each shot; theirs from our shots,
@@ -1646,7 +1668,7 @@ function statusLine(scope){
 function buildReport(scope){
   const D = derive(), shots = D.ordered.filter(s => !scope || s.p === scope);
   const st = playerStats(D, scope);
-  const span = reportSpan(D, scope), tl = span ? strengthRuns(D, span.t0, span.played) : {runs:[], secs:{EV:0, PP:0, PK:0}, oz:{us:0, them:0}};
+  const span = reportSpan(D, scope), tl = span ? strengthRuns(D, span.t0, span.played) : {runs:[], secs:{EV:0, PP:0, PK:0}, oz:{us:0, them:0}, ozp:{}, pr:[]};
   const a = teamSummary(D, shots, "us"), b = teamSummary(D, shots, "them");
   a.oz = tl.oz.us; b.oz = tl.oz.them;
   a.ppo = tl.runs.filter(r => r.k === "PP").length; b.ppo = tl.runs.filter(r => r.k === "PK").length;
@@ -1689,7 +1711,7 @@ function buildReport(scope){
       <div><h3>Head to head</h3>${compareBars(a, b)}</div>
     </div>
     <div class="two">
-      <div class="stack">${periodTable(D, shots)}${goalieTable(st, a)}</div>
+      <div class="stack">${periodTable(D, shots, tl)}${possTable(D, shots, tl)}${goalieTable(st, a)}</div>
       <div class="stack">${strengthTable(D, shots, tl)}${units}</div>
     </div>
     <div class="two">${leaderTables(st)}</div>
