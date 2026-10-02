@@ -21,6 +21,15 @@ statuses where the final report had 105. So a game is logged only when:
 Practical schedule: run Wednesday evening (logs the Thursday game) and
 Saturday evening (logs Sunday and Monday). Late-season Saturday games are
 ready from Thursday evening.
+
+Backups (added 2026-10-02). A game that is not ready by its report deadline
+still gets a prediction, flagged quality="backup", from whatever data is
+there: a thin or missing injury report, or ratings missing last week's
+latest game. Accurate-ish beats nothing: on 2026-10-01 nflverse never
+published game statuses for the Thursday game and nothing was logged. If
+the full report turns up before kickoff, a quality="final" row is logged
+and the scorecard prefers it; a backup is never logged once a final row
+exists for the game.
 """
 from __future__ import annotations
 
@@ -67,6 +76,12 @@ def season_complete_before(games: pd.DataFrame, team_games: pd.DataFrame, season
         elif g["game_id"] not in have_pbp:
             missing.append(f"{g['game_id']} (no play-by-play)")
     return missing
+
+
+def backup_allowed(g, now: datetime) -> bool:
+    """Past the final-report deadline and before kickoff: a game that is
+    still not ready gets a backup prediction instead of nothing."""
+    return report_due_et(g) <= now < kickoff_et(g)
 
 
 def game_readiness(g, injuries: dict, now: datetime) -> tuple[bool, str]:

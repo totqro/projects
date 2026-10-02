@@ -5,7 +5,8 @@ Every predict.py run appends one JSON line per game to
 data/predictions_log.jsonl: UTC timestamp, run date, game id, teams, week,
 win probability, expected home/away points, margin, total, and the model
 version. Lines are never rewritten; a (game_id, run_date) pair is written
-once, so re-running on the same day doesn't duplicate. A prediction only
+once per quality ("final" or "backup", see src/readiness.py), so re-running
+on the same day doesn't duplicate but a final row can follow a backup. A prediction only
 counts if it was logged before kickoff — the scorecard drops the rest.
 """
 from __future__ import annotations
@@ -20,6 +21,21 @@ LOG_PATH = Path(__file__).resolve().parents[2] / "data" / "predictions_log.jsonl
 MODEL_VERSION = "nfl-win-v1+coherent-points-v2"
 
 
+def final_logged(path: Path = LOG_PATH) -> set:
+    """Game ids that already have a full-data (final) prediction."""
+    if not path.exists():
+        return set()
+    out = set()
+    for line in path.read_text().splitlines():
+        try:
+            r = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if r.get("quality", "final") == "final":
+            out.add(r.get("game_id"))
+    return out
+
+
 def _existing_keys(path: Path) -> set:
     keys = set()
     if not path.exists():
@@ -32,7 +48,7 @@ def _existing_keys(path: Path) -> set:
             r = json.loads(line)
         except json.JSONDecodeError:
             continue
-        keys.add((r.get("game_id"), r.get("run_date")))
+        keys.add((r.get("game_id"), r.get("run_date"), r.get("quality", "final")))
     return keys
 
 
@@ -44,7 +60,7 @@ def log_predictions(rows: list, path: Path = LOG_PATH, model_version: str = MODE
     written = 0
     with open(path, "a") as f:
         for r in rows:
-            key = (r["game_id"], run_date)
+            key = (r["game_id"], run_date, r.get("quality", "final"))
             if key in existing:
                 continue
             existing.add(key)

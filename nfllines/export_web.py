@@ -26,7 +26,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from scorecard import load_log, load_results, MIN_GAMES_FOR_VERDICT
+from scorecard import load_log, load_results, pick_prediction, MIN_GAMES_FOR_VERDICT
 from src.data.nflverse import current_season
 from src.models.metrics import log_loss, brier
 from src.readiness import report_due_et
@@ -58,7 +58,7 @@ def last_pre_kickoff(log: pd.DataFrame, res: pd.DataFrame) -> pd.DataFrame:
     log = log[log.game_id.isin(res.index)].copy()
     log["kickoff"] = log.game_id.map(res.kickoff)
     pre = log[log.ts < pd.to_datetime(log.kickoff, utc=True)]
-    return pre.sort_values("ts").groupby("game_id").tail(1).set_index("game_id")
+    return pick_prediction(pre)
 
 
 def win_block(y, p):
@@ -87,7 +87,8 @@ def summary(d: pd.DataFrame) -> dict:
            "model": win_block(y, pm),
            "coin_flip": win_block(y, np.full(len(w), 0.5)),
            "margin_mae": _f(np.mean(np.abs(d.margin - d.expected_margin)), 2),
-           "total_mae": _f(np.mean(np.abs(d.total - d.expected_total)), 2)}
+           "total_mae": _f(np.mean(np.abs(d.total - d.expected_total)), 2),
+           "backups": int((d.quality == "backup").sum())}
     if has_mkt.any():
         out["market"] = win_block(y[has_mkt], w.p_mkt.to_numpy()[has_mkt])
         out["model_same_games"] = win_block(y[has_mkt], pm[has_mkt])
@@ -107,7 +108,8 @@ def game_entry(gid, g, row, now) -> dict:
         e.update({"home_win_prob": _f(row.home_win_prob), "expected_margin": _f(row.expected_margin, 1),
                   "expected_home_points": _f(row.expected_home_points, 1),
                   "expected_away_points": _f(row.expected_away_points, 1),
-                  "expected_total": _f(row.expected_total, 1), "logged_at": row.ts.isoformat()})
+                  "expected_total": _f(row.expected_total, 1), "logged_at": row.ts.isoformat(),
+                  "backup": row.quality == "backup"})
     if pd.notna(g.home_score):
         e["status"] = "final"
         e["home_score"], e["away_score"] = int(g.home_score), int(g.away_score)
@@ -167,6 +169,7 @@ def main():
             "market_correct": None if (r.margin == 0 or pd.isna(r.p_mkt)) else bool((r.p_mkt > .5) == (r.margin > 0)),
             "expected_margin": _f(r.expected_margin, 1), "margin": int(r.margin),
             "expected_total": _f(r.expected_total, 1), "total": int(r.total),
+            "backup": r.quality == "backup",
         })
     perf = {"timestamp": now.isoformat(), "season": args.season,
             "min_games_for_verdict": MIN_GAMES_FOR_VERDICT,

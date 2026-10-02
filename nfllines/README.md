@@ -242,6 +242,19 @@ outputs summarised in `data/processed/*.json`).
   down from 80.1%). The same run exposed a 365-day download cache that had
   frozen the 2026 season at its first fetch. The current season now always
   downloads fresh. Both fixes date from 2026-09-21.
+* **Backup predictions (2026-10-02).** On 2026-10-01 nflverse never
+  published game statuses for the Thursday game (PIT @ CLE) before kickoff,
+  so the final-report rule logged nothing. Now a game still missing data
+  once its report deadline has passed is logged anyway as
+  `quality: "backup"`, from whatever injury data exists (and with ratings
+  missing the latest game, if nflverse is behind on results). A full-data
+  row logged later replaces it; the scorecard and the website prefer
+  full-data rows and mark backups. PIT @ CLE was backfilled as the backup
+  the 7:49 pm ET run (26 minutes before kickoff) computed and printed; the
+  row links that run. nflverse's injury data lags: PIT and CLE's statuses
+  appeared only after kickoff. The workflow also retries `predict.py` up to
+  three times, after a brief nflverse outage failed a run 30 minutes before
+  that kickoff.
 * **Contract tie fix (2026-09-21).** When a player had two contracts signed
   in the same year, the one used for his value was whichever an unstable sort
   put last. That order differs between Apple Silicon and the x86 GitHub
