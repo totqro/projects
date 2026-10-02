@@ -11,9 +11,12 @@ appends them to data/predictions_log.jsonl.
     python predict.py --season 2026 --week 3
 
 Run it Wednesday evening (logs the Thursday game) and Saturday evening (logs
-Sunday and Monday). A game is logged only when its final injury report is
-out and it has not kicked off (src/readiness.py); everything else is
-printed with the reason it was held back. --force logs regardless, loudly.
+Sunday and Monday). A game is logged when its final injury report is out and
+it has not kicked off (src/readiness.py). A game still missing data once its
+report deadline has passed is logged anyway as a backup (quality="backup"),
+from whatever data there is; a later full-data row replaces it. Everything
+else is printed with the reason it was held back. --force logs regardless,
+loudly.
 
 Starting QBs come from the nflverse schedule's home_qb_id/away_qb_id; for an
 upcoming game those columns are nflverse's expected starter and are
@@ -36,9 +39,9 @@ from src.data import nflverse as nv
 from src.features.build import load_inputs, make_engine, attach_targets
 from src.models.coherent import coherent_points
 from src.models.points_model import ServedPointsModel
-from src.models.prediction_log import log_predictions
+from src.models.prediction_log import final_logged, log_predictions
 from src.models.win_model import ServedWinModel, WIN_MODEL_PATH, POINTS_MODEL_PATH
-from src.readiness import ET, game_readiness, season_complete_before
+from src.readiness import ET, backup_allowed, game_readiness, season_complete_before
 
 
 def main():
@@ -64,7 +67,7 @@ def main():
     print(f"season {args.season} week {args.week}  (run at {now:%a %Y-%m-%d %H:%M} ET)")
     missing = season_complete_before(games, inputs["team_games"], args.season, args.week, now)
     if missing:
-        msg = f"ratings incomplete, nflverse has not published: {', '.join(missing)}; nothing will be logged"
+        msg = f"ratings incomplete, nflverse has not published: {', '.join(missing)}; games past their report deadline are logged as backups"
         print(("::warning::" if os.environ.get("GITHUB_ACTIONS") else "") + msg)
     target = games[(games.season == args.season) & (games.week == args.week)]
     if target.empty:
@@ -90,15 +93,22 @@ def main():
     pts = coherent_points(p, total, wm.sigma)
 
     out = []
+    have_final = final_logged()
     print(f"{'game':<20}{'P(home)':>9}{'margin':>8}{'home':>7}{'away':>7}{'total':>7}  status")
     for i, r in rows.iterrows():
         g = target[target.game_id == r.game_id].iloc[0]
         ready, why = game_readiness(g, inputs["context"]["injuries"], now)
         if ready and missing:
             ready, why = False, "earlier results missing (see above)"
-        log_it = ready or (args.force and why != "kicked off")
+        # Not ready but out of time: log what we have rather than nothing.
+        backup = (not ready and backup_allowed(g, now) and r.game_id not in have_final)
+        forced = args.force and not ready and not backup and why != "kicked off"
+        log_it = ready or backup or forced
+        quality = "final" if ready else "backup"
         status = "logged" if (log_it and not args.no_log) else ("ready" if ready else f"held: {why}")
-        if log_it and not ready:
+        if backup:
+            status = f"BACKUP ({why})" + ("" if args.no_log else ", logged")
+        elif forced:
             status = f"FORCED ({why})"
         print(f"{r.game_id:<20}{p[i]:>9.3f}{pts['margin'][i]:>8.1f}{pts['home'][i]:>7.1f}{pts['away'][i]:>7.1f}"
               f"{pts['total'][i]:>7.1f}  {status}")
@@ -111,7 +121,7 @@ def main():
                     "expected_home_points": float(pts["home"][i]),
                     "expected_away_points": float(pts["away"][i]),
                     "expected_total": float(pts["total"][i]),
-                    "readiness": why, "forced": bool(log_it and not ready)})
+                    "quality": quality, "readiness": why, "forced": bool(forced)})
     if not args.no_log:
         n = log_predictions(out)
         print(f"logged {n} new prediction rows")
