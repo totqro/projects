@@ -58,6 +58,10 @@ function renderWeek() {
 }
 
 function statusLine(g) {
+    return statusText(g) + (g.backup ? ` <span class="gc-status gc-backup" title="Logged from incomplete data: the final injury report was not out in time">backup</span>` : '');
+}
+
+function statusText(g) {
     switch (g.status) {
         case 'final': {
             const res = `Final · ${g.away} ${g.away_score} @ ${g.home} ${g.home_score}`;
@@ -67,7 +71,7 @@ function statusLine(g) {
         case 'in_progress': return `<span class="gc-status live">In progress · kicked off ${fmtKick(g.kickoff)}</span>`;
         case 'logged':      return `<span class="gc-status">Kickoff ${fmtKick(g.kickoff)} · logged ${fmtDay(g.logged_at)}</span>`;
         case 'missed':      return `<span class="gc-status bad">Kicked off without a logged prediction</span>`;
-        default:            return `<span class="gc-status">Kickoff ${fmtKick(g.kickoff)} · posts after final injury report (${fmtKick(g.report_due)})</span>`;
+        default:            return `<span class="gc-status">Kickoff ${fmtKick(g.kickoff)} · posts after final injury report (${fmtKick(g.report_due)}), or as a backup if the report is late</span>`;
     }
 }
 
@@ -134,12 +138,13 @@ function toggleGC(i) {
 
 function renderGameDetails(g) {
     if (g.home_win_prob == null) {
-        return `<div class="details-section"><p class="parlay-subtitle">The model's number for this game is held until the final injury report is published (${fmtKick(g.report_due || g.kickoff)}). The model was trained on final reports, so a mid-week prediction would not be the same model.</p></div>`;
+        return `<div class="details-section"><p class="parlay-subtitle">The model's number for this game is held until the final injury report is published (${fmtKick(g.report_due || g.kickoff)}). The model was trained on final reports, so a mid-week prediction would not be the same model. If the report still is not out by then, a backup prediction posts from whatever data is available.</p></div>`;
     }
+    const backupNote = g.backup ? `<div class="details-section"><p class="parlay-subtitle">Backup prediction: the final injury report was not available in time, so this was made from incomplete injury data. It is usually close to the full prediction, but treat it as a little less reliable.</p></div>` : '';
     const fav = g.home_win_prob > 0.5 ? g.home : g.away;
     const card = (label, val) => `<div class="advanced-stat-card"><div class="advanced-stat-label">${label}</div><div class="advanced-stat-value">${val}</div></div>`;
     const modelFav = `${fav} ${pct(Math.max(g.home_win_prob, 1 - g.home_win_prob), 0)}`;
-    let h = `<div class="details-section"><h3>Model vs Vegas</h3><div class="advanced-stats-grid">
+    let h = backupNote + `<div class="details-section"><h3>Model vs Vegas</h3><div class="advanced-stats-grid">
         ${card('Model favours', modelFav)}
         ${card('Vegas favours', vegasFav(g))}
         ${card('Projected winning margin', `${fav} by ${Math.round(Math.abs(g.expected_margin))}`)}
@@ -197,6 +202,7 @@ function displayPerformance(d) {
                 : 'So far the model and Vegas have picked the same number of winners. ';
     }
     if (s.n < d.min_games_for_verdict) verdict += `That is only ${s.n} games, so a couple of upsets either way can swing it. It takes about ${d.min_games_for_verdict} games (most of a season) before the comparison really means something.`;
+    if (s.backups) verdict += ` ${s.backups} of these game${s.backups > 1 ? 's were' : ' was'} predicted from a backup (incomplete injury data), marked "backup" below.`;
     $('perf-verdict').textContent = verdict;
 
     // Confidence check, from every scored game.
@@ -243,7 +249,7 @@ function displayPerformance(d) {
         return `<div class="pred-result-row">
             <span class="pred-result-date">Wk ${r.week}</span>
             <span class="pred-result-matchup">${team(r.away, r.away_score, aw)} @ ${team(r.home, r.home_score, hw)}</span>
-            <span class="pred-result-winner">${icon} ${r.pick} ${(r.pick_prob*100).toFixed(0)}%</span>
+            <span class="pred-result-winner">${icon} ${r.pick} ${(r.pick_prob*100).toFixed(0)}%${r.backup ? '<span class="score" title="Backup prediction from incomplete injury data"> backup</span>' : ''}</span>
             <span class="pred-result-total"><span class="actual">Vegas ${r.market_pick ? `${mIcon} ${r.market_pick} ${(r.market_pick_prob*100).toFixed(0)}%` : '-'}</span></span>
         </div>`;
     }).join('');

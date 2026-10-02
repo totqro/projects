@@ -5,7 +5,9 @@ Mirrors nhllines/scorecard.py. The rules that keep it honest:
 
 1. Only pre-kickoff rows count. A row whose timestamp_utc is at or after
    kickoff (schedule gameday + gametime, US Eastern) is dropped. If several
-   runs logged a game, the last pre-kickoff row is the prediction.
+   runs logged a game, the last pre-kickoff full-data row is the prediction;
+   a backup row (quality="backup", logged from incomplete data, see
+   src/readiness.py) counts only when the game has no full-data row.
 2. The market is nflverse's closing moneyline, de-vigged; the closing spread
    and total for points. Read here for scoring only, never as a feature.
 3. Win probability is the same number in v1 and v2 rows (only the points
@@ -56,7 +58,15 @@ def load_log() -> pd.DataFrame:
     rows = [json.loads(l) for l in open(LOG_PATH) if l.strip()]
     df = pd.DataFrame(rows)
     df["ts"] = pd.to_datetime(df.timestamp_utc, utc=True)
+    df["quality"] = df["quality"].fillna("final") if "quality" in df else "final"
     return df
+
+
+def pick_prediction(pre: pd.DataFrame) -> pd.DataFrame:
+    """One row per game from its pre-kickoff rows: the last full-data row,
+    or the last backup row when there is no full-data row."""
+    pre = pre.assign(_full=(pre.quality == "final").astype(int))
+    return pre.sort_values(["_full", "ts"]).groupby("game_id").tail(1).drop(columns="_full").set_index("game_id")
 
 
 def main():
@@ -74,7 +84,7 @@ def main():
     log["kickoff"] = log.game_id.map(res.kickoff)
     pre = log[log.ts < pd.to_datetime(log.kickoff, utc=True)]
     dropped = len(log) - len(pre)
-    last = pre.sort_values("ts").groupby("game_id").tail(1).set_index("game_id")
+    last = pick_prediction(pre)
     done = last[res.loc[last.index, "home_score"].notna().to_numpy()].copy()
     pending = sorted(set(last.index) - set(done.index))
     r = res.loc[done.index]
@@ -94,7 +104,7 @@ def main():
     for gid, row in done.sort_values("kickoff").iterrows():
         ours = "✓" if (row.home_win_prob > .5) == (row.margin > 0) else "✗"
         mkt = "✓" if (row.p_mkt > .5) == (row.margin > 0) else "✗"
-        ver = "v2" if "coherent" in row.model_version else "v1"
+        ver = ("v2" if "coherent" in row.model_version else "v1") + (" backup" if row.quality == "backup" else "")
         print(f"{gid:<18}{row.home_win_prob:>8.3f}{row.p_mkt:>7.3f}{int(row.hs):>4}-{int(row.as_):<4}{ours:>6}{mkt:>5}"
               f"{row.margin:>+8.0f}{row.expected_margin:>+7.1f}{row.total:>7.0f}{row.expected_total:>7.1f}  {ver}")
 

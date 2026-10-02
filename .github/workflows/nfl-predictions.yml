@@ -84,18 +84,28 @@ jobs:
         if: github.event_name == 'pull_request'
         run: python -m pytest tests -q
 
+      # nflverse's release files are occasionally unavailable for a few
+      # minutes (a 404 on schedules/games.parquet at 7:45pm ET on 2026-10-01,
+      # 30 minutes before kickoff). A failed run logs nothing, so retry.
       - name: Predict
         run: |
-          set -o pipefail
           flags=""
           if [ "${{ github.event_name }}" = "pull_request" ]; then flags="--no-log"; fi
-          python predict.py $flags --features-out served_features.csv 2>&1 | grep -v Warning | tee predict.out
+          ok=0
+          for attempt in 1 2 3; do
+            if python predict.py $flags --features-out served_features.csv > predict.raw 2>&1; then ok=1; break; fi
+            echo "::warning::predict.py failed (attempt $attempt of 3); retrying in 2 minutes"
+            tail -n 3 predict.raw
+            [ "$attempt" = 3 ] || sleep 120
+          done
+          grep -v Warning predict.raw | tee predict.out || true
           {
             echo "### NFL predictions ($([ -n "$flags" ] && echo 'dry run' || echo 'logged'))"
             echo '```'
             cat predict.out
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+          [ "$ok" = 1 ]
 
       # The exact feature rows behind this run's predictions, kept 90 days:
       # the audit trail for any live-vs-training discrepancy.
