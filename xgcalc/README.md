@@ -261,21 +261,26 @@ rest of the time. Pasted into the
 real workbook and recalculated, its Totals sheet reproduces the tracker's TOI
 to the workbook's own 0.1-minute rounding.
 
-**Report PDF** (Shifts view) prints one landscape page for the full game or
-any one period, OT included; if a long game runs over, the page zooms itself
-down to fit. The top row is the shot map with our team always attacking right,
-totals (goals, xG, xG share, goals minus xG, shooting %, high-danger chances,
-rebounds, power plays and PP goals), the period split, and goalies with GSAx
-(xGA minus GA): ours from whoever was on the board for each shot, theirs from
-our shots with empty-net ones left out. The middle is cumulative xG on the
-game clock, with each power play shaded from the penalty timeline and every
-goal marked with the score. The bottom row is the five skaters with the most
-and the least xG for on the ice (the lowest list skips anyone under half the
-median skater's TOI), xG for and against by strength next to the clock time
-spent at each (per 60 too), and the forward lines and D pairs that played
-20+ seconds together; a 3v3 OT report lists the three-skater units instead.
-Printed mid-game, it stops at the clock. It uses the browser's print dialog,
-so pick "Save as PDF".
+**Report PDF** (Shifts view) prints one portrait page for the full game or
+any one period, OT included, in the same design as Shot Chart's report; if a
+long game runs over, the page zooms itself down to fit. The header has the
+matchup (Setup's new **We are** Home/Away picks which side of the @ we sit
+on), the date, the Varsity Blues logo, and the score with where the game
+stands (Final, Overtime, After P2, or the live clock). Our team is always
+Varsity blue and the opponent red. Then the shot map with our team always
+attacking right, and momentum: cumulative xG on the game clock, with each
+power play shaded from the penalty timeline and every goal marked with the
+score. **Data and insights** follows: plain-sentence takeaways, head-to-head
+bars (goals, xG, shots, attempts, high-danger chances, shooting %, o-zone
+time when possession was tracked), the period split, goalies with GSAx (xGA
+minus GA): ours from whoever was on the board for each shot, theirs from our
+shots with empty-net ones left out; xG for and against by strength next to
+the clock time spent at each (per 60 too), the forward lines and D pairs
+that played the most together, and the four skaters with the most and the
+least xG for on the ice (the lowest list skips anyone under half the median
+skater's TOI)); a 3v3 OT report lists the three-skater units instead
+of lines and pairs. Printed mid-game, it stops at the clock. It uses the
+browser's print dialog, so pick "Save as PDF".
 
 **`web/scatter.html` — the shot chart.** For charts that already carry exact
 coordinates — tagged off film, or exported from another tool. Drop the CSV in
