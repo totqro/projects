@@ -227,8 +227,26 @@ re-teams possession the same way it re-teams shots. The **OZ** tag in the
 top bar and the glowing end label show who has it now; each period starts
 with nobody. The report adds o-zone time and share to the totals.
 
+**Shootout.** A regular-season game tied after OT goes to a shootout: press
+`]` at the end of a tied OT and the tracker offers it instead of a second
+OT (Setup's **Tied after OT** picks Shootout or Another OT for playoffs, and
+**Shootout rounds** sets best of 3 by default). The Track view swaps the
+clock, change bar, board and penalties for a shootout panel. Click the rink
+for each attempt (teams alternate from whoever shoots first, the away side
+by default), type the shooter's number, and `g` `o` `m` for goal, saved,
+missed; `x` gives an attempt to the other team. The tally sits where the
+clock was. It ends early once one side can't catch up, then goes to sudden
+death by full rounds; anything logged after that is flagged and doesn't
+count. `]` again leaves the shootout. Attempts are kept apart from the
+game's shots, because the model has never seen a penalty shot and a
+shootout has no clock, shifts or strength: they never touch xG, TOI, GSAx,
+the strength timeline or the TOI sheet. The Shifts view lists shooters and
+goalies, the report adds the deciding goal to the score ("Final ·
+Shootout"), a takeaway and a round-by-round table, and the shots export
+writes them as period `SO` rows with no xG.
+
 Only raw events are stored: clock operations, shots, shift changes,
-penalties, empty-net toggles and possession changes. Clock
+penalties, empty-net toggles, possession changes and shootout attempts. Clock
 times, who was on for each shot, rebounds (same team, within 3 s, the model's
 own definition) and all the stats are derived on every render, so fixing one
 change on the Shifts view fixes every shot and total that depended on it.
@@ -316,7 +334,8 @@ on-ice xG or the top shooters. The shots file carries no TOI, so the worst
 list keeps to skaters on the ice for at least half the median skater's
 attempts. The date defaults to the one in the file name (tracker exports
 start with it), else today. Shootout attempts (period `SO`) stay out of the
-numbers and only add the deciding goal to a game tied after play.
+numbers, on screen and in the report, and only add the deciding goal to a
+game tied after play.
 
 X/Y are raw NHL rink feet. Shots at the left end are mirrored onto the
 attacking-right frame (net at x = 89) — flipping x flips y with it, or every

@@ -137,6 +137,16 @@ svg.rink{display:block; width:min(100%, calc((100vh - var(--hdr, 150px) - 240px)
 .delbtn:hover:not(:disabled){border-color:var(--bad)}
 button.del{border:0; background:none; color:var(--ink-3); padding:0 5px; font-size:15px; line-height:1}
 button.del:hover{color:var(--bad)}
+/* Shootout mode swaps the live-game controls for the shootout panel. */
+body.so .no-so{display:none !important}
+body:not(.so) .so-only{display:none !important}
+/* Attempts all come from the same few feet, so a click always logs the
+   next one rather than grabbing the last; pick earlier ones in the log. */
+body.so .rink .dot{pointer-events:none}
+.sofirst button[aria-pressed="true"]{border-color:var(--us); color:var(--us)}
+.shot .edits.so2{grid-template-columns:repeat(2,1fr)}
+.shot .edits input{width:100%}
+.sotabs{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px}
 
 .leftcol{display:grid; gap:10px; align-content:start; min-width:0}
 .logwrap{position:relative; max-height:max(150px, calc(100vh - var(--hdr, 150px) - 90px - min(100vw - 390px, (100vh - var(--hdr, 150px) - 240px) * 202 / 87) * 87 / 202)); overflow:auto; padding:0 9px 9px}
@@ -253,17 +263,17 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
     <span id="runTag" class="lab">PAUSED</span>
   </div>
   <div class="ctl">
-    <button id="bRun" title="Tab">Start <kbd>Tab</kbd></button>
-    <button id="bSet" title="=">Set <kbd>=</kbd></button>
+    <button id="bRun" class="no-so" title="Tab">Start <kbd>Tab</kbd></button>
+    <button id="bSet" class="no-so" title="=">Set <kbd>=</kbd></button>
     <button id="bNext" title="]">End per <kbd>]</kbd></button>
-    <select id="strSel" title="e cycles EV / PP / PK" aria-label="Strength">
+    <select id="strSel" class="no-so" title="e cycles EV / PP / PK" aria-label="Strength">
       <option value="EV">EV</option><option value="PP">PP 5v4</option><option value="PP2">PP 5v3</option>
       <option value="PK">PK 4v5</option><option value="PK2">PK 3v5</option>
       <option value="4v4">4v4</option><option value="3v3">3v3</option><option value="" id="strNow" disabled hidden></option>
     </select>
   </div>
-  <span id="light">board</span>
-  <span id="poss" title="Offensive-zone possession: Left / Right arrow for the team attacking that end, Up / Down to end it">OZ &mdash;</span>
+  <span id="light" class="no-so">board</span>
+  <span id="poss" class="no-so" title="Offensive-zone possession: Left / Right arrow for the team attacking that end, Up / Down to end it">OZ &mdash;</span>
   <div class="score" id="score"></div>
   <div class="tabs">
     <button data-view="track" aria-pressed="true">Track</button>
@@ -272,7 +282,7 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
     <button id="bHelp">?</button>
   </div>
   <div id="modelNote" class="note hidden"></div>
-  <div class="bar idle" id="bar">
+  <div class="bar idle no-so" id="bar">
     <div class="row">
       <span>c&gt;</span>
       <input id="barIn" autocomplete="off" spellcheck="false" placeholder="15 19 34 / 14 9 10   ·   f2 d1   ·   s20   ·   @12:40">
@@ -288,25 +298,27 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
   <div class="leftcol">
   <div class="panel">
     <div class="rinkhead">
-      <span class="end" id="endL"></span>
+      <span class="end no-so" id="endL"></span>
       <span>
-        <span class="mid"><button id="bSwap" title="Swap which end each team attacks, from this period on">&#8644; Swap ends</button>
-        <button id="bAll" aria-pressed="false">All periods</button><span id="dirNote" class="note"></span></span>
+        <span class="mid"><span class="lab so-only">Shootout &middot; click where each attempt was taken from</span>
+        <button id="bSwap" class="no-so" title="Swap which end each team attacks, from this period on">&#8644; Swap ends</button>
+        <button id="bAll" class="no-so" aria-pressed="false">All periods</button><span id="dirNote" class="note"></span></span>
       </span>
-      <span class="end" id="endR"></span>
+      <span class="end no-so" id="endR"></span>
     </div>
     <svg class="rink" id="rink" viewBox="-101 -43.5 202 87" aria-label="Rink: click where the shot came from"></svg>
   </div>
   <div class="panel logwrap" id="logwrap"><table id="log"></table></div>
   </div>
   <div class="side">
-    <div class="panel board">
+    <div class="panel shot so-only" id="soPanel"></div>
+    <div class="panel board no-so">
       <div class="agohead"><span class="lab" title="Click players to build a change">On ice</span>
         <span class="ago" id="ago" title="The change happened this long ago"><span class="lab" style="align-self:center">ago</span><button data-ago="5">5s</button><button data-ago="10">10s</button><button data-ago="15">15s</button><button data-ago="20">20s</button></span></div>
       <div id="board"></div>
     </div>
-    <div class="panel pens" id="penPanel"></div>
-    <div class="panel shot" id="shotPanel"></div>
+    <div class="panel pens no-so" id="penPanel"></div>
+    <div class="panel shot no-so" id="shotPanel"></div>
   </div>
 </main>
 
@@ -315,6 +327,11 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
     <h2>Players</h2>
     <div style="overflow:auto"><table id="stats"></table></div>
     <div class="note" id="statsNote" style="margin-top:6px"></div>
+  </div>
+  <div class="panel so-only">
+    <h2>Shootout</h2>
+    <div class="sotabs"><div style="overflow:auto"><table id="soShooters"></table></div><div style="overflow:auto"><table id="soGoalies"></table></div></div>
+    <div class="note" style="margin-top:6px">Shootout attempts are kept out of every number above: no xG, no TOI, no GSAx. They only decide the extra goal on the final score.</div>
   </div>
   <div class="panel">
     <h2>Shift changes</h2>
@@ -360,6 +377,8 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
       <label for="sPer">Period length (min)</label><input id="sPer" type="number" min="1" max="30" step="1">
       <label for="sOt">OT length (min)</label><input id="sOt" type="number" min="1" max="30" step="1">
       <label for="sOtf">OT format</label><select id="sOtf"><option value="3v3">3v3</option><option value="5v5">5v5</option></select>
+      <label for="sAfter">Tied after OT</label><select id="sAfter"><option value="so">Shootout</option><option value="ot">Another OT (playoffs)</option></select>
+      <label for="sSoR">Shootout rounds</label><input id="sSoR" type="number" min="1" max="10" step="1">
       <label for="sEnd">We attack in P1</label><select id="sEnd"><option value="R">Right end (from your seat)</option><option value="L">Left end</option></select>
     </div>
   </div>
@@ -452,10 +471,10 @@ const REBOUND_SECONDS = 3;
 const today = () => { const d = new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
 function blankSetup(){
   const lines = {}; LINE_KEYS.forEach(k => lines[k] = []);
-  return {date:today(), us:"UofT", opp:"Opponent", venue:"home", periodMin:20, otMin:5, otFormat:"3v3", usRightP1:true, roster:[], lines};
+  return {date:today(), us:"UofT", opp:"Opponent", venue:"home", periodMin:20, otMin:5, otFormat:"3v3", afterOT:"so", soRounds:3, usRightP1:true, roster:[], lines};
 }
 function blankGame(setup){
-  return {clock:[{w:Date.now(), k:"set", p:1, s:setup.periodMin*60}], strength:"EV", shots:[], changes:[], flips:[], strOps:[], pens:[], enOps:[], poss:[], nextId:1};
+  return {clock:[{w:Date.now(), k:"set", p:1, s:setup.periodMin*60}], strength:"EV", shots:[], changes:[], flips:[], strOps:[], pens:[], enOps:[], poss:[], so:null, nextId:1};
 }
 let S = blankSetup(), G = null;
 try{ const r = localStorage.getItem(KEY_SETUP); if(r) S = Object.assign(blankSetup(), JSON.parse(r)); }catch(e){}
@@ -464,13 +483,14 @@ if(!G) G = blankGame(S);
 if(!Array.isArray(G.flips)) G.flips = [];
 G.shots.forEach(s => { if(s.type === "DEFL") s.type = "TIP"; });
 ["strOps","pens","enOps","poss"].forEach(k => { if(!Array.isArray(G[k])) G[k] = []; });
+if(!G.so) G.so = null;
 
 let saveFailed = false;
 function saveGame(){ try{ localStorage.setItem(KEY_GAME, JSON.stringify(G)); saveFailed = false; }catch(e){ saveFailed = true; } }
 function saveSetup(){ try{ localStorage.setItem(KEY_SETUP, JSON.stringify(S)); }catch(e){ saveFailed = true; } }
 
 const hist = [];
-const snapshot = () => JSON.stringify({shots:G.shots, changes:G.changes, flips:G.flips, strOps:G.strOps, pens:G.pens, enOps:G.enOps, poss:G.poss, nextId:G.nextId});
+const snapshot = () => JSON.stringify({shots:G.shots, changes:G.changes, flips:G.flips, strOps:G.strOps, pens:G.pens, enOps:G.enOps, poss:G.poss, so:G.so, nextId:G.nextId});
 function mutate(fn){ hist.push(snapshot()); if(hist.length > 200) hist.shift(); fn(); saveGame(); render(); }
 function undo(){
   const s = hist.pop(); if(!s) return;
@@ -555,6 +575,77 @@ function between(p1, s1, p2, s2){
 }
 
 /* ================================================================
+   Shootout. Attempts live in G.so.att, never in G.shots: the model has
+   never seen a shootout (MoneyPuck carries none), and an attempt has no
+   clock, no shift, no strength and no rebound, so it must not reach xG,
+   TOI, GSAx or the TOI sheet. Each attempt stores its team; rounds, the
+   tally and the winner are derived. Best of S.soRounds, ending early
+   once one side can't catch up, then sudden death by full rounds.
+   Attempts logged after it is decided are kept but don't count.
+================================================================= */
+function soState(){
+  const so = G.so; if(!so) return null;
+  const N = Math.max(1, +S.soRounds || 3), n = {us:0, them:0}, g = {us:0, them:0}, rows = [];
+  let winner = null;
+  for(const a of so.att){
+    n[a.team]++;
+    rows.push({a, round:n[a.team], after:!!winner});
+    if(winner) continue;
+    if(a.result === "GOAL") g[a.team]++;
+    if(n.us <= N && n.them <= N){
+      if(g.us > g.them + (N - n.them)) winner = "us";
+      else if(g.them > g.us + (N - n.us)) winner = "them";
+    }
+    if(!winner && n.us === n.them && n.us >= N && g.us !== g.them) winner = g.us > g.them ? "us" : "them";
+  }
+  const last = so.att[so.att.length-1], next = last ? (last.team === "us" ? "them" : "us") : so.first;
+  return {N, n, g, winner, rows, next, round:n[next] + 1};
+}
+const soCounted = so => so.rows.filter(r => !r.after);
+function soWho(a){
+  if(!a.shooter) return "?";
+  const p = a.team === "us" ? rosterMap()[a.shooter] : null;
+  return "#" + a.shooter + (p && p.name ? " " + p.name : "");
+}
+const goalsOf = team => G.shots.filter(s => s.team === team && s.result === "GOAL").length;
+function startShootout(){
+  const goalie = [...derive().board].find(n => posOf(n) === "G") || "";
+  if(now().run) G.clock.push({w:Date.now(), k:"pause"});
+  mutate(() => { G.so = {w:Date.now(), first:S.venue === "home" ? "them" : "us", goalie, opp:"", att:[]}; selId = null; });
+}
+/* ] ends the period. After a tied OT it offers the shootout instead
+   (Setup: Tied after OT); inside the shootout it leaves it. */
+function endPeriodPrompt(){
+  const c = now();
+  if(G.so){
+    if(confirm(G.so.att.length ? "Leave the shootout? Its attempts are removed (Cmd+Z brings them back)." : "Leave the shootout?"))
+      mutate(() => { G.so = null; selId = null; });
+    return;
+  }
+  const gu = goalsOf("us"), gt = goalsOf("them");
+  if(c.p >= 4 && S.afterOT !== "ot" && gu === gt){
+    if(confirm(`End ${perLabel(c.p)} tied ${gu}-${gt} and start the shootout?`)) startShootout();
+    return;
+  }
+  if(confirm(`End ${perLabel(c.p)} and start ${perLabel(c.p+1)}?`)) nextPeriod();
+}
+function logSoAttempt(x, y){
+  const team = soState().next;
+  mutate(() => { G.so.att.push({id:G.nextId++, w:Date.now(), team, shooter:"", result:"SAVE", x:+x.toFixed(1), y:+y.toFixed(1)}); selId = null; });
+}
+const soSelected = () => G.so && ((selId !== null && G.so.att.find(a => a.id === selId)) || G.so.att[G.so.att.length-1]) || null;
+function soEdit(fn){ const a = soSelected(); if(a) mutate(() => fn(a)); }
+function soDelete(id){ mutate(() => { G.so.att = G.so.att.filter(a => a.id !== id); if(selId === id) selId = null; }); }
+/* Digits typed within 1.5 s of each other build one shooter number. */
+let soDigits = {id:null, t:0, v:""};
+function soDigit(d){
+  const a = soSelected(); if(!a) return;
+  const t = Date.now(), v = soDigits.id === a.id && t - soDigits.t < 1500 && soDigits.v.length < 2 ? soDigits.v + d : d;
+  soDigits = {id:a.id, t, v};
+  mutate(() => a.shooter = String(+v));
+}
+
+/* ================================================================
    Derivation: order every event by (period, clock desc, wall time),
    replay the shift changes, and read who was on for each shot.
 ================================================================= */
@@ -564,6 +655,7 @@ const cmp = (a,b) => a.p - b.p || b.sec - a.sec || a.w - b.w;
    (G.flips) turns that period and every later one around. */
 const usAttacksRight = p => (S.usRightP1 === (p % 2 === 1)) !== (G.flips.filter(q => q <= p).length % 2 === 1);
 function swapEnds(){
+  if(G.so) return;
   const p = now().p, moved = G.shots.filter(s => s.p >= p).length;
   mutate(() => {
     G.flips = G.flips.includes(p) ? G.flips.filter(q => q !== p) : G.flips.concat([p]);
@@ -1089,12 +1181,97 @@ function renderLog(D){
   }
 }
 
+/* ---- shootout mode: rink, panel and log in place of the live game ---- */
+const SO_RESULT = {GOAL:"goal", SAVE:"saved", MISS:"missed"};
+const teamName = t => t === "us" ? S.us : S.opp;
+function soStatus(so){
+  if(so.winner) return `<b style="color:var(--${so.winner})">${esc(teamName(so.winner))}</b> win${/s$/i.test(teamName(so.winner)) ? "" : "s"} the shootout ${Math.max(so.g.us, so.g.them)}-${Math.min(so.g.us, so.g.them)}`;
+  return `Round ${so.round}${so.round > so.N ? " (sudden death)" : ` of ${so.N}`} · <b style="color:var(--${so.next})">${esc(teamName(so.next))}</b> shoots next`;
+}
+function renderSoRink(so){
+  const sel = soSelected();
+  $("rink").innerHTML = RINK_BASE + so.rows.map(({a, round, after}) => {
+    const cls = ["dot", a.team, a.result === "MISS" ? "miss" : "", a.result === "GOAL" ? "goal" : "", sel && sel.id === a.id ? "sel" : "", after ? "old" : ""].join(" ");
+    return `<circle class="${cls}" data-id="${a.id}" cx="${a.x}" cy="${-a.y}" r="1.8"><title>Round ${round} · ${esc(teamName(a.team))} ${esc(soWho(a))} · ${SO_RESULT[a.result]}</title></circle>`;
+  }).join("");
+}
+function renderSoPanel(so){
+  const a = soSelected(), el = $("soPanel"), row = a && so.rows.find(r => r.a === a);
+  const first = G.so.att.length ? "" : `<div class="line sofirst"><span class="note">First to shoot</span>
+      <button data-first="us" aria-pressed="${G.so.first === "us"}">${esc(S.us)}</button><button data-first="them" aria-pressed="${G.so.first === "them"}">${esc(S.opp)}</button></div>`;
+  const edit = a ? `<span class="lab" style="margin-top:4px">${selId !== null && a !== G.so.att[G.so.att.length-1] ? "Editing attempt · Esc for latest" : "Latest attempt"}</span>
+    <div class="line"><span class="chip team-${a.team}">${esc(teamName(a.team))}</span><span class="chip">Round ${row.round}</span>
+      <span class="chip ${a.shooter ? "" : "need"}">${esc(soWho(a))}</span><span class="chip">${SO_RESULT[a.result]}</span>
+      ${row.after ? `<span class="chip need">after it was decided</span>` : ""}</div>
+    <div class="edits so2"><input data-sof="shooter" value="${esc(a.shooter)}" placeholder="shooter #" inputmode="numeric">
+      <select data-sof="result">${Object.entries(SO_RESULT).map(([v,l]) => `<option value="${v}"${v === a.result ? " selected" : ""}>${l}</option>`).join("")}</select></div>
+    <button class="delbtn" id="soDel">Delete attempt <kbd>Shift</kbd>+<kbd>Delete</kbd></button>`
+    : `<div class="note">Click the rink where the first attempt was taken from.</div>`;
+  el.innerHTML = `<div class="agohead"><span class="lab">Shootout · best of ${so.N}</span><span class="mono" style="font-size:15px">${so.g.us}-${so.g.them}</span></div>
+    <div>${soStatus(so)}</div>${first}
+    <div class="edits so2"><label class="note">${esc(S.us)} goalie<input data-sog="goalie" value="${esc(G.so.goalie)}" placeholder="#"></label>
+      <label class="note">${esc(S.opp)} goalie<input data-sog="opp" value="${esc(G.so.opp)}" placeholder="#"></label></div>
+    ${edit}
+    <div class="note">click the rink: next attempt · digits shooter # · <kbd>g</kbd> goal <kbd>o</kbd> saved <kbd>m</kbd> missed · <kbd>x</kbd> other team · <kbd>]</kbd> leave the shootout</div>`;
+  el.querySelectorAll("button").forEach(b => b.addEventListener("mousedown", e => e.preventDefault()));
+  el.querySelectorAll("[data-first]").forEach(b => b.onclick = () => mutate(() => G.so.first = b.dataset.first));
+  const num = v => (v.match(/\d{1,2}/) || [""])[0].replace(/^0+(?=\d)/, "");
+  el.querySelectorAll("[data-sog]").forEach(inp => {
+    inp.onchange = () => mutate(() => G.so[inp.dataset.sog] = num(inp.value));
+    inp.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); inp.blur(); } };
+  });
+  el.querySelectorAll("[data-sof]").forEach(inp => {
+    inp.onchange = () => { const f = inp.dataset.sof; soEdit(x => x[f] = f === "shooter" ? num(inp.value) : inp.value); inp.blur(); };
+    if(inp.tagName === "INPUT") inp.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); inp.blur(); } };
+  });
+  const del = $("soDel"); if(del) del.onclick = () => soDelete(a.id);
+}
+function renderSoLog(so){
+  const tb = $("log"), sel = soSelected();
+  if(!so.rows.length){ tb.innerHTML = `<tbody><tr><td class="note">No shootout attempts yet.</td></tr></tbody>`; return; }
+  tb.innerHTML = `<thead><tr><th>#</th><th>Round</th><th>Team</th><th>Shooter</th><th>Result</th><th></th><th></th></tr></thead><tbody>` +
+    so.rows.map(({a, round, after}, i) => `<tr class="row${sel && sel.id === a.id ? " sel" : ""}" data-id="${a.id}">
+      <td class="num">${i+1}</td><td>${round > so.N ? round + " SD" : round}</td><td style="color:var(--${a.team})">${esc(teamName(a.team))}</td>
+      <td class="${a.shooter ? "" : "warnc"}">${esc(soWho(a))}</td><td>${a.result === "GOAL" ? "<b>GOAL</b>" : SO_RESULT[a.result]}</td>
+      <td class="note">${after ? "after it was decided" : ""}</td>
+      <td><button class="del" data-del="${a.id}" tabindex="-1" title="Delete this attempt" aria-label="Delete">&times;</button></td></tr>`).join("") + `</tbody>`;
+  tb.querySelectorAll("tr.row").forEach(tr => tr.onclick = () => { selId = +tr.dataset.id; render(); });
+  tb.querySelectorAll("button.del").forEach(b => {
+    b.addEventListener("mousedown", e => e.preventDefault());
+    b.onclick = e => { e.stopPropagation(); soDelete(+b.dataset.del); };
+  });
+}
+/* Shifts view: shooters and goalies, counting only attempts that mattered. */
+function renderSoStats(so){
+  if(!so) return;
+  const rows = soCounted(so), by = {};
+  rows.forEach(({a}) => { const k = a.team + ":" + a.shooter, r = by[k] = by[k] || {a, att:0, g:0}; r.att++; if(a.result === "GOAL") r.g++; });
+  const list = Object.values(by).sort((x,y) => (x.a.team === "us" ? 0 : 1) - (y.a.team === "us" ? 0 : 1) || y.g - x.g || y.att - x.att);
+  $("soShooters").innerHTML = `<thead><tr><th>Team</th><th>Shooter</th><th class="num">Att</th><th class="num">Goals</th></tr></thead><tbody>` +
+    (list.length ? list.map(r => `<tr><td style="color:var(--${r.a.team})">${esc(teamName(r.a.team))}</td><td>${esc(soWho(r.a))}</td><td class="num">${r.att}</td><td class="num">${r.g}</td></tr>`).join("")
+                 : `<tr><td colspan="4" class="note">No attempts yet.</td></tr>`) + `</tbody>`;
+  const R = rosterMap(), gk = (team, num) => { const faced = rows.filter(r => r.a.team !== team), p = team === "us" ? R[num] : null;
+    return `<tr><td style="color:var(--${team})">${esc(teamName(team))}</td><td>${num ? "#" + esc(num) + (p && p.name ? " " + esc(p.name) : "") : "?"}</td>
+      <td class="num">${faced.length}</td><td class="num">${faced.filter(r => r.a.result === "SAVE").length}</td><td class="num">${faced.filter(r => r.a.result === "GOAL").length}</td></tr>`; };
+  $("soGoalies").innerHTML = `<thead><tr><th>Team</th><th>Goalie</th><th class="num">Faced</th><th class="num">Saves</th><th class="num">Goals</th></tr></thead><tbody>` +
+    gk("us", G.so.goalie) + gk("them", G.so.opp) + `</tbody>`;
+}
+
 function renderTop(D){
-  const c = now(), clk = $("clock");
-  $("per").textContent = perLabel(c.p);
-  clk.textContent = fmt(c.v);
-  clk.className = "mono " + (c.run ? "run" : "stop");
-  $("runTag").textContent = c.run ? "RUNNING" : "PAUSED";
+  const c = now(), clk = $("clock"), so = soState();
+  document.body.classList.toggle("so", !!so);
+  $("bNext").innerHTML = (so ? "Leave SO" : "End per") + " <kbd>]</kbd>";
+  if(so){
+    $("per").textContent = "SO";
+    clk.textContent = so.g.us + "-" + so.g.them;
+    clk.className = "mono";
+    $("runTag").textContent = so.winner ? "DECIDED" : "ROUND " + so.round;
+  } else {
+    $("per").textContent = perLabel(c.p);
+    clk.textContent = fmt(c.v);
+    clk.className = "mono " + (c.run ? "run" : "stop");
+    $("runTag").textContent = c.run ? "RUNNING" : "PAUSED";
+  }
   $("bRun").innerHTML = (c.run ? "Pause" : "Start") + " <kbd>Tab</kbd>";
   if(!D) return;
   const ns = nowState(D), code = codeFor(ns.us, ns.them, ns.p);
@@ -1107,6 +1284,7 @@ function renderTop(D){
   $("score").innerHTML =
     `<span style="color:var(--us)">${esc(S.us)} <b>${a.xg.toFixed(2)}</b> xG ${a.g}G ${a.att}att</span>`+
     `<span style="color:var(--them)">${esc(S.opp)} <b>${b.xg.toFixed(2)}</b> xG ${b.g}G ${b.att}att</span>`+
+    (so ? `<span>SO <b>${so.g.us}-${so.g.them}</b></span>` : "")+
     (need ? `<span class="warnc">${need} need a type</span>` : "")+
     (saveFailed ? `<span class="badc">NOT SAVING: export a backup</span>` : "");
   renderLight(D);
@@ -1193,6 +1371,7 @@ function renderPenList(D){
 function renderSetup(){
   $("sDate").value = S.date; $("sUs").value = S.us; $("sOpp").value = S.opp;
   $("sPer").value = S.periodMin; $("sOt").value = S.otMin; $("sOtf").value = S.otFormat;
+  $("sAfter").value = S.afterOT === "ot" ? "ot" : "so"; $("sSoR").value = S.soRounds;
   $("sEnd").value = S.usRightP1 ? "R" : "L"; $("sVenue").value = S.venue === "away" ? "away" : "home";
   $("sRoster").value = S.roster.map(p => [p.num, p.name, p.pos].filter(Boolean).join(" ")).join("\n");
   $("sLines").innerHTML = LINE_KEYS.map(k => `<label><span class="lab" style="min-width:26px">${k.toUpperCase()}</span>`+
@@ -1228,8 +1407,12 @@ function readSetup(){
 function render(){
   const D = derive();
   renderTop(D);
-  if(view === "track"){ renderRink(D); renderBoard(D); renderPens(D); renderShotPanel(D); renderLog(D); renderBar(); }
-  else if(view === "shifts"){ renderStats(D); renderShiftList(D); renderPenList(D); renderScopeSelect(D); }
+  const so = soState();
+  if(view === "track"){
+    if(so){ renderSoRink(so); renderSoPanel(so); renderSoLog(so); }
+    else { renderRink(D); renderBoard(D); renderPens(D); renderShotPanel(D); renderLog(D); renderBar(); }
+  }
+  else if(view === "shifts"){ renderStats(D); renderSoStats(so); renderShiftList(D); renderPenList(D); renderScopeSelect(D); }
   document.querySelectorAll(".tabs [data-view]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
 }
 function setView(v){
@@ -1264,6 +1447,12 @@ function exportShots(){
     rows.push([s.p <= 3 ? s.p : "OT", s.team === "us" ? S.us : S.opp, "", RESULT_EXPORT[s.result], s.x, s.y,
       TYPE_EXPORT[s.type], SIT_TEXT[I.situation] || "", fmt(I.sec), I.rebound ? 1 : 0, I.situation,
       I.xg === null ? "" : I.xg.toFixed(4), I.onIce.filter(n => n !== I.goalie).join(" "), I.goalie || "", S.us]); });
+  /* Shootout attempts as period SO, which Shot Chart keeps out of its
+     numbers. No xG; a 0:00 clock so the file still counts as clocked.
+     Attempts logged after it was decided are left out. */
+  const so = soState();
+  if(so) soCounted(so).forEach(({a}) => rows.push(["SO", teamName(a.team), a.shooter ? soWho(a) : "", RESULT_EXPORT[a.result], a.x, a.y,
+    "", "", "0:00", 0, "", "", "", a.team === "them" ? G.so.goalie || "" : "", S.us]));
   download(base() + "_shots.csv", csv(rows));
 }
 function exportPlayers(){
@@ -1637,11 +1826,23 @@ function insights(D, shots, st, a, b){
    game stands, so an intermission report says so. */
 function statusLine(scope){
   if(scope) return (scope <= 3 ? "Period " + scope : perLabel(scope)) + " only";
+  const so = soState();
+  if(so) return so.winner ? "Final &middot; Shootout" : `Shootout &middot; ${so.g.us}-${so.g.them} after ${Math.max(so.n.us, so.n.them)}`;
   const c = now();
   if(c.v <= 0 && c.p >= 3) return c.p >= 4 ? "Final &middot; Overtime" : "Final";
   if(c.v <= 0) return "After " + perLabel(c.p);
   if(c.v >= periodLen(c.p)) return c.p > 1 ? "After " + perLabel(c.p - 1) : "Pregame";
   return perLabel(c.p) + " " + fmt(c.v);
+}
+/* One row per round, both teams side by side. */
+function soTable(so){
+  const rows = soCounted(so), by = {us:[], them:[]};
+  rows.forEach(({a}) => by[a.team].push(a));
+  const cell = a => a ? `<td class="nm">${esc(soWho(a))}</td><td class="${a.result === "GOAL" ? "pos" : ""}">${a.result === "GOAL" ? "Goal" : SO_RESULT[a.result]}</td>` : `<td></td><td></td>`;
+  const n = Math.max(by.us.length, by.them.length);
+  const sub = so.winner ? `· ${esc(teamName(so.winner))} ${Math.max(so.g.us, so.g.them)}-${Math.min(so.g.us, so.g.them)}` : "· not decided";
+  return `<div><h3>Shootout <span class="sub">${sub}</span></h3><table><thead><tr><th>Rd</th><th style="color:${RC_US}">${esc(S.us)}</th><th></th><th style="color:${RC_THEM}">${esc(S.opp)}</th><th></th></tr></thead><tbody>` +
+    Array.from({length:n}, (_, i) => `<tr><td>${i+1}</td>${cell(by.us[i])}${cell(by.them[i])}</tr>`).join("") + `</tbody></table></div>`;
 }
 function buildReport(scope){
   const D = derive(), shots = D.ordered.filter(s => !scope || s.p === scope);
@@ -1664,12 +1865,16 @@ function buildReport(scope){
   const match = S.venue === "away" ? `${usTag} @ ${themTag}` : `${themTag} @ ${usTag}`;
   const logo = LOGO.naturalWidth ? `<img class="logo" src="${LOGO.src}" alt="University of Toronto Varsity Blues">` : "";
   const ins = insights(D, shots, st, a, b);
+  /* A full-game report of a game tied after play: the shootout adds one
+     goal to the winner's score and a line to the takeaways. */
+  const so = scope ? null : soState(), sw = so && so.winner && a.g === b.g ? so.winner : null;
+  if(sw) ins.push(`<b style="color:${sw === "us" ? RC_US : RC_THEM}">${esc(teamName(sw))}</b> won the shootout ${Math.max(so.g.us, so.g.them)}-${Math.min(so.g.us, so.g.them)}.`);
   return `<section class="rp">
   <header class="head">
     <div class="side l"><div class="match">${match}${esc(short)}</div><div class="meta">${esc(long)}</div></div>
     ${logo}
     <div class="side r">
-      <div class="score"><span class="tm" style="color:${RC_US}">${esc(showName(S.us))}</span><span class="num">${a.g}&ndash;${b.g}</span><span class="tm" style="color:${RC_THEM}">${esc(S.opp)}</span></div>
+      <div class="score"><span class="tm" style="color:${RC_US}">${esc(showName(S.us))}</span><span class="num">${a.g + (sw === "us" ? 1 : 0)}&ndash;${b.g + (sw === "them" ? 1 : 0)}</span><span class="tm" style="color:${RC_THEM}">${esc(S.opp)}</span></div>
       <div class="meta">${statusLine(scope)}</div>
     </div>
   </header>
@@ -1689,7 +1894,7 @@ function buildReport(scope){
       <div><h3>Head to head</h3>${compareBars(a, b)}</div>
     </div>
     <div class="two">
-      <div class="stack">${periodTable(D, shots)}${goalieTable(st, a)}</div>
+      <div class="stack">${periodTable(D, shots)}${goalieTable(st, a)}${so && so.rows.length ? soTable(so) : ""}</div>
       <div class="stack">${strengthTable(D, shots, tl)}${units}</div>
     </div>
     <div class="two">${leaderTables(st)}</div>
@@ -1742,7 +1947,7 @@ $("rink").addEventListener("pointerdown", e => {
 });
 $("rink").addEventListener("pointermove", e => {
   if(!drag) return;
-  const s = G.shots.find(x => x.id === drag.id), q = rinkPoint(e);
+  const s = (G.so ? G.so.att : G.shots).find(x => x.id === drag.id), q = rinkPoint(e);
   if(!s) return;
   s.x = +q.x.toFixed(1); s.y = +q.y.toFixed(1); drag.moved = true;
   const el = $("rink").querySelector(`.dot[data-id="${drag.id}"]`);
@@ -1751,7 +1956,8 @@ $("rink").addEventListener("pointermove", e => {
 $("rink").addEventListener("pointerup", e => {
   if(drag){ if(drag.moved){ hist.push(drag.snap); saveGame(); } drag = null; render(); return; }
   if(e.button !== 0 || e.target.closest(".dot")) return;
-  const q = rinkPoint(e); logShot(q.x, q.y);
+  const q = rinkPoint(e);
+  if(G.so) logSoAttempt(q.x, q.y); else logShot(q.x, q.y);
 });
 
 $("board").addEventListener("mousedown", e => e.preventDefault());
@@ -1781,7 +1987,7 @@ $("setBox").addEventListener("input", e => e.target.style.borderColor = "");
 document.querySelectorAll(".top button").forEach(b => b.addEventListener("mousedown", e => e.preventDefault()));
 $("bRun").onclick = toggleClock;
 $("bSet").onclick = openSet;
-$("bNext").onclick = () => { if(confirm(`End ${perLabel(now().p)} and start ${perLabel(now().p+1)}?`)) nextPeriod(); };
+$("bNext").onclick = endPeriodPrompt;
 $("strSel").onchange = e => { setStrength(e.target.value); e.target.blur(); };
 $("bAll").onclick = () => { showAll = !showAll; render(); };
 $("bSwap").addEventListener("mousedown", e => e.preventDefault());
@@ -1847,6 +2053,7 @@ $("sSave").onclick = () => {
   const r = readSetup();
   Object.assign(S, {date:$("sDate").value || today(), us:$("sUs").value.trim() || "UofT", opp:$("sOpp").value.trim() || "Opponent", venue:$("sVenue").value,
     periodMin:Math.max(1, +$("sPer").value || 20), otMin:Math.max(1, +$("sOt").value || 5), otFormat:$("sOtf").value,
+    afterOT:$("sAfter").value, soRounds:Math.max(1, Math.min(10, +$("sSoR").value || 3)),
     usRightP1:$("sEnd").value === "R", roster:r.roster, lines:r.lines});
   saveSetup();
   $("setupNote").innerHTML = (r.errs.length ? `<span class="warnc">${r.errs.map(esc).join("<br>")}</span><br>` : "") +
@@ -1870,6 +2077,7 @@ $("sFile").onchange = async e => {
     if(!d.setup || !d.game || !Array.isArray(d.game.shots)) throw new Error("not a tracker backup");
     S = Object.assign(blankSetup(), d.setup); G = d.game; if(!Array.isArray(G.flips)) G.flips = [];
     ["strOps","pens","enOps","poss"].forEach(k => { if(!Array.isArray(G[k])) G[k] = []; });
+    if(!G.so) G.so = null;
 G.shots.forEach(s => { if(s.type === "DEFL") s.type = "TIP"; }); hist.length = 0; saveSetup(); saveGame(); renderSetup(); render();
     $("setupNote").textContent = `Loaded ${G.shots.length} shots and ${G.changes.length} changes.`;
   }catch(err){ $("setupNote").textContent = "Couldn't read that file: " + err.message; }
@@ -1878,7 +2086,7 @@ G.shots.forEach(s => { if(s.type === "DEFL") s.type = "TIP"; }); hist.length = 0
 
 document.addEventListener("keydown", e => {
   if(view === "setup") return;
-  if(e.key === "Tab"){ e.preventDefault(); toggleClock(); return; }
+  if(e.key === "Tab"){ e.preventDefault(); if(!G.so) toggleClock(); return; }
   const t = e.target, field = t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName);
   if(field) return;
   if((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z"){ e.preventDefault(); undo(); return; }
@@ -1886,8 +2094,9 @@ document.addEventListener("keydown", e => {
   if(!$("help").classList.contains("hidden")){ if(e.key === "Escape" || e.key === "?") toggleHelp(false); return; }
   if(e.key === "`"){ e.preventDefault(); setView(view === "track" ? "shifts" : "track"); return; }
   if(e.key === "?"){ toggleHelp(true); return; }
+  if(e.key === "]"){ e.preventDefault(); endPeriodPrompt(); return; }
+  if(G.so){ soKey(e); return; }
   if(e.key === "="){ e.preventDefault(); openSet(); return; }
-  if(e.key === "]"){ e.preventDefault(); if(confirm(`End ${perLabel(now().p)} and start ${perLabel(now().p+1)}?`)) nextPeriod(); return; }
   if(e.key === "e"){ const ns = nowState(derive()), i = ["EV","PP","PK"].indexOf(codeFor(ns.us, ns.them, ns.p)); setStrength(["EV","PP","PK"][(i+1) % 3]); return; }
   if(e.key === " "){ e.preventDefault(); return; }
   if(view !== "track") return;
@@ -1909,11 +2118,26 @@ document.addEventListener("keydown", e => {
   if(k === "." || k === ">"){ editSel(s => nudge(s, k === ">" ? -5 : -1)); return; }
 });
 
+/* Shootout keys, Track view only: the live-game keys don't apply. */
+function soKey(e){
+  if(view !== "track") return;
+  const k = e.key, list = G.so.att;
+  if(k === "Escape"){ selId = null; render(); return; }
+  if((k === "ArrowUp" || k === "ArrowDown") && e.shiftKey && list.length){ e.preventDefault();
+    const i = list.indexOf(soSelected()), j = Math.max(0, Math.min(list.length-1, i + (k === "ArrowUp" ? -1 : 1)));
+    selId = list[j].id; render(); return; }
+  if((k === "Backspace" || k === "Delete") && e.shiftKey){ e.preventDefault(); const a = soSelected(); if(a) soDelete(a.id); return; }
+  if(/^\d$/.test(k)){ e.preventDefault(); soDigit(k); return; }
+  if(k === "g" || k === "o" || k === "m"){ soEdit(a => a.result = RESULTS[k]); return; }
+  if(k === "x"){ soEdit(a => a.team = a.team === "us" ? "them" : "us"); return; }
+  if(k === " " || k === "ArrowUp" || k === "ArrowDown" || k === "ArrowLeft" || k === "ArrowRight") e.preventDefault();
+}
+
 const HELP = [
   ["Always"],
   ["Tab","Pause / resume the clock (works everywhere, even in the change bar)"],
   ["=","Type the scoreboard time (1240 or 12:40, Enter). Also fixes events since the last reading"],
-  ["]","End the period"],
+  ["]","End the period. After a tied OT: start the shootout (Setup: Tied after OT). In it: leave"],
   ["e","Set strength by hand: EV, PP, PK (overrides until the next penalty starts or ends)"],
   ["Cmd+Z","Undo the last shot, change or edit"],
   ["`","Switch Track / Shifts"],
@@ -1930,6 +2154,12 @@ const HELP = [
   ["O-zone possession"],
   ["Left / Right","The team attacking that end has the puck in its offensive zone"],
   ["Up / Down","Possession over: neutral zone, stoppage, change of control"],
+  ["Shootout (after ] on a tied OT)"],
+  ["click the rink","Log the next attempt; teams alternate from the first shooter"],
+  ["0-9","Shooter number for the selected attempt"],
+  ["g o m","Goal, saved, missed"],
+  ["x","The attempt was the other team's"],
+  ["Shift+Up / Down","Select an earlier / later attempt; Shift+Delete deletes it"],
   ["Shot log"],
   ["Shift+Up / Down","Select an earlier / later shot"],
   ["Esc","Back to the latest shot"],

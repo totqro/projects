@@ -574,12 +574,16 @@ function loadShots(text){
     });
   });
   if(!out.length) throw new Error("No rows had usable X/Y coordinates.");
-  const scored=out.filter(s=>s.unblocked);
+  /* Shootout attempts (period SO) stay in all for the report to decide the
+     final score, but out of everything priced: the model has never seen
+     a penalty shot, and the game clock has no shootout block. */
+  const play=out.filter(s=>!isShootout(s.period));
+  const scored=play.filter(s=>s.unblocked);
   scored.forEach(s=>{ s.xg=scoreShot(s); });
   const odd=out.filter(s=>!s.unblocked&&!s.blocked);
   const hasOnIce=out.some(s=>s.on_ice.length);
   return {all:out, scored:scored, blocked:out.filter(s=>s.blocked).length,
-          clock:gameClock(out), hasOnIce,
+          clock:gameClock(play), hasOnIce,
           onIceTeam:hasOnIce?(out.find(s=>s.onice_team)||{}).onice_team||"":"",
           unrecognised:[...new Set(odd.map(s=>s.event||"(blank)"))],
           unrecognisedCount:odd.length};
@@ -1368,7 +1372,7 @@ function reportFlowSVG(events){
   const seq=events.filter(s=>s.unblocked).slice().sort(C?(a,b)=>a.t-b.t||a.i-b.i:(a,b)=>a.i-b.i), n=seq.length;
   if(!n) return `<p class="empty">No scored attempts in this scope.</p>`;
   const W=760, H=158, L=30, R=104, T=10, B=17;
-  const ps=C?C.periods.filter(p=>events.some(s=>String(s.period)===p)||events.length===DATA.all.length):[];
+  const ps=C?C.periods.filter(p=>events.some(s=>String(s.period)===p)||events.length===DATA.all.filter(s=>!isShootout(s.period)).length):[];
   const t0=C?C.start[ps[0]]:0, t1=C?C.start[ps[ps.length-1]]+C.len[ps[ps.length-1]]:0;
   const x=C ? i=>L+(seq[i].t-t0)/Math.max(1,t1-t0)*(W-L-R) : i=>n<2?(L+W-R)/2:L+(i/(n-1))*(W-L-R);
   const xEnd=C?W-R:x(n-1), xStart=C?L:x(0);
@@ -1573,7 +1577,7 @@ function buildReportMarkup(events, home, away, flips, scope, tracked, shootout){
 function periodLabel(p){ return /^\d+$/.test(p) ? "Period "+p : p; }
 
 function buildScopeSelect(){
-  const periods=sortPeriods([...new Set(DATA.all.map(s=>String(s.period)))]);
+  const periods=sortPeriods([...new Set(DATA.all.map(s=>String(s.period)))]).filter(p=>!isShootout(p));
   document.getElementById("pdfScope").innerHTML=
     `<option value="__all__">Full game</option>`+
     periods.map(p=>`<option value="${esc(p)}">${esc(periodLabel(p))}</option>`).join("");
