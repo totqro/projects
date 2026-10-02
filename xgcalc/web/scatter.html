@@ -236,50 +236,73 @@ tr.shotrow.sel td{background:color-mix(in srgb, var(--accent) 17%, transparent)}
    pop-ups are blocked by default in exactly the place this gets used, on a
    phone in the stands. It stays display:none until the print stylesheet
    swaps it in for everything else. Colours are literal, not themed — a
-   dark-mode page still has to print on white paper. One landscape page:
+   dark-mode page still has to print on white paper. One portrait page, read
+   top to bottom: score, shot map, momentum, data and insights.
    exportReport() zooms it down if a long game runs over. */
-#reportOut{display:none; background:#fff; color:#141D26; font-size:10px; line-height:1.35;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-#reportOut .rp{width:10.25in}
-#reportOut .head{display:flex; align-items:baseline; gap:14px; margin-bottom:6px;
-  border-bottom:1.5px solid #141D26; padding-bottom:4px}
-#reportOut .head h1{margin:0; font-size:18px; letter-spacing:-.02em; font-family:inherit; color:#141D26; text-shadow:none; text-transform:none; background:none; -webkit-text-fill-color:#141D26}
-#reportOut .head .final{font-size:16px; font-weight:800; font-variant-numeric:tabular-nums}
-#reportOut .head .scope{font-size:14px; font-weight:700; margin-left:auto}
-#reportOut .head .when{font-size:9px; color:#7B8B9C}
-#reportOut .upper{display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr); gap:14px; align-items:start}
-#reportOut .rinkfull{display:block; width:100%; height:auto}
-#reportOut .keys{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:center;
-  margin-top:3px; padding-top:3px; border-top:1px solid #E3E8ED; font-size:9.5px; color:#48586A}
+#reportOut{display:none; background:#fff; color:#141D26; font-size:11px; line-height:1.4;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact}
+#reportOut .rp{width:7.75in; margin:0 auto}
+#reportOut .head{display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:end; gap:14px; margin-bottom:10px}
+#reportOut .head .side{border-bottom:1.5px solid #141D26; padding-bottom:6px; min-width:0}
+#reportOut .head .side.r{text-align:right}
+#reportOut .head .match{font-size:17px; font-weight:800; letter-spacing:-.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+#reportOut .head .score{display:flex; justify-content:flex-end; align-items:baseline; gap:8px; white-space:nowrap}
+#reportOut .head .score .tm{font-size:13px; font-weight:800; overflow:hidden; text-overflow:ellipsis}
+#reportOut .head .score .num{font-size:26px; font-weight:900; font-variant-numeric:tabular-nums; letter-spacing:-.02em; line-height:1}
+#reportOut .head .meta{font-size:10px; color:#5D6E80; margin-top:2px; font-weight:600; letter-spacing:.04em; text-transform:uppercase}
+#reportOut .head .logo{display:block; height:.82in; width:auto}
+#reportOut .blk{margin-top:8px}
+#reportOut h2{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin:0 0 5px; padding-left:8px;
+  border-left:4px solid #044684; font-size:15px; font-weight:800; letter-spacing:-.01em; color:#141D26;
+  font-family:inherit; text-shadow:none; text-transform:none; background:none; -webkit-text-fill-color:#141D26}
+#reportOut h2 .sub{font-size:9.5px; font-weight:400; color:#7B8B9C; letter-spacing:0; -webkit-text-fill-color:#7B8B9C}
+#reportOut h3{font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:#5D6E80;
+  margin:0 0 4px; font-weight:700; font-family:inherit; text-shadow:none}
+#reportOut h3 .sub{letter-spacing:.02em; text-transform:none; font-weight:400; color:#7B8B9C}
+#reportOut .rinkfull{display:block; width:94%; height:auto; margin:0 auto}
+#reportOut .keys{display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:center;
+  margin-top:4px; font-size:10px; color:#48586A}
 /* rkey/rkeyi, not lg/lgi: the page already owns those class names. */
 #reportOut .rkey{display:inline-flex; align-items:center; gap:4px}
-#reportOut .rkeyi{width:12px; height:12px; flex:none}
-#reportOut .keys .sep{width:1px; height:11px; background:#D3DBE2}
-#reportOut .keys b{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px}
-#reportOut .flowbox{margin-top:8px}
-#reportOut .four{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; align-items:start; margin-top:8px}
-#reportOut .stack{display:grid; gap:8px; align-content:start}
-#reportOut h2{font-size:8.5px; letter-spacing:.11em; text-transform:uppercase; color:#7B8B9C;
-  margin:0 0 3px; font-weight:700; font-family:inherit; text-shadow:none}
-#reportOut h2 .sub{letter-spacing:.02em; text-transform:none; font-weight:400}
-#reportOut table{border-collapse:collapse; width:100%; font-size:10px}
-#reportOut th,#reportOut td{padding:1.6px 4px; text-align:left; border-bottom:1px solid #E3E8ED; white-space:nowrap;
+#reportOut .rkeyi{width:13px; height:13px; flex:none}
+#reportOut .keys .sep{width:1px; height:12px; background:#D3DBE2}
+#reportOut .keys b{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; vertical-align:-1px}
+#reportOut .flowsvg{display:block; width:100%; height:auto}
+#reportOut .two{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; align-items:start; margin-top:9px}
+#reportOut .three{display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr) minmax(0,.8fr); gap:14px; align-items:start; margin-top:9px}
+#reportOut .two:first-of-type{margin-top:2px}
+#reportOut .stack{display:grid; gap:9px; align-content:start}
+#reportOut .ins ul{margin:0; padding:0; list-style:none; display:grid; gap:5px}
+#reportOut .ins li{position:relative; padding-left:13px; font-size:11px; line-height:1.4}
+#reportOut .ins li::before{content:""; position:absolute; left:0; top:.45em; width:6px; height:6px; border-radius:50%; background:#044684}
+#reportOut .cmp-head{display:flex; justify-content:space-between; font-size:10px; font-weight:800; margin-bottom:2px}
+#reportOut .cmp-row{display:grid; grid-template-columns:44px minmax(0,1fr) 44px; align-items:end; gap:8px; margin-bottom:3px}
+#reportOut .cv{font-size:12px; font-variant-numeric:tabular-nums; font-weight:600; line-height:1.1}
+#reportOut .cv.r{text-align:right}
+#reportOut .cv.lead{font-weight:900; font-size:13px}
+#reportOut .clab{font-size:9.5px; color:#5D6E80; text-align:center; margin-bottom:1px; line-height:1.2}
+#reportOut .ctrack{display:flex; gap:2px; height:7px; border-radius:4px; overflow:hidden; background:#E3E8ED}
+#reportOut .ctrack i{display:block; min-width:0}
+#reportOut table{border-collapse:collapse; width:100%; font-size:10.5px}
+#reportOut th,#reportOut td{padding:2px 4px; text-align:left; border-bottom:1px solid #E3E8ED; white-space:nowrap;
   position:static; background:none; font-family:inherit; color:#141D26; letter-spacing:normal;
-  text-transform:none; font-size:10px; cursor:auto}
-#reportOut th{font-size:8.5px; letter-spacing:.05em; text-transform:uppercase; color:#7B8B9C; font-weight:600}
+  text-transform:none; font-size:10.5px; cursor:auto}
+#reportOut th{font-size:9px; letter-spacing:.05em; text-transform:uppercase; color:#7B8B9C; font-weight:600}
 #reportOut td.n,#reportOut th.n{text-align:right; font-variant-numeric:tabular-nums}
-#reportOut td.nm{max-width:1.05in; overflow:hidden; text-overflow:ellipsis}
-#reportOut tr.hl td{font-weight:700}
+#reportOut td.nm{max-width:1.2in; overflow:hidden; text-overflow:ellipsis}
 #reportOut tr.tot td{border-top:1px solid #B8C4CF; font-weight:700}
 #reportOut td.pos{color:#1E7B4A; font-weight:700} #reportOut td.neg{color:#B0293C; font-weight:700}
 #reportOut tbody tr:last-child td{border-bottom:0}
-#reportOut .flowsvg{display:block; width:100%; height:auto}
-#reportOut .empty{color:#7B8B9C; font-size:9.5px; margin:3px 0}
-#reportOut .foot{margin-top:6px; padding-top:4px; border-top:1px solid #E3E8ED;
+#reportOut .empty{color:#7B8B9C; font-size:10px; margin:3px 0}
+#reportOut .foot{margin-top:10px; padding-top:5px; border-top:1px solid #E3E8ED;
   font-size:8.5px; color:#7B8B9C; display:flex; justify-content:space-between; gap:16px}
 @media print{
-  @page{ size:letter landscape; margin:9mm }
-  html,body{background:#fff !important; margin:0 !important; padding:0 !important}
+  @page{ size:letter portrait; margin:9mm }
+  /* The page declares color-scheme:dark, which paints the page margins
+     dark in a saved PDF. Paper is light. */
+  :root{color-scheme:light !important}
+  html,body{background:#fff !important; margin:0 !important; padding:0 !important; min-height:0 !important}
   body > *{display:none !important}
   body > #reportOut{display:block !important}
 }
@@ -369,12 +392,14 @@ tr.shotrow.sel td{background:color-mix(in srgb, var(--accent) 17%, transparent)}
 
     <div class="card cy-panel hidden" id="reportCard">
       <span class="eyebrow">Game Report</span>
-      <div class="note" style="margin-bottom:9px">One landscape page: full rink with home and away
-        held on their own ends, totals, goaltending with GSAx, cumulative xG, xG by strength and
-        the best chances. A Rinkside Tracker export adds the game clock and on-ice xG per player.</div>
+      <div class="note" style="margin-bottom:9px">One portrait page, top to bottom: the score with
+        the Blues logo, the full rink with UofT in Varsity blue shooting right and the opponent in red,
+        momentum (cumulative xG), then data and insights. A Rinkside Tracker export adds the game clock
+        and on-ice xG per player.</div>
       <div style="display:flex; gap:8px; flex-wrap:wrap">
         <select id="pdfScope" style="flex:1; min-width:120px; padding:6px 8px"></select>
         <select id="pdfHome" title="Home team" style="flex:1; min-width:120px; padding:6px 8px"></select>
+        <input type="date" id="pdfDate" title="Game date" style="flex:1; min-width:120px; padding:6px 8px">
         <select id="pdfOnIce" title="The team whose players and goalie the tracker logged on the ice" class="hidden" style="flex:1; min-width:120px; padding:6px 8px"></select>
         <button class="primary" id="pdfBtn" style="padding:6px 11px;font-size:13px">Export PDF</button>
       </div>
@@ -411,7 +436,7 @@ tr.shotrow.sel td{background:color-mix(in srgb, var(--accent) 17%, transparent)}
    Unknown categories deliberately produce an all-zero block rather
    than an error, matching OneHotEncoder(handle_unknown="ignore").
 ================================================================= */
-let MODEL=null, COLIDX=null;
+let MODEL=null, COLIDX=null, SRC_NAME="";
 
 function scoreShot(s){
   const x=new Float64Array(MODEL.columns.length);
@@ -954,7 +979,7 @@ function esc(s){ return String(s).replace(/[<>&"]/g,c=>({"<":"&lt;",">":"&gt;","
 
 function show(id,on){ document.getElementById(id).classList.toggle("hidden",!on); }
 
-function ingest(text){
+function ingest(text, name){
   let d;
   try{ d=loadShots(text); }
   catch(err){
@@ -962,8 +987,9 @@ function ingest(text){
       `<span class="flag bad">couldn't read that</span> ${esc(err.message)}`;
     return;
   }
-  DATA=d; SEL=null; resetFilters();
-  const teams=[...new Set(d.scored.map(s=>s.team))].sort();
+  DATA=d; SEL=null; SRC_NAME=name||""; resetFilters();
+  /* UofT first, so it takes the blue-leaning series colour on screen too. */
+  const teams=[...new Set(d.scored.map(s=>s.team))].sort((a,b)=>isUofT(b)-isUofT(a)||a.localeCompare(b));
   TEAMCOL={}; teams.forEach((t,i)=>{ TEAMCOL[t]=["var(--s1)","var(--s2)"][i]||"var(--ink-3)"; });
   document.getElementById("importNote").innerHTML=
     `<span class="flag ok">loaded</span> ${d.scored.length} shot${
@@ -977,7 +1003,7 @@ function ingest(text){
 function readFile(f){
   if(!f) return;
   const r=new FileReader();
-  r.onload=()=>ingest(String(r.result));
+  r.onload=()=>ingest(String(r.result), f.name);
   r.onerror=()=>{ document.getElementById("importNote").innerHTML=
     `<span class="flag bad">couldn't read that</span> The file could not be opened.`; };
   r.readAsText(f);
@@ -1034,8 +1060,19 @@ function exportCSV(){
    cluster on IS the end it attacked. Flip the periods that disagree and
    home stays on the right all game.
 ================================================================= */
-const REPORT_HOME_COL="#1E62B8", REPORT_AWAY_COL="#B0293C";
+/* UofT is always Varsity blue and whoever they play is always red, on every
+   mark, line and number in the report, whichever end they start at. When
+   neither team reads as UofT, the tracked team (then home) takes the blue. */
+const BLUE_COL="#044684", RED_COL="#C8283C";
 const MISS_EVENTS={"miss":1,"missed":1,"missed shot":1,"wide":1,"post":1,"crossbar":1};
+const UOFT_RE=/^(u\s*of\s*t|uoft|u\s*of\s*toronto|university\s+of\s+toronto|(toronto\s+)?varsity\s*blues?|blues)$/i;
+const isUofT=t=>UOFT_RE.test(String(t).trim());
+/* Loaded up front so the print dialog never opens on a page whose logo
+   hasn't arrived yet. */
+const LOGO=new Image(); LOGO.src="uoft-logo.png";
+let SIDES={blue:"", red:""};
+const teamCol=t=>t===SIDES.blue?BLUE_COL:RED_COL;
+const showName=t=>isUofT(t)?"Varsity Blues":t;
 
 /* Nothing in a shot chart says who is home — alphabetical order put MTL
    at home in San Jose. Literal Home/Away labels settle it; otherwise the
@@ -1064,6 +1101,10 @@ function detectSides(teams){
   const home=teams.includes(pick)?pick:guessHome(teams);
   return {home, away:teams.find(t=>t!==home)||home};
 }
+function colourSides(teams, home, tracked){
+  const blue=teams.find(isUofT)||(teams.includes(tracked)?tracked:home);
+  return {blue, red:teams.find(t=>t!==blue)||blue};
+}
 
 /* Numeric periods in order, then OT/SO and anything else after them. */
 function sortPeriods(periods){
@@ -1076,6 +1117,9 @@ function sortPeriods(periods){
     return String(a).localeCompare(String(b));
   });
 }
+const isShootout=p=>/^(so|s\/o|shootout)$/i.test(String(p).trim());
+const isOT=p=>/^ot\d*$/i.test(String(p).trim())||(/^\d+$/.test(String(p).trim())&&+p>3);
+const pl=q=>/^\d+$/.test(q)?"P"+q:q;
 
 /* loadShots keeps only the mirrored copy, but the mirror is its own
    inverse, so the flag is enough to recover what the CSV actually said. */
@@ -1083,15 +1127,19 @@ function rawXY(s){
   return s.mirrored ? [-s.x_adj, -s.y_adj] : [s.x_adj, s.y_adj];
 }
 
-function computeFlips(events, home){
+/* Teams change ends every period, so each period's orientation is read off
+   its own shots: a team shoots at the net it is attacking, so the sign its
+   shots cluster on IS the end it attacked. Flip the periods that disagree
+   and `right` stays on the right all game. */
+function computeFlips(events, right){
   const byPeriod={};
   events.forEach(s=>{ (byPeriod[s.period]=byPeriod[s.period]||[]).push(s); });
   const flips={};
   Object.keys(byPeriod).forEach(p=>{
-    const evs=byPeriod[p], homeEvs=evs.filter(s=>s.team===home);
-    /* No home shots in a period is rare but survivable: away attacked the
-       other end by definition, so its sign answers the same question. */
-    const pool=homeEvs.length?homeEvs:evs, wantPositive=!!homeEvs.length;
+    const evs=byPeriod[p], mine=evs.filter(s=>s.team===right);
+    /* No shots from that team in a period is rare but survivable: the other
+       team attacked the other end by definition. */
+    const pool=mine.length?mine:evs, wantPositive=!!mine.length;
     let pos=0, neg=0;
     pool.forEach(s=>{ const rx=rawXY(s)[0]; if(rx>0) pos++; else if(rx<0) neg++; });
     flips[p]=wantPositive ? neg>pos : pos>neg;
@@ -1122,8 +1170,8 @@ function starMark(cx,cy,ro,ri,col){
 }
 function iconMark(kind,cx,cy,col){
   cx=+cx.toFixed(2); cy=+cy.toFixed(2);
-  if(kind==="goal")  return starMark(cx,cy,3.1,1.3,col);
-  if(kind==="shot")  return `<circle cx="${cx}" cy="${cy}" r="1.8" fill="${col}" stroke="#fff" stroke-width=".35"/>`;
+  if(kind==="goal")  return starMark(cx,cy,3.4,1.45,col);
+  if(kind==="shot")  return `<circle cx="${cx}" cy="${cy}" r="1.9" fill="${col}" stroke="#fff" stroke-width=".35"/>`;
   if(kind==="block") return `<rect x="${(cx-1.6).toFixed(2)}" y="${(cy-1.6).toFixed(2)}" width="3.2" `+
                             `height="3.2" fill="${col}" stroke="#fff" stroke-width=".35"/>`;
   return `<g stroke="${col}" stroke-width=".95" stroke-linecap="round">`+
@@ -1138,7 +1186,7 @@ function fullRinkPath(){
 }
 function fullRinkMarkup(){
   /* Faceoff dots are drawn grey and small on purpose: at rink scale a red
-     dot is indistinguishable from an away marker. */
+     dot is indistinguishable from an opponent marker. */
   const p=[], red="#C42A3E", blue="#1E62B8", faint="rgba(20,29,38,.30)", dot="#9AA8B6";
   p.push(`<clipPath id="iceFull"><path d="${fullRinkPath()}"/></clipPath>`);
   p.push(`<path d="${fullRinkPath()}" fill="#FBFCFD" stroke="#141D26" stroke-width=".7"/>`);
@@ -1164,17 +1212,19 @@ function fullRinkMarkup(){
   return p.join("");
 }
 
-function reportRinkSVG(events, flips, home, away){
+/* Blue always attacks the right-hand net. */
+function reportRinkSVG(events, flips){
+  const {blue, red}=SIDES;
   const marks=events.map(s=>{
     const c=normXY(s, flips);
-    return iconMark(classify(s), c[0], svgY(c[1]), s.team===home?REPORT_HOME_COL:REPORT_AWAY_COL);
+    return iconMark(classify(s), c[0], svgY(c[1]), teamCol(s.team));
   }).join("");
-  const lab=(x,txt,col,anchor)=>`<text x="${x}" y="-45.5" text-anchor="${anchor}" `+
-    `font-size="5" font-weight="700" fill="${col}" letter-spacing=".3">${esc(txt)}</text>`;
+  const lab=(x,txt,col)=>`<text x="${x}" y="-45.5" text-anchor="middle" `+
+    `font-size="4.6" font-weight="700" fill="${col}" letter-spacing=".3">${esc(txt)}</text>`;
   return `<svg viewBox="-104 -50 208 99" xmlns="http://www.w3.org/2000/svg" class="rinkfull">`+
     fullRinkMarkup()+
-    lab(-50, "← "+away+" attacking", REPORT_AWAY_COL, "middle")+
-    lab(50, home+" attacking →", REPORT_HOME_COL, "middle")+
+    lab(-50, "← "+red+" attacking", RED_COL)+
+    lab(50, blue+" attacking →", BLUE_COL)+
     marks+`</svg>`;
 }
 
@@ -1182,10 +1232,10 @@ function reportRinkSVG(events, flips, home, away){
 const sg2=v=>(v>=0?"+":"")+v.toFixed(2);
 const pctOf=(a,b)=>a+b>0?(100*a/(a+b)).toFixed(0)+"%":"";
 const signCls=v=>v>0.005?"pos":v<-0.005?"neg":"";
-const teamCol=(t,home)=>t===home?REPORT_HOME_COL:REPORT_AWAY_COL;
 /* EN_AGAINST is a shot at an empty net: no goalie to credit or blame. */
 const intoEmptyNet=s=>s.situation==="EN_AGAINST";
 const strGroup=s=>{ const k=s.situation.slice(0,2); return k==="PP"?"PP":k==="SH"?"SH":k==="EN"?"EN":"EV"; };
+const teamTag=t=>`<b style="color:${teamCol(t)}">${esc(t)}</b>`;
 
 function summarize(events, team){
   const r={goals:0, onNet:0, attempts:0, xg:0, hdc:0, reb:0, ppg:0, enGoals:0, enNet:0, enXg:0};
@@ -1204,120 +1254,173 @@ function summarize(events, team){
   return r;
 }
 
-function statsTable(h, a, home, away){
-  const shPct=t=>t.onNet?(100*t.goals/t.onNet).toFixed(1)+"%":"";
-  const row=(label,hv,av,cls)=>`<tr${cls?` class="${cls}"`:""}><td>${esc(label)}</td>`+
-    `<td class="n">${hv}</td><td class="n">${av}</td></tr>`;
-  return `<table>
-    <thead><tr><th></th>
-      <th class="n" style="color:${REPORT_HOME_COL}">${esc(home)}</th>
-      <th class="n" style="color:${REPORT_AWAY_COL}">${esc(away)}</th></tr></thead>
-    <tbody>
-      ${row("Goals", h.goals, a.goals, "hl")}
-      ${row("xG", h.xg.toFixed(2), a.xg.toFixed(2), "hl")}
-      ${row("xG share", pctOf(h.xg,a.xg), pctOf(a.xg,h.xg))}
-      ${row("Goals − xG", sg2(h.diff), sg2(a.diff))}
-      ${row("Shots on net", h.onNet, a.onNet)}
-      ${row("Shooting %", shPct(h), shPct(a))}
-      ${row("Attempts", h.attempts, a.attempts)}
-      ${row("High-danger chances", h.hdc, a.hdc, "hl")}
-      ${row("Rebound shots", h.reb, a.reb)}
-      ${row("Power-play goals", h.ppg, a.ppg)}
-    </tbody></table>`;
+/* Head-to-head bars: blue on the left, red on the right, each bar split by
+   share so the bigger side is visible at a glance. */
+function compareBars(b, r){
+  const {blue, red}=SIDES, sh=t=>t.onNet?100*t.goals/t.onNet:0;
+  const rows=[["Goals",b.goals,r.goals,v=>v],
+    ["Expected goals (xG)",b.xg,r.xg,v=>v.toFixed(2)],
+    ["Shots on net",b.onNet,r.onNet,v=>v],
+    ["Shot attempts",b.attempts,r.attempts,v=>v],
+    ["High-danger chances",b.hdc,r.hdc,v=>v],
+    ["Shooting %",sh(b),sh(r),v=>v.toFixed(1)+"%"]];
+  return `<div class="cmp"><div class="cmp-head"><span style="color:${BLUE_COL}">${esc(blue)}</span><span style="color:${RED_COL}">${esc(red)}</span></div>`+
+    rows.map(([lab,bv,rv,f])=>{
+      const lead=bv>rv+1e-9?"b":rv>bv+1e-9?"r":"";
+      /* Shares, not raw values: flex-grow under 1 in total leaves the track part empty. */
+      return `<div class="cmp-row"><span class="cv${lead==="b"?" lead":""}" style="color:${BLUE_COL}">${f(bv)}</span>`+
+        `<div class="cmid"><div class="clab">${lab}</div><div class="ctrack">`+
+        (bv+rv>0?`<i style="flex:${(100*bv/(bv+rv)).toFixed(2)} 1 0; background:${BLUE_COL}"></i><i style="flex:${(100*rv/(bv+rv)).toFixed(2)} 1 0; background:${RED_COL}"></i>`:"")+
+        `</div></div><span class="cv r${lead==="r"?" lead":""}" style="color:${RED_COL}">${f(rv)}</span></div>`;
+    }).join("")+`</div>`;
 }
 
-function periodTable(events, home, away){
+/* GSAx = xG against (unblocked attempts) minus goals against, empty-net
+   shots left out. */
+function gsaxOf(shots){
+  const ga=shots.filter(s=>s.goal).length, xga=shots.reduce((v,s)=>v+(s.unblocked?(s.xg||0):0),0);
+  return {ga, xga, gsax:xga-ga, sa:shots.filter(s=>s.goal||classify(s)==="shot").length};
+}
+
+/* The takeaways in plain sentences, most important first: who drove play,
+   whether the score matched it, where it was won, and the one chance
+   everyone will remember. */
+function insightsList(events, b, r, shootout){
+  const {blue, red}=SIDES, out=[], tot=b.xg+r.xg;
+  const [lt, ls, ot, os]=b.xg>=r.xg?[blue,b,red,r]:[red,r,blue,b];
+  if(tot>0){
+    const share=100*ls.xg/tot;
+    out.push(Math.abs(b.xg-r.xg)<0.15
+      ? `Even on chances: ${teamTag(blue)} ${b.xg.toFixed(2)} xG, ${teamTag(red)} ${r.xg.toFixed(2)}.`
+      : `${teamTag(lt)} ${share>=60?"controlled":"had the edge in"} chance quality, ${ls.xg.toFixed(2)} to ${os.xg.toFixed(2)} xG (${share.toFixed(0)}% share).`);
+  }
+  const gl=b.goals>r.goals?blue:r.goals>b.goals?red:null;
+  if(gl&&gl!==lt&&Math.abs(b.xg-r.xg)>=0.3)
+    out.push(`${teamTag(gl)} led on the scoreboard despite trailing on chances: finishing and goaltending made the difference.`);
+  else if(!gl&&Math.abs(b.xg-r.xg)>=0.5)
+    out.push(`Tied on goals, but ${teamTag(lt)} created the better looks.`);
+  const fin=[[blue,b],[red,r]].sort((x,y)=>Math.abs(y[1].diff)-Math.abs(x[1].diff))[0];
+  if(Math.abs(fin[1].diff)>=0.75)
+    out.push(`${teamTag(fin[0])} scored ${fin[1].goals} on ${fin[1].xg.toFixed(2)} xG, finishing ${fin[1].diff>0?"well above":"well below"} expectation.`);
+  if(b.hdc!==r.hdc&&b.hdc+r.hdc>=3){
+    const [ht,hs,hn]=b.hdc>r.hdc?[blue,b.hdc,r.hdc]:[red,r.hdc,b.hdc];
+    out.push(`${teamTag(ht)} won the slot: ${hs} high-danger chances to ${hn}.`);
+  }
+  const gk=[blue,red].map(t=>({t, g:gsaxOf(events.filter(s=>s.team!==t&&!intoEmptyNet(s)))}))
+    .sort((x,y)=>Math.abs(y.g.gsax)-Math.abs(x.g.gsax))[0];
+  if(gk&&Math.abs(gk.g.gsax)>=0.5)
+    out.push(`${teamTag(gk.t)} goaltending ${gk.g.gsax>0?"stopped":"gave up"} ${Math.abs(gk.g.gsax).toFixed(2)} more goals than expected `+
+      `(${gk.g.ga} on ${gk.g.xga.toFixed(2)} xG against).`);
   const ps=sortPeriods([...new Set(events.map(s=>String(s.period)))]);
+  if(ps.length>1){
+    const best=ps.map(p=>{ const ev=events.filter(s=>String(s.period)===p), x=summarize(ev,blue).xg, y=summarize(ev,red).xg;
+      return {p, t:x>=y?blue:red, share:x+y>0?100*Math.max(x,y)/(x+y):50, tot:x+y}; })
+      .filter(o=>o.tot>=0.3).sort((x,y)=>y.share-x.share)[0];
+    if(best&&best.share>=62) out.push(`${esc(periodLabel(best.p))} belonged to ${teamTag(best.t)}: ${best.share.toFixed(0)}% of the xG.`);
+  }
+  const top=events.filter(s=>s.unblocked).sort((x,y)=>y.xg-x.xg)[0];
+  if(top){
+    const what=String(top.tagged_type||top.shot_type||"shot").toLowerCase(), C=DATA.clock;
+    out.push(`Best chance: ${teamTag(top.team)}, ${esc(pl(String(top.period)))}${C?" "+fmtClock(top.sec):""}, `+
+      `${esc(what)} from ${Math.round(top.distance)} ft (${top.xg.toFixed(2)} xG), ${top.goal?"scored":"no goal"}.`);
+  }
+  if(shootout) out.push(`${teamTag(shootout.winner)} won the shootout ${shootout.w}-${shootout.l}.`);
+  if(b.ppg||r.ppg) out.push(`Power-play goals: ${teamTag(blue)} ${b.ppg}, ${teamTag(red)} ${r.ppg}.`);
+  return out.slice(0,6);
+}
+
+function periodTable(events){
+  const {blue, red}=SIDES, ps=sortPeriods([...new Set(events.map(s=>String(s.period)))]);
   if(ps.length<2) return "";
-  return `<div><h2>By period</h2><table><thead><tr><th></th><th class="n">Goals</th><th class="n">SOG</th>`+
-    `<th class="n" style="color:${REPORT_HOME_COL}">xG</th><th class="n" style="color:${REPORT_AWAY_COL}">xG</th><th class="n">xG%</th></tr></thead><tbody>`+
-    ps.map(p=>{ const ev=events.filter(s=>String(s.period)===p), h=summarize(ev,home), a=summarize(ev,away);
-      return `<tr><td>${esc(/^\d+$/.test(p)?"P"+p:p)}</td><td class="n">${h.goals}-${a.goals}</td><td class="n">${h.onNet}-${a.onNet}</td>`+
+  return `<div><h3>By period</h3><table><thead><tr><th></th><th class="n">Goals</th><th class="n">Shots</th>`+
+    `<th class="n" style="color:${BLUE_COL}">xG</th><th class="n" style="color:${RED_COL}">xG</th><th class="n">xG%</th></tr></thead><tbody>`+
+    ps.map(p=>{ const ev=events.filter(s=>String(s.period)===p), h=summarize(ev,blue), a=summarize(ev,red);
+      return `<tr><td>${esc(pl(p))}</td><td class="n">${h.goals}-${a.goals}</td><td class="n">${h.onNet}-${a.onNet}</td>`+
         `<td class="n">${h.xg.toFixed(2)}</td><td class="n">${a.xg.toFixed(2)}</td><td class="n">${pctOf(h.xg,a.xg)}</td></tr>`; }).join("")+
     `</tbody></table></div>`;
 }
 
-/* GSAx = xG against (unblocked attempts) minus goals against, empty-net
-   shots left out. A tracker export names the goalie in net for every shot,
-   so the tracked team gets a row per goalie; everyone else gets one. */
-function goalieTable(events, home, away, tracked){
+/* A tracker export names the goalie in net for every shot, so the tracked
+   team gets a row per goalie; everyone else gets one. */
+function goalieTable(events, tracked){
   const line=(who, col, shots)=>{
-    const sa=shots.filter(s=>s.goal||classify(s)==="shot").length, ga=shots.filter(s=>s.goal).length;
-    const xga=shots.reduce((v,s)=>v+(s.unblocked?(s.xg||0):0),0), gsax=xga-ga;
-    return `<tr><td class="nm" style="color:${col}">${who}</td><td class="n">${sa}</td><td class="n">${ga}</td>`+
-      `<td class="n">${sa?(1-ga/sa).toFixed(3).replace(/^0/,""):""}</td><td class="n">${xga.toFixed(2)}</td>`+
-      `<td class="n ${signCls(gsax)}">${sg2(gsax)}</td></tr>`;
+    const g=gsaxOf(shots);
+    return `<tr><td class="nm" style="color:${col}">${who}</td><td class="n">${g.sa}</td><td class="n">${g.ga}</td>`+
+      `<td class="n">${g.sa?(1-g.ga/g.sa).toFixed(3).replace(/^0/,""):""}</td><td class="n">${g.xga.toFixed(2)}</td>`+
+      `<td class="n ${signCls(g.gsax)}">${sg2(g.gsax)}</td></tr>`;
   };
   const rows=[];
-  [home,away].forEach(t=>{
-    const against=events.filter(s=>s.team!==t&&!intoEmptyNet(s)), col=teamCol(t,home);
+  [SIDES.blue,SIDES.red].forEach(t=>{
+    const against=events.filter(s=>s.team!==t&&!intoEmptyNet(s)), col=teamCol(t);
     const nums=t===tracked?[...new Set(against.map(s=>s.goalie).filter(Boolean))]:[];
     if(nums.length) nums.forEach(g=>rows.push(line(`#${esc(g)} ${esc(t)}`, col, against.filter(s=>s.goalie===g))));
     else rows.push(line(esc(t), col, against));
   });
-  return `<div><h2>Goaltending <span class="sub">&middot; GSAx = xGA &minus; GA</span></h2><table><thead><tr><th>Goalie</th>`+
+  return `<div><h3>Goaltending <span class="sub">&middot; GSAx = goals saved above expected</span></h3><table><thead><tr><th>Goalie</th>`+
     `<th class="n">SA</th><th class="n">GA</th><th class="n">SV%</th><th class="n">xGA</th><th class="n">GSAx</th></tr></thead>`+
     `<tbody>${rows.join("")}</tbody></table></div>`;
 }
 
-/* Cumulative xG for the report: on the game clock when the file has one,
-   in shot order when it doesn't. Goals carry the running score. */
-function reportFlowSVG(events, home, away){
-  const C=DATA.clock;
+/* Momentum: cumulative xG, on the game clock when the file has one, in
+   shot order when it doesn't. Goals carry the running score, blue first. */
+function reportFlowSVG(events){
+  const {blue, red}=SIDES, C=DATA.clock;
   const seq=events.filter(s=>s.unblocked).slice().sort(C?(a,b)=>a.t-b.t||a.i-b.i:(a,b)=>a.i-b.i), n=seq.length;
   if(!n) return `<p class="empty">No scored attempts in this scope.</p>`;
-  const W=980, H=190, L=30, R=96, T=8, B=16;
+  const W=760, H=158, L=30, R=104, T=10, B=17;
   const ps=C?C.periods.filter(p=>events.some(s=>String(s.period)===p)||events.length===DATA.all.length):[];
   const t0=C?C.start[ps[0]]:0, t1=C?C.start[ps[ps.length-1]]+C.len[ps[ps.length-1]]:0;
   const x=C ? i=>L+(seq[i].t-t0)/Math.max(1,t1-t0)*(W-L-R) : i=>n<2?(L+W-R)/2:L+(i/(n-1))*(W-L-R);
   const xEnd=C?W-R:x(n-1), xStart=C?L:x(0);
-  const tot={}; [home,away].forEach(t=>tot[t]=0); seq.forEach(s=>{ if(s.team in tot) tot[s.team]+=s.xg||0; });
-  const top=Math.max(0.3,tot[home],tot[away])*1.04;
+  const tot={[blue]:0,[red]:0}; seq.forEach(s=>{ if(s.team in tot) tot[s.team]+=s.xg||0; });
+  const top=Math.max(0.3,tot[blue],tot[red])*1.06;
   const y=v=>H-B-(v/top)*(H-T-B), f=v=>v.toFixed(1), p=[], over=[];
   niceTicks(top).filter(v=>v>0).forEach(v=>{
     p.push(`<line x1="${L}" y1="${f(y(v))}" x2="${W-R}" y2="${f(y(v))}" stroke="#D3DBE2" stroke-dasharray="3 3"/>`+
-      `<text x="${L-4}" y="${f(y(v)+3)}" text-anchor="end" font-size="8.5" fill="#7B8B9C">${v.toFixed(2)}</text>`);
+      `<text x="${L-4}" y="${f(y(v)+3)}" text-anchor="end" font-size="9" fill="#7B8B9C">${v.toFixed(2)}</text>`);
   });
-  const pl=q=>/^\d+$/.test(q)?"P"+q:q;
+  const band=(xa,xb,k)=>{ if(k%2) p.push(`<rect x="${f(xa)}" y="${T}" width="${f(Math.max(0,xb-xa))}" height="${H-T-B}" fill="#F3F6F9"/>`); };
   if(C){
     ps.forEach((q,k)=>{
-      const xa=L+(C.start[q]-t0)/Math.max(1,t1-t0)*(W-L-R);
-      if(k) p.push(`<line x1="${f(xa)}" y1="${T}" x2="${f(xa)}" y2="${H-B}" stroke="#7B8B9C" stroke-width=".8" stroke-dasharray="2 2"/>`);
-      p.push(`<text x="${f(xa+4)}" y="${T+9}" font-size="9" font-weight="700" fill="#7B8B9C">${esc(pl(q))}</text>`);
+      const xa=L+(C.start[q]-t0)/Math.max(1,t1-t0)*(W-L-R), xb=L+(C.start[q]+C.len[q]-t0)/Math.max(1,t1-t0)*(W-L-R);
+      band(xa,xb,k);
+      p.push(`<text x="${f(xa+4)}" y="${T+10}" font-size="10" font-weight="700" fill="#7B8B9C">${esc(pl(q))}</text>`);
       for(let v=C.len[q]-300; v>0; v-=300){
         const xt=L+(C.start[q]+C.len[q]-v-t0)/Math.max(1,t1-t0)*(W-L-R);
         p.push(`<line x1="${f(xt)}" y1="${H-B}" x2="${f(xt)}" y2="${H-B+3}" stroke="#B8C4CF"/>`+
-          `<text x="${f(xt)}" y="${H-B+11}" text-anchor="middle" font-size="8" fill="#7B8B9C">${fmtClock(v)}</text>`);
+          `<text x="${f(xt)}" y="${H-B+12}" text-anchor="middle" font-size="8.5" fill="#7B8B9C">${fmtClock(v)}</text>`);
       }
     });
   } else {
-    p.push(`<text x="${f(x(0)+4)}" y="${T+9}" font-size="9" font-weight="700" fill="#7B8B9C">${esc(pl(String(seq[0].period)))}</text>`);
-    for(let i=1;i<n;i++) if(String(seq[i].period)!==String(seq[i-1].period)){
-      p.push(`<line x1="${f(x(i))}" y1="${T}" x2="${f(x(i))}" y2="${H-B}" stroke="#7B8B9C" stroke-width=".8" stroke-dasharray="2 2"/>`+
-        `<text x="${f(x(i)+4)}" y="${T+9}" font-size="9" font-weight="700" fill="#7B8B9C">${esc(pl(String(seq[i].period)))}</text>`);
-    }
-    p.push(`<text x="${W-R}" y="${H-3}" text-anchor="end" font-size="8" fill="#7B8B9C">${n} attempts in order &rarr; (no clock in this file)</text>`);
+    const cuts=[0];
+    for(let i=1;i<n;i++) if(String(seq[i].period)!==String(seq[i-1].period)) cuts.push(i);
+    cuts.forEach((i,k)=>{
+      const xa=k?(x(i-1)+x(i))/2:L, xb=k<cuts.length-1?(x(cuts[k+1]-1)+x(cuts[k+1]))/2:W-R;
+      band(xa,xb,k);
+      p.push(`<text x="${f(xa+4)}" y="${T+10}" font-size="10" font-weight="700" fill="#7B8B9C">${esc(pl(String(seq[i].period)))}</text>`);
+    });
+    p.push(`<text x="${W-R}" y="${H-3}" text-anchor="end" font-size="8.5" fill="#7B8B9C">${n} attempts in order &rarr; (no clock in this file)</text>`);
   }
   const ends=[];
-  [home,away].forEach(t=>{
-    const col=teamCol(t,home);
+  [blue,red].forEach(t=>{
+    const col=teamCol(t);
     let run=0, d=`M ${f(xStart)} ${f(y(0))}`;
     seq.forEach((s,i)=>{ if(s.team!==t) return; d+=` L ${f(x(i))} ${f(y(run))}`; run+=s.xg||0; d+=` L ${f(x(i))} ${f(y(run))}`; });
     d+=` L ${f(xEnd)} ${f(y(run))}`;
-    p.push(`<path d="${d}" fill="none" stroke="${col}" stroke-width="1.9" stroke-linejoin="round"/>`);
+    p.push(`<path d="${d}" fill="none" stroke="${col}" stroke-width="2.4" stroke-linejoin="round"/>`);
     ends.push({t, col, run, yy:y(run)});
   });
-  const run={[home]:0,[away]:0}, sc={[home]:0,[away]:0};
+  const run={[blue]:0,[red]:0}, sc={[blue]:0,[red]:0};
   seq.forEach((s,i)=>{
     if(!(s.team in run)) return;
     run[s.team]+=s.xg||0; if(!s.goal) return; sc[s.team]++;
-    const cx=x(i), cy=y(run[s.team]), col=teamCol(s.team,home);
-    over.push(`<circle cx="${f(cx)}" cy="${f(cy)}" r="3.4" fill="${col}" stroke="#fff" stroke-width="1.2"/>`+
-      `<text x="${f(cx)}" y="${f(cy-6)}" text-anchor="middle" font-size="8.5" font-weight="700" fill="${col}">${sc[home]}-${sc[away]}</text>`);
+    const cx=x(i), cy=y(run[s.team]), col=teamCol(s.team);
+    over.push(`<circle cx="${f(cx)}" cy="${f(cy)}" r="4" fill="${col}" stroke="#fff" stroke-width="1.3"/>`+
+      `<text x="${f(cx)}" y="${f(cy-7)}" text-anchor="middle" font-size="9.5" font-weight="700" fill="${col}">${sc[blue]}-${sc[red]}</text>`);
   });
   ends.sort((a,b)=>a.yy-b.yy);
-  if(ends[1].yy-ends[0].yy<11){ const m=(ends[0].yy+ends[1].yy)/2; ends[0].yy=m-5.5; ends[1].yy=m+5.5; }
-  ends.forEach(e=>over.push(`<text x="${f(xEnd+5)}" y="${f(e.yy+3)}" font-size="9" font-weight="700" fill="${e.col}">${esc(e.t)} ${e.run.toFixed(2)}</text>`));
+  if(ends[1].yy-ends[0].yy<12){ const m=(ends[0].yy+ends[1].yy)/2; ends[0].yy=m-6; ends[1].yy=m+6; }
+  ends.forEach(e=>over.push(`<text x="${f(xEnd+6)}" y="${f(e.yy+3.5)}" font-size="10" font-weight="700" fill="${e.col}">${esc(e.t)} ${e.run.toFixed(2)}</text>`));
   p.push(`<line x1="${L}" y1="${H-B}" x2="${W-R}" y2="${H-B}" stroke="#B8C4CF"/>`);
   return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="flowsvg">${p.join("")}${over.join("")}</svg>`;
 }
@@ -1338,89 +1441,130 @@ function onIceTables(events, tracked){
   const vol=sk.map(r=>r.cf+r.ca).sort((a,b)=>a-b), med=vol.length?vol[Math.floor(vol.length/2)]:0;
   const nTop=Math.min(5,Math.ceil(sk.length/2)), best=sk.slice(0,nTop);
   const worst=sk.slice(nTop).filter(r=>r.cf+r.ca>=med/2).slice(-5).reverse();
-  const table=(title,rows)=>`<div><h2>${title}</h2>`+(rows.length
+  const table=(title,rows)=>`<div><h3>${title} <span class="sub">&middot; ${esc(tracked)} skaters</span></h3>`+(rows.length
     ? `<table><thead><tr><th>Skater</th><th class="n">CF-CA</th><th class="n">GF-GA</th><th class="n">xGF</th><th class="n">xGA</th><th class="n">xG +/-</th></tr></thead><tbody>`+
       rows.map(r=>`<tr><td>#${esc(r.num)}</td><td class="n">${r.cf}-${r.ca}</td><td class="n">${r.gf}-${r.ga}</td><td class="n">${r.xgf.toFixed(2)}</td>`+
         `<td class="n">${r.xga.toFixed(2)}</td><td class="n ${signCls(r.xgf-r.xga)}">${sg2(r.xgf-r.xga)}</td></tr>`).join("")+`</tbody></table>`
     : `<p class="empty">No on-ice data in this scope.</p>`)+`</div>`;
-  return [table("Highest on-ice xG", best), table("Lowest on-ice xG", worst)];
+  return [table("Best on-ice xG", best), table("Worst on-ice xG", worst)];
 }
 
 /* Individual shooters, when the file names them (the tracker leaves
    Player blank; shot-plotter exports usually fill it). */
-function shooterTable(events, home){
+function shooterTable(events){
   const by={};
   events.forEach(s=>{ if(!s.player) return;
     const k=s.team+"\u0000"+s.player, r=by[k]=by[k]||{team:s.team, player:s.player, att:0, g:0, xg:0};
     r.att++; if(s.goal) r.g++; if(s.unblocked) r.xg+=s.xg||0; });
   const rows=Object.values(by).sort((a,b)=>b.xg-a.xg).slice(0,6);
   if(!rows.length) return "";
-  return `<div><h2>Top shooters <span class="sub">&middot; individual xG</span></h2><table><thead><tr><th>Player</th><th class="n">Att</th><th class="n">G</th><th class="n">xG</th></tr></thead><tbody>`+
-    rows.map(r=>`<tr><td class="nm" style="color:${teamCol(r.team,home)}">${esc(r.player)}</td><td class="n">${r.att}</td><td class="n">${r.g}</td><td class="n">${r.xg.toFixed(2)}</td></tr>`).join("")+
+  return `<div><h3>Top shooters <span class="sub">&middot; individual xG</span></h3><table><thead><tr><th>Player</th><th class="n">Att</th><th class="n">G</th><th class="n">xG</th></tr></thead><tbody>`+
+    rows.map(r=>`<tr><td class="nm" style="color:${teamCol(r.team)}">${esc(r.player)}</td><td class="n">${r.att}</td><td class="n">${r.g}</td><td class="n">${r.xg.toFixed(2)}</td></tr>`).join("")+
     `</tbody></table></div>`;
 }
 
 /* Goals and xG by the shooter's strength state. */
-function strengthTable(events, home, away){
-  const LAB={EV:"Even", PP:"Power play", SH:"Shorthanded", EN:"Empty net / pulled"};
+function strengthTable(events){
+  const {blue, red}=SIDES, LAB={EV:"Even", PP:"Power play", SH:"Shorthanded", EN:"Empty net"};
   const cell=(t,k)=>{ const ev=events.filter(s=>s.team===t&&(!k||strGroup(s)===k));
-    return {g:ev.filter(s=>s.goal).length, xg:ev.reduce((v,s)=>v+(s.unblocked?(s.xg||0):0),0), n:ev.length}; };
-  const line=(label,k,cls)=>{ const h=cell(home,k), a=cell(away,k);
+    return {g:ev.filter(s=>s.goal).length, xg:ev.reduce((v,s)=>v+(s.unblocked?(s.xg||0):0),0)}; };
+  const line=(label,k,cls)=>{ const h=cell(blue,k), a=cell(red,k);
     return `<tr${cls?` class="${cls}"`:""}><td>${label}</td><td class="n">${h.g}</td><td class="n">${h.xg.toFixed(2)}</td><td class="n">${a.g}</td><td class="n">${a.xg.toFixed(2)}</td></tr>`; };
   const keys=["EV","PP","SH","EN"].filter(k=>events.some(s=>strGroup(s)===k));
-  return `<div><h2>By strength</h2><table><thead><tr><th></th>`+
-    `<th class="n" style="color:${REPORT_HOME_COL}">G</th><th class="n" style="color:${REPORT_HOME_COL}">xG</th>`+
-    `<th class="n" style="color:${REPORT_AWAY_COL}">G</th><th class="n" style="color:${REPORT_AWAY_COL}">xG</th></tr></thead><tbody>`+
+  return `<div><h3>By strength</h3><table><thead><tr><th></th>`+
+    `<th class="n" style="color:${BLUE_COL}">G</th><th class="n" style="color:${BLUE_COL}">xG</th>`+
+    `<th class="n" style="color:${RED_COL}">G</th><th class="n" style="color:${RED_COL}">xG</th></tr></thead><tbody>`+
     keys.map(k=>line(LAB[k],k)).join("")+line("All",null,"tot")+`</tbody></table></div>`;
 }
 
-function bestChances(events, home){
-  const rows=events.filter(s=>s.unblocked).slice().sort((a,b)=>b.xg-a.xg).slice(0,6);
-  const pl=q=>/^\d+$/.test(q)?"P"+q:q, C=DATA.clock;
-  return `<div><h2>Best chances</h2><table><thead><tr><th>When</th><th>Team</th><th>Type</th><th>Result</th><th class="n">xG</th></tr></thead><tbody>`+
-    (rows.map(s=>`<tr><td>${esc(pl(String(s.period)))}${C?" "+fmtClock(s.sec):""}</td><td class="nm" style="color:${teamCol(s.team,home)}">${esc(s.team)}</td>`+
+function bestChances(events){
+  const rows=events.filter(s=>s.unblocked).slice().sort((a,b)=>b.xg-a.xg).slice(0,5), C=DATA.clock;
+  return `<div><h3>Best chances</h3><table><thead><tr><th>When</th><th>Team</th><th>Type</th><th>Result</th><th class="n">xG</th></tr></thead><tbody>`+
+    (rows.map(s=>`<tr><td>${esc(pl(String(s.period)))}${C?" "+fmtClock(s.sec):""}</td><td class="nm" style="color:${teamCol(s.team)}">${esc(s.team)}</td>`+
       `<td>${esc(s.tagged_type||s.shot_type)}</td><td>${s.goal?"<b>Goal</b>":esc(classify(s))}</td><td class="n">${s.xg.toFixed(2)}</td></tr>`).join("")||
       `<tr><td colspan="5" class="empty">No scored attempts.</td></tr>`)+`</tbody></table></div>`;
 }
 
-function keysHTML(home, away){
-  const ic=kind=>`<svg viewBox="-3.6 -3.6 7.2 7.2" class="rkeyi">${iconMark(kind,0,0,"#48586A")}</svg>`;
+function keysHTML(){
+  const ic=kind=>`<svg viewBox="-3.8 -3.8 7.6 7.6" class="rkeyi">${iconMark(kind,0,0,"#48586A")}</svg>`;
   return `<div class="keys">
     <span class="rkey">${ic("goal")} Goal</span>
-    <span class="rkey">${ic("shot")} Shot</span>
-    <span class="rkey">${ic("block")} Block</span>
-    <span class="rkey">${ic("miss")} Miss</span>
+    <span class="rkey">${ic("shot")} Shot on net</span>
+    <span class="rkey">${ic("block")} Blocked</span>
+    <span class="rkey">${ic("miss")} Missed</span>
     <span class="sep"></span>
-    <span><b style="background:${REPORT_HOME_COL}"></b>${esc(home)}</span>
-    <span><b style="background:${REPORT_AWAY_COL}"></b>${esc(away)}</span>
+    <span><b style="background:${BLUE_COL}"></b>${esc(SIDES.blue)}</span>
+    <span><b style="background:${RED_COL}"></b>${esc(SIDES.red)}</span>
   </div>`;
 }
 
-function buildReportMarkup(events, home, away, flips, scopeLabel, tracked){
-  const when=new Date().toLocaleString([], {year:"numeric", month:"short", day:"numeric",
-    hour:"2-digit", minute:"2-digit"});
-  const h=summarize(events,home), a=summarize(events,away);
+/* "Final" once a third period is in the file, "Through P2" before that. */
+function statusLine(scope, events, shootout){
+  if(scope!=="__all__") return periodLabel(scope)+" only";
+  const ps=sortPeriods([...new Set(events.map(s=>String(s.period)))]);
+  if(shootout) return "Final &middot; Shootout";
+  if(ps.some(isOT)) return "Final &middot; Overtime";
+  const last=ps.filter(p=>/^\d+$/.test(p)).pop();
+  return !last||+last>=3 ? "Final" : "Through "+pl(last);
+}
+function gameDate(){
+  const v=document.getElementById("pdfDate").value, m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  if(!m) return null;
+  return new Date(+m[1], +m[2]-1, +m[3]);
+}
+
+function buildReportMarkup(events, home, away, flips, scope, tracked, shootout){
+  const {blue, red}=SIDES, b=summarize(events,blue), r=summarize(events,red);
+  if(shootout&&b.goals!==r.goals) shootout=null;
+  const fb=b.goals+(shootout&&shootout.winner===blue?1:0), fr=r.goals+(shootout&&shootout.winner===red?1:0);
+  const d=gameDate(), short=d?` (${d.getMonth()+1}/${d.getDate()})`:"";
+  const long=d?d.toLocaleDateString([], {weekday:"short", year:"numeric", month:"short", day:"numeric"}):"";
   const onIce=DATA.hasOnIce&&tracked&&events.some(s=>s.on_ice.length);
-  const blocks=(onIce?onIceTables(events,tracked):[]).concat([shooterTable(events,home), strengthTable(events,home,away), bestChances(events,home)])
-    .filter(Boolean).slice(0,4);
-  const notes=[DATA.clock?"xG plotted on the game clock":"No Clock column, so xG is plotted in shot order",
+  const extra=(onIce?onIceTables(events,tracked):[]).concat([shooterTable(events)]).filter(Boolean).slice(0,2);
+  const notes=[DATA.clock?"momentum plotted on the game clock":"no Clock column, so momentum is plotted in shot order",
     onIce?`on-ice numbers from the OnIce column (${esc(tracked)})`:""].filter(Boolean).join(" · ");
+  const logo=LOGO.naturalWidth?`<img class="logo" src="${LOGO.src}" alt="University of Toronto Varsity Blues">`:"";
+  const ins=insightsList(events, b, r, shootout);
   return `<section class="rp">
-  <div class="head">
-    <h1>Game Report</h1>
-    <span class="final"><span style="color:${REPORT_HOME_COL}">${esc(home)}</span> ${h.goals} &ndash; ${a.goals} <span style="color:${REPORT_AWAY_COL}">${esc(away)}</span></span>
-    <span class="scope">${esc(scopeLabel)}</span>
-    <span class="when">${esc(when)}</span>
-  </div>
-  <div class="upper">
-    <div>${reportRinkSVG(events, flips, home, away)}${keysHTML(home, away)}</div>
-    <div><h2>Totals</h2>${statsTable(h, a, home, away)}</div>
-    <div class="stack">${periodTable(events, home, away)}${goalieTable(events, home, away, tracked)}</div>
-  </div>
-  <div class="flowbox"><h2>Cumulative xG <span class="sub">&middot; labels are the score after each goal</span></h2>${reportFlowSVG(events, home, away)}</div>
-  <div class="four">${blocks.join("")}</div>
+  <header class="head">
+    <div class="side l">
+      <div class="match"><span style="color:${teamCol(away)}">${esc(showName(away))}</span> @ <span style="color:${teamCol(home)}">${esc(showName(home))}</span>${esc(short)}</div>
+      <div class="meta">${esc(long||"Game report")}</div>
+    </div>
+    ${logo}
+    <div class="side r">
+      <div class="score"><span class="tm" style="color:${BLUE_COL}">${esc(showName(blue))}</span>`+
+      `<span class="num">${fb}&ndash;${fr}</span><span class="tm" style="color:${RED_COL}">${esc(showName(red))}</span></div>
+      <div class="meta">${statusLine(scope, events, shootout)}</div>
+    </div>
+  </header>
+
+  <section class="blk">
+    <h2>Shot map <span class="sub">&middot; ${esc(blue)} always shooting right &middot; stars are goals</span></h2>
+    ${reportRinkSVG(events, flips)}${keysHTML()}
+  </section>
+
+  <section class="blk">
+    <h2>Momentum <span class="sub">&middot; cumulative expected goals; the steeper the line, the more pressure &middot; dots are goals with the score</span></h2>
+    ${reportFlowSVG(events)}
+  </section>
+
+  <section class="blk">
+    <h2>Data and insights</h2>
+    <div class="two">
+      <div class="ins"><h3>Takeaways</h3>${ins.length?`<ul>${ins.map(t=>`<li>${t}</li>`).join("")}</ul>`:`<p class="empty">Not enough shots for takeaways yet.</p>`}</div>
+      <div><h3>Head to head</h3>${compareBars(b, r)}</div>
+    </div>
+    <div class="three">
+      <div class="stack">${periodTable(events)}${goalieTable(events, tracked)}</div>
+      ${bestChances(events)}
+      ${strengthTable(events)}
+    </div>
+    ${extra.length?`<div class="two">${extra.join("")}</div>`:""}
+  </section>
+
   <div class="foot">
-    <span>xG from a five-feature model fit on 905,483 NHL attempts. Blocks are placed but not scored. ${notes}.</span>
+    <span>xG (expected goals) is the chance a shot goes in, from a five-feature model fit on 905,483 NHL attempts. Blocks are placed but not scored; ${notes}.</span>
     <span>lknox.web.app/xgcalc</span>
   </div></section>`;
 }
@@ -1443,12 +1587,17 @@ function buildScopeSelect(){
   oi.value=guessOnIce(teams);
   oi.classList.toggle("hidden",!ask);
   if(teams.includes(DATA.onIceTeam)){ try{ localStorage.setItem(ONICE_LAST, DATA.onIceTeam); }catch(e){} }
+  /* The tracker names its exports 2026-09-30_uoft_vs_tmu_...; anything
+     else gets today, which is right for a report printed at the rink. */
+  const m=/(\d{4}-\d{2}-\d{2})/.exec(SRC_NAME), t=new Date();
+  document.getElementById("pdfDate").value=m?m[1]:
+    `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
 }
 
 /* One page, always: lay the report out offscreen at the printable size of
-   a landscape letter page and zoom it down if a long game runs over. */
+   a portrait letter page and zoom it down if a long game runs over. */
 function fitReport(out){
-  const page=out.querySelector(".rp"), fit=(8.5-2*9/25.4)*96-6;
+  const page=out.querySelector(".rp"), fit=(11-2*9/25.4)*96-6;
   page.style.zoom="";
   out.style.cssText="display:block; position:absolute; left:-20000px; top:0";
   const h=page.getBoundingClientRect().height;
@@ -1460,16 +1609,27 @@ function exportReport(){
   if(!DATA) return;
   const scope=document.getElementById("pdfScope").value, teams=teamsOf();
   const {home,away}=detectSides(teams);
-  const flips=computeFlips(DATA.all, home);
   const tracked=!DATA.hasOnIce?"":teams.includes(DATA.onIceTeam)?DATA.onIceTeam:document.getElementById("pdfOnIce").value;
+  SIDES=colourSides(teams, home, tracked);
+  const flips=computeFlips(DATA.all, SIDES.blue);
   /* DATA.all, not visible(): a report has to carry the blocks, and they
-     never enter the filtered set. */
-  const events=DATA.all.filter(s=>scope==="__all__"||String(s.period)===scope);
-  const label=scope==="__all__" ? "Full Game" : periodLabel(scope);
+     never enter the filtered set. A shootout isn't game play: its attempts
+     stay out of the numbers and only decide the extra goal on the score. */
+  const inScope=DATA.all.filter(s=>scope==="__all__"||String(s.period)===scope);
+  const so=scope==="__all__"?inScope.filter(s=>isShootout(s.period)):[];
+  const events=so.length?inScope.filter(s=>!isShootout(s.period)):inScope;
+  let shootout=null;
+  if(so.length){
+    const gb=so.filter(s=>s.goal&&s.team===SIDES.blue).length, gr=so.filter(s=>s.goal&&s.team===SIDES.red).length;
+    if(gb!==gr) shootout={winner:gb>gr?SIDES.blue:SIDES.red, w:Math.max(gb,gr), l:Math.min(gb,gr)};
+  }
   const out=document.getElementById("reportOut");
-  out.innerHTML=buildReportMarkup(events, home, away, flips, label, tracked);
-  fitReport(out);
-  window.print();
+  const go=()=>{
+    out.innerHTML=buildReportMarkup(events, home, away, flips, scope, tracked, shootout);
+    fitReport(out);
+    window.print();
+  };
+  if(LOGO.complete) go(); else { LOGO.onload=LOGO.onerror=go; }
 }
 
 /* ---------------- wiring ---------------- */

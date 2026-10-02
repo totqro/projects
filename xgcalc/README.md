@@ -261,21 +261,26 @@ rest of the time. Pasted into the
 real workbook and recalculated, its Totals sheet reproduces the tracker's TOI
 to the workbook's own 0.1-minute rounding.
 
-**Report PDF** (Shifts view) prints one landscape page for the full game or
-any one period, OT included; if a long game runs over, the page zooms itself
-down to fit. The top row is the shot map with our team always attacking right,
-totals (goals, xG, xG share, goals minus xG, shooting %, high-danger chances,
-rebounds, power plays and PP goals), the period split, and goalies with GSAx
-(xGA minus GA): ours from whoever was on the board for each shot, theirs from
-our shots with empty-net ones left out. The middle is cumulative xG on the
-game clock, with each power play shaded from the penalty timeline and every
-goal marked with the score. The bottom row is the five skaters with the most
-and the least xG for on the ice (the lowest list skips anyone under half the
-median skater's TOI), xG for and against by strength next to the clock time
-spent at each (per 60 too), and the forward lines and D pairs that played
-20+ seconds together; a 3v3 OT report lists the three-skater units instead.
-Printed mid-game, it stops at the clock. It uses the browser's print dialog,
-so pick "Save as PDF".
+**Report PDF** (Shifts view) prints one portrait page for the full game or
+any one period, OT included, in the same design as Shot Chart's report; if a
+long game runs over, the page zooms itself down to fit. The header has the
+matchup (Setup's new **We are** Home/Away picks which side of the @ we sit
+on), the date, the Varsity Blues logo, and the score with where the game
+stands (Final, Overtime, After P2, or the live clock). Our team is always
+Varsity blue and the opponent red. Then the shot map with our team always
+attacking right, and momentum: cumulative xG on the game clock, with each
+power play shaded from the penalty timeline and every goal marked with the
+score. **Data and insights** follows: plain-sentence takeaways, head-to-head
+bars (goals, xG, shots, attempts, high-danger chances, shooting %, o-zone
+time when possession was tracked), the period split, goalies with GSAx (xGA
+minus GA): ours from whoever was on the board for each shot, theirs from our
+shots with empty-net ones left out; xG for and against by strength next to
+the clock time spent at each (per 60 too), the forward lines and D pairs
+that played the most together, and the four skaters with the most and the
+least xG for on the ice (the lowest list skips anyone under half the median
+skater's TOI)); a 3v3 OT report lists the three-skater units instead
+of lines and pairs. Printed mid-game, it stops at the clock. It uses the
+browser's print dialog, so pick "Save as PDF".
 
 **`web/scatter.html` — the shot chart.** For charts that already carry exact
 coordinates — tagged off film, or exported from another tool. Drop the CSV in
@@ -295,15 +300,23 @@ tag, so the xG matches the tracker's exactly. `OnIce`, `Goalie` and
 `OnIceTeam` feed the report's on-ice xG per skater and GSAx per goalie. An
 older export without `OnIceTeam` gets a picker for whose players those are.
 
-**Export PDF** prints a one-page landscape game report for the full game or
-any period: the full rink with home and away held on their own ends, totals,
-the period split, goaltending with GSAx (xGA minus GA, empty-net shots left
-out; one row per goalie when the file names them, otherwise one per team),
-cumulative xG with the score at each goal, and a bottom row of the skaters
-with the highest and lowest on-ice xG, top shooters when the file has a
-`Player` column, xG by strength, and the six best chances. The shots file
-carries no TOI, so the lowest list keeps to skaters on the ice for at least
-half the median skater's attempts.
+**Export PDF** prints a one-page portrait game report for the full game or
+any period, read top to bottom. The header has the matchup (away @ home) and
+game date, the Varsity Blues logo, and the score, marked Final, Overtime or
+Shootout. UofT is always Varsity blue (`#044684`) and the opponent is always
+red; when neither team name reads as UofT, the tracked team (then home) takes
+the blue. Below that: the full rink with the blue team always shooting right,
+momentum (cumulative xG with the score at each goal), then **Data and
+insights**: plain-sentence takeaways, head-to-head bars (goals, xG, shots,
+attempts, high-danger chances, shooting %), the period split, goaltending
+with GSAx (xGA minus GA, empty-net shots left out; one row per goalie when
+the file names them, otherwise one per team), the best chances, xG by
+strength, and, when the file has them, the skaters with the best and worst
+on-ice xG or the top shooters. The shots file carries no TOI, so the worst
+list keeps to skaters on the ice for at least half the median skater's
+attempts. The date defaults to the one in the file name (tracker exports
+start with it), else today. Shootout attempts (period `SO`) stay out of the
+numbers and only add the deciding goal to a game tied after play.
 
 X/Y are raw NHL rink feet. Shots at the left end are mirrored onto the
 attacking-right frame (net at x = 89) — flipping x flips y with it, or every

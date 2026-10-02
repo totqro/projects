@@ -168,48 +168,76 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
   display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 26px}
 .help h3{grid-column:1/-1; font-family:var(--head); font-size:13px; margin:8px 0 2px; color:var(--us)}
 .help .k{display:flex; gap:10px; font-size:12.5px} .help .k > span:first-child{min-width:130px}
-/* ---- printable report: one landscape page, literal colours so a dark page
-   still prints on white. exportReport() zooms it down if a long game overflows. ---- */
-#reportOut{display:none; background:#fff; color:#141D26; font-size:10px; line-height:1.35;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-#reportOut .rp{width:10.25in}
-#reportOut .head{display:flex; align-items:baseline; gap:14px; margin-bottom:6px; border-bottom:1.5px solid #141D26; padding-bottom:4px}
-#reportOut .head h1{margin:0; font-size:18px; letter-spacing:-.02em; font-family:inherit}
-#reportOut .head .game{font-size:12px; font-weight:600}
-#reportOut .head .final{font-size:16px; font-weight:800; font-variant-numeric:tabular-nums}
-#reportOut .head .scope{font-size:14px; font-weight:700; margin-left:auto}
-#reportOut .head .when{font-size:9px; color:#7B8B9C}
-#reportOut .upper{display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr); gap:14px; align-items:start}
-#reportOut .rinkfull{display:block; width:100%; height:auto}
-#reportOut .keys{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:center;
-  margin-top:3px; padding-top:3px; border-top:1px solid #E3E8ED; font-size:9.5px; color:#48586A}
+/* ---- printable game report ----
+   One portrait page, the same design as Shot Chart's, read top to bottom:
+   score, shot map, momentum, data and insights. Literal colours so a dark
+   page still prints on white. exportReport() zooms it down if a long game
+   overflows. */
+#reportOut{display:none; background:#fff; color:#141D26; font-size:11px; line-height:1.4;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact}
+#reportOut .rp{width:7.75in; margin:0 auto}
+#reportOut .head{display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:end; gap:14px; margin-bottom:10px}
+#reportOut .head .side{border-bottom:1.5px solid #141D26; padding-bottom:6px; min-width:0}
+#reportOut .head .side.r{text-align:right}
+#reportOut .head .match{font-size:17px; font-weight:800; letter-spacing:-.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+#reportOut .head .score{display:flex; justify-content:flex-end; align-items:baseline; gap:8px; white-space:nowrap}
+#reportOut .head .score .tm{font-size:13px; font-weight:800; overflow:hidden; text-overflow:ellipsis}
+#reportOut .head .score .num{font-size:26px; font-weight:900; font-variant-numeric:tabular-nums; letter-spacing:-.02em; line-height:1}
+#reportOut .head .meta{font-size:10px; color:#5D6E80; margin-top:2px; font-weight:600; letter-spacing:.04em; text-transform:uppercase}
+#reportOut .head .logo{display:block; height:.82in; width:auto}
+#reportOut .blk{margin-top:8px}
+#reportOut h2{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin:0 0 5px; padding-left:8px;
+  border-left:4px solid #044684; font-size:15px; font-weight:800; letter-spacing:-.01em; color:#141D26;
+  font-family:inherit; text-shadow:none; text-transform:none; background:none; -webkit-text-fill-color:#141D26}
+#reportOut h2 .sub{font-size:9.5px; font-weight:400; color:#7B8B9C; letter-spacing:0; -webkit-text-fill-color:#7B8B9C}
+#reportOut h3{font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:#5D6E80;
+  margin:0 0 4px; font-weight:700; font-family:inherit; text-shadow:none}
+#reportOut h3 .sub{letter-spacing:.02em; text-transform:none; font-weight:400; color:#7B8B9C}
+#reportOut .rinkfull{display:block; width:94%; height:auto; margin:0 auto}
+#reportOut .keys{display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:center;
+  margin-top:4px; font-size:10px; color:#48586A}
+/* rkey/rkeyi, not lg/lgi: the page already owns those class names. */
 #reportOut .rkey{display:inline-flex; align-items:center; gap:4px}
-#reportOut .rkeyi{width:12px; height:12px; flex:none}
-#reportOut .keys .sep{width:1px; height:11px; background:#D3DBE2}
-#reportOut .keys b{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px}
-#reportOut .flow{margin-top:8px}
-#reportOut .four{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; align-items:start; margin-top:8px}
-#reportOut .stack{display:grid; gap:8px; align-content:start}
-#reportOut h2{font-size:8.5px; letter-spacing:.11em; text-transform:uppercase; color:#7B8B9C; margin:0 0 3px; font-weight:700; font-family:inherit}
-#reportOut h2 .sub{letter-spacing:.02em; text-transform:none; font-weight:400}
-#reportOut table{border-collapse:collapse; width:100%; font-size:10px}
-#reportOut th,#reportOut td{padding:1.6px 4px; text-align:left; border-bottom:1px solid #E3E8ED; white-space:nowrap;
-  position:static; background:none; color:#141D26; font-family:inherit; letter-spacing:normal; text-transform:none; font-size:10px}
-#reportOut th{font-size:8.5px; letter-spacing:.05em; text-transform:uppercase; color:#7B8B9C; font-weight:600}
+#reportOut .rkeyi{width:13px; height:13px; flex:none}
+#reportOut .keys .sep{width:1px; height:12px; background:#D3DBE2}
+#reportOut .keys b{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; vertical-align:-1px}
+#reportOut .flowsvg{display:block; width:100%; height:auto}
+#reportOut .two{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; align-items:start; margin-top:9px}
+#reportOut .three{display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr) minmax(0,.8fr); gap:14px; align-items:start; margin-top:9px}
+#reportOut .two:first-of-type{margin-top:2px}
+#reportOut .stack{display:grid; gap:9px; align-content:start}
+#reportOut .ins ul{margin:0; padding:0; list-style:none; display:grid; gap:5px}
+#reportOut .ins li{position:relative; padding-left:13px; font-size:11px; line-height:1.4}
+#reportOut .ins li::before{content:""; position:absolute; left:0; top:.45em; width:6px; height:6px; border-radius:50%; background:#044684}
+#reportOut .cmp-head{display:flex; justify-content:space-between; font-size:10px; font-weight:800; margin-bottom:2px}
+#reportOut .cmp-row{display:grid; grid-template-columns:44px minmax(0,1fr) 44px; align-items:end; gap:8px; margin-bottom:3px}
+#reportOut .cv{font-size:12px; font-variant-numeric:tabular-nums; font-weight:600; line-height:1.1}
+#reportOut .cv.r{text-align:right}
+#reportOut .cv.lead{font-weight:900; font-size:13px}
+#reportOut .clab{font-size:9.5px; color:#5D6E80; text-align:center; margin-bottom:1px; line-height:1.2}
+#reportOut .ctrack{display:flex; gap:2px; height:7px; border-radius:4px; overflow:hidden; background:#E3E8ED}
+#reportOut .ctrack i{display:block; min-width:0}
+#reportOut table{border-collapse:collapse; width:100%; font-size:10.5px}
+#reportOut th,#reportOut td{padding:2px 4px; text-align:left; border-bottom:1px solid #E3E8ED; white-space:nowrap;
+  position:static; background:none; font-family:inherit; color:#141D26; letter-spacing:normal;
+  text-transform:none; font-size:10.5px; cursor:auto}
+#reportOut th{font-size:9px; letter-spacing:.05em; text-transform:uppercase; color:#7B8B9C; font-weight:600}
 #reportOut td.n,#reportOut th.n{text-align:right; font-variant-numeric:tabular-nums}
-#reportOut td.nm{max-width:1.05in; overflow:hidden; text-overflow:ellipsis}
-#reportOut tr.hl td{font-weight:700}
-#reportOut tr.grp td{font-size:8.5px; letter-spacing:.08em; text-transform:uppercase; color:#7B8B9C; font-weight:700; padding-top:4px}
+#reportOut td.nm{max-width:1.2in; overflow:hidden; text-overflow:ellipsis}
+#reportOut tr.grp td{font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:#7B8B9C; font-weight:700; padding-top:4px}
 #reportOut tr.tot td{border-top:1px solid #B8C4CF; font-weight:700}
 #reportOut td.pos{color:#1E7B4A; font-weight:700} #reportOut td.neg{color:#B0293C; font-weight:700}
 #reportOut tbody tr:last-child td{border-bottom:0}
-#reportOut .flowsvg{display:block; width:100%; height:auto}
-#reportOut .empty{color:#7B8B9C; font-size:9.5px; margin:3px 0}
-#reportOut .foot{margin-top:6px; padding-top:4px; border-top:1px solid #E3E8ED; font-size:8.5px; color:#7B8B9C;
-  display:flex; justify-content:space-between; gap:16px}
+#reportOut .empty{color:#7B8B9C; font-size:10px; margin:3px 0}
+#reportOut .foot{margin-top:10px; padding-top:5px; border-top:1px solid #E3E8ED;
+  font-size:8.5px; color:#7B8B9C; display:flex; justify-content:space-between; gap:16px}
 @media print{
-  @page{ size:letter landscape; margin:9mm }
-  html,body{background:#fff !important; margin:0 !important}
+  @page{ size:letter portrait; margin:9mm }
+  /* The page declares color-scheme:dark, which paints the page margins
+     dark in a saved PDF. Paper is light. */
+  :root{color-scheme:light !important}
+  html,body{background:#fff !important; margin:0 !important; padding:0 !important; min-height:0 !important}
   body > *{display:none !important}
   body > #reportOut{display:block !important}
 }
@@ -315,7 +343,7 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
     <div class="actions">
       <select id="rScope" aria-label="Report scope"></select>
       <button class="primary" id="xReport">Report PDF</button>
-      <span class="note" style="align-self:center">Opens the print dialog: choose <b>Save as PDF</b>. One landscape page.</span>
+      <span class="note" style="align-self:center">Opens the print dialog: choose <b>Save as PDF</b>. One portrait page.</span>
     </div>
     <div class="note" style="margin-top:6px">The shots CSV keeps the shot-plotter columns, so Shot Chart and <code>score_tagged.py</code> read it as-is, plus clock, rebound, situation, xG and who was on the ice.</div>
   </div>
@@ -328,6 +356,7 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
       <label for="sDate">Date</label><input type="date" id="sDate">
       <label for="sUs">Our team</label><input id="sUs">
       <label for="sOpp">Opponent</label><input id="sOpp">
+      <label for="sVenue">We are</label><select id="sVenue"><option value="home">Home</option><option value="away">Away</option></select>
       <label for="sPer">Period length (min)</label><input id="sPer" type="number" min="1" max="30" step="1">
       <label for="sOt">OT length (min)</label><input id="sOt" type="number" min="1" max="30" step="1">
       <label for="sOtf">OT format</label><select id="sOtf"><option value="3v3">3v3</option><option value="5v5">5v5</option></select>
@@ -423,7 +452,7 @@ const REBOUND_SECONDS = 3;
 const today = () => { const d = new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
 function blankSetup(){
   const lines = {}; LINE_KEYS.forEach(k => lines[k] = []);
-  return {date:today(), us:"UofT", opp:"Opponent", periodMin:20, otMin:5, otFormat:"3v3", usRightP1:true, roster:[], lines};
+  return {date:today(), us:"UofT", opp:"Opponent", venue:"home", periodMin:20, otMin:5, otFormat:"3v3", usRightP1:true, roster:[], lines};
 }
 function blankGame(setup){
   return {clock:[{w:Date.now(), k:"set", p:1, s:setup.periodMin*60}], strength:"EV", shots:[], changes:[], flips:[], strOps:[], pens:[], enOps:[], poss:[], nextId:1};
@@ -1164,7 +1193,7 @@ function renderPenList(D){
 function renderSetup(){
   $("sDate").value = S.date; $("sUs").value = S.us; $("sOpp").value = S.opp;
   $("sPer").value = S.periodMin; $("sOt").value = S.otMin; $("sOtf").value = S.otFormat;
-  $("sEnd").value = S.usRightP1 ? "R" : "L";
+  $("sEnd").value = S.usRightP1 ? "R" : "L"; $("sVenue").value = S.venue === "away" ? "away" : "home";
   $("sRoster").value = S.roster.map(p => [p.num, p.name, p.pos].filter(Boolean).join(" ")).join("\n");
   $("sLines").innerHTML = LINE_KEYS.map(k => `<label><span class="lab" style="min-width:26px">${k.toUpperCase()}</span>`+
     `<input data-line="${k}" value="${esc((S.lines[k] || []).join(" "))}" placeholder="${k[0]==="f"?"9 14 7":k[0]==="d"?"22 4":"9 14 7 22 4"}"></label>`).join("");
@@ -1303,15 +1332,20 @@ const toiSheetTSV = () => toiSheetRows().map(r => r.join("\t")).join("\n") + "\n
 function exportBackup(){ download(base() + "_backup.json", JSON.stringify({setup:S, game:G}, null, 1), "application/json"); }
 
 /* ================================================================
-   Report: one printable landscape page built on Shot Chart's layout.
-   Top row: the shot map (we always shoot right, since the tracker knows
-   the ends), totals, the period split and goalies with GSAx. Middle:
-   cumulative xG on the game clock, power plays shaded from the penalty
-   timeline. Bottom: the skaters with the most and least xG on the ice
-   for us, results against time at each strength, and the lines and
-   pairs that actually played together.
+   Report: one printable portrait page, the same design as Shot Chart's.
+   Header: matchup, date, the Varsity Blues logo and the score. Then the
+   shot map (we always shoot right, since the tracker knows the ends),
+   momentum as cumulative xG on the game clock with power plays shaded
+   from the penalty timeline, and data and insights: plain-sentence
+   takeaways, head-to-head bars, the period split, goalies with GSAx,
+   results against time at each strength, the lines and pairs that
+   actually played together, and the skaters with the most and least xG
+   on the ice for us. Our team is always Varsity blue, theirs red.
 ================================================================= */
-const RC_US = "#1E62B8", RC_THEM = "#B0293C";
+const RC_US = "#044684", RC_THEM = "#C8283C";
+/* Loaded up front so the print dialog never opens before the logo has. */
+const LOGO = new Image(); LOGO.src = "uoft-logo.png";
+const showName = t => /^(u\s*of\s*t|uoft|u\s*of\s*toronto|university\s+of\s+toronto|(toronto\s+)?varsity\s*blues?|blues)$/i.test(String(t).trim()) ? "Varsity Blues" : t;
 const TIER_OF = {5:"HIGH", 8:"HIGH", 4:"MED", 6:"MED", 10:"MED", 11:"MED", 12:"MED"};
 function zone16(x, y){
   const g = geometry(x, y), d = g.d, a = g.a, left = y < 0;
@@ -1360,8 +1394,8 @@ function starMark(cx, cy, ro, ri, col){
 }
 function iconMark(kind, cx, cy, col){
   cx = +cx.toFixed(2); cy = +cy.toFixed(2);
-  if(kind === "GOAL") return starMark(cx, cy, 3.1, 1.3, col);
-  if(kind === "SAVE") return `<circle cx="${cx}" cy="${cy}" r="1.8" fill="${col}" stroke="#fff" stroke-width=".35"/>`;
+  if(kind === "GOAL") return starMark(cx, cy, 3.4, 1.45, col);
+  if(kind === "SAVE") return `<circle cx="${cx}" cy="${cy}" r="1.9" fill="${col}" stroke="#fff" stroke-width=".35"/>`;
   if(kind === "BLOCK") return `<rect x="${(cx-1.6).toFixed(2)}" y="${(cy-1.6).toFixed(2)}" width="3.2" height="3.2" fill="${col}" stroke="#fff" stroke-width=".35"/>`;
   return `<g stroke="${col}" stroke-width=".95" stroke-linecap="round"><line x1="${cx-1.7}" y1="${cy-1.7}" x2="${cx+1.7}" y2="${cy+1.7}"/><line x1="${cx-1.7}" y1="${cy+1.7}" x2="${cx+1.7}" y2="${cy-1.7}"/></g>`;
 }
@@ -1386,13 +1420,13 @@ function reportRink(D, shots){
     const flip = !usAttacksRight(s.p), x = flip ? -s.x : s.x, y = flip ? -s.y : s.y;
     return iconMark(s.result, x, -y, s.team === "us" ? RC_US : RC_THEM);
   }).join("");
-  const lab = (x, txt, col) => `<text x="${x}" y="-45.5" text-anchor="middle" font-size="5" font-weight="700" fill="${col}">${esc(txt)}</text>`;
+  const lab = (x, txt, col) => `<text x="${x}" y="-45.5" text-anchor="middle" font-size="4.6" font-weight="700" fill="${col}">${esc(txt)}</text>`;
   return `<svg viewBox="-104 -50 208 99" class="rinkfull">${fullRink()}${lab(-50, "← " + S.opp + " attacking", RC_THEM)}${lab(50, S.us + " attacking →", RC_US)}${marks}</svg>`;
 }
 function reportKeys(){
-  const ic = k => `<svg viewBox="-3.6 -3.6 7.2 7.2" class="rkeyi">${iconMark(k, 0, 0, "#48586A")}</svg>`;
-  return `<div class="keys"><span class="rkey">${ic("GOAL")} Goal</span><span class="rkey">${ic("SAVE")} Shot</span>
-    <span class="rkey">${ic("BLOCK")} Block</span><span class="rkey">${ic("MISS")} Miss</span><span class="sep"></span>
+  const ic = k => `<svg viewBox="-3.8 -3.8 7.6 7.6" class="rkeyi">${iconMark(k, 0, 0, "#48586A")}</svg>`;
+  return `<div class="keys"><span class="rkey">${ic("GOAL")} Goal</span><span class="rkey">${ic("SAVE")} Shot on net</span>
+    <span class="rkey">${ic("BLOCK")} Blocked</span><span class="rkey">${ic("MISS")} Missed</span><span class="sep"></span>
     <span><b style="background:${RC_US}"></b>${esc(S.us)}</span><span><b style="background:${RC_THEM}"></b>${esc(S.opp)}</span></div>`;
 }
 /* Shots into an empty net are kept apart so the opponent's GSAx only
@@ -1425,7 +1459,7 @@ function totalsTable(a, b){
 function periodTable(D, shots){
   const ps = [...new Set(shots.map(s => s.p))].sort((a,b) => a-b);
   if(ps.length < 2) return "";
-  return `<div><h2>By period</h2><table><thead><tr><th></th><th class="n">Goals</th><th class="n">SOG</th><th class="n">xGF</th><th class="n">xGA</th><th class="n">xGF%</th></tr></thead><tbody>` +
+  return `<div><h3>By period</h3><table><thead><tr><th></th><th class="n">Goals</th><th class="n">SOG</th><th class="n">xGF</th><th class="n">xGA</th><th class="n">xGF%</th></tr></thead><tbody>` +
     ps.map(p => { const sh = shots.filter(s => s.p === p), a = teamSummary(D, sh, "us"), b = teamSummary(D, sh, "them");
       return `<tr><td>${perLabel(p)}</td><td class="n">${a.g}-${b.g}</td><td class="n">${a.sog}-${b.sog}</td><td class="n">${a.xg.toFixed(2)}</td>
         <td class="n">${b.xg.toFixed(2)}</td><td class="n">${pctOf(a.xg, b.xg)}</td></tr>`; }).join("") + `</tbody></table></div>`;
@@ -1439,7 +1473,7 @@ function goalieTable(st, a){
       <td class="n">${sa ? (1 - ga/sa).toFixed(3).replace(/^0/, "") : ""}</td><td class="n">${xga.toFixed(2)}</td>
       <td class="n ${signCls(gsax)}">${sg2(gsax)}</td></tr>`; };
   const ours = Object.values(st).filter(r => r.p.pos === "G" && r.toi > 0).sort((x,y) => y.toi - x.toi);
-  return `<div><h2>Goalies <span class="sub">· GSAx = xGA − GA</span></h2><table><thead><tr><th>Goalie</th><th class="n">TOI</th><th class="n">SA</th><th class="n">GA</th><th class="n">SV%</th><th class="n">xGA</th><th class="n">GSAx</th></tr></thead><tbody>` +
+  return `<div><h3>Goalies <span class="sub">· GSAx = xGA − GA</span></h3><table><thead><tr><th>Goalie</th><th class="n">TOI</th><th class="n">SA</th><th class="n">GA</th><th class="n">SV%</th><th class="n">xGA</th><th class="n">GSAx</th></tr></thead><tbody>` +
     (ours.length ? ours.map(r => row(pname(r.p), fmt(r.toi), r.sa, r.ga, r.xga)).join("")
                  : `<tr><td colspan="7" class="empty">No ${esc(S.us)} goalie logged on the ice.</td></tr>`) +
     row(esc(S.opp), "", a.sog - a.ensog, a.g - a.eng, a.xg - a.enxg) + `</tbody></table></div>`;
@@ -1451,12 +1485,12 @@ function flowChart(D, shots, span, tl){
   const {periods, t0, t1, played} = span;
   const seq = shots.filter(s => s.result !== "BLOCK").map(s => ({s, t:elapsed(s.p, D.shotInfo[s.id].sec), xg:D.shotInfo[s.id].xg || 0}))
     .sort((a,b) => a.t - b.t);
-  const W = 980, H = 190, L = 30, R = 96, T = 8, B = 16;
+  const W = 760, H = 158, L = 30, R = 104, T = 10, B = 17;
   const tot = {us:0, them:0}; seq.forEach(e => tot[e.s.team] += e.xg);
   const top = Math.max(0.3, tot.us, tot.them) * 1.04, step = niceStep(top);
   const x = t => L + (t - t0) / Math.max(1, t1 - t0) * (W - L - R), y = v => H - B - v/top*(H - T - B);
   const f = v => v.toFixed(1), p = [], over = [];
-  tl.runs.filter(r => r.k !== "EV").forEach(r => p.push(`<rect x="${f(x(r.a))}" y="${T}" width="${f(Math.max(.8, x(r.b) - x(r.a)))}" height="${H-T-B}" fill="${r.k === "PP" ? "rgba(30,98,184,.11)" : "rgba(176,41,60,.10)"}"/>`));
+  tl.runs.filter(r => r.k !== "EV").forEach(r => p.push(`<rect x="${f(x(r.a))}" y="${T}" width="${f(Math.max(.8, x(r.b) - x(r.a)))}" height="${H-T-B}" fill="${r.k === "PP" ? "rgba(4,70,132,.11)" : "rgba(200,40,60,.10)"}"/>`));
   for(let v = step; v <= top + 1e-9; v += step)
     p.push(`<line x1="${L}" y1="${f(y(v))}" x2="${W-R}" y2="${f(y(v))}" stroke="#D3DBE2" stroke-dasharray="3 3"/><text x="${L-4}" y="${f(y(v)+3)}" text-anchor="end" font-size="8.5" fill="#7B8B9C">${v.toFixed(step < 1 ? (step < .1 ? 2 : 1) : 0)}</text>`);
   periods.forEach(q => { const xa = x(elapsed(q, periodLen(q)));
@@ -1471,7 +1505,7 @@ function flowChart(D, shots, span, tl){
     let run = 0, d = `M ${f(x(t0))} ${f(y(0))}`;
     seq.filter(e => e.s.team === team).forEach(e => { d += ` L ${f(x(e.t))} ${f(y(run))}`; run += e.xg; d += ` L ${f(x(e.t))} ${f(y(run))}`; });
     d += ` L ${f(x(played))} ${f(y(run))}`;
-    p.push(`<path d="${d}" fill="none" stroke="${col}" stroke-width="1.9" stroke-linejoin="round"/>`);
+    p.push(`<path d="${d}" fill="none" stroke="${col}" stroke-width="2.4" stroke-linejoin="round"/>`);
     ends.push({team, col, run, yy:y(run)});
   });
   /* Goals carry the running score, ours first. */
@@ -1479,10 +1513,10 @@ function flowChart(D, shots, span, tl){
   seq.forEach(e => { run[e.s.team] += e.xg; if(e.s.result !== "GOAL") return;
     if(e.s.team === "us") gu++; else gt++;
     const cx = x(e.t), cy = y(run[e.s.team]), col = e.s.team === "us" ? RC_US : RC_THEM;
-    over.push(`<circle cx="${f(cx)}" cy="${f(cy)}" r="3.4" fill="${col}" stroke="#fff" stroke-width="1.2"/><text x="${f(cx)}" y="${f(cy-6)}" text-anchor="middle" font-size="8.5" font-weight="700" fill="${col}">${gu}-${gt}</text>`); });
+    over.push(`<circle cx="${f(cx)}" cy="${f(cy)}" r="4" fill="${col}" stroke="#fff" stroke-width="1.3"/><text x="${f(cx)}" y="${f(cy-7)}" text-anchor="middle" font-size="9.5" font-weight="700" fill="${col}">${gu}-${gt}</text>`); });
   ends.sort((a,b) => a.yy - b.yy);
   if(ends.length === 2 && ends[1].yy - ends[0].yy < 11){ const m = (ends[0].yy + ends[1].yy)/2; ends[0].yy = m - 5.5; ends[1].yy = m + 5.5; }
-  ends.forEach(e => over.push(`<text x="${f(x(played)+5)}" y="${f(e.yy+3)}" font-size="9" font-weight="700" fill="${e.col}">${esc(e.team === "us" ? S.us : S.opp)} ${e.run.toFixed(2)}</text>`));
+  ends.forEach(e => over.push(`<text x="${f(x(played)+5)}" y="${f(e.yy+3)}" font-size="10" font-weight="700" fill="${e.col}">${esc(e.team === "us" ? S.us : S.opp)} ${e.run.toFixed(2)}</text>`));
   p.push(`<line x1="${L}" y1="${H-B}" x2="${W-R}" y2="${H-B}" stroke="#B8C4CF"/>`);
   return `<svg viewBox="0 0 ${W} ${H}" class="flowsvg">${p.join("")}${over.join("")}</svg>`;
 }
@@ -1491,9 +1525,9 @@ function flowChart(D, shots, span, tl){
 function leaderTables(st){
   const sk = Object.values(st).filter(r => r.p.pos !== "G" && r.toi > 0).sort((a,b) => b.xgf - a.xgf || b.toi - a.toi);
   const tois = sk.map(r => r.toi).sort((a,b) => a-b), med = tois.length ? tois[Math.floor(tois.length/2)] : 0;
-  const nTop = Math.min(5, Math.ceil(sk.length/2)), best = sk.slice(0, nTop);
-  const worst = sk.slice(nTop).filter(r => r.toi >= med/2).slice(-5).reverse();
-  const table = (title, sub, rows) => `<div><h2>${title} <span class="sub">${sub}</span></h2>` + (rows.length
+  const nTop = Math.min(4, Math.ceil(sk.length/2)), best = sk.slice(0, nTop);
+  const worst = sk.slice(nTop).filter(r => r.toi >= med/2).slice(-4).reverse();
+  const table = (title, sub, rows) => `<div><h3>${title} <span class="sub">${sub}</span></h3>` + (rows.length
     ? `<table><thead><tr><th>Skater</th><th class="n">TOI</th><th class="n">xGF</th><th class="n">xGA</th><th class="n">xG +/-</th></tr></thead><tbody>` +
       rows.map(r => `<tr><td class="nm">${pname(r.p)}</td><td class="n">${fmt(r.toi)}</td><td class="n">${r.xgf.toFixed(2)}</td><td class="n">${r.xga.toFixed(2)}</td>
         <td class="n ${signCls(r.xgf - r.xga)}">${sg2(r.xgf - r.xga)}</td></tr>`).join("") + `</tbody></table>`
@@ -1510,7 +1544,7 @@ function strengthTable(D, shots, tl){
   const keys = ["EV","PP","PK"].filter(k => tl.secs[k] >= 1 || rows[k].xgf + rows[k].xga > 0);
   const all = {xgf:0, xga:0, gf:0, ga:0}; keys.forEach(k => ["xgf","xga","gf","ga"].forEach(f => all[f] += rows[k][f]));
   const secs = tl.secs.EV + tl.secs.PP + tl.secs.PK;
-  return `<div><h2>By strength <span class="sub">· clock time</span></h2><table><thead><tr><th></th><th class="n">Time</th><th class="n">G</th><th class="n">xGF</th><th class="n">xGA</th><th class="n">xGF/60</th><th class="n">xGA/60</th></tr></thead><tbody>` +
+  return `<div><h3>By strength <span class="sub">· clock time</span></h3><table><thead><tr><th></th><th class="n">Time</th><th class="n">G</th><th class="n">xGF</th><th class="n">xGA</th><th class="n">xGF/60</th><th class="n">xGA/60</th></tr></thead><tbody>` +
     keys.map(k => line(k, rows[k], tl.secs[k])).join("") + line("All", all, secs, "tot") + `</tbody></table></div>`;
 }
 function unitStats(D, shots, scope, pos, size){
@@ -1529,17 +1563,89 @@ function unitTable(groups){
     ? rows.map(([k,u]) => `<tr><td>${esc(k.split(" ").join(" · "))}</td><td class="n">${fmt(u.toi)}</td><td class="n">${u.xgf.toFixed(2)}</td>
       <td class="n">${u.xga.toFixed(2)}</td><td class="n">${pctOf(u.xgf, u.xga)}</td></tr>`).join("")
     : `<tr><td colspan="5" class="empty">None with 20+ seconds together.</td></tr>`)).join("");
-  return `<div><h2>Units <span class="sub">· most time together</span></h2><table><thead><tr><th></th><th class="n">TOI</th><th class="n">xGF</th><th class="n">xGA</th><th class="n">xGF%</th></tr></thead><tbody>${body}</tbody></table></div>`;
+  return `<div><h3>Units <span class="sub">· most time together</span></h3><table><thead><tr><th></th><th class="n">TOI</th><th class="n">xGF</th><th class="n">xGA</th><th class="n">xGF%</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
-function reportHead(title, scopeLabel, a, b){
-  const when = new Date().toLocaleString([], {year:"numeric", month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"});
-  return `<div class="head"><h1>${esc(title)}</h1><span class="game">${esc(S.date)}</span>
-    <span class="final"><span style="color:${RC_US}">${esc(S.us)}</span> ${a.g} &ndash; ${b.g} <span style="color:${RC_THEM}">${esc(S.opp)}</span></span>
-    <span class="scope">${esc(scopeLabel)}</span><span class="when">${esc(when)}</span></div>`;
+/* Head-to-head bars: us on the left, them on the right, each bar split by
+   share so the bigger side shows at a glance. */
+function compareBars(a, b){
+  const sh = t => t.sog ? 100*t.g/t.sog : 0;
+  const rows = [["Goals", a.g, b.g, v => v], ["Expected goals (xG)", a.xg, b.xg, v => v.toFixed(2)],
+    ["Shots on net", a.sog, b.sog, v => v], ["Shot attempts", a.att, b.att, v => v],
+    ["High-danger chances", a.hd, b.hd, v => v], ["Shooting %", sh(a), sh(b), v => v.toFixed(1) + "%"]];
+  if(G.poss.length) rows.push(["O-zone time", a.oz, b.oz, v => fmt(v)]);
+  return `<div class="cmp"><div class="cmp-head"><span style="color:${RC_US}">${esc(S.us)}</span><span style="color:${RC_THEM}">${esc(S.opp)}</span></div>` +
+    rows.map(([lab, x, y, f]) => {
+      const lead = x > y + 1e-9 ? "a" : y > x + 1e-9 ? "b" : "";
+      /* Shares, not raw values: flex-grow under 1 in total leaves the track part empty. */
+      return `<div class="cmp-row"><span class="cv${lead === "a" ? " lead" : ""}" style="color:${RC_US}">${f(x)}</span>` +
+        `<div class="cmid"><div class="clab">${lab}</div><div class="ctrack">` +
+        (x + y > 0 ? `<i style="flex:${(100*x/(x+y)).toFixed(2)} 1 0; background:${RC_US}"></i><i style="flex:${(100*y/(x+y)).toFixed(2)} 1 0; background:${RC_THEM}"></i>` : "") +
+        `</div></div><span class="cv r${lead === "b" ? " lead" : ""}" style="color:${RC_THEM}">${f(y)}</span></div>`;
+    }).join("") + `</div>`;
+}
+/* The takeaways in plain sentences, most important first: who drove play,
+   whether the score matched it, where it was won, who drove it for us,
+   and the one chance everyone will remember. */
+function insights(D, shots, st, a, b){
+  const tag = t => `<b style="color:${t === "us" ? RC_US : RC_THEM}">${esc(t === "us" ? S.us : S.opp)}</b>`;
+  const out = [], tot = a.xg + b.xg, T = {us:a, them:b};
+  const lt = a.xg >= b.xg ? "us" : "them", ot = lt === "us" ? "them" : "us";
+  if(tot > 0){
+    const share = 100*T[lt].xg/tot;
+    out.push(Math.abs(a.xg - b.xg) < 0.15
+      ? `Even on chances: ${tag("us")} ${a.xg.toFixed(2)} xG, ${tag("them")} ${b.xg.toFixed(2)}.`
+      : `${tag(lt)} ${share >= 60 ? "controlled" : "had the edge in"} chance quality, ${T[lt].xg.toFixed(2)} to ${T[ot].xg.toFixed(2)} xG (${share.toFixed(0)}% share).`);
+  }
+  const gl = a.g > b.g ? "us" : b.g > a.g ? "them" : null;
+  if(gl && gl !== lt && Math.abs(a.xg - b.xg) >= 0.3)
+    out.push(`${tag(gl)} led on the scoreboard despite trailing on chances: finishing and goaltending made the difference.`);
+  else if(!gl && Math.abs(a.xg - b.xg) >= 0.5) out.push(`Tied on goals, but ${tag(lt)} created the better looks.`);
+  const fin = ["us","them"].map(t => ({t, d:T[t].g - T[t].xg})).sort((x,y) => Math.abs(y.d) - Math.abs(x.d))[0];
+  if(Math.abs(fin.d) >= 0.75)
+    out.push(`${tag(fin.t)} scored ${T[fin.t].g} on ${T[fin.t].xg.toFixed(2)} xG, finishing ${fin.d > 0 ? "well above" : "well below"} expectation.`);
+  if(a.hd !== b.hd && a.hd + b.hd >= 3){
+    const ht = a.hd > b.hd ? "us" : "them";
+    out.push(`${tag(ht)} won the slot: ${T[ht].hd} high-danger chances to ${T[ht === "us" ? "them" : "us"].hd}.`);
+  }
+  if(G.poss.length && a.oz + b.oz >= 60){
+    const zt = a.oz >= b.oz ? "us" : "them";
+    out.push(`${tag(zt)} owned the zone time: ${fmt(T[zt].oz)} in the offensive zone (${pctOf(T[zt].oz, T[zt === "us" ? "them" : "us"].oz)}).`);
+  }
+  const gk = Object.values(st).filter(r => r.p.pos === "G" && r.toi > 0)
+    .map(r => ({who:`${tag("us")} goalie ${pname(r.p)}`, gsax:r.xga - r.ga, ga:r.ga, xga:r.xga}))
+    .concat([{who:`${tag("them")} goaltending`, gsax:(a.xg - a.enxg) - (a.g - a.eng), ga:a.g - a.eng, xga:a.xg - a.enxg}])
+    .sort((x,y) => Math.abs(y.gsax) - Math.abs(x.gsax))[0];
+  if(gk && Math.abs(gk.gsax) >= 0.5)
+    out.push(`${gk.who} ${gk.gsax > 0 ? "stopped" : "gave up"} ${Math.abs(gk.gsax).toFixed(2)} more goals than expected (${gk.ga} on ${gk.xga.toFixed(2)} xG against).`);
+  const ps = [...new Set(shots.map(s => s.p))].sort((x,y) => x-y);
+  if(ps.length > 1){
+    const best = ps.map(p => { const sh = shots.filter(s => s.p === p), x = teamSummary(D, sh, "us").xg, y = teamSummary(D, sh, "them").xg;
+      return {p, t:x >= y ? "us" : "them", share:x + y > 0 ? 100*Math.max(x, y)/(x + y) : 50, tot:x + y}; })
+      .filter(o => o.tot >= 0.3).sort((x,y) => y.share - x.share)[0];
+    if(best && best.share >= 62) out.push(`${best.p <= 3 ? "Period " + best.p : perLabel(best.p)} belonged to ${tag(best.t)}: ${best.share.toFixed(0)}% of the xG.`);
+  }
+  const sk = Object.values(st).filter(r => r.p.pos !== "G" && r.toi >= 120).sort((x,y) => (y.xgf - y.xga) - (x.xgf - x.xga))[0];
+  if(sk && sk.xgf - sk.xga >= 0.3)
+    out.push(`#${pname(sk.p)} drove play: ${sk.xgf.toFixed(2)} xG for, ${sk.xga.toFixed(2)} against with them on the ice.`);
+  const top = shots.filter(s => s.result !== "BLOCK").sort((x,y) => (D.shotInfo[y.id].xg || 0) - (D.shotInfo[x.id].xg || 0))[0];
+  if(top){ const I = D.shotInfo[top.id];
+    out.push(`Best chance: ${tag(top.team)}, ${perLabel(top.p)} ${fmt(I.sec)}, ${esc(String(TYPE_LABEL[top.type] || "shot").toLowerCase())} from ${Math.round(I.distance)} ft (${(I.xg || 0).toFixed(2)} xG), ${top.result === "GOAL" ? "scored" : "no goal"}.`); }
+  if(a.ppo || b.ppo) out.push(`Power plays: ${tag("us")} ${a.ppg} for ${a.ppo}, ${tag("them")} ${b.ppg} for ${b.ppo}.`);
+  return out.slice(0, 6);
+}
+/* Final once the third period's clock has run out; otherwise where the
+   game stands, so an intermission report says so. */
+function statusLine(scope){
+  if(scope) return (scope <= 3 ? "Period " + scope : perLabel(scope)) + " only";
+  const c = now();
+  if(c.v <= 0 && c.p >= 3) return c.p >= 4 ? "Final &middot; Overtime" : "Final";
+  if(c.v <= 0) return "After " + perLabel(c.p);
+  if(c.v >= periodLen(c.p)) return c.p > 1 ? "After " + perLabel(c.p - 1) : "Pregame";
+  return perLabel(c.p) + " " + fmt(c.v);
 }
 function buildReport(scope){
   const D = derive(), shots = D.ordered.filter(s => !scope || s.p === scope);
-  const st = playerStats(D, scope), label = scope ? (scope <= 3 ? "Period " + scope : perLabel(scope)) : "Full Game";
+  const st = playerStats(D, scope);
   const span = reportSpan(D, scope), tl = span ? strengthRuns(D, span.t0, span.played) : {runs:[], secs:{EV:0, PP:0, PK:0}, oz:{us:0, them:0}};
   const a = teamSummary(D, shots, "us"), b = teamSummary(D, shots, "them");
   a.oz = tl.oz.us; b.oz = tl.oz.them;
@@ -1550,15 +1656,46 @@ function buildReport(scope){
                    untyped ? `${untyped} shot${untyped > 1 ? "s" : ""} with no type (scored as unknown)` : ""].filter(Boolean).join(" · ");
   const ot3 = scope && scope >= 4 && S.otFormat === "3v3";
   const units = ot3 ? unitTable([["3v3 units", unitStats(D, shots, scope, null, 3).slice(0, 6)]])
-    : unitTable([["Forward lines", unitStats(D, shots, scope, "F", 3).slice(0, 4)], ["D pairs", unitStats(D, shots, scope, "D", 2).slice(0, 3)]]);
-  const foot = `<div class="foot"><span>xG from a five-feature model fit on 905,483 NHL attempts; blocks are placed but not scored. On-ice numbers come from tracked shifts,
-    strength time from the clock and logged penalties. One game is a small sample.</span><span>${esc(caveats)}</span></div>`;
-  return `<section class="rp">${reportHead("Game Report", label, a, b)}
-    <div class="upper"><div>${reportRink(D, shots)}${reportKeys()}</div><div><h2>Totals</h2>${totalsTable(a, b)}</div>
-      <div class="stack">${periodTable(D, shots)}${goalieTable(st, a)}</div></div>
-    <div class="flow"><h2>Cumulative xG by game clock <span class="sub">· shaded: <span style="color:${RC_US}">${esc(S.us)} power play</span>,
-      <span style="color:${RC_THEM}">${esc(S.opp)} power play</span> · labels are the score after each goal</span></h2>${flowChart(D, shots, span, tl)}</div>
-    <div class="four">${leaderTables(st)}${strengthTable(D, shots, tl)}${units}</div>${foot}</section>`;
+    : unitTable([["Forward lines", unitStats(D, shots, scope, "F", 3).slice(0, 3)], ["D pairs", unitStats(D, shots, scope, "D", 2).slice(0, 2)]]);
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(S.date || ""), d = m ? new Date(+m[1], +m[2]-1, +m[3]) : null;
+  const short = d ? ` (${d.getMonth()+1}/${d.getDate()})` : "";
+  const long = d ? d.toLocaleDateString([], {weekday:"short", year:"numeric", month:"short", day:"numeric"}) : "Game report";
+  const usTag = `<span style="color:${RC_US}">${esc(showName(S.us))}</span>`, themTag = `<span style="color:${RC_THEM}">${esc(S.opp)}</span>`;
+  const match = S.venue === "away" ? `${usTag} @ ${themTag}` : `${themTag} @ ${usTag}`;
+  const logo = LOGO.naturalWidth ? `<img class="logo" src="${LOGO.src}" alt="University of Toronto Varsity Blues">` : "";
+  const ins = insights(D, shots, st, a, b);
+  return `<section class="rp">
+  <header class="head">
+    <div class="side l"><div class="match">${match}${esc(short)}</div><div class="meta">${esc(long)}</div></div>
+    ${logo}
+    <div class="side r">
+      <div class="score"><span class="tm" style="color:${RC_US}">${esc(showName(S.us))}</span><span class="num">${a.g}&ndash;${b.g}</span><span class="tm" style="color:${RC_THEM}">${esc(S.opp)}</span></div>
+      <div class="meta">${statusLine(scope)}</div>
+    </div>
+  </header>
+  <section class="blk">
+    <h2>Shot map <span class="sub">&middot; ${esc(S.us)} always shooting right &middot; stars are goals</span></h2>
+    ${reportRink(D, shots)}${reportKeys()}
+  </section>
+  <section class="blk">
+    <h2>Momentum <span class="sub">&middot; cumulative xG on the game clock &middot; shaded:
+      <span style="color:${RC_US}">${esc(S.us)} power play</span>, <span style="color:${RC_THEM}">${esc(S.opp)} power play</span> &middot; dots are goals with the score</span></h2>
+    ${flowChart(D, shots, span, tl)}
+  </section>
+  <section class="blk">
+    <h2>Data and insights</h2>
+    <div class="two">
+      <div class="ins"><h3>Takeaways</h3>${ins.length ? `<ul>${ins.map(t => `<li>${t}</li>`).join("")}</ul>` : `<p class="empty">Not enough shots for takeaways yet.</p>`}</div>
+      <div><h3>Head to head</h3>${compareBars(a, b)}</div>
+    </div>
+    <div class="two">
+      <div class="stack">${periodTable(D, shots)}${goalieTable(st, a)}</div>
+      <div class="stack">${strengthTable(D, shots, tl)}${units}</div>
+    </div>
+    <div class="two">${leaderTables(st)}</div>
+  </section>
+  <div class="foot"><span>xG (expected goals) is the chance a shot goes in, from a five-feature model fit on 905,483 NHL attempts; blocks are placed but not scored.
+    On-ice numbers come from tracked shifts, strength time from the clock and logged penalties. One game is a small sample.</span><span>${esc(caveats)}</span></div></section>`;
 }
 function renderScopeSelect(D){
   const sel = $("rScope"), cur = sel.value, ps = periodsInGame(D);
@@ -1566,9 +1703,9 @@ function renderScopeSelect(D){
   sel.value = [...sel.options].some(o => o.value === cur) ? cur : "";
 }
 /* One page, always: lay the report out offscreen at the printable size of
-   a landscape letter page and zoom it down if a long game runs over. */
+   a portrait letter page and zoom it down if a long game runs over. */
 function fitReport(out){
-  const page = out.querySelector(".rp"), fit = (8.5 - 2*9/25.4) * 96 - 6;
+  const page = out.querySelector(".rp"), fit = (11 - 2*9/25.4) * 96 - 6;
   page.style.zoom = "";
   out.style.cssText = "display:block; position:absolute; left:-20000px; top:0";
   const h = page.getBoundingClientRect().height;
@@ -1576,10 +1713,12 @@ function fitReport(out){
   if(h > fit) page.style.zoom = (fit / h).toFixed(3);
 }
 function exportReport(){
-  const v = $("rScope").value;
-  $("reportOut").innerHTML = buildReport(v ? +v : null);
-  fitReport($("reportOut"));
-  window.print();
+  const v = $("rScope").value, go = () => {
+    $("reportOut").innerHTML = buildReport(v ? +v : null);
+    fitReport($("reportOut"));
+    window.print();
+  };
+  if(LOGO.complete) go(); else LOGO.onload = LOGO.onerror = go;
 }
 
 /* ================================================================
@@ -1706,7 +1845,7 @@ $("xToiFile").onclick = () => download(base() + "_TOI_TRACKER.tsv", toiSheetTSV(
 
 $("sSave").onclick = () => {
   const r = readSetup();
-  Object.assign(S, {date:$("sDate").value || today(), us:$("sUs").value.trim() || "UofT", opp:$("sOpp").value.trim() || "Opponent",
+  Object.assign(S, {date:$("sDate").value || today(), us:$("sUs").value.trim() || "UofT", opp:$("sOpp").value.trim() || "Opponent", venue:$("sVenue").value,
     periodMin:Math.max(1, +$("sPer").value || 20), otMin:Math.max(1, +$("sOt").value || 5), otFormat:$("sOtf").value,
     usRightP1:$("sEnd").value === "R", roster:r.roster, lines:r.lines});
   saveSetup();
