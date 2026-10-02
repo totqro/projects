@@ -1014,6 +1014,14 @@ def run_analysis(
         print(f"Logged {n_logged} new prediction(s) ({', '.join(versions)}) "
               f"to data/predictions_log.jsonl")
 
+    # Score logged predictions whose games are now final (Performance
+    # History tab). all_games is the completed-games window fetched above.
+    try:
+        from src.analysis.performance import update_performance
+        update_performance(all_games)
+    except Exception as e:
+        print(f"  Warning: could not update performance.json: {e}")
+
     # Generate parlay performance data from historical results
     parlay_perf = get_parlay_performance(stake=stake)
     if parlay_perf:

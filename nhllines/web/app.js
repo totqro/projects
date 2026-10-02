@@ -45,12 +45,44 @@ async function loadAnalysis() {
     }
 }
 
+// Performance History: performance.json holds every logged prediction
+// scored against its final score (rebuilt each run), plus the old Mar-Jun
+// 2026 backtest as its own season. Stats are computed for the selected season.
+let perfData = null;
+
 async function loadPerformanceData() {
     try {
-        const r = await fetch(`backtest_results.json?v=${Date.now()}`);
+        const r = await fetch(`performance.json?v=${Date.now()}`);
         if (!r.ok) { displayNoPerformanceData(); return; }
-        displayPerformance(await r.json());
+        perfData = await r.json();
+        const sel = $('perf-season');
+        const seasons = perfData.seasons || [];
+        // Default to the current season even before its first game is scored.
+        const now = new Date();
+        const startYr = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
+        const current = `${startYr}-${String(startYr + 1).slice(2)}`;
+        if (!seasons.some(s => s.key === current)) seasons.unshift({key: current, label: current});
+        const prev = sel.value;
+        sel.innerHTML = seasons.map(s => `<option value="${s.key}">${s.label}</option>`).join('')
+            + `<option value="all">All seasons</option>`;
+        sel.value = prev && [...sel.options].some(o => o.value === prev) ? prev : current;
+        applyPerfSeason();
     } catch(e) { console.error(e); displayNoPerformanceData(); }
+}
+
+function applyPerfSeason() {
+    if (!perfData) return;
+    const season = $('perf-season').value;
+    const results = (perfData.results || []).filter(r => season === 'all' || r.season === season);
+    if (!results.length) { displayNoPerformanceData('No completed games scored for this season yet.'); return; }
+    const n = results.length;
+    const withTotal = results.filter(r => r.total_error != null);
+    displayPerformance({
+        results,
+        winner_accuracy: results.filter(r => r.winner_correct).length / n,
+        within_1_goal: withTotal.length ? withTotal.filter(r => r.total_error <= 1).length / withTotal.length : null,
+        avg_total_error: withTotal.length ? withTotal.reduce((a, r) => a + r.total_error, 0) / withTotal.length : null,
+    });
 }
 
 function displayAnalysis(data) {
@@ -253,7 +285,7 @@ function displayPerformance(data) {
     $('perf-total-within1').textContent = data.within_1_goal != null ? pct(data.within_1_goal) : '-';
     $('perf-total-exact').textContent = data.avg_total_error != null ? data.avg_total_error.toFixed(2) : '-';
 
-    const diffs = results.map(r => Math.abs(Math.round(r.predicted_total) - r.actual_total));
+    const diffs = results.filter(r => r.predicted_total != null).map(r => Math.abs(Math.round(r.predicted_total) - r.actual_total));
     const greenCount = diffs.filter(d => d === 0).length;
     const yellowCount = diffs.filter(d => d === 1).length;
     const redCount = diffs.filter(d => d >= 2).length;
@@ -261,9 +293,10 @@ function displayPerformance(data) {
     $('total-green').textContent = greenCount;
     $('total-yellow').textContent = yellowCount;
     $('total-red').textContent = redCount;
-    $('total-green-pct').textContent = pct(greenCount / n);
-    $('total-yellow-pct').textContent = pct(yellowCount / n);
-    $('total-red-pct').textContent = pct(redCount / n);
+    const nt = Math.max(diffs.length, 1);
+    $('total-green-pct').textContent = pct(greenCount / nt);
+    $('total-yellow-pct').textContent = pct(yellowCount / nt);
+    $('total-red-pct').textContent = pct(redCount / nt);
 
     $('recent-results-list').innerHTML = results.slice(0, 60).map(r => {
         const diff = Math.abs(Math.round(r.predicted_total) - r.actual_total);
@@ -414,8 +447,8 @@ function renderTotals(t) {
         </div>`;
 }
 
-function displayNoPerformanceData() {
-    $('recent-results-list').innerHTML = `<div class="no-data"><div class="no-data-icon">📊</div><p>No performance data yet. Run backtest.py to generate.</p></div>`;
+function displayNoPerformanceData(msg) {
+    $('recent-results-list').innerHTML = `<div class="no-data"><div class="no-data-icon">📊</div><p>${msg || 'No performance data yet.'}</p></div>`;
     ['perf-total-bets','perf-win-rate','perf-total-exact','perf-total-within1'].forEach(id => $(id).textContent = '-');
     ['total-green','total-yellow','total-red'].forEach(id => $(id).textContent = '0');
 }

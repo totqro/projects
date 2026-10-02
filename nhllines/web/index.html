@@ -89,6 +89,12 @@
 
         <!-- Performance History Tab -->
         <div id="performance-tab" class="tab-content" style="display: none;">
+            <div class="games-filter-bar">
+                <label class="cy-field cy-field--select">
+                    <span class="cy-sr-only">Season</span>
+                    <select id="perf-season" class="filter-select cy-select" onchange="applyPerfSeason()"></select>
+                </label>
+            </div>
             <section class="summary-card cy-panel cy-card">
                 <h2 class="cy-label cy-slash">Prediction Accuracy</h2>
                 <div class="stats-grid">
@@ -137,7 +143,7 @@
             </section>
 
             <section class="recent-results cy-panel cy-panel--terminal cy-card">
-                <div class="cy-termbar">backtest_results.json <span class="cy-termbar__right">last 60</span></div>
+                <div class="cy-termbar">performance.json <span class="cy-termbar__right">last 60</span></div>
                 <h2 class="cy-label cy-slash">Recent Game Predictions</h2>
                 <div id="recent-results-list"></div>
             </section>
@@ -190,6 +196,6 @@
         <a href="https://github.com/totqro" target="_blank" rel="noopener">GitHub</a>
     </footer>
 
-    <script src="app.js?v=17.1"></script>
+    <script src="app.js?v=17.2"></script>
 </body>
 </html>

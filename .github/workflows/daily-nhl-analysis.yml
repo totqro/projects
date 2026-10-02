@@ -2,13 +2,18 @@ name: Daily NHL Game Predictions
 
 on:
   schedule:
-    # GitHub delays top-of-the-hour crons when its scheduler is busy: the old
-    # '0 17' started 2-5 hours late every day in Sept 2026 (19:13 to 22:26
-    # UTC), sometimes near puck drop. Off-the-hour minutes are picked up far
-    # more reliably. Two runs: midday (12:23 PM EDT), and a pre-game refresh
-    # (5:41 PM EDT) that reprices with closer-to-close odds and covers a
-    # midday run that was delayed or failed. The prediction log dedups by
-    # game and day, so the second run doesn't double-log.
+    # GitHub delays scheduled runs when its scheduler is busy, often by hours
+    # (the old '0 17' started 2-5 hours late every day in Sept 2026, and the
+    # 21:41 run below started 3h23m late on Oct 1), so there are three runs,
+    # all off the top of the hour:
+    #   10:37 UTC (6:37 AM EDT): first run of the new slate (the slate rolls
+    #     over at 6 AM ET), so the day's games and yesterday's results are up
+    #     by morning even when it is delayed.
+    #   16:23 UTC (12:23 PM EDT): midday refresh.
+    #   21:41 UTC (5:41 PM EDT): pre-game refresh with closer-to-close odds.
+    # The prediction log dedups by game and slate, so later runs don't
+    # double-log, and already-started games stay on the site.
+    - cron: '37 10 * * *'
     - cron: '23 16 * * *'
     - cron: '41 21 * * *'
   workflow_dispatch: # Allow manual trigger
@@ -93,12 +98,12 @@ jobs:
             echo "No NHL games scheduled today, skipping analysis"
           fi
 
-      # Weekly steps (refit, backtest) run once on Sunday: on the midday
-      # scheduled run or a manual run, not again on the pre-game refresh.
+      # Weekly steps (refit, backtest) run once on Sunday: on the morning
+      # scheduled run or a manual run, not again on the later refreshes.
       - name: Check day of week
         id: check-day
         run: |
-          if [ "$(date +%u)" == "7" ] && [ "${{ github.event.schedule }}" != "41 21 * * *" ]; then
+          if [ "$(date +%u)" == "7" ] && { [ "${{ github.event_name }}" != "schedule" ] || [ "${{ github.event.schedule }}" == "37 10 * * *" ]; }; then
             echo "is_sunday=true" >> $GITHUB_OUTPUT
           else
             echo "is_sunday=false" >> $GITHUB_OUTPUT
@@ -181,7 +186,8 @@ jobs:
           # bare list would silently stop committing the other data files on
           # every gameless day.
           for f in bet_results.json analysis_history.json latest_analysis.json \
-                   model_feedback.json backtest_results.json predictions_log.jsonl; do
+                   model_feedback.json backtest_results.json predictions_log.jsonl \
+                   performance.json; do
             if [ -f "nhllines/data/$f" ]; then
               git add "nhllines/data/$f"
             fi
