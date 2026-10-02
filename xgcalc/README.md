@@ -295,15 +295,23 @@ tag, so the xG matches the tracker's exactly. `OnIce`, `Goalie` and
 `OnIceTeam` feed the report's on-ice xG per skater and GSAx per goalie. An
 older export without `OnIceTeam` gets a picker for whose players those are.
 
-**Export PDF** prints a one-page landscape game report for the full game or
-any period: the full rink with home and away held on their own ends, totals,
-the period split, goaltending with GSAx (xGA minus GA, empty-net shots left
-out; one row per goalie when the file names them, otherwise one per team),
-cumulative xG with the score at each goal, and a bottom row of the skaters
-with the highest and lowest on-ice xG, top shooters when the file has a
-`Player` column, xG by strength, and the six best chances. The shots file
-carries no TOI, so the lowest list keeps to skaters on the ice for at least
-half the median skater's attempts.
+**Export PDF** prints a one-page portrait game report for the full game or
+any period, read top to bottom. The header has the matchup (away @ home) and
+game date, the Varsity Blues logo, and the score, marked Final, Overtime or
+Shootout. UofT is always Varsity blue (`#044684`) and the opponent is always
+red; when neither team name reads as UofT, the tracked team (then home) takes
+the blue. Below that: the full rink with the blue team always shooting right,
+momentum (cumulative xG with the score at each goal), then **Data and
+insights**: plain-sentence takeaways, head-to-head bars (goals, xG, shots,
+attempts, high-danger chances, shooting %), the period split, goaltending
+with GSAx (xGA minus GA, empty-net shots left out; one row per goalie when
+the file names them, otherwise one per team), the best chances, xG by
+strength, and, when the file has them, the skaters with the best and worst
+on-ice xG or the top shooters. The shots file carries no TOI, so the worst
+list keeps to skaters on the ice for at least half the median skater's
+attempts. The date defaults to the one in the file name (tracker exports
+start with it), else today. Shootout attempts (period `SO`) stay out of the
+numbers and only add the deciding goal to a game tied after play.
 
 X/Y are raw NHL rink feet. Shots at the left end are mirrored onto the
 attacking-right frame (net at x = 89) — flipping x flips y with it, or every
