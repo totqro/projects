@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import threading
 import time
+from zoneinfo import ZoneInfo
 
 BASE_URL = "https://api-web.nhle.com/v1"
 CACHE_DIR = Path(__file__).parent.parent.parent / "cache"
@@ -67,6 +68,31 @@ def nhl_get(url: str, timeout: float = 15, **kwargs) -> requests.Response:
             wait = 2 ** attempt
         time.sleep(min(_NHL_MAX_BACKOFF, max(wait, 1.0)))
     return resp
+
+
+# The day's slate is an Eastern-time thing: a 10:10 PM ET puck drop is
+# 02:10 UTC the next day, and the CI runner's clock is UTC. A slate runs until
+# SLATE_ROLLOVER_HOUR ET the next morning, so a late-night run still belongs
+# to that evening's games and doesn't jump ahead to tomorrow's.
+ET = ZoneInfo("America/New_York")
+SLATE_ROLLOVER_HOUR = 6
+
+
+def slate_date(now: datetime = None) -> str:
+    """The NHL slate (ET date, YYYY-MM-DD) a run at `now` belongs to."""
+    now = now.astimezone(ET) if now else datetime.now(ET)
+    return (now - timedelta(hours=SLATE_ROLLOVER_HOUR)).strftime("%Y-%m-%d")
+
+
+def game_slate(start_time_utc: str) -> str:
+    """The slate a game belongs to: its ET calendar date. Takes an ISO
+    timestamp such as the odds feed's commence_time ("...Z"); "" if
+    unparseable."""
+    try:
+        t = datetime.fromisoformat(start_time_utc.replace("Z", "+00:00"))
+    except (AttributeError, ValueError):
+        return ""
+    return t.astimezone(ET).strftime("%Y-%m-%d")
 
 
 def current_season() -> str:
@@ -306,8 +332,8 @@ def fetch_season_games(season: str = "20252026", days_back: int = 90) -> list:
 
 
 def fetch_todays_games() -> list:
-    """Fetch today's scheduled games."""
-    today = datetime.now().strftime("%Y-%m-%d")
+    """Fetch the current slate's scheduled games (see slate_date)."""
+    today = slate_date()
     schedule = fetch_schedule(today)
     # Filter to today's games only, not yet final
     todays = [g for g in schedule if g["date"] == today]
