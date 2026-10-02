@@ -18,6 +18,7 @@ ids) — teams meet at most once per date, so the tuple is unique either way.
 
 import json
 from datetime import datetime, timezone
+from src.data.nhl_data import slate_date
 from pathlib import Path
 
 LOG_PATH = Path(__file__).resolve().parents[2] / "data" / "predictions_log.jsonl"
@@ -75,7 +76,11 @@ def log_predictions(games: list, path: Path = LOG_PATH,
     path.parent.mkdir(parents=True, exist_ok=True)
     existing = _existing_keys(path)
     now = datetime.now(timezone.utc)
-    run_date = now.strftime("%Y-%m-%d")
+    # The slate (ET date, rolling over at 6 AM ET), not the UTC date: a
+    # 9 PM ET run is the next day in UTC, which used to log that night's
+    # games a second time and log tomorrow's under tomorrow's date, so the
+    # next day's real runs were deduped away.
+    run_date = slate_date(now)
 
     written = 0
     with open(path, "a") as f:

@@ -50,6 +50,7 @@ from src.models import (
     StreamlinedNHLMLModel,
 )
 from src.models import elo_production, xg_production
+from src.data.nhl_data import slate_date, game_slate
 from src.analysis import (
     evaluate_all_bets,
     format_recommendations,
@@ -91,6 +92,34 @@ ML_WEIGHT_FULL_GP = 20
 def moneyline_data_weight(home_gp: int, away_gp: int) -> float:
     frac = min(1.0, max(0, min(home_gp, away_gp)) / ML_WEIGHT_FULL_GP)
     return ML_WEIGHT_MIN + (ML_WEIGHT_MAX - ML_WEIGHT_MIN) * frac
+
+
+def _carry_over_started_games(output: dict, output_path: Path):
+    """Keep the whole slate on the site until it rolls over the next morning.
+
+    Each run only analyzes games that haven't started (odds go live at puck
+    drop), so a run during the evening would drop the early games from
+    latest_analysis.json. Carry their analysis, and any bets recommended for
+    them, over from the previous run when they belong to the same slate.
+    Earlier slates and games without a start time are not carried."""
+    slate = slate_date()
+    output["slate_date"] = slate
+    try:
+        prev = json.loads(output_path.read_text())
+    except (OSError, ValueError):
+        return
+    have = {g["game"] for g in output["games_analyzed"]}
+    carried = [g for g in prev.get("games_analyzed", [])
+               if g.get("game") not in have
+               and game_slate(g.get("start_time", "")) == slate]
+    if not carried:
+        return
+    labels = {g["game"] for g in carried}
+    output["games_analyzed"].extend(dict(g, started=True) for g in carried)
+    output["recommendations"].extend(
+        r for r in prev.get("recommendations", []) if r.get("game") in labels)
+    print(f"  Kept {len(carried)} already-started game(s) from earlier today: "
+          + ", ".join(sorted(labels)))
 
 
 def run_analysis(
@@ -312,28 +341,12 @@ def run_analysis(
             
             odds_games = pre_game_only
             
-            # Filter to today's games only (commence_time is UTC, we're EST/UTC-5)
-            # Include today and tomorrow UTC to catch evening EST games
-            today = datetime.now()
-            today_str = today.strftime("%Y-%m-%d")
-            tomorrow_str = (today + timedelta(days=1)).strftime("%Y-%m-%d")
-            odds_games = [
-                g for g in odds_games
-                if g["commence_time"][:10] in (today_str, tomorrow_str)
-            ]
-            # Remove games that are clearly tomorrow EST (UTC afternoon+)
-            # Games starting after ~10am UTC tomorrow are tomorrow's games EST
-            filtered = []
-            for g in odds_games:
-                ct = g["commence_time"]
-                if ct[:10] == today_str:
-                    filtered.append(g)
-                elif ct[:10] == tomorrow_str:
-                    # Tomorrow UTC but before 10:00 UTC = tonight EST
-                    hour = int(ct[11:13]) if len(ct) > 13 else 0
-                    if hour < 10:
-                        filtered.append(g)
-            odds_games = filtered
+            # Only this slate's games (ET date, rolling over at 6 AM ET).
+            # This used to compare UTC dates against the runner's clock,
+            # which is UTC: a run after 8 PM ET picked up tomorrow's games.
+            slate = slate_date()
+            odds_games = [g for g in odds_games
+                          if game_slate(g["commence_time"]) == slate]
             print(f"  Found odds for {len(odds_games)} games today (pre-game only)")
         except Exception as e:
             print(f"  Warning: Could not fetch odds: {e}")
@@ -988,6 +1001,7 @@ def run_analysis(
 
     output_path = Path(__file__).parent / "data" / "latest_analysis.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)
+    _carry_over_started_games(output, output_path)
     output_path.write_text(json.dumps(output, indent=2, default=str))
     print(f"Full analysis saved to: {output_path}")
 
