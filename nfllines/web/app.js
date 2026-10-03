@@ -75,6 +75,19 @@ function statusText(g) {
     }
 }
 
+// Projected score in whole points. Rounding can turn a close call into a tie
+// (22.2 - 21.7 shows as 22 - 22), so the model's pick then wins by 1, using
+// whichever split keeps the total nearest the projection.
+function roundedScore(g) {
+    let home = Math.round(g.expected_home_points), away = Math.round(g.expected_away_points);
+    if (home === away) {
+        const r = home, up = Math.abs(2 * r + 1 - g.expected_total) < Math.abs(2 * r - 1 - g.expected_total);
+        const [fav, dog] = up ? [r + 1, r] : [r, r - 1];
+        [home, away] = g.home_win_prob > 0.5 ? [fav, dog] : [dog, fav];
+    }
+    return { home, away };
+}
+
 function renderGameCard(g, i) {
     const has = g.home_win_prob != null;
     const hp = has ? g.home_win_prob : 0.5, ap = 1 - hp;
@@ -108,7 +121,7 @@ function renderGameCard(g, i) {
         <div class="gc-footer" onclick="toggleGC(${i})">
             <div class="gc-total">
                 <span class="gc-total-unit">Projected</span>
-                <span class="gc-total-num">${has ? `${g.away} ${Math.round(g.expected_away_points)} - ${g.home} ${Math.round(g.expected_home_points)}` : '—'}</span>
+                <span class="gc-total-num">${has ? `${g.away} ${roundedScore(g).away} - ${g.home} ${roundedScore(g).home}` : '—'}</span>
                 ${mkt}
             </div>
             <div class="gc-conf">
@@ -147,7 +160,7 @@ function renderGameDetails(g) {
     let h = backupNote + `<div class="details-section"><h3>Model vs Vegas</h3><div class="advanced-stats-grid">
         ${card('Model favours', modelFav)}
         ${card('Vegas favours', vegasFav(g))}
-        ${card('Projected winning margin', `${fav} by ${Math.round(Math.abs(g.expected_margin))}`)}
+        ${card('Projected winning margin', `${fav} by ${Math.max(1, Math.round(Math.abs(g.expected_margin)))}`)}
         ${card('Projected total points', Math.round(g.expected_total))}
     </div></div>`;
     if (g.status === 'final') {
