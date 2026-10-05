@@ -298,6 +298,8 @@ function displayPerformance(data) {
     $('total-yellow-pct').textContent = pct(yellowCount / nt);
     $('total-red-pct').textContent = pct(redCount / nt);
 
+    renderVegas(results);
+
     $('recent-results-list').innerHTML = results.slice(0, 60).map(r => {
         const diff = Math.abs(Math.round(r.predicted_total) - r.actual_total);
         const dot = diff === 0 ? '🟢' : diff === 1 ? '🟡' : '🔴';
@@ -310,7 +312,7 @@ function displayPerformance(data) {
         const dateStr = d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
         return `<div class="pred-result-row">
             <span class="pred-result-date">${dateStr}</span>
-            <span class="pred-result-matchup">${r.game}</span>
+            <span class="pred-result-matchup">${r.game}${r.market_pick ? `<span class="pred-result-date"> · Vegas ${r.market_correct ? '✅' : '❌'} ${r.market_pick} ${pct(r.market_pick_prob, 0)}</span>` : ''}</span>
             <span class="pred-result-winner">${winIcon} ${r.predicted_winner}${score ? `<span class="score"> ${score}</span>` : ''}</span>
             <span class="pred-result-total ${cls}">${dot} ${predicted}<span class="actual"> · ${r.actual_total}</span></span>
         </div>`;
@@ -447,7 +449,57 @@ function renderTotals(t) {
         </div>`;
 }
 
+// Model vs Vegas vs always picking the home team, in plain terms. Only games
+// with a pre-game Vegas line count, so all three rows grade the same games.
+const rec = (w, n) => `${w}-${n - w}`;
+const tbl = rows => rows.map(([a, b, c, strong]) => `<div class="pred-result-row bench-row${strong ? ' bench-row--model' : ''}">
+        <span class="pred-result-matchup">${a}</span>
+        <span class="pred-result-winner">${b}</span>
+        <span class="pred-result-winner"><span class="score">${c}</span></span>
+    </div>`).join('');
+
+function renderVegas(results) {
+    const g = results.filter(r => r.market_pick);
+    if (!g.length) {
+        $('bench-table').innerHTML = `<p class="parlay-subtitle">No Vegas lines for these games. Odds are only recorded for live predictions (from the 2026-27 season on), not the backtest.</p>`;
+        return;
+    }
+    const n = g.length;
+    const modelW = g.filter(r => r.winner_correct).length;
+    const vegasW = g.filter(r => r.market_correct).length;
+    const homeW = g.filter(r => r.actual_winner === r.home).length;
+    let h = tbl([
+        ['Model', `record ${rec(modelW, n)}`, `${pct(modelW / n, 0)} right`, true],
+        ['Vegas', `record ${rec(vegasW, n)}`, `${pct(vegasW / n, 0)} right`],
+        ['Always pick the home team', `record ${rec(homeW, n)}`, 'the no-skill baseline'],
+    ]);
+
+    const diff = modelW - vegasW;
+    const lines = [diff > 0 ? `So far the model has picked ${diff} more winner${diff > 1 ? 's' : ''} than Vegas.`
+                : diff < 0 ? `So far Vegas has picked ${-diff} more winner${diff < -1 ? 's' : ''} than the model.`
+                : 'So far the model and Vegas have picked the same number of winners.'];
+    // Same floor scorecard.py uses before a model-vs-market gap means anything.
+    if (n < 200) lines[0] += ` That is only ${n} game${n > 1 ? 's' : ''}, and hockey has lots of upsets, so it takes a few hundred games before the comparison really means something.`;
+    const agree = g.filter(r => r.predicted_winner === r.market_pick).length;
+    lines.push(`The model and Vegas picked the same team in ${pct(agree / n, 0)} of games.`);
+    const dis = g.filter(r => r.predicted_winner !== r.market_pick);
+    if (dis.length) {
+        const disW = dis.filter(r => r.winner_correct).length;
+        lines.push(`When they disagreed (${dis.length} game${dis.length > 1 ? 's' : ''}), the model was right ${disW} time${disW === 1 ? '' : 's'} and Vegas ${dis.length - disW}.`);
+    }
+    const t = g.filter(r => r.total_error != null && r.market_total_line != null);
+    if (t.length) {
+        const mMiss = t.reduce((a, r) => a + r.total_error, 0) / t.length;
+        const vMiss = t.reduce((a, r) => a + Math.abs(r.market_total_line - r.actual_total), 0) / t.length;
+        lines.push(`On total goals, the model missed by ${mMiss.toFixed(2)} on average; the Vegas over/under line missed by ${vMiss.toFixed(2)}.`);
+    }
+    if (n < results.length) lines.push(`${results.length - n} game${results.length - n > 1 ? 's' : ''} in this view had no Vegas line recorded and ${results.length - n > 1 ? 'are' : 'is'} left out of this comparison.`);
+    h += lines.map(l => `<p class="parlay-subtitle" style="margin-top:10px">${l}</p>`).join('');
+    $('bench-table').innerHTML = h;
+}
+
 function displayNoPerformanceData(msg) {
+    $('bench-table').innerHTML = '';
     $('recent-results-list').innerHTML = `<div class="no-data"><div class="no-data-icon">📊</div><p>${msg || 'No performance data yet.'}</p></div>`;
     ['perf-total-bets','perf-win-rate','perf-total-exact','perf-total-within1'].forEach(id => $(id).textContent = '-');
     ['total-green','total-yellow','total-red'].forEach(id => $(id).textContent = '0');
