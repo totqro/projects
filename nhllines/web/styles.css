@@ -87,3 +87,12 @@
   .bracket-col { flex: 1 1 calc(50% - 8px); }
   .totals-compare { grid-template-columns: 1fr; }
 }
+
+/* Model vs Vegas benchmark rows (same layout as the NFL page). */
+.bench-row { grid-template-columns: 1fr auto auto; }
+.bench-row--model .pred-result-matchup { color: var(--cy-accent); }
+@media (max-width: 600px) {
+    .bench-row { grid-template-columns: auto 1fr; }
+    .bench-row .pred-result-matchup { grid-column: 1 / -1; }
+    .bench-row .pred-result-winner:last-child { justify-content: flex-end; }
+}

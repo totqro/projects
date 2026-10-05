@@ -14,6 +14,12 @@ slate per game), the latest pre-game row is the one scored.
 The old retrospective backtest (data/backtest_results.json, the similarity
 model replayed over Mar-Jun 2026) is carried in as its own season, labelled
 as a backtest, so it stays viewable without being mixed into live results.
+
+Live results also carry Vegas's closing line (the latest odds snapshot taken
+before puck drop, via scorecard.load_market) so the site can grade the model
+against the market. It is re-attached every run, so a snapshot that lands
+after a game was first scored still gets picked up. The model never sees
+these odds; they are only used to grade it.
 """
 
 import json
@@ -83,6 +89,35 @@ def _score(pred: dict, game: dict) -> dict:
     }
 
 
+def _closing_lines() -> dict:
+    """{(date, home, away): snapshot entry} for Vegas's pre-game closing line.
+    Imported lazily: scorecard pulls in numpy/sklearn, and a missing snapshot
+    set should never stop the performance file from being written."""
+    try:
+        from scorecard import load_market
+        return load_market()
+    except Exception as e:
+        print(f"  Warning: no Vegas lines for performance.json: {e}")
+        return {}
+
+
+def _attach_market(r: dict, closing: dict) -> dict:
+    """Add Vegas's pick, win chance and total line to a scored result."""
+    m = closing.get((r["date"], r["home"], r["away"]))
+    if not m or m.get("home_win_prob") is None:
+        return r
+    p_home = float(m["home_win_prob"])
+    pick = r["home"] if p_home > 0.5 else r["away"]
+    r.update({
+        "market_home_win_prob": round(p_home, 3),
+        "market_pick": pick,
+        "market_pick_prob": round(max(p_home, 1 - p_home), 3),
+        "market_correct": pick == r["actual_winner"],
+        "market_total_line": m.get("total_line"),
+    })
+    return r
+
+
 def _legacy_backtest(path: Path) -> list:
     try:
         data = json.loads(path.read_text())
@@ -118,6 +153,10 @@ def update_performance(completed_games: list, log_path: Path = LOG_PATH,
         if k in finals and k not in live:
             live[k] = _score(pred, finals[k])
             new += 1
+
+    closing = _closing_lines()
+    for r in live.values():
+        _attach_market(r, closing)
 
     results = sorted(list(live.values()) + _legacy_backtest(backtest_path),
                      key=lambda r: (r["date"], r["game"]), reverse=True)

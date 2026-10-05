@@ -14,7 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/cyber.css">
     <link rel="stylesheet" href="/dashboard.css">
-    <link rel="stylesheet" href="styles.css?v=17.0">
+    <link rel="stylesheet" href="styles.css?v=17.1">
 </head>
 <body>
     <nav class="cy-nav">
@@ -118,6 +118,12 @@
             </section>
 
             <section class="summary-card cy-panel cy-card">
+                <h2 class="cy-label cy-slash">Model vs Vegas</h2>
+                <p class="parlay-subtitle">Vegas is the betting odds just before puck drop, the toughest benchmark there is. The model never sees the odds; they are only used to grade it. All three rows are scored on the same games.</p>
+                <div id="bench-table"></div>
+            </section>
+
+            <section class="summary-card cy-panel cy-card">
                 <h2 class="cy-label cy-slash">Total Goals Accuracy</h2>
                 <p class="parlay-subtitle">How close were the model's total goal predictions vs actual game totals.</p>
                 <div class="accuracy-breakdown">
@@ -196,6 +202,6 @@
         <a href="https://github.com/totqro" target="_blank" rel="noopener">GitHub</a>
     </footer>
 
-    <script src="app.js?v=17.2"></script>
+    <script src="app.js?v=17.3"></script>
 </body>
 </html>
