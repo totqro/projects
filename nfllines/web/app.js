@@ -75,6 +75,16 @@ function statusText(g) {
     }
 }
 
+// Projected score as shown: each side rounded to whole points, and a rounded
+// tie goes to the model's favourite by 1 so a projection never reads as a tie.
+function projectedScore(g) {
+    let away = Math.round(g.expected_away_points), home = Math.round(g.expected_home_points);
+    if (away === home) {
+        if (g.home_win_prob > 0.5) home += 1; else away += 1;
+    }
+    return {away, home};
+}
+
 function renderGameCard(g, i) {
     const has = g.home_win_prob != null;
     const hp = has ? g.home_win_prob : 0.5, ap = 1 - hp;
@@ -108,7 +118,7 @@ function renderGameCard(g, i) {
         <div class="gc-footer" onclick="toggleGC(${i})">
             <div class="gc-total">
                 <span class="gc-total-unit">Projected</span>
-                <span class="gc-total-num">${has ? `${g.away} ${Math.round(g.expected_away_points)} - ${g.home} ${Math.round(g.expected_home_points)}` : '—'}</span>
+                <span class="gc-total-num">${has ? (s => `${g.away} ${s.away} - ${g.home} ${s.home}`)(projectedScore(g)) : '—'}</span>
                 ${mkt}
             </div>
             <div class="gc-conf">
@@ -142,12 +152,13 @@ function renderGameDetails(g) {
     }
     const backupNote = g.backup ? `<div class="details-section"><p class="parlay-subtitle">Backup prediction: the final injury report was not available in time, so this was made from incomplete injury data. It is usually close to the full prediction, but treat it as a little less reliable.</p></div>` : '';
     const fav = g.home_win_prob > 0.5 ? g.home : g.away;
+    const ps = projectedScore(g);
     const card = (label, val) => `<div class="advanced-stat-card"><div class="advanced-stat-label">${label}</div><div class="advanced-stat-value">${val}</div></div>`;
     const modelFav = `${fav} ${pct(Math.max(g.home_win_prob, 1 - g.home_win_prob), 0)}`;
     let h = backupNote + `<div class="details-section"><h3>Model vs Vegas</h3><div class="advanced-stats-grid">
         ${card('Model favours', modelFav)}
         ${card('Vegas favours', vegasFav(g))}
-        ${card('Projected winning margin', `${fav} by ${Math.round(Math.abs(g.expected_margin))}`)}
+        ${card('Projected winning margin', `${ps.home > ps.away ? g.home : g.away} by ${Math.abs(ps.home - ps.away)}`)}
         ${card('Projected total points', Math.round(g.expected_total))}
     </div></div>`;
     if (g.status === 'final') {
