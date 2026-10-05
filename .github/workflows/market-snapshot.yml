@@ -20,6 +20,11 @@ on:
         description: 'Odds API sport key (use baseball_mlb to smoke-test in the NHL off-season)'
         type: string
         default: 'icehockey_nhl'
+      slot:
+        description: 'Which daily snapshot this is (set by the cron-job.org schedule; leave as manual by hand)'
+        type: choice
+        options: [manual, opening, midday, close]
+        default: manual
 
 # Never let two snapshot runs race each other to push; a queued run still
 # takes its own snapshot afterwards.
@@ -106,8 +111,9 @@ jobs:
       - name: Notify on failure
         # At most one mail per day, plus every manual run. The job fires 3x
         # daily and the usual causes — a dead key, an API outage — persist
-        # across all three, so mailing per run is noise, not signal.
-        if: failure() && (github.event_name != 'schedule' || github.event.schedule == '0 14 * * *')
+        # across all three, so mailing per run is noise, not signal. Only the
+        # opening snapshot (cron-job.org slot, or GitHub's own cron) mails.
+        if: failure() && (github.event_name != 'schedule' || github.event.schedule == '0 14 * * *') && inputs.slot != 'midday' && inputs.slot != 'close'
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
