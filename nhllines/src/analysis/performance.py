@@ -158,7 +158,14 @@ def update_performance(completed_games: list, log_path: Path = LOG_PATH,
     for r in live.values():
         _attach_market(r, closing)
 
-    results = sorted(list(live.values()) + _legacy_backtest(backtest_path),
+    # The weekly backtest replays every game since March 1, so it runs into
+    # the live season too (preseason games and duplicates of live games).
+    # A season with live results is graded on those alone.
+    live_seasons = {r["season"] for r in live.values()}
+    backtest = [r for r in _legacy_backtest(backtest_path)
+                if r["season"] not in live_seasons]
+
+    results = sorted(list(live.values()) + backtest,
                      key=lambda r: (r["date"], r["game"]), reverse=True)
     seasons = []
     for s in sorted({r["season"] for r in results}, reverse=True):
