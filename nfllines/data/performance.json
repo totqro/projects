@@ -1,44 +1,44 @@
 {
- "timestamp": "2026-10-05T21:13:14.128185+00:00",
+ "timestamp": "2026-10-07T00:47:05.996786+00:00",
  "season": 2026,
  "min_games_for_verdict": 200,
  "season_summary": {
-  "n": 47,
+  "n": 48,
   "ties": 0,
   "model": {
-   "n": 47,
-   "log_loss": 0.6558,
-   "brier": 0.2335,
+   "n": 48,
+   "log_loss": 0.6591,
+   "brier": 0.2352,
    "correct": 31,
-   "accuracy": 0.6596
+   "accuracy": 0.6458
   },
   "coin_flip": {
-   "n": 47,
+   "n": 48,
    "log_loss": 0.6931,
    "brier": 0.25,
-   "correct": 21,
-   "accuracy": 0.4468
+   "correct": 22,
+   "accuracy": 0.4583
   },
-  "margin_mae": 9.26,
-  "total_mae": 10.56,
+  "margin_mae": 9.54,
+  "total_mae": 10.88,
   "backups": 1,
   "market": {
-   "n": 47,
-   "log_loss": 0.6594,
-   "brier": 0.234,
+   "n": 48,
+   "log_loss": 0.6609,
+   "brier": 0.2347,
    "correct": 29,
-   "accuracy": 0.617
+   "accuracy": 0.6042
   },
   "model_same_games": {
-   "n": 47,
-   "log_loss": 0.6558,
-   "brier": 0.2335,
+   "n": 48,
+   "log_loss": 0.6591,
+   "brier": 0.2352,
    "correct": 31,
-   "accuracy": 0.6596
+   "accuracy": 0.6458
   },
-  "favourite_agreement": 0.872,
-  "market_margin_mae": 8.8,
-  "market_total_mae": 10.18
+  "favourite_agreement": 0.875,
+  "market_margin_mae": 9.08,
+  "market_total_mae": 10.42
  },
  "weeks": [
   {
@@ -121,45 +121,65 @@
   },
   {
    "week": 4,
-   "n": 15,
+   "n": 16,
    "ties": 0,
    "model": {
-    "n": 15,
-    "log_loss": 0.6678,
-    "brier": 0.2395,
+    "n": 16,
+    "log_loss": 0.6771,
+    "brier": 0.244,
     "correct": 10,
-    "accuracy": 0.6667
+    "accuracy": 0.625
    },
    "coin_flip": {
-    "n": 15,
+    "n": 16,
     "log_loss": 0.6931,
     "brier": 0.25,
-    "correct": 7,
-    "accuracy": 0.4667
+    "correct": 8,
+    "accuracy": 0.5
    },
-   "margin_mae": 7.32,
-   "total_mae": 10.0,
+   "margin_mae": 8.3,
+   "total_mae": 10.96,
    "backups": 1,
    "market": {
-    "n": 15,
-    "log_loss": 0.618,
-    "brier": 0.2161,
+    "n": 16,
+    "log_loss": 0.6249,
+    "brier": 0.2193,
     "correct": 9,
-    "accuracy": 0.6
+    "accuracy": 0.5625
    },
    "model_same_games": {
-    "n": 15,
-    "log_loss": 0.6678,
-    "brier": 0.2395,
+    "n": 16,
+    "log_loss": 0.6771,
+    "brier": 0.244,
     "correct": 10,
-    "accuracy": 0.6667
+    "accuracy": 0.625
    },
-   "favourite_agreement": 0.8,
-   "market_margin_mae": 6.3,
-   "market_total_mae": 8.83
+   "favourite_agreement": 0.812,
+   "market_margin_mae": 7.31,
+   "market_total_mae": 9.62
   }
  ],
  "results": [
+  {
+   "game_id": "2026_04_ATL_NO",
+   "week": 4,
+   "kickoff": "2026-10-05T20:15:00-04:00",
+   "away": "ATL",
+   "home": "NO",
+   "away_score": 45,
+   "home_score": 24,
+   "pick": "NO",
+   "pick_prob": 0.558,
+   "market_pick": "NO",
+   "market_pick_prob": 0.517,
+   "correct": false,
+   "market_correct": false,
+   "expected_margin": 1.9,
+   "margin": -21,
+   "expected_total": 43.5,
+   "total": 69,
+   "backup": false
+  },
   {
    "game_id": "2026_04_DET_CAR",
    "week": 4,
@@ -321,26 +341,6 @@
    "backup": false
   },
   {
-   "game_id": "2026_04_JAX_CIN",
-   "week": 4,
-   "kickoff": "2026-10-04T13:00:00-04:00",
-   "away": "JAX",
-   "home": "CIN",
-   "away_score": 22,
-   "home_score": 17,
-   "pick": "JAX",
-   "pick_prob": 0.515,
-   "market_pick": "CIN",
-   "market_pick_prob": 0.572,
-   "correct": true,
-   "market_correct": false,
-   "expected_margin": -0.5,
-   "margin": -5,
-   "expected_total": 47.0,
-   "total": 39,
-   "backup": false
-  },
-  {
    "game_id": "2026_04_GB_TB",
    "week": 4,
    "kickoff": "2026-10-04T13:00:00-04:00",
@@ -358,6 +358,26 @@
    "margin": -3,
    "expected_total": 43.9,
    "total": 31,
+   "backup": false
+  },
+  {
+   "game_id": "2026_04_JAX_CIN",
+   "week": 4,
+   "kickoff": "2026-10-04T13:00:00-04:00",
+   "away": "JAX",
+   "home": "CIN",
+   "away_score": 22,
+   "home_score": 17,
+   "pick": "JAX",
+   "pick_prob": 0.515,
+   "market_pick": "CIN",
+   "market_pick_prob": 0.572,
+   "correct": true,
+   "market_correct": false,
+   "expected_margin": -0.5,
+   "margin": -5,
+   "expected_total": 47.0,
+   "total": 39,
    "backup": false
   },
   {
@@ -581,26 +601,6 @@
    "backup": false
   },
   {
-   "game_id": "2026_03_CAR_CLE",
-   "week": 3,
-   "kickoff": "2026-09-27T13:00:00-04:00",
-   "away": "CAR",
-   "home": "CLE",
-   "away_score": 18,
-   "home_score": 21,
-   "pick": "CAR",
-   "pick_prob": 0.518,
-   "market_pick": "CAR",
-   "market_pick_prob": 0.551,
-   "correct": false,
-   "market_correct": false,
-   "expected_margin": -0.6,
-   "margin": 3,
-   "expected_total": 39.6,
-   "total": 39,
-   "backup": false
-  },
-  {
    "game_id": "2026_03_KC_MIA",
    "week": 3,
    "kickoff": "2026-09-27T13:00:00-04:00",
@@ -618,6 +618,26 @@
    "margin": -14,
    "expected_total": 43.0,
    "total": 34,
+   "backup": false
+  },
+  {
+   "game_id": "2026_03_CAR_CLE",
+   "week": 3,
+   "kickoff": "2026-09-27T13:00:00-04:00",
+   "away": "CAR",
+   "home": "CLE",
+   "away_score": 18,
+   "home_score": 21,
+   "pick": "CAR",
+   "pick_prob": 0.518,
+   "market_pick": "CAR",
+   "market_pick_prob": 0.551,
+   "correct": false,
+   "market_correct": false,
+   "expected_margin": -0.6,
+   "margin": 3,
+   "expected_total": 39.6,
+   "total": 39,
    "backup": false
   },
   {
