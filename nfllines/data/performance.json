@@ -1,44 +1,44 @@
 {
- "timestamp": "2026-10-09T00:40:32.235366+00:00",
+ "timestamp": "2026-10-10T00:53:45.435926+00:00",
  "season": 2026,
  "min_games_for_verdict": 200,
  "season_summary": {
-  "n": 48,
+  "n": 49,
   "ties": 0,
   "model": {
-   "n": 48,
-   "log_loss": 0.6591,
-   "brier": 0.2352,
+   "n": 49,
+   "log_loss": 0.672,
+   "brier": 0.2411,
    "correct": 31,
-   "accuracy": 0.6458
+   "accuracy": 0.6327
   },
   "coin_flip": {
-   "n": 48,
+   "n": 49,
    "log_loss": 0.6931,
    "brier": 0.25,
-   "correct": 22,
-   "accuracy": 0.4583
+   "correct": 23,
+   "accuracy": 0.4694
   },
-  "margin_mae": 9.54,
-  "total_mae": 10.88,
+  "margin_mae": 9.67,
+  "total_mae": 10.77,
   "backups": 1,
   "market": {
-   "n": 48,
-   "log_loss": 0.6609,
-   "brier": 0.2347,
+   "n": 49,
+   "log_loss": 0.6811,
+   "brier": 0.2432,
    "correct": 29,
-   "accuracy": 0.6042
+   "accuracy": 0.5918
   },
   "model_same_games": {
-   "n": 48,
-   "log_loss": 0.6591,
-   "brier": 0.2352,
+   "n": 49,
+   "log_loss": 0.672,
+   "brier": 0.2411,
    "correct": 31,
-   "accuracy": 0.6458
+   "accuracy": 0.6327
   },
-  "favourite_agreement": 0.875,
-  "market_margin_mae": 9.08,
-  "market_total_mae": 10.42
+  "favourite_agreement": 0.878,
+  "market_margin_mae": 9.26,
+  "market_total_mae": 10.4
  },
  "weeks": [
   {
@@ -157,9 +157,68 @@
    "favourite_agreement": 0.812,
    "market_margin_mae": 7.31,
    "market_total_mae": 9.62
+  },
+  {
+   "week": 5,
+   "n": 1,
+   "ties": 0,
+   "model": {
+    "n": 1,
+    "log_loss": 1.29,
+    "brier": 0.5252,
+    "correct": 0,
+    "accuracy": 0.0
+   },
+   "coin_flip": {
+    "n": 1,
+    "log_loss": 0.6931,
+    "brier": 0.25,
+    "correct": 1,
+    "accuracy": 1.0
+   },
+   "margin_mae": 15.72,
+   "total_mae": 5.7,
+   "backups": 0,
+   "market": {
+    "n": 1,
+    "log_loss": 1.6511,
+    "brier": 0.6531,
+    "correct": 0,
+    "accuracy": 0.0
+   },
+   "model_same_games": {
+    "n": 1,
+    "log_loss": 1.29,
+    "brier": 0.5252,
+    "correct": 0,
+    "accuracy": 0.0
+   },
+   "favourite_agreement": 1.0,
+   "market_margin_mae": 17.5,
+   "market_total_mae": 9.5
   }
  ],
  "results": [
+  {
+   "game_id": "2026_05_TB_DAL",
+   "week": 5,
+   "kickoff": "2026-10-08T20:15:00-04:00",
+   "away": "TB",
+   "home": "DAL",
+   "away_score": 24,
+   "home_score": 16,
+   "pick": "DAL",
+   "pick_prob": 0.725,
+   "market_pick": "DAL",
+   "market_pick_prob": 0.808,
+   "correct": false,
+   "market_correct": false,
+   "expected_margin": 7.7,
+   "margin": -8,
+   "expected_total": 45.7,
+   "total": 40,
+   "backup": false
+  },
   {
    "game_id": "2026_04_ATL_NO",
    "week": 4,
@@ -681,23 +740,23 @@
    "backup": false
   },
   {
-   "game_id": "2026_03_NE_JAX",
+   "game_id": "2026_03_NYJ_DET",
    "week": 3,
    "kickoff": "2026-09-27T13:00:00-04:00",
-   "away": "NE",
-   "home": "JAX",
-   "away_score": 6,
-   "home_score": 35,
-   "pick": "JAX",
-   "pick_prob": 0.625,
-   "market_pick": "JAX",
-   "market_pick_prob": 0.593,
+   "away": "NYJ",
+   "home": "DET",
+   "away_score": 24,
+   "home_score": 31,
+   "pick": "DET",
+   "pick_prob": 0.767,
+   "market_pick": "DET",
+   "market_pick_prob": 0.734,
    "correct": true,
    "market_correct": true,
-   "expected_margin": 4.1,
-   "margin": 29,
-   "expected_total": 43.4,
-   "total": 41,
+   "expected_margin": 9.4,
+   "margin": 7,
+   "expected_total": 47.5,
+   "total": 55,
    "backup": false
   },
   {
@@ -721,23 +780,23 @@
    "backup": false
   },
   {
-   "game_id": "2026_03_NYJ_DET",
+   "game_id": "2026_03_NE_JAX",
    "week": 3,
    "kickoff": "2026-09-27T13:00:00-04:00",
-   "away": "NYJ",
-   "home": "DET",
-   "away_score": 24,
-   "home_score": 31,
-   "pick": "DET",
-   "pick_prob": 0.767,
-   "market_pick": "DET",
-   "market_pick_prob": 0.734,
+   "away": "NE",
+   "home": "JAX",
+   "away_score": 6,
+   "home_score": 35,
+   "pick": "JAX",
+   "pick_prob": 0.625,
+   "market_pick": "JAX",
+   "market_pick_prob": 0.593,
    "correct": true,
    "market_correct": true,
-   "expected_margin": 9.4,
-   "margin": 7,
-   "expected_total": 47.5,
-   "total": 55,
+   "expected_margin": 4.1,
+   "margin": 29,
+   "expected_total": 43.4,
+   "total": 41,
    "backup": false
   },
   {
