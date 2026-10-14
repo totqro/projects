@@ -1,6 +1,407 @@
 {
   "analyses": [
     {
+      "timestamp": "2026-10-14T11:29:30.213839-04:00",
+      "stake": 0.5,
+      "days_back": 90,
+      "min_edge": 0.04,
+      "n_historical_games": 170,
+      "games_analyzed": [
+        {
+          "game": "MTL @ WSH",
+          "home": "WSH",
+          "away": "MTL",
+          "start_time": "2026-10-14T23:40:00Z",
+          "model_probs": {
+            "home_win_prob": 0.5492241453868025,
+            "away_win_prob": 0.45077585461319747,
+            "expected_total": 6.252278547087355,
+            "over_prob": 0.4579558312334706,
+            "under_prob": 0.5420441687665294,
+            "home_cover_prob": 0.6031647551527709,
+            "away_cover_prob": 0.3968352448472291,
+            "total_line": 6.5,
+            "spread_line": -1.5,
+            "n_games": 50,
+            "avg_similarity": 0.7434781663946716,
+            "confidence": 0.3,
+            "raw_confidence": 0.41979387033454385,
+            "raw_home_win_prob": 0.6437000048556291,
+            "raw_over_prob": 0.4414359366534213,
+            "goal_distribution": {
+              "1": 0.04,
+              "2": 0.02,
+              "3": 0.08,
+              "4": 0.04,
+              "5": 0.26,
+              "6": 0.1,
+              "7": 0.12,
+              "8": 0.12,
+              "9": 0.16,
+              "10": 0.04,
+              "12": 0.02
+            },
+            "ml_data_weight": 0.53
+          },
+          "market_probs": {
+            "home_win_prob": 0.5342634251815376,
+            "away_win_prob": 0.4657365748184625,
+            "over_prob": 0.5165390413281096,
+            "under_prob": 0.48346095867189043,
+            "spread_home_cover_prob": 0.33277392420455565,
+            "total_line": 6.5,
+            "spread_line": -1.5,
+            "n_books_ml": 15,
+            "n_books_total": 15,
+            "n_books_spread": 15
+          },
+          "blended_probs": {
+            "home_win_prob": 0.5494333485241081,
+            "away_win_prob": 0.4505666514758919,
+            "over_prob": 0.5006166761792218,
+            "under_prob": 0.4993833238207782,
+            "home_cover_prob": 0.3773624961133799,
+            "away_cover_prob": 0.4505666514758919,
+            "expected_total": 6.252278547087355,
+            "model_confidence": 0.3,
+            "ml_data_weight": 0.53,
+            "effective_model_weight": 0.27386127875258304,
+            "ml_model_weight": 0.3640054944640259
+          },
+          "n_similar": 50,
+          "n_bets": 0,
+          "context_indicators": {
+            "fatigue": [
+              {
+                "team": "WSH",
+                "type": "B2B",
+                "severity": "medium"
+              },
+              {
+                "team": "MTL",
+                "type": "B2B",
+                "severity": "medium"
+              }
+            ],
+            "goalie": [
+              {
+                "team": "WSH",
+                "type": "advantage",
+                "value": 21.999999999999996,
+                "severity": "positive"
+              }
+            ],
+            "injuries": [],
+            "splits": [
+              {
+                "team": "WSH",
+                "type": "strong_home",
+                "value": 0.8,
+                "severity": "positive"
+              }
+            ],
+            "advanced": []
+          },
+          "goalie_matchup": {
+            "home": {
+              "name": "Logan Thompson",
+              "quality_score": 52.8,
+              "recent_save_pct": 0.904,
+              "recent_gaa": 2.84,
+              "recent_quality_starts": 3
+            },
+            "away": {
+              "name": "Samuel Montembeault",
+              "quality_score": 30.8,
+              "recent_save_pct": 0.9,
+              "recent_gaa": 3.0,
+              "recent_quality_starts": 0
+            }
+          },
+          "team_splits": {
+            "home": {
+              "games": 5,
+              "wins": 4,
+              "losses": 1,
+              "ot_losses": 0,
+              "win_pct": 0.8,
+              "goals_for": 19,
+              "goals_against": 13,
+              "gf_pg": 3.8,
+              "ga_pg": 2.6,
+              "goal_diff": 1.2
+            },
+            "away": {
+              "games": 4,
+              "wins": 2,
+              "losses": 0,
+              "ot_losses": 2,
+              "win_pct": 0.5,
+              "goals_for": 15,
+              "goals_against": 13,
+              "gf_pg": 3.75,
+              "ga_pg": 3.25,
+              "goal_diff": 0.5
+            }
+          },
+          "injuries": {
+            "home": {
+              "impact_score": 0,
+              "key_injuries": [],
+              "total_injuries": 0,
+              "positions_affected": {},
+              "injury_details": []
+            },
+            "away": {
+              "impact_score": 0,
+              "key_injuries": [],
+              "total_injuries": 0,
+              "positions_affected": {},
+              "injury_details": []
+            }
+          },
+          "advanced_stats": {
+            "home": {
+              "xGF_per_60": 0.0,
+              "xGA_per_60": 0.0,
+              "xGF_pct": 83.66533864541832,
+              "corsi_pct": 50.0,
+              "fenwick_pct": 50.0,
+              "shooting_pct": 0.0,
+              "save_pct": 0.9,
+              "pdo": 100.0
+            },
+            "away": {
+              "xGF_per_60": 0.0,
+              "xGA_per_60": 0.0,
+              "xGF_pct": 84.44444444444444,
+              "corsi_pct": 50.0,
+              "fenwick_pct": 50.0,
+              "shooting_pct": 0.0,
+              "save_pct": 0.9,
+              "pdo": 100.0
+            }
+          }
+        },
+        {
+          "game": "DAL @ COL",
+          "home": "COL",
+          "away": "DAL",
+          "start_time": "2026-10-15T00:40:00Z",
+          "model_probs": {
+            "home_win_prob": 0.6251413951884925,
+            "away_win_prob": 0.37485860481150746,
+            "expected_total": 6.2397197246596905,
+            "over_prob": 0.4706280642555363,
+            "under_prob": 0.5293719357444637,
+            "home_cover_prob": 0.5711442413317303,
+            "away_cover_prob": 0.42885575866826975,
+            "total_line": 6.5,
+            "spread_line": -1.5,
+            "n_games": 50,
+            "avg_similarity": 0.6694828411187659,
+            "confidence": 0.3,
+            "raw_confidence": 0.18542095475799847,
+            "raw_home_win_prob": 0.6139824499196818,
+            "raw_over_prob": 0.45294228833747796,
+            "goal_distribution": {
+              "1": 0.06,
+              "2": 0.02,
+              "3": 0.04,
+              "4": 0.06,
+              "5": 0.24,
+              "6": 0.08,
+              "7": 0.22,
+              "8": 0.08,
+              "9": 0.14,
+              "10": 0.04,
+              "11": 0.02
+            },
+            "ml_data_weight": 0.53
+          },
+          "market_probs": {
+            "home_win_prob": 0.5550194562944493,
+            "away_win_prob": 0.4449805437055507,
+            "over_prob": 0.49983743503620387,
+            "under_prob": 0.5001625649637962,
+            "spread_home_cover_prob": 0.3432413394613654,
+            "total_line": 5.5,
+            "spread_line": -1.5,
+            "n_books_ml": 15,
+            "n_books_total": 15,
+            "n_books_spread": 15
+          },
+          "blended_probs": {
+            "home_win_prob": 0.5782529128240531,
+            "away_win_prob": 0.4217470871759469,
+            "over_prob": 0.4904778059697606,
+            "under_prob": 0.5095221940302395,
+            "home_cover_prob": 0.37864752394536255,
+            "away_cover_prob": 0.4217470871759469,
+            "expected_total": 6.2397197246596905,
+            "model_confidence": 0.3,
+            "ml_data_weight": 0.53,
+            "effective_model_weight": 0.27386127875258304,
+            "ml_model_weight": 0.3640054944640259
+          },
+          "n_similar": 50,
+          "n_bets": 0,
+          "context_indicators": {
+            "fatigue": [
+              {
+                "team": "COL",
+                "type": "B2B",
+                "severity": "medium"
+              },
+              {
+                "team": "DAL",
+                "type": "B2B",
+                "severity": "medium"
+              }
+            ],
+            "goalie": [
+              {
+                "team": "COL",
+                "type": "cold",
+                "value": 0.879,
+                "severity": "negative"
+              },
+              {
+                "team": "DAL",
+                "type": "hot",
+                "value": 0.944,
+                "severity": "positive"
+              },
+              {
+                "team": "DAL",
+                "type": "advantage",
+                "value": 46.2,
+                "severity": "positive"
+              }
+            ],
+            "injuries": [],
+            "splits": [
+              {
+                "team": "COL",
+                "type": "strong_home",
+                "value": 0.8,
+                "severity": "positive"
+              }
+            ],
+            "advanced": []
+          },
+          "goalie_matchup": {
+            "home": {
+              "name": "Mackenzie Blackwood",
+              "quality_score": 36.8,
+              "recent_save_pct": 0.879,
+              "recent_gaa": 3.04,
+              "recent_quality_starts": 2
+            },
+            "away": {
+              "name": "Jake Oettinger",
+              "quality_score": 83.0,
+              "recent_save_pct": 0.944,
+              "recent_gaa": 1.2,
+              "recent_quality_starts": 4
+            }
+          },
+          "team_splits": {
+            "home": {
+              "games": 5,
+              "wins": 4,
+              "losses": 1,
+              "ot_losses": 0,
+              "win_pct": 0.8,
+              "goals_for": 26,
+              "goals_against": 14,
+              "gf_pg": 5.2,
+              "ga_pg": 2.8,
+              "goal_diff": 2.4
+            },
+            "away": {
+              "games": 5,
+              "wins": 3,
+              "losses": 2,
+              "ot_losses": 0,
+              "win_pct": 0.6,
+              "goals_for": 10,
+              "goals_against": 6,
+              "gf_pg": 2.0,
+              "ga_pg": 1.2,
+              "goal_diff": 0.8
+            }
+          },
+          "injuries": {
+            "home": {
+              "impact_score": 0,
+              "key_injuries": [],
+              "total_injuries": 0,
+              "positions_affected": {},
+              "injury_details": []
+            },
+            "away": {
+              "impact_score": 0,
+              "key_injuries": [],
+              "total_injuries": 0,
+              "positions_affected": {},
+              "injury_details": []
+            }
+          },
+          "advanced_stats": {
+            "home": {
+              "xGF_per_60": 0.0,
+              "xGA_per_60": 0.0,
+              "xGF_pct": 91.39784946236558,
+              "corsi_pct": 50.0,
+              "fenwick_pct": 50.0,
+              "shooting_pct": 0.0,
+              "save_pct": 0.9,
+              "pdo": 100.0
+            },
+            "away": {
+              "xGF_per_60": 0.0,
+              "xGA_per_60": 0.0,
+              "xGF_pct": 92.9718875502008,
+              "corsi_pct": 50.0,
+              "fenwick_pct": 50.0,
+              "shooting_pct": 0.0,
+              "save_pct": 0.9,
+              "pdo": 100.0
+            }
+          }
+        }
+      ],
+      "recommendations": [],
+      "parlays": [],
+      "quota_info": {
+        "total_keys": 3,
+        "total_remaining": 754,
+        "total_used": 746,
+        "keys": [
+          {
+            "index": 0,
+            "used": 500,
+            "remaining": 0,
+            "last_updated": "2026-10-14T15:29:27.976470"
+          },
+          {
+            "index": 1,
+            "used": 246,
+            "remaining": 254,
+            "last_updated": "2026-10-14T15:29:28.247091"
+          },
+          {
+            "index": 2,
+            "used": 0,
+            "remaining": 500,
+            "last_updated": "Never"
+          }
+        ]
+      },
+      "slate_date": "2026-10-14"
+    },
+    {
       "timestamp": "2026-10-13T20:39:41.039801-04:00",
       "stake": 0.5,
       "days_back": 90,
@@ -44374,6 +44775,6 @@
       }
     }
   ],
-  "last_updated": "2026-10-13T20:39:41.132715-04:00",
-  "total_analyses": 38
+  "last_updated": "2026-10-14T11:29:30.383460-04:00",
+  "total_analyses": 39
 }
