@@ -170,9 +170,8 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
 .help .k{display:flex; gap:10px; font-size:12.5px} .help .k > span:first-child{min-width:130px}
 /* ---- printable game report ----
    One portrait page, the same design as Shot Chart's, read top to bottom:
-   score, shot map, momentum, data and insights. Literal colours so a dark
-   page still prints on white. exportReport() zooms it down if a long game
-   overflows. */
+   score, shot map, momentum, data. Literal colours so a dark page still
+   prints on white. fitReport() scales it down if a long game overflows. */
 #reportOut{display:none; background:#fff; color:#141D26; font-size:11px; line-height:1.4;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   -webkit-print-color-adjust:exact; print-color-adjust:exact}
@@ -204,12 +203,11 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
 #reportOut .keys b{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; vertical-align:-1px}
 #reportOut .flowsvg{display:block; width:100%; height:auto}
 #reportOut .two{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; align-items:start; margin-top:9px}
-#reportOut .three{display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr) minmax(0,.8fr); gap:14px; align-items:start; margin-top:9px}
 #reportOut .two:first-of-type{margin-top:2px}
 #reportOut .stack{display:grid; gap:9px; align-content:start}
-#reportOut .ins ul{margin:0; padding:0; list-style:none; display:grid; gap:5px}
-#reportOut .ins li{position:relative; padding-left:13px; font-size:11px; line-height:1.4}
-#reportOut .ins li::before{content:""; position:absolute; left:0; top:.45em; width:6px; height:6px; border-radius:50%; background:#044684}
+/* fitReport() scales .rp inside .rpfit; the box takes the scaled height. */
+#reportOut .rpfit{overflow:hidden; break-inside:avoid; page-break-inside:avoid}
+#reportOut .rp{transform-origin:top center}
 #reportOut .cmp-head{display:flex; justify-content:space-between; font-size:10px; font-weight:800; margin-bottom:2px}
 #reportOut .cmp-row{display:grid; grid-template-columns:44px minmax(0,1fr) 44px; align-items:end; gap:8px; margin-bottom:3px}
 #reportOut .cv{font-size:12px; font-variant-numeric:tabular-nums; font-weight:600; line-height:1.1}
@@ -1336,10 +1334,9 @@ function exportBackup(){ download(base() + "_backup.json", JSON.stringify({setup
    Header: matchup, date, the Varsity Blues logo and the score. Then the
    shot map (we always shoot right, since the tracker knows the ends),
    momentum as cumulative xG on the game clock with power plays shaded
-   from the penalty timeline, and data and insights: plain-sentence
-   takeaways, head-to-head bars, the period split, goalies with GSAx,
-   results against time at each strength, the lines and pairs that
-   actually played together, and the skaters with the most and least xG
+   from the penalty timeline, then the data: head-to-head bars, the
+   period split, goalies with GSAx, results against time at each
+   strength, every forward line and D pair that actually played together, and the skaters with the most and least xG
    on the ice for us. Our team is always Varsity blue, theirs red.
 ================================================================= */
 const RC_US = "#044684", RC_THEM = "#C8283C";
@@ -1558,9 +1555,17 @@ function unitStats(D, shots, scope, pos, size){
     if(s.team === "us"){ u.xgf += xg; if(s.result === "GOAL") u.gf++; } else { u.xga += xg; if(s.result === "GOAL") u.ga++; } }
   return Object.entries(units).filter(([,u]) => u.toi >= 20).sort((a,b) => b[1].toi - a[1].toi);
 }
+/* "F4 · 14 · 15 · 11" when a unit is exactly one of the Setup presets.
+   Preset units list in preset order (F1-F4, D1-D3), others after by TOI. */
+function unitPreset(k){
+  const key = k.split(" ").sort().join(" ");
+  return LINE_KEYS.find(p => (S.lines[p] || []).length && (S.lines[p] || []).map(String).sort().join(" ") === key) || null;
+}
+const unitName = k => { const pre = unitPreset(k); return (pre ? pre.toUpperCase() + " · " : "") + k.split(" ").join(" · "); };
+const unitRank = k => { const pre = unitPreset(k); return pre ? LINE_KEYS.indexOf(pre) : LINE_KEYS.length; };
 function unitTable(groups){
   const body = groups.map(([label, rows]) => `<tr class="grp"><td colspan="5">${esc(label)}</td></tr>` + (rows.length
-    ? rows.map(([k,u]) => `<tr><td>${esc(k.split(" ").join(" · "))}</td><td class="n">${fmt(u.toi)}</td><td class="n">${u.xgf.toFixed(2)}</td>
+    ? rows.slice().sort((x,y) => unitRank(x[0]) - unitRank(y[0])).map(([k,u]) => `<tr><td>${esc(unitName(k))}</td><td class="n">${fmt(u.toi)}</td><td class="n">${u.xgf.toFixed(2)}</td>
       <td class="n">${u.xga.toFixed(2)}</td><td class="n">${pctOf(u.xgf, u.xga)}</td></tr>`).join("")
     : `<tr><td colspan="5" class="empty">None with 20+ seconds together.</td></tr>`)).join("");
   return `<div><h3>Units <span class="sub">· most time together</span></h3><table><thead><tr><th></th><th class="n">TOI</th><th class="n">xGF</th><th class="n">xGA</th><th class="n">xGF%</th></tr></thead><tbody>${body}</tbody></table></div>`;
@@ -1582,56 +1587,6 @@ function compareBars(a, b){
         (x + y > 0 ? `<i style="flex:${(100*x/(x+y)).toFixed(2)} 1 0; background:${RC_US}"></i><i style="flex:${(100*y/(x+y)).toFixed(2)} 1 0; background:${RC_THEM}"></i>` : "") +
         `</div></div><span class="cv r${lead === "b" ? " lead" : ""}" style="color:${RC_THEM}">${f(y)}</span></div>`;
     }).join("") + `</div>`;
-}
-/* The takeaways in plain sentences, most important first: who drove play,
-   whether the score matched it, where it was won, who drove it for us,
-   and the one chance everyone will remember. */
-function insights(D, shots, st, a, b){
-  const tag = t => `<b style="color:${t === "us" ? RC_US : RC_THEM}">${esc(t === "us" ? S.us : S.opp)}</b>`;
-  const out = [], tot = a.xg + b.xg, T = {us:a, them:b};
-  const lt = a.xg >= b.xg ? "us" : "them", ot = lt === "us" ? "them" : "us";
-  if(tot > 0){
-    const share = 100*T[lt].xg/tot;
-    out.push(Math.abs(a.xg - b.xg) < 0.15
-      ? `Even on chances: ${tag("us")} ${a.xg.toFixed(2)} xG, ${tag("them")} ${b.xg.toFixed(2)}.`
-      : `${tag(lt)} ${share >= 60 ? "controlled" : "had the edge in"} chance quality, ${T[lt].xg.toFixed(2)} to ${T[ot].xg.toFixed(2)} xG (${share.toFixed(0)}% share).`);
-  }
-  const gl = a.g > b.g ? "us" : b.g > a.g ? "them" : null;
-  if(gl && gl !== lt && Math.abs(a.xg - b.xg) >= 0.3)
-    out.push(`${tag(gl)} led on the scoreboard despite trailing on chances: finishing and goaltending made the difference.`);
-  else if(!gl && Math.abs(a.xg - b.xg) >= 0.5) out.push(`Tied on goals, but ${tag(lt)} created the better looks.`);
-  const fin = ["us","them"].map(t => ({t, d:T[t].g - T[t].xg})).sort((x,y) => Math.abs(y.d) - Math.abs(x.d))[0];
-  if(Math.abs(fin.d) >= 0.75)
-    out.push(`${tag(fin.t)} scored ${T[fin.t].g} on ${T[fin.t].xg.toFixed(2)} xG, finishing ${fin.d > 0 ? "well above" : "well below"} expectation.`);
-  if(a.hd !== b.hd && a.hd + b.hd >= 3){
-    const ht = a.hd > b.hd ? "us" : "them";
-    out.push(`${tag(ht)} won the slot: ${T[ht].hd} high-danger chances to ${T[ht === "us" ? "them" : "us"].hd}.`);
-  }
-  if(G.poss.length && a.oz + b.oz >= 60){
-    const zt = a.oz >= b.oz ? "us" : "them";
-    out.push(`${tag(zt)} owned the zone time: ${fmt(T[zt].oz)} in the offensive zone (${pctOf(T[zt].oz, T[zt === "us" ? "them" : "us"].oz)}).`);
-  }
-  const gk = Object.values(st).filter(r => r.p.pos === "G" && r.toi > 0)
-    .map(r => ({who:`${tag("us")} goalie ${pname(r.p)}`, gsax:r.xga - r.ga, ga:r.ga, xga:r.xga}))
-    .concat([{who:`${tag("them")} goaltending`, gsax:(a.xg - a.enxg) - (a.g - a.eng), ga:a.g - a.eng, xga:a.xg - a.enxg}])
-    .sort((x,y) => Math.abs(y.gsax) - Math.abs(x.gsax))[0];
-  if(gk && Math.abs(gk.gsax) >= 0.5)
-    out.push(`${gk.who} ${gk.gsax > 0 ? "stopped" : "gave up"} ${Math.abs(gk.gsax).toFixed(2)} more goals than expected (${gk.ga} on ${gk.xga.toFixed(2)} xG against).`);
-  const ps = [...new Set(shots.map(s => s.p))].sort((x,y) => x-y);
-  if(ps.length > 1){
-    const best = ps.map(p => { const sh = shots.filter(s => s.p === p), x = teamSummary(D, sh, "us").xg, y = teamSummary(D, sh, "them").xg;
-      return {p, t:x >= y ? "us" : "them", share:x + y > 0 ? 100*Math.max(x, y)/(x + y) : 50, tot:x + y}; })
-      .filter(o => o.tot >= 0.3).sort((x,y) => y.share - x.share)[0];
-    if(best && best.share >= 62) out.push(`${best.p <= 3 ? "Period " + best.p : perLabel(best.p)} belonged to ${tag(best.t)}: ${best.share.toFixed(0)}% of the xG.`);
-  }
-  const sk = Object.values(st).filter(r => r.p.pos !== "G" && r.toi >= 120).sort((x,y) => (y.xgf - y.xga) - (x.xgf - x.xga))[0];
-  if(sk && sk.xgf - sk.xga >= 0.3)
-    out.push(`#${pname(sk.p)} drove play: ${sk.xgf.toFixed(2)} xG for, ${sk.xga.toFixed(2)} against with them on the ice.`);
-  const top = shots.filter(s => s.result !== "BLOCK").sort((x,y) => (D.shotInfo[y.id].xg || 0) - (D.shotInfo[x.id].xg || 0))[0];
-  if(top){ const I = D.shotInfo[top.id];
-    out.push(`Best chance: ${tag(top.team)}, ${perLabel(top.p)} ${fmt(I.sec)}, ${esc(String(TYPE_LABEL[top.type] || "shot").toLowerCase())} from ${Math.round(I.distance)} ft (${(I.xg || 0).toFixed(2)} xG), ${top.result === "GOAL" ? "scored" : "no goal"}.`); }
-  if(a.ppo || b.ppo) out.push(`Power plays: ${tag("us")} ${a.ppg} for ${a.ppo}, ${tag("them")} ${b.ppg} for ${b.ppo}.`);
-  return out.slice(0, 6);
 }
 /* Final once the third period's clock has run out; otherwise where the
    game stands, so an intermission report says so. */
@@ -1656,15 +1611,14 @@ function buildReport(scope){
                    untyped ? `${untyped} shot${untyped > 1 ? "s" : ""} with no type (scored as unknown)` : ""].filter(Boolean).join(" · ");
   const ot3 = scope && scope >= 4 && S.otFormat === "3v3";
   const units = ot3 ? unitTable([["3v3 units", unitStats(D, shots, scope, null, 3).slice(0, 6)]])
-    : unitTable([["Forward lines", unitStats(D, shots, scope, "F", 3).slice(0, 3)], ["D pairs", unitStats(D, shots, scope, "D", 2).slice(0, 2)]]);
+    : unitTable([["Forward lines", unitStats(D, shots, scope, "F", 3).slice(0, 4)], ["D pairs", unitStats(D, shots, scope, "D", 2).slice(0, 3)]]);
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(S.date || ""), d = m ? new Date(+m[1], +m[2]-1, +m[3]) : null;
   const short = d ? ` (${d.getMonth()+1}/${d.getDate()})` : "";
   const long = d ? d.toLocaleDateString([], {weekday:"short", year:"numeric", month:"short", day:"numeric"}) : "Game report";
   const usTag = `<span style="color:${RC_US}">${esc(showName(S.us))}</span>`, themTag = `<span style="color:${RC_THEM}">${esc(S.opp)}</span>`;
   const match = S.venue === "away" ? `${usTag} @ ${themTag}` : `${themTag} @ ${usTag}`;
   const logo = LOGO.naturalWidth ? `<img class="logo" src="${LOGO.src}" alt="University of Toronto Varsity Blues">` : "";
-  const ins = insights(D, shots, st, a, b);
-  return `<section class="rp">
+  return `<div class="rpfit"><section class="rp">
   <header class="head">
     <div class="side l"><div class="match">${match}${esc(short)}</div><div class="meta">${esc(long)}</div></div>
     ${logo}
@@ -1683,34 +1637,34 @@ function buildReport(scope){
     ${flowChart(D, shots, span, tl)}
   </section>
   <section class="blk">
-    <h2>Data and insights</h2>
+    <h2>Data</h2>
     <div class="two">
-      <div class="ins"><h3>Takeaways</h3>${ins.length ? `<ul>${ins.map(t => `<li>${t}</li>`).join("")}</ul>` : `<p class="empty">Not enough shots for takeaways yet.</p>`}</div>
-      <div><h3>Head to head</h3>${compareBars(a, b)}</div>
-    </div>
-    <div class="two">
-      <div class="stack">${periodTable(D, shots)}${goalieTable(st, a)}</div>
+      <div class="stack"><div><h3>Head to head</h3>${compareBars(a, b)}</div>${periodTable(D, shots)}${goalieTable(st, a)}</div>
       <div class="stack">${strengthTable(D, shots, tl)}${units}</div>
     </div>
     <div class="two">${leaderTables(st)}</div>
   </section>
   <div class="foot"><span>xG (expected goals) is the chance a shot goes in, from a five-feature model fit on 905,483 NHL attempts; blocks are placed but not scored.
-    On-ice numbers come from tracked shifts, strength time from the clock and logged penalties. One game is a small sample.</span><span>${esc(caveats)}</span></div></section>`;
+    On-ice numbers come from tracked shifts, strength time from the clock and logged penalties. One game is a small sample.</span><span>${esc(caveats)}</span></div></section></div>`;
 }
 function renderScopeSelect(D){
   const sel = $("rScope"), cur = sel.value, ps = periodsInGame(D);
   sel.innerHTML = `<option value="">Full game</option>` + ps.map(p => `<option value="${p}">${p <= 3 ? "Period " + p : perLabel(p)}</option>`).join("");
   sel.value = [...sel.options].some(o => o.value === cur) ? cur : "";
 }
-/* One page, always: lay the report out offscreen at the printable size of
-   a portrait letter page and zoom it down if a long game runs over. */
+/* One page, always, in any browser. Safari ignores zoom when it prints and
+   lays a letter page out at about 696 x 922 CSS px (Chrome: 748 x 988), so
+   scale the report with a transform, inside a box of the scaled height,
+   until it fits the smaller of the two. */
+/* SLACK: print wraps small text a little taller than the screen measures. */
+const REPORT_MAX_W = 690, REPORT_MAX_H = 900, REPORT_SLACK = 12;
 function fitReport(out){
-  const page = out.querySelector(".rp"), fit = (11 - 2*9/25.4) * 96 - 6;
-  page.style.zoom = "";
+  const page = out.querySelector(".rp"), box = page.parentNode;
+  page.style.transform = ""; box.style.height = "";
   out.style.cssText = "display:block; position:absolute; left:-20000px; top:0";
-  const h = page.getBoundingClientRect().height;
+  const r = page.getBoundingClientRect(), k = Math.min(1, REPORT_MAX_W / r.width, (REPORT_MAX_H - REPORT_SLACK) / r.height);
   out.style.cssText = "";
-  if(h > fit) page.style.zoom = (fit / h).toFixed(3);
+  if(k < 1){ page.style.transform = `scale(${k.toFixed(4)})`; box.style.height = (r.height * k + REPORT_SLACK).toFixed(1) + "px"; }
 }
 function exportReport(){
   const v = $("rScope").value, go = () => {
