@@ -1457,12 +1457,18 @@ function fullRink(){
    underneath. Orange/amber/green stay clear of the two team colours. */
 const TIER_COL = {HIGH:"#E4572E", MEDIUM:"#F3A712", LOW:"#6BAA5E"};
 const TIER_NAME = {HIGH:"High", MEDIUM:"Medium", LOW:"Low"}, TIER_ORDER = ["HIGH","MEDIUM","LOW"];
-/* A ring around a shot whose tier a tag moved, one per tag, in the tag's
-   colour: purple rush (+1), teal royal road (to high), slate block (-1). */
-const WHY_COL = {rush:"#7B4FC9", royal:"#0E9FB3", block:"#4A5866"};
-const WHY_NAME = {rush:"odd-man rush", royal:"royal road", block:"blocked"};
-const causeRings = (why, kind, cx, cy) => (why || []).map((w, i) =>
-  `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${((kind === "GOAL" ? 4.3 : 2.9) + i*1.05).toFixed(2)}" fill="none" stroke="${WHY_COL[w]}" stroke-width=".7"/>`).join("");
+/* A shot whose tier a royal-road pass or an odd-man rush raised gets a thin
+   edge in that tag's colour and its glyph beside it: teal ⇄ royal road,
+   purple » rush. A block's square already says blocked, so it gets nothing. */
+const WHY_COL = {rush:"#7B4FC9", royal:"#0E9FB3"};
+const WHY_NAME = {rush:"odd-man rush", royal:"royal road"}, WHY_GLYPH = {rush:"\u00BB", royal:"\u21C4"};
+const raisedBy = why => (why || []).filter(w => WHY_COL[w]);
+function tagMark(svg, why, kind, cx, cy){
+  why = raisedBy(why); if(!why.length) return svg;
+  const off = kind === "GOAL" ? 2.8 : 1.9;
+  if(kind !== "MISS") svg = svg.replace(/stroke="#fff" stroke-width=".35"/, `stroke="${WHY_COL[why[why.length-1]]}" stroke-width=".55"`);
+  return svg + why.map((w, i) => `<text x="${(cx+off+.2+i*2.6).toFixed(2)}" y="${(cy-off+1.4).toFixed(2)}" font-size="3.3" font-weight="900" fill="${WHY_COL[w]}" stroke="#fff" stroke-width=".35" paint-order="stroke">${WHY_GLYPH[w]}</text>`).join("");
+}
 function zoneShapes(dir){
   const X = v => (v*dir).toFixed(1);
   const pts = [[GOAL_X,-HIGH_Y],[DOT_X,-DOT_Y],[CIRCLE_TOP_X,-DOT_Y],[CIRCLE_TOP_X,DOT_Y],[DOT_X,DOT_Y],[GOAL_X,HIGH_Y]].map(([x,y]) => X(x)+","+y).join(" ");
@@ -1481,7 +1487,7 @@ function reportRink(D, shots){
   const marks = shots.map(s => {
     const flip = !usAttacksRight(s.p), x = flip ? -s.x : s.x, y = flip ? -s.y : s.y;
     const I = D.shotInfo[s.id];
-    return causeRings(I.tierWhy, s.result, x, -y) + iconMark(s.result, x, -y, TIER_COL[I.tier]);
+    return tagMark(iconMark(s.result, x, -y, TIER_COL[I.tier]), I.tierWhy, s.result, x, -y);
   }).join("");
   const zones = `<g clip-path="url(#iceFull)">${zoneShapes(1)}${zoneShapes(-1)}</g>`;
   const lab = (x, txt, col) => `<text x="${x}" y="-45.5" text-anchor="middle" font-size="4.6" font-weight="700" fill="${col}">${esc(txt)}</text>`;
@@ -1492,8 +1498,8 @@ function reportKeys(){
   return `<div class="keys"><span class="rkey">${ic("GOAL")} Goal</span><span class="rkey">${ic("SAVE")} Shot on net</span>
     <span class="rkey">${ic("BLOCK")} Blocked</span><span class="rkey">${ic("MISS")} Missed</span><span class="sep"></span>
     ${TIER_ORDER.map(k => `<span><b style="background:${TIER_COL[k]}"></b>${TIER_NAME[k]}</span>`).join("")} danger
-    <span class="sep"></span><span>ring: tier moved by</span>${Object.keys(WHY_COL).map(w => `<span class="rkey"><svg viewBox="-3.8 -3.8 7.6 7.6" class="rkeyi"><circle r="2.9" fill="none" stroke="${WHY_COL[w]}" stroke-width=".9"/></svg>${WHY_NAME[w]}</span>`).join("")}
-    <span class="sep"></span><span>${esc(S.us)} shoots right, ${esc(S.opp)} left</span></div>`;
+    <span class="sep"></span><span>raised by</span>${Object.keys(WHY_COL).map(w => `<span class="rkey"><svg viewBox="-3.8 -3.8 7.6 7.6" class="rkeyi"><circle r="2.2" fill="#9AA8B6" stroke="${WHY_COL[w]}" stroke-width=".8"/></svg><b style="color:${WHY_COL[w]};background:none;width:auto;height:auto;margin:0">${WHY_GLYPH[w]}</b> ${WHY_NAME[w]}</span>`).join("")}
+    <span>${esc(S.us)} shoots right, ${esc(S.opp)} left</span></div>`;
 }
 /* Shots into an empty net are kept apart so the opponent's GSAx only
    counts shots their goalie could have stopped. */
