@@ -441,13 +441,17 @@ const GOAL_X = 89, POST_Y = 3, CIRCLE_TOP_X = 54, DOT_X = 69, HIGH_Y = 11, DOT_Y
    tops; the rest is low. A rush moves up one, a royal-road pass makes it
    high, then a block drops it one. */
 const TIERS = ["LOW","MEDIUM","HIGH"], TIER_SHORT = {HIGH:"High", MEDIUM:"Med", LOW:"Low"};
-function dangerTier(x, y, rush, royalRoad, blocked){
+/* The tier, and which tags actually moved it off the zone's tier (a rush
+   on a shot already high moves nothing, so it isn't listed). */
+function tierSteps(x, y, rush, royalRoad, blocked){
   const ya = Math.abs(y), front = x <= GOAL_X, deep = front && x >= DOT_X;
   const trap = HIGH_Y + (GOAL_X - x) * (DOT_Y - HIGH_Y) / (GOAL_X - DOT_X);
-  let lv = deep && ya <= HIGH_Y ? 2 : (deep && ya <= trap) || (front && x >= CIRCLE_TOP_X && x < DOT_X && ya <= DOT_Y) ? 1 : 0;
-  lv = Math.min(lv + (rush ? 1 : 0), 2);
-  if(royalRoad) lv = 2;
-  return TIERS[Math.max(lv - (blocked ? 1 : 0), 0)];
+  const base = deep && ya <= HIGH_Y ? 2 : (deep && ya <= trap) || (front && x >= CIRCLE_TOP_X && x < DOT_X && ya <= DOT_Y) ? 1 : 0;
+  let lv = base; const why = [];
+  if(rush && lv < 2){ lv++; why.push("rush"); }
+  if(royalRoad && lv < 2){ lv = 2; why.push("royal"); }
+  if(blocked && lv > 0){ lv--; why.push("block"); }
+  return {tier:TIERS[lv], base:TIERS[base], why};
 }
 function geometry(x,y){ const dx = GOAL_X-x, ya = Math.abs(y);
   return {d:Math.hypot(dx,ya), a:Math.atan2(ya,dx)*180/Math.PI}; }
@@ -765,7 +769,8 @@ function derive(extraChange){
        0.5 s. Only the shooter is on the rink, so a tag on a shooter above
        the circles or on the road is shown but not counted. */
     I.xiSuspect = !!s.xi && !(X >= CIRCLE_TOP_X && Math.abs(Y) > POST_Y);
-    I.tier = dangerTier(X, Y, s.rush, s.xi && !I.xiSuspect, s.result === "BLOCK");
+    const ts = tierSteps(X, Y, s.rush, s.xi && !I.xiSuspect, s.result === "BLOCK");
+    I.tier = ts.tier; I.tierWhy = ts.why;
     I.xg = scoreShot({distance:g.d, angle_from_net:g.a, shot_type:MODEL_TYPE[s.type] || s.type, is_rebound:I.rebound ? 1 : 0,
                       situation:I.situation, rush:!!s.rush, cross_ice:!!s.xi && !I.xiSuspect, blocked:s.result === "BLOCK"});
     prev = s;
@@ -1452,6 +1457,12 @@ function fullRink(){
    underneath. Orange/amber/green stay clear of the two team colours. */
 const TIER_COL = {HIGH:"#E4572E", MEDIUM:"#F3A712", LOW:"#6BAA5E"};
 const TIER_NAME = {HIGH:"High", MEDIUM:"Medium", LOW:"Low"}, TIER_ORDER = ["HIGH","MEDIUM","LOW"];
+/* A ring around a shot whose tier a tag moved, one per tag, in the tag's
+   colour: purple rush (+1), teal royal road (to high), slate block (-1). */
+const WHY_COL = {rush:"#7B4FC9", royal:"#0E9FB3", block:"#4A5866"};
+const WHY_NAME = {rush:"odd-man rush", royal:"royal road", block:"blocked"};
+const causeRings = (why, kind, cx, cy) => (why || []).map((w, i) =>
+  `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${((kind === "GOAL" ? 4.3 : 2.9) + i*1.05).toFixed(2)}" fill="none" stroke="${WHY_COL[w]}" stroke-width=".7"/>`).join("");
 function zoneShapes(dir){
   const X = v => (v*dir).toFixed(1);
   const pts = [[GOAL_X,-HIGH_Y],[DOT_X,-DOT_Y],[CIRCLE_TOP_X,-DOT_Y],[CIRCLE_TOP_X,DOT_Y],[DOT_X,DOT_Y],[GOAL_X,HIGH_Y]].map(([x,y]) => X(x)+","+y).join(" ");
@@ -1469,7 +1480,8 @@ function tierBars(a, b){
 function reportRink(D, shots){
   const marks = shots.map(s => {
     const flip = !usAttacksRight(s.p), x = flip ? -s.x : s.x, y = flip ? -s.y : s.y;
-    return iconMark(s.result, x, -y, TIER_COL[D.shotInfo[s.id].tier]);
+    const I = D.shotInfo[s.id];
+    return causeRings(I.tierWhy, s.result, x, -y) + iconMark(s.result, x, -y, TIER_COL[I.tier]);
   }).join("");
   const zones = `<g clip-path="url(#iceFull)">${zoneShapes(1)}${zoneShapes(-1)}</g>`;
   const lab = (x, txt, col) => `<text x="${x}" y="-45.5" text-anchor="middle" font-size="4.6" font-weight="700" fill="${col}">${esc(txt)}</text>`;
@@ -1480,6 +1492,7 @@ function reportKeys(){
   return `<div class="keys"><span class="rkey">${ic("GOAL")} Goal</span><span class="rkey">${ic("SAVE")} Shot on net</span>
     <span class="rkey">${ic("BLOCK")} Blocked</span><span class="rkey">${ic("MISS")} Missed</span><span class="sep"></span>
     ${TIER_ORDER.map(k => `<span><b style="background:${TIER_COL[k]}"></b>${TIER_NAME[k]}</span>`).join("")} danger
+    <span class="sep"></span><span>ring: tier moved by</span>${Object.keys(WHY_COL).map(w => `<span class="rkey"><svg viewBox="-3.8 -3.8 7.6 7.6" class="rkeyi"><circle r="2.9" fill="none" stroke="${WHY_COL[w]}" stroke-width=".9"/></svg>${WHY_NAME[w]}</span>`).join("")}
     <span class="sep"></span><span>${esc(S.us)} shoots right, ${esc(S.opp)} left</span></div>`;
 }
 /* Shots into an empty net are kept apart so the opponent's GSAx only

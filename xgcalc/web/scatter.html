@@ -478,12 +478,16 @@ const ZONE_NAMES={1:"L corner",2:"behind net",3:"R corner",4:"L post",5:"crease"
 const TIER={HIGH:{label:"High",css:"hi",zones:"net-front box to the dots · royal road"},
             MED:{label:"Medium",css:"md",zones:"out to the dots and circle tops"},
             LOW:{label:"Low",css:"lo",zones:"everything else"}};
-function dangerTier(x,y,rush,royalRoad,blocked){
+/* The tier, and which tags actually moved it off the zone's tier (a rush
+   on a shot already high moves nothing, so it isn't listed). */
+function tierSteps(x,y,rush,royalRoad,blocked){
   const ya=Math.abs(y), front=x<=GOAL_X, deep=front&&x>=69, trap=11+(GOAL_X-x)*11/20;
-  let lv=deep&&ya<=11?2:((deep&&ya<=trap)||(front&&x>=54&&x<69&&ya<=22)?1:0);
-  lv=Math.min(lv+(rush?1:0),2);
-  if(royalRoad) lv=2;
-  return ["LOW","MED","HIGH"][Math.max(lv-(blocked?1:0),0)];
+  const base=deep&&ya<=11?2:((deep&&ya<=trap)||(front&&x>=54&&x<69&&ya<=22)?1:0), T=["LOW","MED","HIGH"];
+  let lv=base; const why=[];
+  if(rush&&lv<2){ lv++; why.push("rush"); }
+  if(royalRoad&&lv<2){ lv=2; why.push("royal"); }
+  if(blocked&&lv>0){ lv--; why.push("block"); }
+  return {tier:T[lv], base:T[base], why};
 }
 
 function geometry(x,y){
@@ -595,7 +599,8 @@ function loadShots(text){
       cross_ice:/^(1|true|yes|y)$/i.test(r.crossice||"")&&X>=54&&Math.abs(Y)>3?1:0
     });
     const last=out[out.length-1];
-    last.tier=dangerTier(X,Y,last.rush,last.cross_ice,last.blocked);
+    const ts=tierSteps(X,Y,last.rush,last.cross_ice,last.blocked);
+    last.tier=ts.tier; last.tier_why=ts.why;
   });
   if(!out.length) throw new Error("No rows had usable X/Y coordinates.");
   const scored=out.filter(s=>s.unblocked||s.blocked);
@@ -1233,6 +1238,12 @@ function fullRinkMarkup(){
    the rink says whose shot it is), and the coaches' zones sit faintly
    underneath. Orange/amber/green stay clear of the two team colours. */
 const TIER_COL={HIGH:"#E4572E", MED:"#F3A712", LOW:"#6BAA5E"}, TIER_ORDER=["HIGH","MED","LOW"];
+/* A ring around a shot whose tier a tag moved, one per tag, in the tag's
+   colour: purple rush (+1), teal royal road (to high), slate block (-1). */
+const WHY_COL={rush:"#7B4FC9", royal:"#0E9FB3", block:"#4A5866"};
+const WHY_NAME={rush:"odd-man rush", royal:"royal road", block:"blocked"};
+const causeRings=(why,kind,cx,cy)=>(why||[]).map((w,i)=>
+  `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${((kind==="goal"?4.3:2.9)+i*1.05).toFixed(2)}" fill="none" stroke="${WHY_COL[w]}" stroke-width=".7"/>`).join("");
 function zoneShapes(dir){
   const X=v=>(v*dir).toFixed(1);
   const pts=[[GOAL_X,-11],[69,-22],[54,-22],[54,22],[69,22],[GOAL_X,11]].map(([x,y])=>X(x)+","+y).join(" ");
@@ -1252,7 +1263,8 @@ function reportRinkSVG(events, flips){
   const {blue, red}=SIDES;
   const marks=events.map(s=>{
     const c=normXY(s, flips);
-    return iconMark(classify(s), c[0], svgY(c[1]), TIER_COL[s.tier]);
+    const k=classify(s), cy=svgY(c[1]);
+    return causeRings(s.tier_why, k, c[0], cy)+iconMark(k, c[0], cy, TIER_COL[s.tier]);
   }).join("");
   const lab=(x,txt,col)=>`<text x="${x}" y="-45.5" text-anchor="middle" `+
     `font-size="4.6" font-weight="700" fill="${col}" letter-spacing=".3">${esc(txt)}</text>`;
@@ -1484,6 +1496,7 @@ function keysHTML(){
     <span class="rkey">${ic("miss")} Missed</span>
     <span class="sep"></span>
     ${TIER_ORDER.map(k=>`<span><b style="background:${TIER_COL[k]}"></b>${TIER[k].label}</span>`).join("")} danger
+    <span class="sep"></span><span>ring: tier moved by</span>${Object.keys(WHY_COL).map(w=>`<span class="rkey"><svg viewBox="-3.8 -3.8 7.6 7.6" class="rkeyi"><circle r="2.9" fill="none" stroke="${WHY_COL[w]}" stroke-width=".9"/></svg>${WHY_NAME[w]}</span>`).join("")}
     <span class="sep"></span>
     <span>${esc(SIDES.blue)} shoots right, ${esc(SIDES.red)} left</span>
   </div>`;
