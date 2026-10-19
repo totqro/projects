@@ -4,7 +4,7 @@ Score a hand-tagged shot chart with the saved xG model.
 
     python score_tagged.py shots.csv               # per-shot xG + game totals
     python score_tagged.py shots.csv --out xg.csv  # also write the scored rows
-    python score_tagged.py shots.csv --tier HIGH   # only the HIGH-danger zone
+    python score_tagged.py shots.csv --tier HIGH   # only HIGH-danger shots
 
 Input is the x/y export from the shot-scatter tagger:
 
@@ -14,10 +14,15 @@ X/Y are raw NHL rink feet (x -100..100, y -42.5..42.5), so shots at the left
 end are mirrored onto the attacking-right frame the model was trained in
 (net at x = +89) before anything is computed.
 
-Type is Shot/Goal/Miss/Block. Only BLOCKED shots are dropped: the model is fit
-on unblocked attempts, 30% of which (269,893 of 905,483) are misses carrying
-goal=0, so throwing misses away would undercount a game's xG. Blocks are the
-one category MoneyPuck itself excludes (see clean.py, valid_event).
+Type is Shot/Goal/Miss/Block. Misses are scored like any attempt: 30% of the
+model's rows (269,893 of 905,483) are misses carrying goal=0. Blocks are
+scored at block_factor times their unblocked xG (tag_adjustments.json), not
+zero: some of those attempts would have gone in.
+
+Optional Rush and CrossIce columns (0/1, from the rinkside tracker) add the
+tagged layer in tag_features.py. A CrossIce tag only counts where a
+royal-road pass can end: below the faceoff-circle tops, off the road itself.
+Charts without the columns score as before.
 
 Shot-type words are mapped onto the model's vocabulary, and anything without a
 match (Scramble, blanks) is scored as UNKNOWN rather than guessed at. UNKNOWN
@@ -38,8 +43,9 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
+from tag_features import adjust, royal_road_spot
 from xg_model import FEATURES, MODEL_PATH, predict_xg
-from zone_tagging import GOAL_X, ZONE16_NAMES, geometry, zone16
+from zone_tagging import GOAL_X, ZONE16_NAMES, danger_tier, geometry, zone16
 
 # Tagger vocabulary -> the model's. Left off deliberately: Scramble and
 # anything blank, which have no NHL shotType equivalent -> UNKNOWN.
@@ -65,9 +71,6 @@ UNBLOCKED = {"shot", "goal", "save", "shot on goal", "miss", "missed",
              "missed shot", "wide", "post", "crossbar"}
 BLOCKED = {"block", "blocked", "blocked shot"}
 
-# The tagger's tiers, for the zone read (see web/index.html).
-TIER = {5: "HIGH", 8: "HIGH", 4: "MED", 6: "MED", 10: "MED", 11: "MED",
-        12: "MED"}
 
 
 def load_tagged(path: Path) -> pd.DataFrame:
@@ -97,7 +100,6 @@ def load_tagged(path: Path) -> pd.DataFrame:
     out["angle_from_net"] = a
     out["zone"] = zone16(out["x_adj"], out["y_adj"], numbered=True)
     out["zone_name"] = [ZONE16_NAMES[z] for z in out["zone"]]
-    out["tier"] = [TIER.get(z, "LOW") for z in out["zone"]]
 
     raw_type = df["shot_type"].fillna("").astype(str).str.strip().str.lower()
     out["shot_type"] = raw_type.map(SHOT_TYPES).fillna("UNKNOWN")
@@ -113,9 +115,18 @@ def load_tagged(path: Path) -> pd.DataFrame:
         df["rebound"].fillna(0).astype(int) if "rebound" in df.columns
         else 0
     )
+    flag = lambda col: (df[col].fillna(0).astype(int) if col in df.columns
+                        else pd.Series(0, index=df.index))
+    out["rush"] = flag("rush")
+    # A royal-road pass can't end above the circle tops or on the road itself.
+    out["cross_ice"] = flag("crossice") * royal_road_spot(out["x_adj"], out["y_adj"])
+    out["off_defender"] = flag("offdefender")
+    # The coaches' danger tiers (zone_tagging.danger_tier): a label, not a feature.
     out["goal"] = out["event"].isin(GOAL_WORDS).astype(int)
     out["scored"] = out["event"].isin(UNBLOCKED)
     out["blocked"] = out["event"].isin(BLOCKED)
+    out["tier"] = danger_tier(out["x_adj"], out["y_adj"], out["rush"],
+                              out["cross_ice"], out["blocked"])
     return out
 
 
@@ -125,8 +136,8 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("csv", type=Path)
     ap.add_argument("--out", type=Path, help="write the scored rows here")
-    ap.add_argument("--tier", choices=["HIGH", "MED", "LOW"],
-                    help="only shots in this danger tier (see web/index.html)")
+    ap.add_argument("--tier", choices=["HIGH", "MEDIUM", "LOW"],
+                    help="only shots in this coaching danger tier (zone_tagging.danger_tier)")
     args = ap.parse_args()
 
     if not MODEL_PATH.exists():
@@ -134,14 +145,15 @@ def main():
     model = joblib.load(MODEL_PATH)
 
     df = load_tagged(args.csv)
-    scored = df[df.scored].copy()
+    scored = df[df.scored | df.blocked].copy()
     blocked = int(df.blocked.sum())
     unrecognised = df[~df.scored & ~df.blocked]
-    scored["xg"] = predict_xg(model, scored)
+    scored["xg"] = adjust(predict_xg(model, scored), scored.rush,
+                          scored.cross_ice, scored.blocked)
 
     label = f"{args.csv.name}: {len(df)} tagged events, {len(scored)} scored"
     if blocked:
-        label += f", {blocked} blocked (dropped)"
+        label += f" ({blocked} blocked, at reduced xG)"
     if len(unrecognised):
         kinds = ", ".join(sorted(set(unrecognised.event.replace("", "(blank)"))))
         label += f", {len(unrecognised)} unrecognised type ({kinds}, dropped)"
@@ -155,13 +167,13 @@ def main():
         return
 
     print("\nPer shot")
-    print(f"  {'P':>2} {'team':<6}{'tier':<5}{'zone':<14}{'dist':>6}{'ang':>5}  "
+    print(f"  {'P':>2} {'team':<6}{'tier':<7}{'zone':<14}{'dist':>6}{'ang':>5}  "
           f"{'type':<8}{'situation':<10}{'':<5}{'xG':>7}")
-    order = {"HIGH": 0, "MED": 1, "LOW": 2}
+    order = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
     for _, s in scored.sort_values(
             by="tier", key=lambda c: c.map(order)).iterrows():
-        mark = "GOAL" if s.goal else ""
-        print(f"  {s.period:>2} {s.team:<6}{s.tier:<5}{s.zone_name:<14}"
+        mark = "GOAL" if s.goal else ("BLK" if s.blocked else "")
+        print(f"  {s.period:>2} {s.team:<6}{s.tier:<7}{s.zone_name:<14}"
               f"{s.distance:>6.1f}{s.angle_from_net:>5.0f}  {s.shot_type:<8}"
               f"{s.situation:<10}{mark:<5}{s.xg:>7.3f}")
 
@@ -176,7 +188,7 @@ def main():
         print("\nShot quality mix")
         for team, g in scored.groupby("team"):
             parts = [f"{t} {(g.tier==t).mean()*100:.0f}%" for t in
-                     ("HIGH", "MED", "LOW")]
+                     ("HIGH", "MEDIUM", "LOW")]
             print(f"  {team:<8}{'  '.join(parts)}")
 
     unknown = (scored.shot_type == "UNKNOWN")
@@ -195,7 +207,7 @@ def main():
     if args.out:
         cols = ["period", "team", "player", "event", "x_adj", "y_adj",
                 "distance", "angle_from_net", "zone", "zone_name", "tier",
-                *FEATURES, "goal", "xg"]
+                *FEATURES, "rush", "cross_ice", "blocked", "goal", "xg"]
         scored[cols].to_csv(args.out, index=False)
         print(f"\nWrote {args.out}")
 

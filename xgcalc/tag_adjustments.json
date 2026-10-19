@@ -1,0 +1,19 @@
+{
+  "rush": {
+    "coef": 0.7,
+    "prior": 0.7,
+    "prior_sd": 0.5,
+    "fit": null,
+    "note": "odd-man rush; prior 0.70 (about 2.0x the odds) is a judgment call anchored above a measured floor: NHL shots within 6 s of a neutral/defensive-zone turnover score at 1.58x (+0.46 +/- 0.03, 20,223 shots, nhl_turnover_rush.py), and an odd-man rush is the subset of those where the defence is short"
+  },
+  "cross_ice": {
+    "coef": 0.9083,
+    "prior": 0.9083,
+    "prior_sd": 0.2946,
+    "fit": null,
+    "note": "royal-road pass: passer and shooter on opposite sides of the road, both below the circle tops, shot within 0.5 s; prior measured on real games, about 2.5x the odds",
+    "prior_source": "Big Data Cup 2021 women's NCAA/NWHL/Olympic events: 87 royal-road shots, 16 goals, of 2976 unblocked"
+  },
+  "block_factor": 0.25,
+  "block_note": "blocked attempts score this fraction of their unblocked xG; 0.25 is a judgment call until fit_tagged.py measures it from goals tagged off a defender (h)"
+}

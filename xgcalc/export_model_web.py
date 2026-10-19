@@ -10,6 +10,10 @@ lines of JavaScript, which is what web/scatter.html does. Nothing here is
 approximated: the numbers are lifted straight off the fitted pipeline, and
 `--check` reruns both paths on the same rows to prove they agree.
 
+Also carried: the tagged-feature layer from tag_adjustments.json (rush,
+cross-ice, block factor; see tag_features.py), under "adjust". The parity
+check covers it too.
+
 Not included: the isotonic calibrator in data/xg_calibrator.json. The CLI
 (score_tagged.py) does not apply it either, so the web page matches the CLI.
 """
@@ -24,6 +28,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
+from tag_features import adjust, load_adjustments
 from xg_model import CATEGORICAL, FEATURES, MODEL_PATH, NUMERIC, SHOT_TYPE_MERGE
 from zone_tagging import GOAL_X, ZONE16_NAMES
 
@@ -63,6 +68,7 @@ def export() -> dict:
         if target in shot_map:
             shot_map[alias] = shot_map[target]
 
+    adj = load_adjustments()
     return {
         "features": FEATURES,
         "numeric": {
@@ -75,6 +81,9 @@ def export() -> dict:
         "coef": clf.coef_[0].tolist(),
         "intercept": float(clf.intercept_[0]),
         "geometry": {"goal_x": GOAL_X, "zone_names": ZONE16_NAMES},
+        "adjust": {"rush": adj["rush"]["coef"],
+                   "cross_ice": adj["cross_ice"]["coef"],
+                   "block_factor": adj["block_factor"]},
     }
 
 
@@ -90,7 +99,10 @@ def score_js_style(spec: dict, row: dict) -> float:
         if column is not None:
             x[index[column]] = 1.0
     z = spec["intercept"] + sum(c * v for c, v in zip(spec["coef"], x))
-    return 1.0 / (1.0 + np.exp(-z))
+    a = spec["adjust"]
+    z += a["rush"] * row["rush"] + a["cross_ice"] * row["cross_ice"]
+    p = 1.0 / (1.0 + np.exp(-z))
+    return p * a["block_factor"] if row["blocked"] else p
 
 
 def check(spec: dict) -> None:
@@ -107,8 +119,12 @@ def check(spec: dict) -> None:
                                  "DEFL", "WRAP", "UNKNOWN", "NOT_A_TYPE"], 400),
         "situation": rng.choice(["EV_5v5", "PP_5v4", "SH_4v5", "EV_3v3",
                                  "EN_AGAINST", "OTHER", "NOT_A_SITUATION"], 400),
+        "rush": rng.integers(0, 2, 400),
+        "cross_ice": rng.integers(0, 2, 400),
+        "blocked": rng.integers(0, 2, 400),
     })
-    truth = predict_xg(joblib.load(MODEL_PATH), rows)
+    truth = adjust(predict_xg(joblib.load(MODEL_PATH), rows),
+                   rows.rush, rows.cross_ice, rows.blocked)
     ours = np.array([score_js_style(spec, r) for _, r in rows.iterrows()])
     worst = float(np.abs(truth - ours).max())
     print(f"  max |sklearn - exported| over {len(rows)} rows: {worst:.3e}")
@@ -124,6 +140,9 @@ def main():
     OUT_JS.write_text(f"window.XG_MODEL={text};\n")
     print(f"Wrote {OUT.relative_to(ROOT)} ({OUT.stat().st_size/1000:.1f} KB) "
           f"and {OUT_JS.relative_to(ROOT)}, {len(spec['columns'])} columns")
+    a = spec["adjust"]
+    print(f"  tagged layer: rush {a['rush']:+.3f}, cross-ice {a['cross_ice']:+.3f}, "
+          f"blocks x{a['block_factor']}")
     check(spec)
 
 

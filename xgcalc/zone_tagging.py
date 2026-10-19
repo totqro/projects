@@ -85,3 +85,37 @@ def zone16(x, y, numbered=False):
 def mirror16(z):
     """Collapse the left/right pairs -> the 9 distinct shapes."""
     return np.array([s.split(" ", 1)[1].replace("L ", "").replace("R ", "") for s in z])
+
+
+# --- coaching danger tiers ----------------------------------------------------
+# The coaches' map, attacking frame. A label for reports, never a model input:
+# the model already prices location, rush and royal-road passes.
+#
+#   HIGH    the box from the goal line to the faceoff-dot line, |y| <= 11
+#   MEDIUM  a trapezoid from that box's edges at the goal line out to the dots
+#           (|y| = 22) at the dot line, then |y| <= 22 out to the circle tops
+#   LOW     everything else, behind the net included
+#
+# Overrides, in order: an odd-man rush moves up one tier, a royal-road pass
+# makes it HIGH, and a blocked attempt then drops one tier (never below LOW).
+DOT_X = 69.0               # faceoff dots
+CIRCLE_TOP_X = 54.0        # dots minus the 15 ft circle radius
+HIGH_Y, DOT_Y = 11.0, 22.0
+TIERS = ("LOW", "MEDIUM", "HIGH")
+
+
+def danger_tier(x, y, rush=0, royal_road=0, blocked=0):
+    """'HIGH' / 'MEDIUM' / 'LOW' per shot. Arrays in, string array out."""
+    x = np.asarray(x, dtype=float); ya = np.abs(np.asarray(y, dtype=float))
+    in_front = x <= GOAL_X
+    deep = in_front & (x >= DOT_X)
+    trapezoid = HIGH_Y + (GOAL_X - x) * (DOT_Y - HIGH_Y) / (GOAL_X - DOT_X)
+    level = np.select(
+        [deep & (ya <= HIGH_Y),
+         deep & (ya <= trapezoid),
+         in_front & (x >= CIRCLE_TOP_X) & (x < DOT_X) & (ya <= DOT_Y)],
+        [2, 1, 1], default=0)
+    level = np.minimum(level + np.asarray(rush, dtype=int), 2)
+    level = np.where(np.asarray(royal_road, dtype=bool), 2, level)
+    level = np.maximum(level - np.asarray(blocked, dtype=int), 0)
+    return np.array(TIERS)[level]

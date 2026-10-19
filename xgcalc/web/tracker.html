@@ -130,6 +130,12 @@ svg.rink{display:block; width:min(100%, calc((100vh - var(--hdr, 150px) - 240px)
 .chip{padding:1px 7px; border:1px solid var(--line-2); background:var(--muted)}
 .chip.team-us{background:var(--us); color:var(--bg); border-color:transparent; font-weight:700}
 .chip.team-them{background:var(--them); color:var(--bg); border-color:transparent; font-weight:700}
+.chip.flag{color:var(--ok); border-color:rgba(0,255,136,.5)}
+.chip.flag.need{color:var(--warn); border-color:rgba(255,176,0,.55)}
+.chip.tier-HIGH{color:var(--bad); border-color:rgba(255,51,102,.6)}
+.chip.tier-MEDIUM{color:var(--us); border-color:rgba(0,212,255,.5)}
+.chip.tier-LOW{color:var(--ink-2)}
+td.tier-HIGH{color:var(--bad)} td.tier-MEDIUM{color:var(--us)}
 .chip.need{color:var(--warn); border-color:rgba(255,176,0,.55)}
 .shot .edits{display:grid; grid-template-columns:repeat(3,1fr); gap:5px}
 .shot .edits select{width:100%}
@@ -205,6 +211,11 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
 #reportOut .two{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; align-items:start; margin-top:9px}
 #reportOut .two:first-of-type{margin-top:2px}
 #reportOut .stack{display:grid; gap:9px; align-content:start}
+#reportOut .tb{margin-bottom:8px}
+#reportOut .tbh{display:flex; justify-content:space-between; font-size:10px; margin-bottom:2px} #reportOut .tbh span{color:#5D6E80}
+#reportOut .tbbar{display:flex; gap:1px; height:13px; border-radius:3px; overflow:hidden; background:#E3E8ED}
+#reportOut .tbbar i{display:flex; align-items:center; justify-content:center; font-style:normal; font-size:8.5px; font-weight:800; color:#fff; min-width:0}
+#reportOut .tbx{display:flex; gap:8px; flex-wrap:wrap; font-size:9px; color:#48586A; margin-top:2px}
 /* fitReport() scales .rp inside .rpfit; the box takes the scaled height. */
 #reportOut .rpfit{overflow:hidden; break-inside:avoid; page-break-inside:avoid}
 #reportOut .rp{transform-origin:top center}
@@ -343,7 +354,7 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
       <button class="primary" id="xReport">Report PDF</button>
       <span class="note" style="align-self:center">Opens the print dialog: choose <b>Save as PDF</b>. One portrait page.</span>
     </div>
-    <div class="note" style="margin-top:6px">The shots CSV keeps the shot-plotter columns, so Shot Chart and <code>score_tagged.py</code> read it as-is, plus clock, rebound, situation, xG and who was on the ice.</div>
+    <div class="note" style="margin-top:6px">The shots CSV keeps the shot-plotter columns, so Shot Chart and <code>score_tagged.py</code> read it as-is, plus clock, rebound, situation, xG, who was on the ice, and the rush and cross-ice tags (<code>fit_tagged.py</code> refits those from it).</div>
   </div>
 </main>
 
@@ -413,9 +424,31 @@ function scoreShot(s){
   }
   let z = MODEL.intercept;
   for(let i=0;i<x.length;i++) z += MODEL.coef[i]*x[i];
-  return 1/(1+Math.exp(-z));
+  const a = adj();
+  z += (s.rush ? a.rush : 0) + (s.cross_ice ? a.cross_ice : 0);
+  const p = 1/(1+Math.exp(-z));
+  return s.blocked ? p * a.block_factor : p;
 }
-const GOAL_X = 89;
+/* The tagged layer (tag_features.py): rush and cross-ice add to the logit,
+   blocks keep a fraction of their xG. Defaults are tag_adjustments.json's
+   priors, for an xg_model.js exported before the layer existed. */
+const ADJUST_DEFAULT = {rush:0.7, cross_ice:0.91, block_factor:0.25};
+const adj = () => Object.assign({}, ADJUST_DEFAULT, (MODEL && MODEL.adjust) || {});
+const GOAL_X = 89, POST_Y = 3, CIRCLE_TOP_X = 54, DOT_X = 69, HIGH_Y = 11, DOT_Y = 22;
+/* The coaches' danger tiers, same as zone_tagging.danger_tier: a label for
+   reports, never fed into xG. High is the box from the goal line to the dot
+   line; medium is the trapezoid out to the dots plus the band to the circle
+   tops; the rest is low. A rush moves up one, a royal-road pass makes it
+   high, then a block drops it one. */
+const TIERS = ["LOW","MEDIUM","HIGH"], TIER_SHORT = {HIGH:"High", MEDIUM:"Med", LOW:"Low"};
+function dangerTier(x, y, rush, royalRoad, blocked){
+  const ya = Math.abs(y), front = x <= GOAL_X, deep = front && x >= DOT_X;
+  const trap = HIGH_Y + (GOAL_X - x) * (DOT_Y - HIGH_Y) / (GOAL_X - DOT_X);
+  let lv = deep && ya <= HIGH_Y ? 2 : (deep && ya <= trap) || (front && x >= CIRCLE_TOP_X && x < DOT_X && ya <= DOT_Y) ? 1 : 0;
+  lv = Math.min(lv + (rush ? 1 : 0), 2);
+  if(royalRoad) lv = 2;
+  return TIERS[Math.max(lv - (blocked ? 1 : 0), 0)];
+}
 function geometry(x,y){ const dx = GOAL_X-x, ya = Math.abs(y);
   return {d:Math.hypot(dx,ya), a:Math.atan2(ya,dx)*180/Math.PI}; }
 
@@ -727,8 +760,14 @@ function derive(extraChange){
     const right = attacksRight(s.team, s.p), X = right ? s.x : -s.x, Y = right ? s.y : -s.y;
     const g = geometry(X, Y);
     I.distance = g.d; I.angle = g.a; I.X = X; I.Y = Y;
-    I.xg = s.result === "BLOCK" ? 0 : scoreShot({distance:g.d, angle_from_net:g.a, shot_type:MODEL_TYPE[s.type] || s.type,
-                                                 is_rebound:I.rebound ? 1 : 0, situation:I.situation});
+    /* Royal-road pass: passer and shooter on opposite sides of the road
+       (beyond the posts' lines), both below the circle tops, shot within
+       0.5 s. Only the shooter is on the rink, so a tag on a shooter above
+       the circles or on the road is shown but not counted. */
+    I.xiSuspect = !!s.xi && !(X >= CIRCLE_TOP_X && Math.abs(Y) > POST_Y);
+    I.tier = dangerTier(X, Y, s.rush, s.xi && !I.xiSuspect, s.result === "BLOCK");
+    I.xg = scoreShot({distance:g.d, angle_from_net:g.a, shot_type:MODEL_TYPE[s.type] || s.type, is_rebound:I.rebound ? 1 : 0,
+                      situation:I.situation, rush:!!s.rush, cross_ice:!!s.xi && !I.xiSuspect, blocked:s.result === "BLOCK"});
     prev = s;
   }
   return {ordered, shotInfo, issues, board, shifts, segments, candidate, MP, poss:possession()};
@@ -737,7 +776,7 @@ function derive(extraChange){
 function playerStats(D, scope){
   const inScope = p => scope === undefined || scope === null || p === scope;
   const st = {};
-  S.roster.forEach(p => st[p.num] = {p, toi:0, shifts:0, cf:0, ca:0, gf:0, ga:0, xgf:0, xga:0, sa:0});
+  S.roster.forEach(p => st[p.num] = {p, toi:0, shifts:0, cf:0, ca:0, gf:0, ga:0, xgf:0, xga:0, uxga:0, sa:0});
   for(const seg of D.segments){ if(!inScope(seg.p)) continue;
     for(const n of seg.board) if(st[n]) st[n].toi += seg.s1 - seg.s2; }
   for(const sh of D.shifts){ const r = st[sh.num]; if(!r) continue;
@@ -752,7 +791,7 @@ function playerStats(D, scope){
     const I = D.shotInfo[s.id], us = s.team === "us";
     for(const n of I.onIce){ const r = st[n]; if(!r) continue;
       if(us){ r.cf++; r.xgf += I.xg || 0; if(s.result === "GOAL") r.gf++; }
-      else  { r.ca++; r.xga += I.xg || 0; if(s.result === "GOAL") r.ga++; if(s.result === "SAVE" || s.result === "GOAL") r.sa++; }
+      else  { r.ca++; r.xga += I.xg || 0; if(s.result !== "BLOCK") r.uxga += I.xg || 0; if(s.result === "GOAL") r.ga++; if(s.result === "SAVE" || s.result === "GOAL") r.sa++; }
     }
   }
   return st;
@@ -909,7 +948,7 @@ function logShot(x, y){
   const team = x >= 0 ? (usAttacksRight(c.p) ? "us" : "them") : (usAttacksRight(c.p) ? "them" : "us");
   mutate(() => {
     G.shots.push({id:G.nextId++, w:Date.now(), p:c.p, x:+x.toFixed(1), y:+y.toFixed(1), team,
-                  type:"UNKNOWN", result:"SAVE", reb:null});
+                  type:"UNKNOWN", result:"SAVE", reb:null, rush:false, xi:false, offd:false});
     selId = null;
   });
 }
@@ -1045,7 +1084,11 @@ function renderShotPanel(D){
       <span class="chip ${s.type === "UNKNOWN" ? "need" : ""}">${esc(TYPE_LABEL[s.type])}</span>
       <span class="chip">${RESULT_LABEL[s.result]}</span>
       ${I.rebound ? `<span class="chip">rebound${s.reb === null || s.reb === undefined ? " (auto)" : ""}</span>` : ""}
+      ${s.rush ? `<span class="chip flag">odd-man rush</span>` : ""}
+      ${s.offd ? `<span class="chip flag${s.result === "GOAL" ? "" : " need"}" title="${s.result === "GOAL" ? "Went in off a defender: counts toward the measured block factor" : "Only goals can go in off a defender"}">off a defender${s.result === "GOAL" ? "" : " · goals only"}</span>` : ""}
+      ${s.xi ? `<span class="chip flag${I.xiSuspect ? " need" : ""}" title="${I.xiSuspect ? "Shooter is above the circle tops or on the royal road: not a royal-road pass, not counted" : "Royal-road pass, shot within 0.5 s"}">cross-ice${I.xiSuspect ? " · not counted" : ""}</span>` : ""}
       <span class="chip">${esc(sitShow(I.situation))}</span>
+      <span class="chip tier-${I.tier}" title="Coaches' danger tier: a label, not part of the xG">${TIER_SHORT[I.tier]} danger</span>
       <span class="mono" style="margin-left:auto">${I.xg === null ? "no model" : I.xg.toFixed(3)+" xG"}</span>
     </div>
     <div class="note">${I.distance.toFixed(0)} ft · ${I.angle.toFixed(0)}° · on ice: ${I.onIce.length ? I.onIce.map(esc).join(" ") : "nobody logged"}</div>
@@ -1054,7 +1097,7 @@ function renderShotPanel(D){
       <select data-f="result">${opt(RESULT_LABEL, s.result)}</select>
       <select data-f="str"><option value=""${s.str ? "" : " selected"}>Auto (${I.us}v${I.them}${I.oppEN ? ", opp EN" : ""})</option>${opt(STR_LABEL, s.str)}</select>
     </div>
-    <div class="note">type <kbd>w</kbd><kbd>s</kbd><kbd>b</kbd><kbd>t</kbd><kbd>a</kbd><kbd>d</kbd><kbd>u</kbd> · result <kbd>o</kbd><kbd>g</kbd><kbd>m</kbd><kbd>k</kbd> · <kbd>r</kbd> rebound · <kbd>x</kbd> other team · <kbd>,</kbd><kbd>.</kbd> time</div>
+    <div class="note">type <kbd>w</kbd><kbd>s</kbd><kbd>b</kbd><kbd>t</kbd><kbd>a</kbd><kbd>d</kbd><kbd>u</kbd> · result <kbd>o</kbd><kbd>g</kbd><kbd>m</kbd><kbd>k</kbd> · <kbd>r</kbd> rebound · <kbd>f</kbd> odd-man rush · <kbd>p</kbd> cross-ice · <kbd>h</kbd> goal off a defender · <kbd>x</kbd> other team · <kbd>,</kbd><kbd>.</kbd> time</div>
     <button class="delbtn" id="shotDel">Delete ${s.result === "GOAL" ? "goal" : "shot"} <kbd>Shift</kbd>+<kbd>Delete</kbd></button>`;
   $("shotDel").addEventListener("mousedown", e => e.preventDefault());
   $("shotDel").onclick = () => deleteShot(s.id);
@@ -1065,13 +1108,14 @@ function renderShotPanel(D){
 function renderLog(D){
   const tb = $("log"), sel = selected();
   if(!D.ordered.length){ tb.innerHTML = `<tbody><tr><td class="note">No shots yet.</td></tr></tbody>`; return; }
-  tb.innerHTML = `<thead><tr><th>#</th><th>P</th><th>Clock</th><th>Team</th><th>Type</th><th>Result</th><th>Reb</th><th>Str</th><th>On ice</th><th class="num">xG</th><th></th></tr></thead><tbody>` +
+  tb.innerHTML = `<thead><tr><th>#</th><th>P</th><th>Clock</th><th>Team</th><th>Type</th><th>Result</th><th>Reb</th><th>Rush</th><th>XI</th><th>Tier</th><th>Str</th><th>On ice</th><th class="num">xG</th><th></th></tr></thead><tbody>` +
     D.ordered.map((s,i) => { const I = D.shotInfo[s.id];
       return `<tr class="row${sel && sel.id === s.id ? " sel" : ""}" data-id="${s.id}">
         <td class="num">${i+1}</td><td>${perLabel(s.p)}</td><td class="mono">${fmt(I.sec)}${s.s !== undefined && s.s !== null ? "*" : ""}</td>
         <td style="color:var(--${s.team})">${esc(s.team === "us" ? S.us : S.opp)}</td>
         <td class="${s.type === "UNKNOWN" ? "warnc" : ""}">${esc(TYPE_LABEL[s.type])}</td><td>${RESULT_LABEL[s.result]}</td>
-        <td>${I.rebound ? "yes" : ""}</td><td>${esc(sitShow(I.situation))}</td>
+        <td>${I.rebound ? "yes" : ""}</td><td>${s.rush ? "yes" : ""}</td><td class="${I.xiSuspect ? "warnc" : ""}">${s.xi ? (I.xiSuspect ? "no*" : "yes") : ""}</td>
+        <td class="tier-${I.tier}">${TIER_SHORT[I.tier]}</td><td>${esc(sitShow(I.situation))}</td>
         <td class="mono">${I.onIce.map(esc).join(" ")}</td><td class="num">${I.xg === null ? "" : I.xg.toFixed(3)}</td>
         <td><button class="del" data-del="${s.id}" tabindex="-1" title="Delete this ${s.result === "GOAL" ? "goal" : "shot"}" aria-label="Delete">&times;</button></td></tr>`; }).join("") + `</tbody>`;
   tb.querySelectorAll("tr.row").forEach(tr => tr.onclick = () => { selId = +tr.dataset.id; render(); });
@@ -1130,7 +1174,7 @@ function renderStats(D){
       <td class="num">${r.xgf.toFixed(2)}</td><td class="num">${r.xga.toFixed(2)}</td><td class="num">${pct(r.xgf, r.xga)}</td>
       <td class="num">${per60(r.xgf, r.toi)}</td><td class="num">${per60(r.xga, r.toi)}</td></tr>`).join("") + `</tbody>`;
   const unknownOn = new Set(); D.shifts.forEach(s => { if(!st[s.num]) unknownOn.add(s.num); });
-  $("statsNote").innerHTML = `CF/CA count every attempt, blocked ones included. xG leaves blocked shots at 0, as the model does.` +
+  $("statsNote").innerHTML = `CF/CA count every attempt, blocked ones included. Blocked shots keep ${Math.round(adj().block_factor*100)}% of their xG.` +
     (unknownOn.size ? ` <span class="warnc">Numbers on the ice but not on the roster: ${[...unknownOn].map(esc).join(", ")}.</span>` : "");
 }
 
@@ -1257,11 +1301,12 @@ const base = () => `${S.date}_${slug(S.us)}_vs_${slug(S.opp)}`;
 
 function exportShots(){
   const D = derive();
-  const rows = [["Period","Team","Player","Type","X","Y","Shot Type","Strength","Clock","Rebound","Situation","xG","OnIce","Goalie","OnIceTeam"]];
+  const rows = [["Period","Team","Player","Type","X","Y","Shot Type","Strength","Clock","Rebound","Situation","xG","OnIce","Goalie","OnIceTeam","Rush","CrossIce","Tier","OffDefender"]];
   D.ordered.forEach(s => { const I = D.shotInfo[s.id];
     rows.push([s.p <= 3 ? s.p : "OT", s.team === "us" ? S.us : S.opp, "", RESULT_EXPORT[s.result], s.x, s.y,
       TYPE_EXPORT[s.type], SIT_TEXT[I.situation] || "", fmt(I.sec), I.rebound ? 1 : 0, I.situation,
-      I.xg === null ? "" : I.xg.toFixed(4), I.onIce.filter(n => n !== I.goalie).join(" "), I.goalie || "", S.us]); });
+      I.xg === null ? "" : I.xg.toFixed(4), I.onIce.filter(n => n !== I.goalie).join(" "), I.goalie || "", S.us,
+      s.rush ? 1 : 0, s.xi ? 1 : 0, I.tier, s.offd && s.result === "GOAL" ? 1 : 0]); });
   download(base() + "_shots.csv", csv(rows));
 }
 function exportPlayers(){
@@ -1343,16 +1388,6 @@ const RC_US = "#044684", RC_THEM = "#C8283C";
 /* Loaded up front so the print dialog never opens before the logo has. */
 const LOGO = new Image(); LOGO.src = "uoft-logo.png";
 const showName = t => /^(u\s*of\s*t|uoft|u\s*of\s*toronto|university\s+of\s+toronto|(toronto\s+)?varsity\s*blues?|blues)$/i.test(String(t).trim()) ? "Varsity Blues" : t;
-const TIER_OF = {5:"HIGH", 8:"HIGH", 4:"MED", 6:"MED", 10:"MED", 11:"MED", 12:"MED"};
-function zone16(x, y){
-  const g = geometry(x, y), d = g.d, a = g.a, left = y < 0;
-  if(x > GOAL_X) return y < -17 ? 1 : (y > 17 ? 3 : 2);
-  if(x < 25) return 16;
-  if(d < 8) return 5;
-  if(d < 24) return a < 20 ? 8 : (left ? 4 : 6);
-  if(d < 45){ if(a < 20) return 11; if(a < 45) return left ? 10 : 12; return left ? 7 : 9; }
-  return a < 20 ? 14 : (left ? 13 : 15);
-}
 const periodsInGame = D => [...new Set(D.ordered.map(s => s.p).concat(D.segments.map(s => s.p)))].sort((a,b) => a-b);
 const elapsed = (p, sec) => { let t = 0; for(let q = 1; q < p; q++) t += periodLen(q); return t + periodLen(p) - sec; };
 const sg2 = v => (v >= 0 ? "+" : "") + v.toFixed(2);
@@ -1412,34 +1447,60 @@ function fullRink(){
   });
   return p.join("") + `</g>`;
 }
+/* Danger tiers on the report: shot markers take the tier's colour (the side
+   of the rink says whose shot it is), and the coaches' zones sit faintly
+   underneath. Orange/amber/green stay clear of the two team colours. */
+const TIER_COL = {HIGH:"#E4572E", MEDIUM:"#F3A712", LOW:"#6BAA5E"};
+const TIER_NAME = {HIGH:"High", MEDIUM:"Medium", LOW:"Low"}, TIER_ORDER = ["HIGH","MEDIUM","LOW"];
+function zoneShapes(dir){
+  const X = v => (v*dir).toFixed(1);
+  const pts = [[GOAL_X,-HIGH_Y],[DOT_X,-DOT_Y],[CIRCLE_TOP_X,-DOT_Y],[CIRCLE_TOP_X,DOT_Y],[DOT_X,DOT_Y],[GOAL_X,HIGH_Y]].map(([x,y]) => X(x)+","+y).join(" ");
+  return `<polygon points="${pts}" fill="#141D26" fill-opacity=".035" stroke="#7B8B9C" stroke-width=".3"/>`+
+    `<rect x="${dir > 0 ? DOT_X : -GOAL_X}" y="${-HIGH_Y}" width="${GOAL_X-DOT_X}" height="${2*HIGH_Y}" fill="#141D26" fill-opacity=".05" stroke="#7B8B9C" stroke-width=".3"/>`;
+}
+/* Stacked bar per team: attempts in each tier, with xG and goals under it. */
+function tierBars(a, b){
+  const bar = (t, name, col) => { const tot = t.n.HIGH + t.n.MEDIUM + t.n.LOW;
+    return `<div class="tb"><div class="tbh"><b style="color:${col}">${esc(name)}</b><span>${tot} attempts &middot; ${t.xg.toFixed(2)} xG</span></div>
+      <div class="tbbar">${TIER_ORDER.map(k => t.n[k] ? `<i style="flex:${t.n[k]} 1 0;background:${TIER_COL[k]}">${t.n[k]}</i>` : "").join("")}</div>
+      <div class="tbx">${TIER_ORDER.map(k => `<span>${TIER_NAME[k]} <b>${t.n[k]}</b> &middot; ${t.x[k].toFixed(2)} xG${t.tg[k] ? ` &middot; ${t.tg[k]} G` : ""}</span>`).join("")}</div></div>`; };
+  return `<div><h3>Danger tiers</h3>${bar(a, S.us, RC_US)}${bar(b, S.opp, RC_THEM)}</div>`;
+}
 function reportRink(D, shots){
   const marks = shots.map(s => {
     const flip = !usAttacksRight(s.p), x = flip ? -s.x : s.x, y = flip ? -s.y : s.y;
-    return iconMark(s.result, x, -y, s.team === "us" ? RC_US : RC_THEM);
+    return iconMark(s.result, x, -y, TIER_COL[D.shotInfo[s.id].tier]);
   }).join("");
+  const zones = `<g clip-path="url(#iceFull)">${zoneShapes(1)}${zoneShapes(-1)}</g>`;
   const lab = (x, txt, col) => `<text x="${x}" y="-45.5" text-anchor="middle" font-size="4.6" font-weight="700" fill="${col}">${esc(txt)}</text>`;
-  return `<svg viewBox="-104 -50 208 99" class="rinkfull">${fullRink()}${lab(-50, "← " + S.opp + " attacking", RC_THEM)}${lab(50, S.us + " attacking →", RC_US)}${marks}</svg>`;
+  return `<svg viewBox="-104 -50 208 99" class="rinkfull">${fullRink()}${zones}${lab(-50, "← " + S.opp + " attacking", RC_THEM)}${lab(50, S.us + " attacking →", RC_US)}${marks}</svg>`;
 }
 function reportKeys(){
   const ic = k => `<svg viewBox="-3.8 -3.8 7.6 7.6" class="rkeyi">${iconMark(k, 0, 0, "#48586A")}</svg>`;
   return `<div class="keys"><span class="rkey">${ic("GOAL")} Goal</span><span class="rkey">${ic("SAVE")} Shot on net</span>
     <span class="rkey">${ic("BLOCK")} Blocked</span><span class="rkey">${ic("MISS")} Missed</span><span class="sep"></span>
-    <span><b style="background:${RC_US}"></b>${esc(S.us)}</span><span><b style="background:${RC_THEM}"></b>${esc(S.opp)}</span></div>`;
+    ${TIER_ORDER.map(k => `<span><b style="background:${TIER_COL[k]}"></b>${TIER_NAME[k]}</span>`).join("")} danger
+    <span class="sep"></span><span>${esc(S.us)} shoots right, ${esc(S.opp)} left</span></div>`;
 }
 /* Shots into an empty net are kept apart so the opponent's GSAx only
    counts shots their goalie could have stopped. */
 function teamSummary(D, shots, team){
-  const r = {g:0, xg:0, hd:0, sog:0, att:0, reb:0, ppg:0, eng:0, enxg:0, ensog:0};
+  const r = {g:0, xg:0, uxg:0, sog:0, att:0, reb:0, rush:0, xi:0, ppg:0, eng:0, enxg:0, ensog:0,
+             n:{HIGH:0, MEDIUM:0, LOW:0}, x:{HIGH:0, MEDIUM:0, LOW:0}, tg:{HIGH:0, MEDIUM:0, LOW:0}};
   for(const s of shots){ if(s.team !== team) continue;
     const I = D.shotInfo[s.id], xg = I.xg || 0, goal = s.result === "GOAL", onNet = goal || s.result === "SAVE";
     r.att++; r.xg += xg;
     if(goal) r.g++;
     if(onNet) r.sog++;
     if(I.rebound && s.result !== "BLOCK") r.reb++;
-    if(TIER_OF[zone16(I.X, I.Y)] === "HIGH" && s.result !== "BLOCK") r.hd++;
+    if(s.result !== "BLOCK") r.uxg += xg;
+    if(s.rush) r.rush++;
+    if(s.xi && !I.xiSuspect) r.xi++;
+    r.n[I.tier]++; r.x[I.tier] += xg; if(goal) r.tg[I.tier]++;
     if(goal && (team === "us" ? strOf(I.us, I.them) : strOf(I.them, I.us)) === "PP") r.ppg++;
     if(I.situation === "EN_AGAINST"){ r.enxg += xg; if(goal) r.eng++; if(onNet) r.ensog++; }
   }
+  r.hd = r.n.HIGH;
   return r;
 }
 function totalsTable(a, b){
@@ -1471,16 +1532,16 @@ function goalieTable(st, a){
       <td class="n ${signCls(gsax)}">${sg2(gsax)}</td></tr>`; };
   const ours = Object.values(st).filter(r => r.p.pos === "G" && r.toi > 0).sort((x,y) => y.toi - x.toi);
   return `<div><h3>Goalies <span class="sub">· GSAx = xGA − GA</span></h3><table><thead><tr><th>Goalie</th><th class="n">TOI</th><th class="n">SA</th><th class="n">GA</th><th class="n">SV%</th><th class="n">xGA</th><th class="n">GSAx</th></tr></thead><tbody>` +
-    (ours.length ? ours.map(r => row(pname(r.p), fmt(r.toi), r.sa, r.ga, r.xga)).join("")
+    (ours.length ? ours.map(r => row(pname(r.p), fmt(r.toi), r.sa, r.ga, r.uxga)).join("")
                  : `<tr><td colspan="7" class="empty">No ${esc(S.us)} goalie logged on the ice.</td></tr>`) +
-    row(esc(S.opp), "", a.sog - a.ensog, a.g - a.eng, a.xg - a.enxg) + `</tbody></table></div>`;
+    row(esc(S.opp), "", a.sog - a.ensog, a.g - a.eng, a.uxg - a.enxg) + `</tbody></table></div>`;
 }
 function niceStep(max){ const raw = max/4, mag = Math.pow(10, Math.floor(Math.log10(raw))), f = raw/mag;
   return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * mag; }
 function flowChart(D, shots, span, tl){
   if(!span) return `<p class="empty">Nothing logged in this scope.</p>`;
   const {periods, t0, t1, played} = span;
-  const seq = shots.filter(s => s.result !== "BLOCK").map(s => ({s, t:elapsed(s.p, D.shotInfo[s.id].sec), xg:D.shotInfo[s.id].xg || 0}))
+  const seq = shots.map(s => ({s, t:elapsed(s.p, D.shotInfo[s.id].sec), xg:D.shotInfo[s.id].xg || 0}))
     .sort((a,b) => a.t - b.t);
   const W = 760, H = 158, L = 30, R = 104, T = 10, B = 17;
   const tot = {us:0, them:0}; seq.forEach(e => tot[e.s.team] += e.xg);
@@ -1628,7 +1689,7 @@ function buildReport(scope){
     </div>
   </header>
   <section class="blk">
-    <h2>Shot map <span class="sub">&middot; ${esc(S.us)} always shooting right &middot; stars are goals</span></h2>
+    <h2>Shot map <span class="sub">&middot; coloured by danger tier &middot; ${esc(S.us)} always shooting right &middot; stars are goals</span></h2>
     ${reportRink(D, shots)}${reportKeys()}
   </section>
   <section class="blk">
@@ -1639,12 +1700,13 @@ function buildReport(scope){
   <section class="blk">
     <h2>Data</h2>
     <div class="two">
-      <div class="stack"><div><h3>Head to head</h3>${compareBars(a, b)}</div>${periodTable(D, shots)}${goalieTable(st, a)}</div>
-      <div class="stack">${strengthTable(D, shots, tl)}${units}</div>
+      <div class="stack"><div><h3>Head to head</h3>${compareBars(a, b)}</div>${tierBars(a, b)}${goalieTable(st, a)}</div>
+      <div class="stack">${periodTable(D, shots)}${strengthTable(D, shots, tl)}${units}</div>
     </div>
     <div class="two">${leaderTables(st)}</div>
   </section>
-  <div class="foot"><span>xG (expected goals) is the chance a shot goes in, from a five-feature model fit on 905,483 NHL attempts; blocks are placed but not scored.
+  <div class="foot"><span>xG (expected goals) is the chance a shot goes in, from a five-feature model fit on 905,483 NHL attempts, plus tagged odd-man rushes and
+    royal-road passes; blocks count at ${Math.round(adj().block_factor*100)}%. Danger tiers are the coaches' zones (rush +1, royal road = high, blocked &minus;1), a label alongside xG.
     On-ice numbers come from tracked shifts, strength time from the clock and logged penalties. One game is a small sample.</span><span>${esc(caveats)}</span></div></section></div>`;
 }
 function renderScopeSelect(D){
@@ -1858,6 +1920,9 @@ document.addEventListener("keydown", e => {
   if(RESULTS[k]){ editSel(s => s.result = RESULTS[k]); return; }
   if(k === "r"){ editSel(s => { const auto = D.shotInfo[s.id].autoReb, eff = D.shotInfo[s.id].rebound;
     s.reb = (!eff) === auto ? null : !eff; }); return; }
+  if(k === "f"){ editSel(s => s.rush = !s.rush); return; }
+  if(k === "p"){ editSel(s => s.xi = !s.xi); return; }
+  if(k === "h"){ editSel(s => s.offd = !s.offd); return; }
   if(k === "x"){ editSel(s => { s.team = s.team === "us" ? "them" : "us"; s.x = -s.x; s.y = -s.y; }); return; }
   if(k === "," || k === "<"){ editSel(s => nudge(s, k === "<" ? 5 : 1)); return; }
   if(k === "." || k === ">"){ editSel(s => nudge(s, k === ">" ? -5 : -1)); return; }
@@ -1877,6 +1942,10 @@ const HELP = [
   ["t a d u","Tip/deflection, wrap, scramble, unknown"],
   ["o g m k","On goal, goal, missed, blocked"],
   ["r","Rebound on/off (overrides the automatic 3-second rule)"],
+  ["f","Odd-man rush on/off (2-on-1, 3-on-2, breakaway)"],
+  ["p","Royal-road pass on/off: passer and shooter on opposite sides of the road, both below the circle tops, shot within 0.5 s"],
+  ["h","Goal went in off a defender (hit a defender in the lane): measures what blocked shots are worth"],
+  ["tiers","High / medium / low danger is the coaches' map, plus: rush = one tier up, royal-road pass = high, blocked = one tier down. A label only; xG is the model"],
   ["x","Wrong end: move the shot to the same spot at the other end, other team"],
   [", .","Shot 1 s earlier / later (Shift for 5 s)"],
   ["drag a dot","Move where the shot came from"],

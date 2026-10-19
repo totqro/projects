@@ -272,6 +272,11 @@ tr.shotrow.sel td{background:color-mix(in srgb, var(--accent) 17%, transparent)}
 #reportOut .two{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; align-items:start; margin-top:9px}
 #reportOut .two:first-of-type{margin-top:2px}
 #reportOut .stack{display:grid; gap:9px; align-content:start}
+#reportOut .tb{margin-bottom:8px}
+#reportOut .tbh{display:flex; justify-content:space-between; font-size:10px; margin-bottom:2px} #reportOut .tbh span{color:#5D6E80}
+#reportOut .tbbar{display:flex; gap:1px; height:13px; border-radius:3px; overflow:hidden; background:#E3E8ED}
+#reportOut .tbbar i{display:flex; align-items:center; justify-content:center; font-style:normal; font-size:8.5px; font-weight:800; color:#fff; min-width:0}
+#reportOut .tbx{display:flex; gap:8px; flex-wrap:wrap; font-size:9px; color:#48586A; margin-top:2px}
 /* fitReport() scales .rp inside .rpfit; the box takes the scaled height. */
 #reportOut .rpfit{overflow:hidden; break-inside:avoid; page-break-inside:avoid}
 #reportOut .rp{transform-origin:top center}
@@ -450,7 +455,12 @@ function scoreShot(s){
   }
   let z=MODEL.intercept;
   for(let i=0;i<x.length;i++) z+=MODEL.coef[i]*x[i];
-  return 1/(1+Math.exp(-z));
+  /* The tagged layer (tag_features.py): rush and cross-ice add to the logit,
+     blocks keep a fraction of their xG. */
+  const a=Object.assign({rush:0.7, cross_ice:0.91, block_factor:0.25}, MODEL.adjust||{});
+  z+=(s.rush?a.rush:0)+(s.cross_ice?a.cross_ice:0);
+  const p=1/(1+Math.exp(-z));
+  return s.blocked?p*a.block_factor:p;
 }
 
 /* ---------------- geometry — mirrors zone_tagging.py ---------------- */
@@ -460,10 +470,21 @@ const GOAL_X=89, R_CREASE=8, R_MID=24, R_FAR=45, A_SLOT=20, A_WIDE=45,
 const ZONE_NAMES={1:"L corner",2:"behind net",3:"R corner",4:"L post",5:"crease",
   6:"R post",7:"L boards",8:"inner slot",9:"R boards",10:"L circle",11:"slot",
   12:"R circle",13:"L point",14:"mid point",15:"R point",16:"neutral zone"};
-const TIER_OF={5:"HIGH",8:"HIGH",4:"MED",6:"MED",10:"MED",11:"MED",12:"MED"};
-const TIER={HIGH:{label:"High",css:"hi",zones:"crease, inner slot"},
-            MED:{label:"Medium",css:"md",zones:"posts, circles, slot"},
-            LOW:{label:"Low",css:"lo",zones:"corners, boards, points"}};
+/* The coaches' danger tiers, same as zone_tagging.danger_tier: a label,
+   never fed into xG. High is the box from the goal line to the dot line;
+   medium the trapezoid out to the dots plus the band to the circle tops;
+   the rest low. A rush moves up one tier, a royal-road pass makes it high,
+   then a block drops it one. */
+const TIER={HIGH:{label:"High",css:"hi",zones:"net-front box to the dots · royal road"},
+            MED:{label:"Medium",css:"md",zones:"out to the dots and circle tops"},
+            LOW:{label:"Low",css:"lo",zones:"everything else"}};
+function dangerTier(x,y,rush,royalRoad,blocked){
+  const ya=Math.abs(y), front=x<=GOAL_X, deep=front&&x>=69, trap=11+(GOAL_X-x)*11/20;
+  let lv=deep&&ya<=11?2:((deep&&ya<=trap)||(front&&x>=54&&x<69&&ya<=22)?1:0);
+  lv=Math.min(lv+(rush?1:0),2);
+  if(royalRoad) lv=2;
+  return ["LOW","MED","HIGH"][Math.max(lv-(blocked?1:0),0)];
+}
 
 function geometry(x,y){
   const dx=GOAL_X-x, ya=Math.abs(y);
@@ -494,9 +515,9 @@ const SHOT_TYPES={"wrist shot":"WRIST","wrist":"WRIST","wrist/snap":"WRIST","sna
 const SITUATIONS={"5v5":"EV_5v5","4v4":"EV_4v4","3v3":"EV_3v3","5v4":"PP_5v4",
   "5v3":"PP_5v3","4v3":"PP_4v3","4v5":"SH_4v5","3v5":"SH_OTHER","3v4":"SH_OTHER",
   "6v5":"EN_6v5_PULLED","5v6":"EN_AGAINST"};
-/* The model is fit on unblocked attempts: 30% of its 905,483 rows are misses
-   carrying goal=0. Dropping misses would undercount a game's xG, so only
-   blocks — the one category the source data itself excludes — come out. */
+/* Misses are scored like any attempt (30% of the model's 905,483 rows are
+   misses carrying goal=0). Blocks are scored too, at block_factor times
+   their unblocked xG. */
 const UNBLOCKED={"shot":1,"goal":1,"save":1,"shot on goal":1,"miss":1,"missed":1,
   "missed shot":1,"wide":1,"post":1,"crossbar":1};
 const BLOCKED={"block":1,"blocked":1,"blocked shot":1};
@@ -563,17 +584,21 @@ function loadShots(text){
       player:String(r.player||"").trim(), event:event, raw_i:i+2,
       x_adj:X, y_adj:Y, mirrored:flip?1:0,
       distance:g.d, angle_from_net:g.a, zone:z, zone_name:ZONE_NAMES[z],
-      tier:TIER_OF[z]||"LOW",
       shot_type:SHOT_TYPES[tagType.toLowerCase()]||"UNKNOWN", tagged_type:tagType,
       situation:SITUATION_RE.test(tagSit)?tagSit:(SITUATIONS[tagStr.toLowerCase()]||"EV_5v5"), tagged_strength:tagStr,
       sec:parseClock(r.clock), on_ice:onIce?onIce.split(/\s+/):[], goalie:String(r.goalie||"").trim(),
       onice_team:String(r.oniceteam||"").trim(),
       is_rebound:("rebound" in r && /^(1|true|yes|y)$/i.test(r.rebound))?1:0,
-      goal:event==="goal"?1:0, unblocked:!!UNBLOCKED[event], blocked:!!BLOCKED[event]
+      goal:event==="goal"?1:0, unblocked:!!UNBLOCKED[event], blocked:!!BLOCKED[event],
+      rush:/^(1|true|yes|y)$/i.test(r.rush||"")?1:0,
+      /* A royal-road pass can't end above the circle tops or on the road. */
+      cross_ice:/^(1|true|yes|y)$/i.test(r.crossice||"")&&X>=54&&Math.abs(Y)>3?1:0
     });
+    const last=out[out.length-1];
+    last.tier=dangerTier(X,Y,last.rush,last.cross_ice,last.blocked);
   });
   if(!out.length) throw new Error("No rows had usable X/Y coordinates.");
-  const scored=out.filter(s=>s.unblocked);
+  const scored=out.filter(s=>s.unblocked||s.blocked);
   scored.forEach(s=>{ s.xg=scoreShot(s); });
   const odd=out.filter(s=>!s.unblocked&&!s.blocked);
   const hasOnIce=out.some(s=>s.on_ice.length);
@@ -637,7 +662,6 @@ function visible(){
 function rinkPath(){
   return "M 0 -42.5 H 72 A 28 28 0 0 1 100 -14.5 V 14.5 A 28 28 0 0 1 72 42.5 H 0 Z";
 }
-function polar(a,r){ const t=a*Math.PI/180; return [GOAL_X-r*Math.cos(t), r*Math.sin(t)]; }
 
 function drawRink(){
   const p=[];
@@ -645,14 +669,9 @@ function drawRink(){
   p.push(`<path class="board" d="${rinkPath()}"/>`);
   p.push(`<g clip-path="url(#ice)">`);
   if(SHOW_ZONES){
-    [R_CREASE,R_MID,R_FAR].forEach(r=>
-      p.push(`<circle class="zoneline" cx="${GOAL_X}" cy="0" r="${r}"/>`));
-    [A_SLOT,-A_SLOT,A_WIDE,-A_WIDE].forEach(a=>{
-      const e=polar(a,60);
-      p.push(`<line class="zoneline" x1="${GOAL_X}" y1="0" x2="${e[0]}" y2="${e[1]}"/>`);
-    });
-    [-Y_BEHIND,Y_BEHIND].forEach(y=>
-      p.push(`<line class="zoneline" x1="${GOAL_X}" y1="${y}" x2="102" y2="${y}"/>`));
+    /* The danger tiers' outlines: medium polygon, high box inside it. */
+    p.push(`<polygon class="zoneline" points="${GOAL_X},-11 69,-22 54,-22 54,22 69,22 ${GOAL_X},11"/>`);
+    p.push(`<rect class="zoneline" x="69" y="-11" width="${GOAL_X-69}" height="22"/>`);
   }
   /* blue line, goal line, crease, net, faceoff circles and dots */
   p.push(`<line class="mark blue" x1="${BLUE_LINE_X}" y1="-42.5" x2="${BLUE_LINE_X}" y2="42.5"/>`);
@@ -816,9 +835,8 @@ function renderLegend(){
 function renderNotes(){
   const n=[], s=DATA.scored;
   if(DATA.blocked) n.push(`<div class="note"><b>${DATA.blocked}</b> blocked shot${
-    DATA.blocked===1?"":"s"} dropped — the model is fit on unblocked attempts, which
-    is the one category the source data excludes too. Misses are kept and scored:
-    30% of the training rows are misses.</div>`);
+    DATA.blocked===1?"":"s"} scored at ${Math.round(((MODEL.adjust||{}).block_factor??0.25)*100)}%
+    of their unblocked xG: some of those would have gone in. Misses are scored in full.</div>`);
   if(DATA.unrecognisedCount) n.push(`<div class="note"><span class="flag watch">check this</span>
     <b>${DATA.unrecognisedCount}</b> row${DATA.unrecognisedCount===1?"":"s"} had an
     unrecognised Type (${DATA.unrecognised.map(esc).join(", ")}) and could not be
@@ -1034,9 +1052,9 @@ const SAMPLE=`Period,Team,Player,Type,X,Y,Shot Type,Strength
 
 function exportCSV(){
   const cols=["period","team","player","event","x_adj","y_adj","distance","angle_from_net",
-              "zone","zone_name","tier","shot_type","situation","is_rebound","goal","xg"];
+              "zone","zone_name","tier","shot_type","situation","is_rebound","rush","cross_ice","blocked","goal","xg"];
   const rows=visible().map(s=>cols.map(c=>{
-    const v=s[c];
+    const v=typeof s[c]==="boolean"?+s[c]:s[c];
     return typeof v==="number"?(Number.isInteger(v)?v:v.toFixed(4)):`"${String(v).replace(/"/g,'""')}"`;
   }).join(","));
   const blob=new Blob([cols.join(",")+"\n"+rows.join("\n")+"\n"],{type:"text/csv"});
@@ -1211,17 +1229,35 @@ function fullRinkMarkup(){
   return p.join("");
 }
 
+/* Danger tiers on the report: markers take the tier's colour (the side of
+   the rink says whose shot it is), and the coaches' zones sit faintly
+   underneath. Orange/amber/green stay clear of the two team colours. */
+const TIER_COL={HIGH:"#E4572E", MED:"#F3A712", LOW:"#6BAA5E"}, TIER_ORDER=["HIGH","MED","LOW"];
+function zoneShapes(dir){
+  const X=v=>(v*dir).toFixed(1);
+  const pts=[[GOAL_X,-11],[69,-22],[54,-22],[54,22],[69,22],[GOAL_X,11]].map(([x,y])=>X(x)+","+y).join(" ");
+  return `<polygon points="${pts}" fill="#141D26" fill-opacity=".035" stroke="#7B8B9C" stroke-width=".3"/>`+
+    `<rect x="${dir>0?69:-GOAL_X}" y="-11" width="${GOAL_X-69}" height="22" fill="#141D26" fill-opacity=".05" stroke="#7B8B9C" stroke-width=".3"/>`;
+}
+/* Stacked bar per team: attempts in each tier, with xG and goals under it. */
+function tierBars(b, r){
+  const bar=(t, name, col)=>`<div class="tb"><div class="tbh"><b style="color:${col}">${esc(showName(name))}</b><span>${t.attempts} attempts &middot; ${t.xg.toFixed(2)} xG</span></div>
+      <div class="tbbar">${TIER_ORDER.map(k=>t.n[k]?`<i style="flex:${t.n[k]} 1 0;background:${TIER_COL[k]}">${t.n[k]}</i>`:"").join("")}</div>
+      <div class="tbx">${TIER_ORDER.map(k=>`<span>${TIER[k].label} <b>${t.n[k]}</b> &middot; ${t.x[k].toFixed(2)} xG${t.tg[k]?` &middot; ${t.tg[k]} G`:""}</span>`).join("")}</div></div>`;
+  return `<div><h3>Danger tiers</h3>${bar(b, SIDES.blue, BLUE_COL)}${bar(r, SIDES.red, RED_COL)}</div>`;
+}
+
 /* Blue always attacks the right-hand net. */
 function reportRinkSVG(events, flips){
   const {blue, red}=SIDES;
   const marks=events.map(s=>{
     const c=normXY(s, flips);
-    return iconMark(classify(s), c[0], svgY(c[1]), teamCol(s.team));
+    return iconMark(classify(s), c[0], svgY(c[1]), TIER_COL[s.tier]);
   }).join("");
   const lab=(x,txt,col)=>`<text x="${x}" y="-45.5" text-anchor="middle" `+
     `font-size="4.6" font-weight="700" fill="${col}" letter-spacing=".3">${esc(txt)}</text>`;
   return `<svg viewBox="-104 -50 208 99" xmlns="http://www.w3.org/2000/svg" class="rinkfull">`+
-    fullRinkMarkup()+
+    fullRinkMarkup()+`<g clip-path="url(#iceFull)">${zoneShapes(1)}${zoneShapes(-1)}</g>`+
     lab(-50, "← "+red+" attacking", RED_COL)+
     lab(50, blue+" attacking →", BLUE_COL)+
     marks+`</svg>`;
@@ -1236,18 +1272,20 @@ const intoEmptyNet=s=>s.situation==="EN_AGAINST";
 const strGroup=s=>{ const k=s.situation.slice(0,2); return k==="PP"?"PP":k==="SH"?"SH":k==="EN"?"EN":"EV"; };
 
 function summarize(events, team){
-  const r={goals:0, onNet:0, attempts:0, xg:0, hdc:0, reb:0, ppg:0, enGoals:0, enNet:0, enXg:0};
+  const r={goals:0, onNet:0, attempts:0, xg:0, hdc:0, reb:0, ppg:0, enGoals:0, enNet:0, enXg:0,
+           n:{HIGH:0, MED:0, LOW:0}, x:{HIGH:0, MED:0, LOW:0}, tg:{HIGH:0, MED:0, LOW:0}};
   events.forEach(s=>{
     if(s.team!==team) return;
-    const kind=classify(s), xg=s.unblocked?(s.xg||0):0, net=kind==="goal"||kind==="shot";
+    const kind=classify(s), xg=s.xg||0, net=kind==="goal"||kind==="shot";
     r.attempts++; r.xg+=xg;
     if(kind==="goal") r.goals++;
     if(net) r.onNet++;
-    if(s.unblocked&&s.tier==="HIGH") r.hdc++;
+    r.n[s.tier]++; r.x[s.tier]+=xg; if(kind==="goal") r.tg[s.tier]++;
     if(s.unblocked&&s.is_rebound) r.reb++;
     if(kind==="goal"&&strGroup(s)==="PP") r.ppg++;
     if(intoEmptyNet(s)){ r.enXg+=xg; if(kind==="goal") r.enGoals++; if(net) r.enNet++; }
   });
+  r.hdc=r.n.HIGH;
   r.diff=r.goals-r.xg;
   return r;
 }
@@ -1317,7 +1355,7 @@ function goalieTable(events, tracked){
    shot order when it doesn't. Goals carry the running score, blue first. */
 function reportFlowSVG(events){
   const {blue, red}=SIDES, C=DATA.clock;
-  const seq=events.filter(s=>s.unblocked).slice().sort(C?(a,b)=>a.t-b.t||a.i-b.i:(a,b)=>a.i-b.i), n=seq.length;
+  const seq=events.filter(s=>s.xg!==undefined).slice().sort(C?(a,b)=>a.t-b.t||a.i-b.i:(a,b)=>a.i-b.i), n=seq.length;
   if(!n) return `<p class="empty">No scored attempts in this scope.</p>`;
   const W=760, H=158, L=30, R=104, T=10, B=17;
   const ps=C?C.periods.filter(p=>events.some(s=>String(s.period)===p)||events.length===DATA.all.length):[];
@@ -1383,7 +1421,7 @@ function reportFlowSVG(events){
 function onIceTables(events, tracked){
   const st={};
   events.forEach(s=>{
-    const xg=s.unblocked?(s.xg||0):0, mine=s.team===tracked;
+    const xg=s.xg||0, mine=s.team===tracked;
     s.on_ice.forEach(num=>{
       const r=st[num]=st[num]||{num, cf:0, ca:0, gf:0, ga:0, xgf:0, xga:0};
       if(mine){ r.cf++; r.xgf+=xg; if(s.goal) r.gf++; } else { r.ca++; r.xga+=xg; if(s.goal) r.ga++; }
@@ -1407,7 +1445,7 @@ function shooterTable(events){
   const by={};
   events.forEach(s=>{ if(!s.player) return;
     const k=s.team+"\u0000"+s.player, r=by[k]=by[k]||{team:s.team, player:s.player, att:0, g:0, xg:0};
-    r.att++; if(s.goal) r.g++; if(s.unblocked) r.xg+=s.xg||0; });
+    r.att++; if(s.goal) r.g++; r.xg+=s.xg||0; });
   const rows=Object.values(by).sort((a,b)=>b.xg-a.xg).slice(0,6);
   if(!rows.length) return "";
   return `<div><h3>Top shooters <span class="sub">&middot; individual xG</span></h3><table><thead><tr><th>Player</th><th class="n">Att</th><th class="n">G</th><th class="n">xG</th></tr></thead><tbody>`+
@@ -1419,7 +1457,7 @@ function shooterTable(events){
 function strengthTable(events){
   const {blue, red}=SIDES, LAB={EV:"Even", PP:"Power play", SH:"Shorthanded", EN:"Empty net"};
   const cell=(t,k)=>{ const ev=events.filter(s=>s.team===t&&(!k||strGroup(s)===k));
-    return {g:ev.filter(s=>s.goal).length, xg:ev.reduce((v,s)=>v+(s.unblocked?(s.xg||0):0),0)}; };
+    return {g:ev.filter(s=>s.goal).length, xg:ev.reduce((v,s)=>v+(s.xg||0),0)}; };
   const line=(label,k,cls)=>{ const h=cell(blue,k), a=cell(red,k);
     return `<tr${cls?` class="${cls}"`:""}><td>${label}</td><td class="n">${h.g}</td><td class="n">${h.xg.toFixed(2)}</td><td class="n">${a.g}</td><td class="n">${a.xg.toFixed(2)}</td></tr>`; };
   const keys=["EV","PP","SH","EN"].filter(k=>events.some(s=>strGroup(s)===k));
@@ -1445,8 +1483,9 @@ function keysHTML(){
     <span class="rkey">${ic("block")} Blocked</span>
     <span class="rkey">${ic("miss")} Missed</span>
     <span class="sep"></span>
-    <span><b style="background:${BLUE_COL}"></b>${esc(SIDES.blue)}</span>
-    <span><b style="background:${RED_COL}"></b>${esc(SIDES.red)}</span>
+    ${TIER_ORDER.map(k=>`<span><b style="background:${TIER_COL[k]}"></b>${TIER[k].label}</span>`).join("")} danger
+    <span class="sep"></span>
+    <span>${esc(SIDES.blue)} shoots right, ${esc(SIDES.red)} left</span>
   </div>`;
 }
 
@@ -1491,7 +1530,7 @@ function buildReportMarkup(events, home, away, flips, scope, tracked, shootout){
   </header>
 
   <section class="blk">
-    <h2>Shot map <span class="sub">&middot; ${esc(blue)} always shooting right &middot; stars are goals</span></h2>
+    <h2>Shot map <span class="sub">&middot; coloured by danger tier &middot; ${esc(blue)} always shooting right &middot; stars are goals</span></h2>
     ${reportRinkSVG(events, flips)}${keysHTML()}
   </section>
 
@@ -1503,18 +1542,14 @@ function buildReportMarkup(events, home, away, flips, scope, tracked, shootout){
   <section class="blk">
     <h2>Data</h2>
     <div class="two">
-      <div><h3>Head to head</h3>${compareBars(b, r)}</div>
-      <div class="stack">${periodTable(events)}${goalieTable(events, tracked)}</div>
-    </div>
-    <div class="two">
-      ${bestChances(events)}
-      ${strengthTable(events)}
+      <div class="stack"><div><h3>Head to head</h3>${compareBars(b, r)}</div>${tierBars(b, r)}${goalieTable(events, tracked)}</div>
+      <div class="stack">${periodTable(events)}${strengthTable(events)}${bestChances(events)}</div>
     </div>
     ${extra.length?`<div class="two">${extra.join("")}</div>`:""}
   </section>
 
   <div class="foot">
-    <span>xG (expected goals) is the chance a shot goes in, from a five-feature model fit on 905,483 NHL attempts. Blocks are placed but not scored; ${notes}.</span>
+    <span>xG (expected goals) is the chance a shot goes in, from a five-feature model fit on 905,483 NHL attempts, plus tagged odd-man rushes and royal-road passes; blocks count at ${Math.round(((MODEL.adjust||{}).block_factor??0.25)*100)}%. Danger tiers are the coaches' zones (rush +1, royal road = high, blocked &minus;1); ${notes}.</span>
     <span>lknox.web.app/xgcalc</span>
   </div></section></div>`;
 }

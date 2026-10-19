@@ -148,8 +148,11 @@ score_tagged.py        CLI: score a hand-tagged x/y shot chart with the saved mo
 export_model_web.py    flatten the fitted pipeline to web/xg_model.json (+ .js), with a parity check
 zone_tagging.py        the 10- and 16-zone maps for shots you can only eyeball
 web/index.html         the live 16-zone tagger (tier rates, no coordinates needed)
+tag_features.py        the tagged layer (rush, cross-ice, blocks) shared by every scorer
+tag_adjustments.json   its coefficients: priors, refit by fit_tagged.py
+fit_tagged.py          refit rush/cross-ice on tagged games, shrunk toward the prior
 web/scatter.html       the shot chart — CSV in, the real model on a rink, in the browser
-web/tracker.html       live tracker: shots with x/y, scoreboard clock, shifts; TOI, xGF, xGA
+web/tracker.html       live tracker: shots with x/y, scoreboard clock, shifts, rush/cross-ice tags; TOI, xGF, xGA
 web/xg_model.js        the model as a script, so tracker.html runs from file:// offline
 web/serve.py           static server for previewing the pages locally
 data/                  built dataset + saved model (gitignored — regenerable)
@@ -358,6 +361,69 @@ numbers to three decimals:
 derived, and rebounds are the biggest single thing a coordinate export
 usually lacks — those shots score well below their real value. Both pages say
 so on screen rather than quietly rendering a confident-looking dot.
+
+## Tagged features: rush, cross-ice, blocks
+
+The rinkside tracker (`web/tracker.html`) tags three things the NHL data
+cannot supply, and every scorer (tracker, shot chart, `score_tagged.py`)
+applies them the same way, through `tag_features.py`:
+
+| Tag | Key | Effect |
+|---|---|---|
+| Odd-man rush | `f` | `+b_rush` on the logit |
+| Cross-ice (royal-road) pass: passer and shooter on opposite sides of the road (`|y| > 3` ft), both below the circle tops (`x ≥ 54`), shot within 0.5 s | `p` | `+b_cross` on the logit |
+| Blocked | `k` | xG × `block_factor` instead of 0 |
+
+MoneyPuck has no passes, a broken rush flag and no blocks, so none of these
+can come from the 905k-shot fit. They start at priors in
+`tag_adjustments.json` (rush +0.70, cross-ice +0.91, about 2.0× and 2.5× the
+odds; blocks at 25%) and the two coefficients are refit on tagged games,
+shrunk toward the prior, with the base model's logit held fixed:
+
+```bash
+./.venv/bin/python fit_tagged.py ~/Desktop/uoft\ hockey --write
+```
+
+```bash
+./.venv/bin/python export_model_web.py
+```
+
+The tracker only sees the shooter, so a `p` tag on a shooter above the circle
+tops or on the road is shown but not counted; the passer's spot is the
+tagger's call. Only exports with `Rush`/`CrossIce` columns count; older games would read as
+"no rushes" and pull the coefficients down. Where the numbers come from:
+
+- **Royal road: real data.** `bdc_royal_road.py` fits it on Stathletes'
+  Big Data Cup events (women's NCAA, NWHL, 2022 Olympics), the only public
+  data with pass coordinates: 2,976 unblocked shots, 87 royal-road, 16 goals.
+  With the base model as an offset and a league intercept, a royal-road pass
+  is +0.91 ± 0.30 (2.5×, 95% range 1.4× to 4.4×). That is the prior now.
+- **Odd-man rush: a judgment call above a measured floor.** NHL shots
+  within 6 s of a neutral/defensive-zone turnover score at 1.58× (+0.46 ±
+  0.03, 20,223 shots, `nhl_turnover_rush.py`). That catches every transition
+  off a turnover; an odd-man rush is the subset where the defence is short,
+  so the 0.70 prior (2.0×) sits above it. The effect drifts down in recent
+  seasons (2018–23 1.4–2.1×, 2024 0.99×, 2025 1.23×), plausibly a change in
+  how turnovers are logged. No public feed counts who is
+  back; NHL play-by-play has no passes or positions, and its tracking covers
+  goals only and is not open. A general rush (carried entry, shot within
+  5 s) shows no lift on the Big Data Cup data (0.90×), matching the NHL proxy
+  above, so the effect lives in the odd-man part. Your tagged games are the
+  source.
+- **Blocks: measurable by tagging.** Tag goals that go in off a defender
+  (`h`); `fit_tagged.py` sets `block_factor` = those goals over the
+  unblocked xG of every attempt that hit a defender, shrunk toward 0.25.
+
+**Danger tiers** are the coaches' map, a label for reports and never a model
+input (`zone_tagging.danger_tier`, mirrored in both pages). High is the box
+from the goal line to the faceoff-dot line, `|y| <= 11`; medium is the
+trapezoid from that box's edges at the goal line out to the dots (`|y| = 22`)
+plus the band `|y| <= 22` out to the circle tops (`x = 54`); everything else,
+behind the net included, is low. Then, in order: an odd-man rush moves a
+shot up one tier, a counted royal-road pass makes it high, and a blocked
+attempt drops it one tier (never below low). Tier and xG can disagree on purpose:
+one is a coaching category, the other a probability. `web/index.html` still
+prices shots off its own 16-zone tiers and is unchanged.
 
 ## Evaluation protocol
 
