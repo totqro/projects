@@ -13,6 +13,9 @@ const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
 >(({ className, sideOffset = 6, ...props }, ref) => (
+  // Portalled to <body>: rendered in place, a tooltip on a <th> lands inside
+  // the <tr> as an extra cell and shifts every column after it.
+  <TooltipPrimitive.Portal>
   <TooltipPrimitive.Content
     ref={ref}
     sideOffset={sideOffset}
@@ -25,6 +28,7 @@ const TooltipContent = React.forwardRef<
     )}
     {...props}
   />
+  </TooltipPrimitive.Portal>
 ))
 TooltipContent.displayName = TooltipPrimitive.Content.displayName
 
