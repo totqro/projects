@@ -764,7 +764,7 @@ gaining, which is where the remaining headroom is.
 ## Full-data model and game sheets
 
 The second model, trained on the NHL's own play-by-play and shift charts and
-used to score every game on [Fort Knox](https://fortknox-hockey.web.app), now
+used to score every game on [High Slot](https://highslot.web.app), now
 lives with that site in `fortknox/pipeline/` (see its README). It moved so the
 two models stop sharing code: game-sheet changes no longer trigger this
 folder's five-feature retrain. The tracker's number is labelled "Tagger xG"

@@ -1,7 +1,7 @@
-# Fort Knox scoring pipeline
+# High Slot scoring pipeline
 
 Scores every NHL shot with a full-data expected-goals model and writes the
-game sheets, team and player tables the Fort Knox site is built from. It
+game sheets, team and player tables the High Slot site is built from. It
 moved here from `xgcalc/`, whose five-feature tagger model is a separate
 model for shots a person tags from the stands.
 
