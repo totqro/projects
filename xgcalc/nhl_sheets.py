@@ -157,6 +157,10 @@ def build(season, root, fetch):
                          "num": r.get("sweaterNumber")}
             game_players[pid] = defaultdict(float)
         for row in sh.itertuples():
+            if row.goal:
+                for aid in (row.assist1_id, row.assist2_id):
+                    if pd.notna(aid) and int(aid) in game_players:
+                        game_players[int(aid)]["a"] += 1
             if row.shooter_id in game_players:
                 gp = game_players[row.shooter_id]
                 gp["att"] += 1
@@ -260,11 +264,14 @@ def team_row(abbrev, t):
 def skater_row(pid, info, v):
     toi5 = v["toi_5v5"]
     return {"id": pid, **info, "gp": int(v["gp"]), "toi": int(v["toi_all"]), "toi5": int(toi5),
-            "g": int(v["g"]), "att": int(v["att"]), "sog": int(v["sog"]),
+            "g": int(v["g"]), "a": int(v["a"]), "pts": int(v["g"] + v["a"]),
+            "att": int(v["att"]), "sog": int(v["sog"]),
             "ixg": r1(v["ixg"]), "gax": r1(v["g"] - v["ixg"]),
             "ixg5": r1(v["ixg5"]), "g5": int(v["g5"]),
             "xgf5": r1(v["xgf5"]), "xga5": r1(v["xga5"]), "gf5": int(v["gf5"]), "ga5": int(v["ga5"]),
             "xgf_pct5": pct(v["xgf5"], v["xga5"]),
+            "xgf": r1(v["xgf"]), "xga": r1(v["xga"]), "gf": int(v["gf"]), "ga": int(v["ga"]),
+            "xgf_pct": pct(v["xgf"], v["xga"]),
             "xgf60_5": per60(v["xgf5"], toi5), "xga60_5": per60(v["xga5"], toi5),
             "ixg60_5": per60(v["ixg5"], toi5)}
 

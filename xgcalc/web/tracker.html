@@ -438,7 +438,7 @@ const GOAL_X = 89, POST_Y = 3, CIRCLE_TOP_X = 54, DOT_X = 69, HIGH_Y = 11, DOT_Y
 /* The coaches' danger tiers, same as zone_tagging.danger_tier: a label for
    reports, never fed into xG. High is the box from the goal line to the dot
    line; medium is the trapezoid out to the dots plus the band to the circle
-   tops; the rest is low. A rush moves up one, a royal-road pass makes it
+   tops; the rest is low. A rush moves up one, a cross-ice feed makes it
    high, then a block drops it one. */
 const TIERS = ["LOW","MEDIUM","HIGH"], TIER_SHORT = {HIGH:"High", MEDIUM:"Med", LOW:"Low"};
 /* The tier, and which tags actually moved it off the zone's tier (a rush
@@ -764,7 +764,7 @@ function derive(extraChange){
     const right = attacksRight(s.team, s.p), X = right ? s.x : -s.x, Y = right ? s.y : -s.y;
     const g = geometry(X, Y);
     I.distance = g.d; I.angle = g.a; I.X = X; I.Y = Y;
-    /* Royal-road pass: passer and shooter on opposite sides of the road
+    /* Cross-ice feed: passer and shooter on opposite sides of the middle line
        (beyond the posts' lines), both below the circle tops, shot within
        0.5 s. Only the shooter is on the rink, so a tag on a shooter above
        the circles or on the road is shown but not counted. */
@@ -1091,7 +1091,7 @@ function renderShotPanel(D){
       ${I.rebound ? `<span class="chip">rebound${s.reb === null || s.reb === undefined ? " (auto)" : ""}</span>` : ""}
       ${s.rush ? `<span class="chip flag">odd-man rush</span>` : ""}
       ${s.offd ? `<span class="chip flag${s.result === "GOAL" ? "" : " need"}" title="${s.result === "GOAL" ? "Went in off a defender: counts toward the measured block factor" : "Only goals can go in off a defender"}">off a defender${s.result === "GOAL" ? "" : " · goals only"}</span>` : ""}
-      ${s.xi ? `<span class="chip flag${I.xiSuspect ? " need" : ""}" title="${I.xiSuspect ? "Shooter is above the circle tops or on the royal road: not a royal-road pass, not counted" : "Royal-road pass, shot within 0.5 s"}">cross-ice${I.xiSuspect ? " · not counted" : ""}</span>` : ""}
+      ${s.xi ? `<span class="chip flag${I.xiSuspect ? " need" : ""}" title="${I.xiSuspect ? "Shooter is above the circle tops or on the middle line: not a cross-ice feed, not counted" : "Cross-ice feed, shot within 0.5 s"}">cross-ice${I.xiSuspect ? " · not counted" : ""}</span>` : ""}
       <span class="chip">${esc(sitShow(I.situation))}</span>
       <span class="chip tier-${I.tier}" title="Coaches' danger tier: a label, not part of the xG">${TIER_SHORT[I.tier]} danger</span>
       <span class="mono" style="margin-left:auto">${I.xg === null ? "no model" : I.xg.toFixed(3)+" xG"}</span>
@@ -1457,11 +1457,11 @@ function fullRink(){
    underneath. Orange/amber/green stay clear of the two team colours. */
 const TIER_COL = {HIGH:"#E4572E", MEDIUM:"#F3A712", LOW:"#6BAA5E"};
 const TIER_NAME = {HIGH:"High", MEDIUM:"Medium", LOW:"Low"}, TIER_ORDER = ["HIGH","MEDIUM","LOW"];
-/* A shot whose tier a royal-road pass or an odd-man rush raised gets a thin
-   edge in that tag's colour and its glyph beside it: teal ⇄ royal road,
+/* A shot whose tier a cross-ice feed or an odd-man rush raised gets a thin
+   edge in that tag's colour and its glyph beside it: teal ⇄ cross-ice feed,
    purple » rush. A block's square already says blocked, so it gets nothing. */
 const WHY_COL = {rush:"#7B4FC9", royal:"#0E9FB3"};
-const WHY_NAME = {rush:"odd-man rush", royal:"royal road"}, WHY_GLYPH = {rush:"\u00BB", royal:"\u21C4"};
+const WHY_NAME = {rush:"odd-man rush", royal:"cross-ice feed"}, WHY_GLYPH = {rush:"\u00BB", royal:"\u21C4"};
 const raisedBy = why => (why || []).filter(w => WHY_COL[w]);
 function tagMark(svg, why, kind, cx, cy){
   why = raisedBy(why); if(!why.length) return svg;
@@ -1725,7 +1725,7 @@ function buildReport(scope){
     <div class="two">${leaderTables(st)}</div>
   </section>
   <div class="foot"><span>xG (expected goals) is the chance a shot goes in, from a five-feature model fit on 905,483 NHL attempts, plus tagged odd-man rushes and
-    royal-road passes; blocks count at ${Math.round(adj().block_factor*100)}%. Danger tiers are the coaches' zones (rush +1, royal road = high, blocked &minus;1), a label alongside xG.
+    cross-ice feeds; blocks count at ${Math.round(adj().block_factor*100)}%. Danger tiers are the coaches' zones (rush +1, cross-ice feed = high, blocked &minus;1), a label alongside xG.
     On-ice numbers come from tracked shifts, strength time from the clock and logged penalties. One game is a small sample.</span><span>${esc(caveats)}</span></div></section></div>`;
 }
 function renderScopeSelect(D){
@@ -1962,9 +1962,9 @@ const HELP = [
   ["o g m k","On goal, goal, missed, blocked"],
   ["r","Rebound on/off (overrides the automatic 3-second rule)"],
   ["f","Odd-man rush on/off (2-on-1, 3-on-2, breakaway)"],
-  ["p","Royal-road pass on/off: passer and shooter on opposite sides of the road, both below the circle tops, shot within 0.5 s"],
+  ["p","Cross-ice feed on/off: passer and shooter on opposite sides of the middle line, both below the circle tops, shot within 0.5 s"],
   ["h","Goal went in off a defender (hit a defender in the lane): measures what blocked shots are worth"],
-  ["tiers","High / medium / low danger is the coaches' map, plus: rush = one tier up, royal-road pass = high, blocked = one tier down. A label only; xG is the model"],
+  ["tiers","High / medium / low danger is the coaches' map, plus: rush = one tier up, cross-ice feed = high, blocked = one tier down. A label only; xG is the model"],
   ["x","Wrong end: move the shot to the same spot at the other end, other team"],
   [", .","Shot 1 s earlier / later (Shift for 5 s)"],
   ["drag a dot","Move where the shot came from"],

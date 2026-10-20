@@ -191,6 +191,38 @@ svg.quad .ax{font-size:10.5px}
   .cols3, .grid2even,   .cols3 > div + div{border-left:0; padding-left:0}
   }
 
+
+/* ---- v2: links, selection, team page ---- */
+.tlink{color:inherit; text-decoration:underline; text-decoration-color:color-mix(in srgb, var(--t-fg) 35%, transparent); text-underline-offset:2px; font-family:var(--t-font-label); letter-spacing:.06em}
+.tlink:hover{color:var(--t-accent); text-decoration-color:var(--t-accent)}
+.tname{font-size:12px}
+.qteams{display:flex; flex-wrap:wrap; gap:4px 9px; margin-top:2px}
+.tpt{cursor:pointer}
+[data-tip]{cursor:help}
+th[data-tip]{text-decoration:underline dotted color-mix(in srgb, var(--t-muted) 60%, transparent); text-underline-offset:3px}
+th[data-k]{cursor:pointer}
+.tip{max-width:280px}
+.dot.dim{opacity:.12}
+.dot.hl{stroke:var(--t-fg) !important; stroke-width:1.4 !important}
+.hlring{fill:none; stroke:var(--t-accent); stroke-width:.9; pointer-events:none; animation:ring 1.2s ease-out 2}
+@keyframes ring{0%{stroke-width:2.4; opacity:.3}100%{stroke-width:.9; opacity:1}}
+tr.on td{background:color-mix(in srgb, var(--t-accent) 12%, transparent)}
+tr[data-shot]:focus-visible{outline:2px solid var(--t-accent)}
+.shotcap{position:relative; margin-top:8px; padding:8px 70px 8px 10px; min-width:0; overflow-wrap:anywhere;
+  border-left:3px solid var(--t-accent); background:color-mix(in srgb, var(--t-accent) 6%, transparent); font-size:13px; line-height:1.5}
+.shotcap .btn{position:absolute; top:6px; right:6px; padding:3px 8px; font-size:11px}
+.shotcap b{font-family:var(--t-font-label); letter-spacing:.04em; text-transform:uppercase}
+.mini th .status{font-weight:600; color:var(--t-fg)}
+.grouphead{font-family:var(--t-font-head); font-weight:900; font-size:18px; margin:0 0 6px}
+tr.cutline td{border-bottom:2px solid var(--t-fg)}
+.tiles6{grid-template-columns:repeat(auto-fit, minmax(128px, 1fr))}
+.seg button:disabled{opacity:.35; cursor:default}
+svg.bars{display:block; width:100%; height:auto; margin-top:8px}
+svg.bars text{font-size:20px}
+.gbar{cursor:pointer} .gbar:hover rect{opacity:.6}
+/* The broadsheet's three columns need room; below that they stack. */
+@media (max-width: 1100px){ .cols3{grid-template-columns:1fr} .cols3 > div + div{border-left:0; padding-left:0} }
+
 /* Box-score furniture: double rule over each section, ruled tables. */
 .card{background:transparent; border-top:3px double var(--t-fg); border-bottom:1px solid var(--t-fg)}
 .mast h1{font-size:40px; font-style:italic}
@@ -231,8 +263,10 @@ const S = { season: null, seasons: [], index: null, teams: null, players: null, 
 const UI = {
   phase: "regular",
   games: { team: "", type: "all", sort: "date", shown: 100 },
-  teams: { sort: "xgf_pct5", asc: false, lens: "drive" },
-  players: { kind: "skaters", team: "", pos: "", min: 100, q: "", sort: "ixg", asc: false, shown: 100 },
+  teams: { sort: "std", asc: true, lens: "drive", group: "league" },
+  players: { kind: "skaters", team: "", pos: "", min: 100, mingp: 1, q: "", sort: "pts", asc: false, shown: 100 },
+  team: { win: "season", mingp: 1, sk: { sort: "pts", asc: false }, gk: { sort: "gsax", asc: false }, log: { sort: "date", asc: false } },
+  gsort: { home: { sort: "toi", asc: false }, away: { sort: "toi", asc: false } },
 };
 
 /* ---------- helpers ---------- */
@@ -246,29 +280,103 @@ function signed(v, d=1){ if (v == null) return "&ndash;"; const s=(+v).toFixed(d
 function toi(sec){ if (!sec) return "&ndash;"; const m=Math.floor(sec/60), s=Math.round(sec%60); return `${m}:${String(s).padStart(2,"0")}`; }
 function toiH(sec){ return sec ? (sec/60).toFixed(0) : "&ndash;"; }
 function per60(x, sec){ return sec ? x*3600/sec : null; }
+function share(f, a){ return f + a > 0 ? f / (f + a) : null; }
 function fmtDate(d){ const [y,m,dd]=d.split("-"); return `${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+m-1]} ${+dd}`; }
 function seasonLabel(s){ return `${s}-${String((s+1)%100).padStart(2,"0")}`; }
 async function getJSON(path){ const r = await fetch(BASE + path, {cache:"no-store"}); if (!r.ok) throw new Error(path + " " + r.status); return r.json(); }
 
-/* Sortable table. cols: [{k, label, get(row)->sortable, fmt(row)->html, l:left-align, desc:default-desc}] */
+/* The NHL feed codes wingers L and R; hockey says LW and RW. */
+const POS = { L:"LW", R:"RW", C:"C", D:"D", G:"G" };
+const posLabel = p => POS[p] || p;
+
+/* Names and alignment (2024-25 onward: Utah in the Central). */
+const TEAMS = {
+  ANA:["Anaheim Ducks","West","Pacific"], BOS:["Boston Bruins","East","Atlantic"], BUF:["Buffalo Sabres","East","Atlantic"],
+  CGY:["Calgary Flames","West","Pacific"], CAR:["Carolina Hurricanes","East","Metropolitan"], CHI:["Chicago Blackhawks","West","Central"],
+  COL:["Colorado Avalanche","West","Central"], CBJ:["Columbus Blue Jackets","East","Metropolitan"], DAL:["Dallas Stars","West","Central"],
+  DET:["Detroit Red Wings","East","Atlantic"], EDM:["Edmonton Oilers","West","Pacific"], FLA:["Florida Panthers","East","Atlantic"],
+  LAK:["Los Angeles Kings","West","Pacific"], MIN:["Minnesota Wild","West","Central"], MTL:["Montréal Canadiens","East","Atlantic"],
+  NSH:["Nashville Predators","West","Central"], NJD:["New Jersey Devils","East","Metropolitan"], NYI:["New York Islanders","East","Metropolitan"],
+  NYR:["New York Rangers","East","Metropolitan"], OTT:["Ottawa Senators","East","Atlantic"], PHI:["Philadelphia Flyers","East","Metropolitan"],
+  PIT:["Pittsburgh Penguins","East","Metropolitan"], SJS:["San Jose Sharks","West","Pacific"], SEA:["Seattle Kraken","West","Pacific"],
+  STL:["St. Louis Blues","West","Central"], TBL:["Tampa Bay Lightning","East","Atlantic"], TOR:["Toronto Maple Leafs","East","Atlantic"],
+  UTA:["Utah Mammoth","West","Central"], VAN:["Vancouver Canucks","West","Pacific"], VGK:["Vegas Golden Knights","West","Pacific"],
+  WSH:["Washington Capitals","East","Metropolitan"], WPG:["Winnipeg Jets","West","Central"], ARI:["Arizona Coyotes","West","Central"],
+};
+const teamName = ab => (TEAMS[ab] || [ab])[0];
+const teamLink = ab => `<a class="tlink" href="#team/${ab}">${ab}</a>`;
+
+/* Every column's hover explanation, shared by every table on the page. */
+const TIPS = {
+  gp:"Games played.", toi:"Time on ice per game, all situations.", toitot:"Total time on ice, all situations.",
+  toi5:"Time on ice at 5-on-5.", g:"Goals.", a:"Assists.", p:"Points: goals plus assists.",
+  ixg:"Individual expected goals: the summed goal probability of the player's own unblocked shots.",
+  gax:"Goals above expected (GAx): goals minus ixG. Positive means he finished better than an average shooter would on the same chances. Very noisy over small samples.",
+  att:"Shot attempts, blocked and missed included.", sog:"Shots on goal.",
+  xgf:"Expected goals for: the xG of every unblocked shot his team took while he was on the ice.",
+  xga:"Expected goals against: the xG of every unblocked shot the other team took while he was on the ice.",
+  xgs:"xG share: xGF / (xGF + xGA) while he was on the ice. Above 50% means his team out-chanced the opponent with him out there.",
+  xgs5:"xG share at 5-on-5 only, which strips out power plays and penalty kills.",
+  ixg60:"Individual xG per 60 minutes of 5-on-5 time: how much danger he creates himself.",
+  xgf60:"5-on-5 xG for per 60 minutes while he was on the ice.", xga60:"5-on-5 xG against per 60 minutes while he was on the ice. Lower is better.",
+  sa:"Unblocked shots faced: saves, goals and shots that missed the net.", gaG:"Goals allowed.",
+  xgaG:"Expected goals against: the xG of the unblocked shots he faced.",
+  gsax:"Goals saved above expected (GSAx): xGA minus goals allowed. Positive means he stopped more than an average goalie would on the same shots.",
+  gsax60:"GSAx per 60 minutes in net.", svp:"Save percentage on unblocked shots. Misses count as saves here, so it runs higher than the NHL's figure.",
+  xsvp:"Expected save percentage: what an average goalie would stop on the same unblocked shots.",
+  rank:"Standings position, by points with the NHL's tiebreakers (points %, regulation wins, regulation + overtime wins, wins, goal differential).",
+  w:"Wins.", l:"Regulation losses.", otl:"Overtime and shootout losses (one point each).", pts:"Standings points: 2 for a win, 1 for an overtime or shootout loss.",
+  ppct:"Points percentage: points / (2 x games played).", rw:"Regulation wins, the NHL's first standings tiebreaker.",
+  row:"Regulation plus overtime wins (shootout wins excluded).", gf:"Goals for. A shootout win counts as one, as in the standings.",
+  ga:"Goals against.", diff:"Goal differential.",
+  txgf:"Team expected goals for, all situations.", txga:"Team expected goals against, all situations.",
+  txgs:"xG share: the team's share of all expected goals in its games. Above 50% means it out-chances its opponents.",
+  txgs5:"xG share at 5-on-5, the most predictive single team number: it ignores special teams and the bounces.",
+  txgf60:"5-on-5 expected goals for per 60 minutes.", txga60:"5-on-5 expected goals against per 60 minutes. Lower is better.",
+  pp60:"Power-play expected goals per 60 power-play minutes.", pk60:"Penalty-kill expected goals against per 60 shorthanded minutes. Lower is better.",
+  tgax:"Goals above expected (GAx): goals scored minus xGF, shootouts excluded. Finishing; tends to drift back toward zero.",
+  tgsax:"Goals saved above expected (GSAx): xGA minus goals allowed, shootouts excluded. Goaltending.",
+  date:"Game date.", opp:"Opponent; @ means a road game.", res:"Result and final score.",
+};
+
+/* Header hovers: one floating card for every [data-tip] on the page. */
+document.addEventListener("mouseover", e => {
+  const el = e.target.closest && e.target.closest("[data-tip]");
+  if (!el) return;
+  const tip = $("tip"), r = el.getBoundingClientRect();
+  tip.innerHTML = `<b>${el.dataset.tipTitle || el.textContent.trim()}</b><br>${esc(el.dataset.tip)}`;
+  tip.style.display = "block";
+  tip.style.left = Math.max(8, Math.min(r.left, innerWidth - 270)) + "px";
+  tip.style.top = (r.bottom + 6) + "px";
+});
+document.addEventListener("mouseout", e => {
+  const el = e.target.closest && e.target.closest("[data-tip]");
+  if (el && !el.contains(e.relatedTarget)) $("tip").style.display = "none";
+});
+
+/* Sortable table. cols: [{k, label, get(row)->sortable, fmt(row)->html, l:left, asc:default-ascending, tip:key in TIPS}]
+   Each table binds its own headers, so several can share a page. */
+let TABLE_N = 0;
 function table(rows, cols, st, onSort, rowAttr){
+  const id = "tb" + (++TABLE_N);
   const th = cols.map(c => {
     const cls = [c.l ? "l" : "", st.sort === c.k ? "sorted" + (st.asc ? " asc" : "") : ""].join(" ");
-    return `<th class="${cls}" data-k="${c.k}" title="${esc(c.title||"")}">${c.label}</th>`;
+    const tip = c.tip ? ` data-tip="${esc(TIPS[c.tip] || c.tip)}"` : "";
+    return `<th class="${cls}" data-k="${c.k}"${tip}>${c.label}</th>`;
   }).join("");
   const body = rows.map((r, i) => `<tr ${rowAttr ? rowAttr(r) : ""}>` + cols.map(c =>
-    `<td class="${c.l ? "l" : ""} ${c.cls||""}">${c.k === "#" ? i+1 : (c.fmt ? c.fmt(r) : esc(c.get(r)))}</td>`).join("") + "</tr>").join("");
-  const html = `<div class="tw"><table><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table></div>`;
-  setTimeout(() => document.querySelectorAll("th[data-k]").forEach(h => h.onclick = () => {
-    const k = h.dataset.k; if (k === "#") return;
-    const col = cols.find(c => c.k === k);
+    `<td class="${c.l ? "l" : ""} ${c.cls||""}">${c.k === "#" ? i+1 : (c.fmt ? c.fmt(r, i) : esc(c.get(r)))}</td>`).join("") + "</tr>").join("");
+  setTimeout(() => document.querySelectorAll(`#${id} th[data-k]`).forEach(h => h.onclick = () => {
+    const k = h.dataset.k; const col = cols.find(c => c.k === k);
+    if (k === "#" || !col.get) return;
     if (st.sort === k) st.asc = !st.asc; else { st.sort = k; st.asc = col.asc === true; }
+    $("tip").style.display = "none";
     onSort();
   }));
-  return html;
+  return `<div class="tw"><table id="${id}"><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
 function sortRows(rows, cols, st){
-  const col = cols.find(c => c.k === st.sort) || cols[0];
+  const col = cols.find(c => c.k === st.sort && c.get) || cols.find(c => c.get);
   const g = col.get;
   return rows.slice().sort((a, b) => {
     const x = g(a), y = g(b);
@@ -284,7 +392,7 @@ async function loadSeason(season){
   $("view").innerHTML = `<div class="loading">LOADING ${seasonLabel(season)}&hellip;</div>`;
   const [index, teams, players] = await Promise.all([
     getJSON(`${season}/index.json`), getJSON(`${season}/teams.json`), getJSON(`${season}/players.json`)]);
-  Object.assign(S, { index, teams, players, games: {} });
+  Object.assign(S, { index, teams, players, games: {}, _std: null });
   const upd = new Date(index.updated);
   $("sub").textContent = `${seasonLabel(season)} · ${index.games.length} games · updated ${upd.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"})}`;
 }
@@ -307,10 +415,13 @@ function phaseSeg(rerender){
 async function route(){
   const h = location.hash.replace(/^#/, "") || "games";
   const [view, arg] = h.split("/");
+  const tabOf = { game:"games", team:"teams" };
   document.querySelectorAll(".tab").forEach(t =>
-    t.setAttribute("aria-current", t.dataset.view === (view === "game" ? "games" : view) ? "page" : "false"));
+    t.setAttribute("aria-current", t.dataset.view === (tabOf[view] || view) ? "page" : "false"));
+  $("tip").style.display = "none";
   try {
     if (view === "game") return await renderGame(+arg);
+    if (view === "team") return await renderTeam(arg);
     if (view === "teams") return renderTeams();
     if (view === "players") return renderPlayers();
     if (view === "model") return renderModel();
@@ -373,9 +484,10 @@ function byDate(games){
 /* A mini box score: the line score a paper prints for every game. */
 function miniBox(x){
   const line = (ab, s, xg, sog, won) => `<tr class="${won ? "win" : ""}"><td class="l">${ab}</td><td>${s}</td><td class="muted">${f2(xg)}</td><td class="muted">${sog}</td></tr>`;
-  const flag = [x.end !== "REG" ? x.end : "", x.type === 3 ? "Playoffs" : "", isUpset(x) ? "Upset" : ""].filter(Boolean).join(" · ");
+  const status = x.end === "REG" ? "Final" : "F/" + x.end;
+  const flag = [x.type === 3 ? "Playoffs" : "", isUpset(x) ? "Upset" : ""].filter(Boolean).join(" · ");
   return `<a class="mini" href="#game/${x.id}" aria-label="${x.away} ${x.as}, ${x.home} ${x.hs}, ${fmtDate(x.date)}">
-    <table><thead><tr><th class="l">${fmtDate(x.date)}</th><th>G</th><th>xG</th><th>SOG</th></tr></thead><tbody>
+    <table><thead><tr><th class="l">${fmtDate(x.date)} &middot; <b class="status">${status}</b></th><th>G</th><th>xG</th><th>SOG</th></tr></thead><tbody>
       ${line(x.away, x.as, x.axg, x.asog, x.as > x.hs)}${line(x.home, x.hs, x.hxg, x.hsog, x.hs > x.as)}</tbody></table>
     <div class="mini-foot">${flag ? `<span class="badge">${flag}</span>` : "&nbsp;"}<span class="xgbar"><i style="flex:${x.axg};background:var(--t-away)"></i><i style="flex:${x.hxg};background:var(--t-home)"></i></span></div>
   </a>`;
@@ -505,7 +617,8 @@ function secMap(G, opts = {}){
     <svg class="rink" viewBox="-102 -45 204 90" role="img" aria-label="Shot map">${rinkMarkup()}${dots}</svg>
     <div class="legend"><span><i style="background:var(--t-away)"></i>${A.abbrev} shoots &larr;</span>
       <span><i style="background:var(--t-home)"></i>${H.abbrev} shoots &rarr;</span>
-      <span><i style="background:transparent;border:1.5px solid var(--t-ring)"></i>goal</span><span>size = xG</span></div></div>`;
+      <span><i style="background:transparent;border:1.5px solid var(--t-ring)"></i>goal</span><span>size = xG</span></div>
+    <div id="shotCap" aria-live="polite"></div></div>`;
 }
 function secFlow(G, wide){
   return `<div class="card"><span class="eyebrow">xG over the game</span>
@@ -532,7 +645,7 @@ function secScoring(G){
   const rows = G._shots.filter(s => s.ev === "GOAL").map(s => {
     if (s.team === G.home.abbrev) h++; else a++;
     const ast = (s.ast || []).map(id => lastName(G, id)).join(", ");
-    return `<tr><td class="l">${ORD(s.p)}</td><td class="l">${toi(s.t)}</td>
+    return `<tr class="click" data-shot="${s.i}" tabindex="0" title="Show on the rink"><td class="l">${ORD(s.p)}</td><td class="l">${toi(s.t)}</td>
       <td class="l ${s.team === G.home.abbrev ? "home-c" : "away-c"}">${s.team}</td>
       <td class="l"><b>${esc(pname(G, s.shooter))}</b>${ast ? ` <span class="muted">(${esc(ast)})</span>` : ` <span class="muted">(unassisted)</span>`}</td>
       <td class="l muted">${SIT[s.sit] || s.sit}${s.reb !== "NONE" ? ", rebound" : ""}</td>
@@ -551,36 +664,107 @@ function secChances(G, n = 6){
   const top = G._shots.filter(s => s.ev !== "BLOCK" && s.sit !== "EN_AGAINST").sort((a, b) => b.xg - a.xg).slice(0, n);
   return `<div class="card"><span class="eyebrow">Best chances</span><div class="tw" style="margin-top:6px"><table>
     <thead><tr><th class="l">Shooter</th><th class="l">When</th><th class="l">Shot</th><th>xG</th><th class="l">Result</th></tr></thead><tbody>
-    ${top.map(s => `<tr><td class="l"><span class="${s.team === G.home.abbrev ? "home-c" : "away-c"}">${s.team}</span> ${esc(pname(G, s.shooter))}</td>
+    ${top.map(s => `<tr class="click shot-row" data-shot="${s.i}" tabindex="0" title="Show on the rink"><td class="l"><span class="${s.team === G.home.abbrev ? "home-c" : "away-c"}">${s.team}</span> ${esc(pname(G, s.shooter))}</td>
       <td class="l muted">${ORD(s.p)} ${toi(s.t)}</td><td class="l muted">${TYPE[s.type] || ""}${s.reb !== "NONE" ? ", rebound" : ""}${s.rush ? ", rush" : ""}</td>
       <td><b>${s.xg.toFixed(2)}</b></td><td class="l">${s.ev === "GOAL" ? "<b>Goal</b>" : s.ev === "SHOT" ? `Saved by ${esc(lastName(G, s.goalie))}` : "Missed"}</td></tr>`).join("")}
-    </tbody></table></div></div>`;
+    </tbody></table></div><p class="note" style="margin-top:6px">Click a chance to find it on the rink.</p></div>`;
 }
 function secRecap(G, big){
   const r = recap(G);
   return `<div class="recap ${big ? "big" : ""}"><h2 class="headline">${r.headline}</h2><p class="deck">${r.text}</p></div>`;
 }
+
+/* A roster, sortable by any column; re-renders only its own card. */
 function secPlayers(G, side){
   const t = side === "home" ? G.home : G.away;
-  return `<div class="card"><span class="eyebrow ${side}-c">${esc(t.name)}</span>${playerTable(G.players.filter(p => p.team === t.abbrev))}</div>`;
+  const players = G.players.filter(p => p.team === t.abbrev);
+  const sk = players.filter(p => p.pos !== "G" && (p.toi_all || p.att));
+  const gk = players.filter(p => p.pos === "G" && (p.toi_all || p.sa));
+  const n = v => v || 0;
+  const cols = [
+    { k:"name", label:"Skater", l:true, get:p => p.name, asc:true, fmt:p => `${esc(p.name)} <span class="muted">${posLabel(p.pos)}</span>` },
+    { k:"toi", label:"TOI", get:p => n(p.toi_all), fmt:p => toi(p.toi_all), tip:"toitot" },
+    { k:"toi5", label:"5v5", get:p => n(p.toi_5v5), fmt:p => toi(p.toi_5v5), tip:"toi5" },
+    { k:"g", label:"G", get:p => n(p.g), tip:"g" },
+    { k:"a", label:"A", get:p => n(p.a), tip:"a" },
+    { k:"p", label:"P", get:p => n(p.g) + n(p.a), tip:"p" },
+    { k:"ixg", label:"ixG", get:p => n(p.ixg), fmt:p => f2(n(p.ixg)), tip:"ixg" },
+    { k:"att", label:"Att", get:p => n(p.att), tip:"att" },
+    { k:"xgf", label:"xGF", get:p => n(p.xgf), fmt:p => f2(n(p.xgf)), tip:"xgf" },
+    { k:"xga", label:"xGA", get:p => n(p.xga), fmt:p => f2(n(p.xga)), asc:true, tip:"xga" },
+    { k:"xgs", label:"xG share", get:p => share(n(p.xgf), n(p.xga)), fmt:p => pct(share(n(p.xgf), n(p.xga)), 0), tip:"xgs" },
+    { k:"xgs5", label:"5v5 xG share", get:p => share(n(p.xgf5), n(p.xga5)), fmt:p => pct(share(n(p.xgf5), n(p.xga5)), 0), tip:"xgs5" },
+  ];
+  const st = UI.gsort[side];
+  const gRows = gk.map(p => `<tr><td class="l">${esc(p.name)} <span class="muted">G</span></td><td>${toi(p.toi_all)}</td>
+    <td>${n(p.sa)}</td><td>${n(p.ga_)}</td><td>${f2(n(p.xga_))}</td><td>${signed(n(p.xga_) - n(p.ga_), 2)}</td></tr>`).join("");
+  setTimeout(() => { const el = $("pt-" + side); if (el) el._rerender = () => { el.outerHTML = secPlayers(G, side); }; });
+  return `<div class="card" id="pt-${side}"><span class="eyebrow ${side}-c">${esc(t.name)}</span>
+    ${table(sortRows(sk, cols, st), cols, st, () => $("pt-" + side)._rerender())}
+    <div class="tw" style="margin-top:10px"><table>
+      <thead><tr><th class="l">Goalie</th><th data-tip="${esc(TIPS.toitot)}">TOI</th><th data-tip="${esc(TIPS.sa)}">Shots</th>
+        <th data-tip="${esc(TIPS.gaG)}">GA</th><th data-tip="${esc(TIPS.xgaG)}">xGA</th><th data-tip="${esc(TIPS.gsax)}">GSAx</th></tr></thead>
+      <tbody>${gRows}</tbody></table></div></div>`;
 }
-const PLAYER_NOTE = `<p class="note">ixG: the xG of a player's own shots. On-ice xGF / xGA: all xG for and against while he was on the ice. TOI from the NHL shift chart.</p>`;
+const PLAYER_NOTE = `<p class="note">Hover any column heading for what it means. TOI comes from the NHL shift chart.</p>`;
+
+function shotDetail(G, s){
+  return `<b>${esc(pname(G, s.shooter))}</b> <span class="muted">${s.team}</span><br>
+    ${EVN[s.ev]} &middot; ${TYPE[s.type]||s.type}${s.ev === "SHOT" && s.goalie ? ` (${esc(lastName(G, s.goalie))})` : ""}<br>xG <b>${s.xg.toFixed(3)}</b> &middot; ${SIT[s.sit]||s.sit}<br>
+    <span class="muted">${ORD(s.p)} ${toi(s.t)}${s.reb!=="NONE"?` &middot; rebound off a ${({SHOT:"save",MISS:"miss",BLOCK:"block"})[s.reb] || "shot"}`:""}${s.rush?" &middot; rush":""}</span>`;
+}
+
+/* Picking a shot (from Best chances, Scoring or the rink itself) rings it on
+   the rink, fades the rest and writes it out under the map. */
+let SEL_SHOT = null;
+function selectShot(G, i, scroll){
+  SEL_SHOT = SEL_SHOT === i ? null : i;
+  const svg = document.querySelector("svg.rink");
+  if (!svg) return;
+  svg.querySelectorAll(".hlring").forEach(r => r.remove());
+  svg.querySelectorAll(".dot").forEach(d => {
+    const on = +d.dataset.i === SEL_SHOT;
+    d.classList.toggle("dim", SEL_SHOT != null && !on);
+    d.classList.toggle("hl", on);
+  });
+  document.querySelectorAll("[data-shot]").forEach(r => r.classList.toggle("on", +r.dataset.shot === SEL_SHOT));
+  const cap = $("shotCap");
+  if (SEL_SHOT == null) { cap.innerHTML = ""; return; }
+  const dot = svg.querySelector(`.dot[data-i="${SEL_SHOT}"]`);
+  if (dot) {
+    svg.appendChild(dot);   // draw it above its neighbours
+    const ring = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    ring.setAttribute("class", "hlring");
+    ring.setAttribute("cx", dot.getAttribute("cx")); ring.setAttribute("cy", dot.getAttribute("cy"));
+    ring.setAttribute("r", (+dot.getAttribute("r") + 2.6).toFixed(2));
+    svg.appendChild(ring);
+  }
+  cap.innerHTML = `<div class="shotcap">${shotDetail(G, G._shots[SEL_SHOT])}<button class="btn" id="shotClear">Clear</button></div>`;
+  $("shotClear").onclick = () => selectShot(G, SEL_SHOT);
+  if (scroll) {
+    const r = svg.getBoundingClientRect();
+    if (r.top < 0 || r.bottom > innerHeight) svg.scrollIntoView({ behavior:"smooth", block:"center" });
+  }
+}
 
 function bindGame(G, rerender){
   document.querySelectorAll(".blkBtn").forEach(b => b.onclick = () => { GAME_BLOCKS = !GAME_BLOCKS; rerender(); });
   const tip = $("tip");
   document.querySelectorAll(".dot").forEach(el => {
     el.onmousemove = e => {
-      const s = G._shots[+el.dataset.i];
-      tip.innerHTML = `<b>${esc(pname(G, s.shooter))}</b> <span class="muted">${s.team}</span><br>
-        ${EVN[s.ev]} &middot; ${TYPE[s.type]||s.type}<br>xG <b>${s.xg.toFixed(3)}</b> &middot; ${SIT[s.sit]||s.sit}<br>
-        <span class="muted">${ORD(s.p)} ${toi(s.t)}${s.reb!=="NONE"?" &middot; rebound":""}${s.rush?" &middot; rush":""}</span>`;
+      tip.innerHTML = shotDetail(G, G._shots[+el.dataset.i]);
       tip.style.display = "block";
       tip.style.left = Math.min(e.clientX + 14, innerWidth - 260) + "px";
       tip.style.top = (e.clientY + 14) + "px";
     };
     el.onmouseleave = () => tip.style.display = "none";
+    el.onclick = () => selectShot(G, +el.dataset.i, false);
   });
+  document.querySelectorAll("[data-shot]").forEach(r => {
+    r.onclick = () => selectShot(G, +r.dataset.shot, true);
+    r.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); r.onclick(); } };
+  });
+  if (SEL_SHOT != null) { const keep = SEL_SHOT; SEL_SHOT = null; selectShot(G, keep, false); }
 }
 
 /* ---------- game sheet: the front page ---------- */
@@ -605,25 +789,10 @@ let GAME_BLOCKS = false;
 async function renderGame(id){
   $("view").innerHTML = `<div class="loading">LOADING GAME&hellip;</div>`;
   const G = await getSheet(id);
+  if (renderGame.last !== id) SEL_SHOT = null;
+  renderGame.last = id;
   $("view").innerHTML = `<a class="back" href="#games">&larr; All games</a>` + gameBody(G);
   bindGame(G, () => renderGame(id));
-}
-
-function playerTable(players){
-  const sk = players.filter(p => p.pos !== "G" && (p.toi_all || p.att)).sort((a, b) => (b.toi_all||0) - (a.toi_all||0));
-  const gk = players.filter(p => p.pos === "G" && (p.toi_all || p.sa));
-  const sRows = sk.map(p => `<tr><td class="l">${esc(p.name)} <span class="muted">${p.pos}</span></td>
-    <td>${toi(p.toi_all)}</td><td>${toi(p.toi_5v5)}</td><td>${p.g||0}</td><td>${f2(p.ixg||0)}</td><td>${p.att||0}</td>
-    <td>${f2(p.xgf||0)}</td><td>${f2(p.xga||0)}</td><td>${f2(p.xgf5||0)}</td><td>${f2(p.xga5||0)}</td>
-    <td>${pct((p.xgf5||0)+(p.xga5||0) ? (p.xgf5||0)/((p.xgf5||0)+(p.xga5||0)) : null, 0)}</td></tr>`).join("");
-  const gRows = gk.map(p => `<tr><td class="l">${esc(p.name)} <span class="muted">G</span></td><td>${toi(p.toi_all)}</td>
-    <td>${p.sa||0}</td><td>${p.ga_||0}</td><td>${f2(p.xga_||0)}</td><td>${signed((p.xga_||0)-(p.ga_||0), 2)}</td></tr>`).join("");
-  return `<div class="tw" style="margin-top:8px"><table>
-      <thead><tr><th class="l">Skater</th><th>TOI</th><th>5v5</th><th>G</th><th>ixG</th><th>Att</th>
-        <th>xGF</th><th>xGA</th><th>5v5 xGF</th><th>5v5 xGA</th><th>5v5 xGF%</th></tr></thead><tbody>${sRows}</tbody></table></div>
-    <div class="tw" style="margin-top:10px"><table>
-      <thead><tr><th class="l">Goalie</th><th>TOI</th><th title="Unblocked shots faced">Shots</th><th>GA</th><th>xGA</th><th title="Goals saved above expected">GSAx</th></tr></thead>
-      <tbody>${gRows}</tbody></table></div>`;
 }
 
 function flowChart(shots, home, away, wide){
@@ -659,33 +828,106 @@ function flowChart(shots, home, away, wide){
   return out.join("");
 }
 
+/* ---------- standings ---------- */
+/* Built from the games themselves so they always match the sheets: points,
+   then the NHL's tiebreakers. Goals include the shootout winner's +1, as the
+   league's standings do; gf_x / ga_x leave it out for comparisons with xG. */
+function teamGames(ab, phase){
+  const type = phase === "playoff" ? 3 : 2;
+  return S.index.games.filter(x => x.type === type && (x.home === ab || x.away === ab))
+    .slice().sort((a, b) => (a.date + a.id).localeCompare(b.date + b.id))
+    .map(x => {
+      const home = x.home === ab, gf = home ? x.hs : x.as, ga = home ? x.as : x.hs, won = gf > ga;
+      const so = x.end === "SO";
+      return { x, id:x.id, date:x.date, home, opp:home ? x.away : x.home, gf, ga, won, end:x.end,
+        res: won ? "W" : x.end === "REG" ? "L" : "OTL",
+        gf_x: gf - (so && won ? 1 : 0), ga_x: ga - (so && !won ? 1 : 0),
+        xgf: home ? x.hxg : x.axg, xga: home ? x.axg : x.hxg, xgf5: home ? x.hxg5 : x.axg5, xga5: home ? x.axg5 : x.hxg5,
+        att: home ? x.hatt : x.aatt, atta: home ? x.aatt : x.hatt, sog: home ? x.hsog : x.asog, soga: home ? x.asog : x.hsog };
+    });
+}
+function summarize(games){
+  const t = { gp:games.length, w:0, l:0, otl:0, rw:0, row:0, gf:0, ga:0, gf_x:0, ga_x:0, xgf:0, xga:0, xgf5:0, xga5:0 };
+  games.forEach(g => {
+    t[g.res === "W" ? "w" : g.res === "L" ? "l" : "otl"]++;
+    if (g.won && g.end === "REG") t.rw++;
+    if (g.won && g.end !== "SO") t.row++;
+    ["gf","ga","gf_x","ga_x","xgf","xga","xgf5","xga5"].forEach(k => t[k] += g[k]);
+  });
+  t.pts = 2 * t.w + t.otl; t.ppct = t.gp ? t.pts / (2 * t.gp) : null; t.diff = t.gf - t.ga;
+  t.gax = t.gf_x - t.xgf; t.gsax = t.xga - t.ga_x;
+  return t;
+}
+const stdCompare = (a, b) => b.pts - a.pts || (b.ppct ?? 0) - (a.ppct ?? 0) || b.rw - a.rw || b.row - a.row || b.w - a.w || b.diff - a.diff;
+function standings(phase){
+  return S.teams[phase].map(m => ({ ...m, ...summarize(teamGames(m.team, phase)), team:m.team }))
+    .sort(stdCompare).map((t, i) => ({ ...t, lg:i + 1 }));
+}
+
+/* The groupings the NHL publishes: league, conference, division and the
+   wild-card view (top three in each division, then two wild cards). */
+function groupTeams(rows, group){
+  const conf = t => (TEAMS[t.team] || [])[1] || "Other", div = t => (TEAMS[t.team] || [])[2] || "Other";
+  if (group === "league") return [{ title:null, rows:rows.map((t, i) => ({ ...t, rk:String(i + 1) })) }];
+  if (group === "conference") return ["East", "West"].map(c => ({ title:`${c}ern Conference`,
+    rows:rows.filter(t => conf(t) === c).map((t, i) => ({ ...t, rk:String(i + 1) })) }));
+  if (group === "division") return ["Atlantic", "Metropolitan", "Central", "Pacific"].map(d => ({ title:`${d} Division`,
+    rows:rows.filter(t => div(t) === d).map((t, i) => ({ ...t, rk:String(i + 1) })) }));
+  const out = [];
+  [["East", ["Atlantic", "Metropolitan"]], ["West", ["Central", "Pacific"]]].forEach(([c, divs]) => {
+    const leaders = [];
+    divs.forEach(d => {
+      const top = rows.filter(t => div(t) === d).slice(0, 3).map((t, i) => ({ ...t, rk:String(i + 1) }));
+      leaders.push(...top);
+      out.push({ title:`${d} Division`, rows:top });
+    });
+    const rest = rows.filter(t => conf(t) === c && !leaders.some(l => l.team === t.team))
+      .map((t, i) => ({ ...t, rk:i < 2 ? `WC${i + 1}` : String(i + 1), cut:i === 1 }));
+    out.push({ title:`${c}ern Conference wild card`, rows:rest });
+  });
+  return out;
+}
+
 /* ---------- teams ---------- */
+function teamCols(st){
+  return [
+    { k:"std", label:"#", get:t => t.lg, asc:true, fmt:t => `<span class="muted">${t.rk ?? t.lg}</span>`, tip:"rank" },
+    { k:"team", label:"Team", l:true, get:t => t.team, asc:true, fmt:t => `${teamLink(t.team)} <span class="muted tname">${esc(teamName(t.team).split(" ").slice(-1)[0])}</span>` },
+    { k:"gp", label:"GP", get:t => t.gp, tip:"gp" },
+    { k:"w", label:"W", get:t => t.w, tip:"w" },
+    { k:"l", label:"L", get:t => t.l, asc:true, tip:"l" },
+    { k:"otl", label:"OTL", get:t => t.otl, tip:"otl" },
+    { k:"pts", label:"PTS", get:t => t.pts, fmt:t => `<b>${t.pts}</b>`, tip:"pts" },
+    { k:"ppct", label:"P%", get:t => t.ppct, fmt:t => sv(t.ppct), tip:"ppct" },
+    { k:"rw", label:"RW", get:t => t.rw, tip:"rw" },
+    { k:"diff", label:"DIFF", get:t => t.diff, fmt:t => signed(t.diff, 0), tip:"diff" },
+    { k:"xgf", label:"xGF", get:t => t.xgf, fmt:t => f1(t.xgf), tip:"txgf" },
+    { k:"xga", label:"xGA", get:t => t.xga, fmt:t => f1(t.xga), asc:true, tip:"txga" },
+    { k:"xgs", label:"xG share", get:t => share(t.xgf, t.xga), fmt:t => pct(share(t.xgf, t.xga)), tip:"txgs" },
+    { k:"xgs5", label:"5v5 xG share", get:t => t["5v5"].xgf_pct, fmt:t => `<b>${pct(t["5v5"].xgf_pct)}</b>`, tip:"txgs5" },
+    { k:"xgf60", label:"5v5 xGF/60", get:t => t["5v5"].xgf60, fmt:t => f2(t["5v5"].xgf60), tip:"txgf60" },
+    { k:"xga60", label:"5v5 xGA/60", get:t => t["5v5"].xga60, fmt:t => f2(t["5v5"].xga60), asc:true, tip:"txga60" },
+    { k:"pp60", label:"PP xGF/60", get:t => t.pp.xgf60, fmt:t => f2(t.pp.xgf60), tip:"pp60" },
+    { k:"pk60", label:"PK xGA/60", get:t => t.pk.xga60, fmt:t => f2(t.pk.xga60), asc:true, tip:"pk60" },
+    { k:"gax", label:"GAx", get:t => t.gax, fmt:t => signed(t.gax), tip:"tgax" },
+    { k:"gsax", label:"GSAx", get:t => t.gsax, fmt:t => signed(t.gsax), tip:"tgsax" },
+  ];
+}
 function renderTeams(){
   const st = UI.teams;
-  const T = S.teams[UI.phase];
-  const cols = [
-    { k:"#", label:"#", cls:"rank" },
-    { k:"team", label:"Team", l:true, get:t => t.team, asc:true },
-    { k:"gp", label:"GP", get:t => t.gp },
-    { k:"rec", label:"W-L-OTL", get:t => t.pts, fmt:t => `${t.w}-${t.l}-${t.otl}` },
-    { k:"pts", label:"Pts", get:t => t.pts },
-    { k:"gf", label:"GF", get:t => t.gf },
-    { k:"ga", label:"GA", get:t => t.ga, asc:true },
-    { k:"xgf", label:"xGF", get:t => t.xgf, fmt:t => f1(t.xgf) },
-    { k:"xga", label:"xGA", get:t => t.xga, fmt:t => f1(t.xga), asc:true },
-    { k:"xgf_pct", label:"xGF%", get:t => t.xgf_pct, fmt:t => pct(t.xgf_pct), title:"Share of all-situations xG" },
-    { k:"xgf_pct5", label:"5v5 xGF%", get:t => t["5v5"].xgf_pct, fmt:t => `<b>${pct(t["5v5"].xgf_pct)}</b>`, title:"Share of 5-on-5 xG: the best single measure of play-driving" },
-    { k:"xgf60", label:"5v5 xGF/60", get:t => t["5v5"].xgf60, fmt:t => f2(t["5v5"].xgf60) },
-    { k:"xga60", label:"5v5 xGA/60", get:t => t["5v5"].xga60, fmt:t => f2(t["5v5"].xga60), asc:true },
-    { k:"pp60", label:"PP xGF/60", get:t => t.pp.xgf60, fmt:t => f2(t.pp.xgf60) },
-    { k:"pk60", label:"PK xGA/60", get:t => t.pk.xga60, fmt:t => f2(t.pk.xga60), asc:true },
-    { k:"fin", label:"GF−xGF", get:t => t.gf - t.xgf, fmt:t => signed(t.gf - t.xgf), title:"Finishing: goals scored above expected" },
-    { k:"gsax", label:"xGA−GA", get:t => t.xga - t.ga, fmt:t => signed(t.xga - t.ga), title:"Goaltending: goals saved above expected" },
-  ];
-  const rows = sortRows(T, cols, st);
-  const lens = lensChart(T, st.lens);
+  const rows = standings(UI.phase);
+  const cols = teamCols(st);
+  const lens = lensChart(rows, st.lens);
+  const groups = groupTeams(rows, UI.phase === "playoff" ? "league" : st.group);
+  const tables = groups.map(g => {
+    const sorted = st.sort === "std" ? (st.asc ? g.rows : g.rows.slice().reverse()) : sortRows(g.rows, cols, st);
+    return `<div class="card">${g.title ? `<h3 class="grouphead">${esc(g.title)}</h3>` : ""}
+      ${table(sorted, cols, st, renderTeams, t => t.cut && st.sort === "std" && st.asc ? `class="cutline"` : "")}</div>`;
+  }).join("");
+  const groupSeg = UI.phase === "playoff" ? "" : `<div class="seg">${[["league","League"],["conference","Conference"],["division","Division"],["wildcard","Wild card"]]
+    .map(([k, l]) => `<button data-group="${k}" aria-pressed="${st.group===k}">${l}</button>`).join("")}</div>`;
   $("view").innerHTML = `
-    ${phaseSeg(renderTeams) ? `<div class="filters">${phaseSeg(renderTeams)}</div>` : ""}
+    <div class="filters">${phaseSeg(renderTeams)}${groupSeg}</div>
     <div class="card">
       <span class="eyebrow">Team lenses</span>
       <div class="lenses seg">${Object.entries(LENSES).map(([k, l]) => `<button data-lens="${k}" aria-pressed="${st.lens===k}">${l.name}</button>`).join("")}</div>
@@ -693,14 +935,167 @@ function renderTeams(){
       <div class="grid2">
         <div>${lens.svg}</div>
         <div><div class="callouts" style="grid-template-columns:1fr">${lens.callouts}</div>
-          <p class="note" style="margin-top:10px">Lines split at the league average${st.lens === "luck" ? " (50% for shares)" : ""}. Hover a team for its numbers.</p></div>
+          <p class="note" style="margin-top:10px">Lines split at the league average${st.lens === "luck" ? " (50% for shares)" : ""}. Hover a team for its numbers; click it to open the team.</p></div>
       </div>
     </div>
-    <div class="card">${table(rows, cols, st, renderTeams)}</div>
-    <p class="note"><b>5v5 xGF%</b> is the share of 5-on-5 expected goals a team created. On 2025-26, a team's first-half 5v5 xGF% predicted its second-half points better (r = 0.60) than its first-half goal share (0.42) or points (0.43). <b>GF−xGF</b> is finishing and <b>xGA−GA</b> is goaltending; both drift back toward zero.</p>`;
+    ${tables}
+    <p class="note">Ranked by points, with the NHL's tiebreakers. Click any heading to re-sort, click a team to open it, hover a heading for what it means. On 2025-26, a team's first-half 5v5 xG share predicted its second-half points better (r = 0.60) than its first-half goal share (0.42) or points (0.43).</p>`;
   document.querySelectorAll("[data-lens]").forEach(b => b.onclick = () => { st.lens = b.dataset.lens; renderTeams(); });
+  document.querySelectorAll("[data-group]").forEach(b => b.onclick = () => { st.group = b.dataset.group; st.sort = "std"; st.asc = true; renderTeams(); });
   if (lens.pts) bindLensTips(lens);
 }
+/* ---------- one team ---------- */
+/* A team's page: where it stands, how it has played over a window (season,
+   or its last 20, 10 or 5 games), its game log and its players. Player
+   numbers are summed from the window's game sheets, so they count only
+   games played for this team. */
+const WINDOWS = [["season", "Season", Infinity], ["20", "Last 20", 20], ["10", "Last 10", 10], ["5", "Last 5", 5]];
+async function renderTeam(ab){
+  const st = UI.team;
+  const all = teamGames(ab, UI.phase);
+  if (!all.length) {
+    $("view").innerHTML = `<a class="back" href="#teams">&larr; All teams</a><div class="card"><p class="note">${esc(teamName(ab))} has no ${UI.phase === "playoff" ? "playoff " : ""}games in ${seasonLabel(S.season)}.</p></div>`;
+    return;
+  }
+  const n = WINDOWS.find(w => w[0] === st.win)[2];
+  const games = all.slice(-Math.min(n, all.length));
+  const t = summarize(games);
+  const std = UI.phase === "regular" ? standings("regular") : null;
+  const me = std && std.find(x => x.team === ab);
+  const meta = TEAMS[ab] || [ab, "", ""];
+  const rankIn = key => { const list = std.filter(x => (TEAMS[x.team] || [])[key] === meta[key]); return list.findIndex(x => x.team === ab) + 1; };
+  const ord = k => k + (["th","st","nd","rd"][(k % 100 > 10 && k % 100 < 14) ? 0 : (k % 10 < 4 ? k % 10 : 0)]);
+  const ranks = me ? `${ord(rankIn(2))} in the ${meta[2]} &middot; ${ord(rankIn(1))} in the ${meta[1]} &middot; ${ord(me.lg)} in the league` : "";
+
+  const tile = (k, v, tip) => `<div class="tile"${tip ? ` data-tip="${esc(TIPS[tip])}" data-tip-title="${k}"` : ""}><div class="k">${k}</div><div class="v">${v}</div></div>`;
+  const winLabel = WINDOWS.find(w => w[0] === st.win)[1].toLowerCase();
+  $("view").innerHTML = `
+    <a class="back" href="#teams">&larr; All teams</a>
+    <div class="recap"><h2 class="headline">${esc(teamName(ab))}</h2>
+      <p class="deck">${me ? `${me.w}-${me.l}-${me.otl}, ${me.pts} points. ${ranks}.` : `${t.w}-${t.l}-${t.otl} in the playoffs.`}</p></div>
+    <div class="filters">${phaseSeg(() => renderTeam(ab))}
+      <div class="seg">${WINDOWS.map(([k, l, w]) => `<button data-win="${k}" aria-pressed="${st.win===k}" ${w !== Infinity && w > all.length ? "disabled" : ""}>${l}</button>`).join("")}</div>
+      <span class="note">${games.length} game${games.length === 1 ? "" : "s"}${st.win !== "season" ? `, ${fmtDate(games[0].date)} to ${fmtDate(games[games.length - 1].date)}` : ""}</span></div>
+    <div class="card"><span class="eyebrow">${st.win === "season" ? "Season" : winLabel}</span>
+      <div class="tiles tiles6" style="margin-top:8px">
+        ${tile("Record", `${t.w}-${t.l}-${t.otl}`, "pts")}
+        ${tile("Goals", `${t.gf}&ndash;${t.ga}`, "diff")}
+        ${tile("Expected goals", `${f1(t.xgf)}&ndash;${f1(t.xga)}`, "txgs")}
+        ${tile("xG share", pct(share(t.xgf, t.xga)), "txgs")}
+        ${tile("5v5 xG share", pct(share(t.xgf5, t.xga5)), "txgs5")}
+        ${tile("GAx", signed(t.gax), "tgax")}
+        ${tile("GSAx", signed(t.gsax), "tgsax")}
+      </div></div>
+    <div class="card"><span class="eyebrow">Game by game</span>${gameBars(games)}
+      <p class="note">Bars: expected goals for (up) and against (down) in each game. Filled squares are wins. The line is the rolling five-game xG share.</p></div>
+    <div class="card"><span class="eyebrow">Game log</span>${gameLog(ab, games)}</div>
+    <div class="card" id="teamPlayers"><div class="loading">LOADING PLAYERS&hellip;</div></div>`;
+  document.querySelectorAll("[data-win]").forEach(b => b.onclick = () => { st.win = b.dataset.win; renderTeam(ab); });
+  document.querySelectorAll("[data-gid]").forEach(r => r.onclick = () => location.hash = "game/" + r.dataset.gid);
+
+  const sheets = await Promise.all(games.map(g => loadGame(g.id)));
+  if (!location.hash.startsWith("#team/" + ab)) return;   // the user moved on
+  $("teamPlayers").outerHTML = teamPlayers(ab, sheets, games.length);
+  bindTeamPlayers(ab, sheets, games.length);
+}
+
+function gameBars(games){
+  const W = 900, H = 200, L = 30, R = 10, mid = H / 2, bw = Math.max(3, Math.min(18, (W - L - R) / games.length - 2));
+  const max = Math.max(3, ...games.map(g => Math.max(g.xgf, g.xga)));
+  const X = i => L + (i + .5) * (W - L - R) / games.length, Y = v => v / max * (mid - 14);
+  const o = [`<svg class="bars" viewBox="0 0 ${W} ${H}" role="img" aria-label="Expected goals by game">`,
+    `<line class="axis" x1="${L}" x2="${W - R}" y1="${mid}" y2="${mid}"/>`,
+    `<text x="${L - 6}" y="${mid - Y(max) + 4}" text-anchor="end">${max.toFixed(0)}</text><text x="${L - 6}" y="${mid + Y(max) + 4}" text-anchor="end">${max.toFixed(0)}</text>`];
+  games.forEach((g, i) => {
+    const x = X(i);
+    o.push(`<g class="gbar" data-gid="${g.id}"><title>${fmtDate(g.date)} ${g.home ? "vs" : "@"} ${g.opp}: ${g.res} ${g.gf}-${g.ga}, xG ${g.xgf.toFixed(2)}-${g.xga.toFixed(2)}</title>
+      <rect x="${x - bw / 2}" y="${mid - Y(g.xgf)}" width="${bw}" height="${Y(g.xgf)}" fill="var(--t-home)"/>
+      <rect x="${x - bw / 2}" y="${mid}" width="${bw}" height="${Y(g.xga)}" fill="var(--t-away)" opacity=".75"/>
+      <rect x="${x - 3}" y="${H - 9}" width="6" height="6" fill="${g.won ? "var(--t-fg)" : "none"}" stroke="var(--t-fg)"/></g>`);
+  });
+  const roll = games.map((g, i) => { const w = games.slice(Math.max(0, i - 4), i + 1); return share(w.reduce((s, q) => s + q.xgf, 0), w.reduce((s, q) => s + q.xga, 0)); });
+  if (games.length > 2) o.push(`<polyline fill="none" stroke="var(--t-fg)" stroke-width="1.5" points="${roll.map((v, i) => `${X(i).toFixed(1)},${(H - 14 - v * (H - 28)).toFixed(1)}`).join(" ")}" opacity=".7"/>`);
+  o.push(`</svg>`);
+  return o.join("");
+}
+
+function gameLog(ab, games){
+  const st = UI.team.log;
+  const cols = [
+    { k:"date", label:"Date", l:true, get:g => g.date + g.id, fmt:g => fmtDate(g.date), tip:"date" },
+    { k:"opp", label:"Opp", l:true, get:g => g.opp, asc:true, fmt:g => `${g.home ? "vs" : "@"} ${g.opp}`, tip:"opp" },
+    { k:"res", label:"Result", l:true, get:g => g.gf - g.ga, fmt:g => `<b class="${g.won ? "pos" : "neg"}">${g.res}</b> ${g.gf}&ndash;${g.ga}${g.end !== "REG" ? ` <span class="muted">${g.end}</span>` : ""}`, tip:"res" },
+    { k:"xgf", label:"xGF", get:g => g.xgf, fmt:g => f2(g.xgf), tip:"txgf" },
+    { k:"xga", label:"xGA", get:g => g.xga, fmt:g => f2(g.xga), asc:true, tip:"txga" },
+    { k:"xgs", label:"xG share", get:g => share(g.xgf, g.xga), fmt:g => pct(share(g.xgf, g.xga)), tip:"txgs" },
+    { k:"xgs5", label:"5v5 xG share", get:g => share(g.xgf5, g.xga5), fmt:g => pct(share(g.xgf5, g.xga5)), tip:"txgs5" },
+    { k:"att", label:"Att", get:g => g.att, fmt:g => `${g.att}&ndash;${g.atta}`, tip:"att" },
+    { k:"sog", label:"SOG", get:g => g.sog, fmt:g => `${g.sog}&ndash;${g.soga}`, tip:"sog" },
+  ];
+  setTimeout(() => document.querySelectorAll("[data-gid]").forEach(r => r.onclick = () => location.hash = "game/" + r.dataset.gid));
+  const rerender = () => { const card = document.querySelector(".gamelog"); card.outerHTML = gameLog(ab, games); };
+  return `<div class="gamelog">${table(sortRows(games, cols, st), cols, st, rerender, g => `class="click" data-gid="${g.id}"`)}</div>`;
+}
+
+/* Sum a team's players over a set of game sheets. */
+function teamPlayerRows(ab, sheets){
+  const sk = {}, gk = {};
+  const keys = ["toi_all", "toi_5v5", "g", "a", "ixg", "att", "sog", "xgf", "xga", "xgf5", "xga5", "sa", "ga_", "xga_"];
+  sheets.forEach(G => G.players.filter(p => p.team === ab && (p.toi_all || p.att || p.sa)).forEach(p => {
+    const bag = p.pos === "G" ? gk : sk;
+    const r = bag[p.id] || (bag[p.id] = { id:p.id, name:p.name, pos:p.pos, gp:0 });
+    r.gp++;
+    keys.forEach(k => r[k] = (r[k] || 0) + (p[k] || 0));
+  }));
+  return { skaters:Object.values(sk), goalies:Object.values(gk) };
+}
+function teamPlayers(ab, sheets, ngames){
+  const st = UI.team;
+  const { skaters, goalies } = teamPlayerRows(ab, sheets);
+  const sk = skaters.filter(p => p.gp >= Math.min(st.mingp, ngames));
+  const skCols = [
+    { k:"name", label:"Skater", l:true, get:p => p.name, asc:true, fmt:p => esc(p.name) },
+    { k:"pos", label:"Pos", l:true, get:p => posLabel(p.pos), asc:true, fmt:p => posLabel(p.pos) },
+    { k:"gp", label:"GP", get:p => p.gp, tip:"gp" },
+    { k:"toi", label:"TOI/GP", get:p => p.toi_all / p.gp, fmt:p => toi(p.toi_all / p.gp), tip:"toi" },
+    { k:"g", label:"G", get:p => p.g, tip:"g" },
+    { k:"a", label:"A", get:p => p.a, tip:"a" },
+    { k:"pts", label:"P", get:p => p.g + p.a, fmt:p => `<b>${p.g + p.a}</b>`, tip:"p" },
+    { k:"ixg", label:"ixG", get:p => p.ixg, fmt:p => f2(p.ixg), tip:"ixg" },
+    { k:"gax", label:"GAx", get:p => p.g - p.ixg, fmt:p => signed(p.g - p.ixg), tip:"gax" },
+    { k:"att", label:"Att", get:p => p.att, tip:"att" },
+    { k:"xgf", label:"xGF", get:p => p.xgf, fmt:p => f1(p.xgf), tip:"xgf" },
+    { k:"xga", label:"xGA", get:p => p.xga, fmt:p => f1(p.xga), asc:true, tip:"xga" },
+    { k:"xgs", label:"xG share", get:p => share(p.xgf, p.xga), fmt:p => pct(share(p.xgf, p.xga)), tip:"xgs" },
+    { k:"xgs5", label:"5v5 xG share", get:p => share(p.xgf5, p.xga5), fmt:p => pct(share(p.xgf5, p.xga5)), tip:"xgs5" },
+    { k:"xgf60", label:"5v5 xGF/60", get:p => per60(p.xgf5, p.toi_5v5), fmt:p => f2(per60(p.xgf5, p.toi_5v5)), tip:"xgf60" },
+    { k:"xga60", label:"5v5 xGA/60", get:p => per60(p.xga5, p.toi_5v5), fmt:p => f2(per60(p.xga5, p.toi_5v5)), asc:true, tip:"xga60" },
+  ];
+  const gkCols = [
+    { k:"name", label:"Goalie", l:true, get:p => p.name, asc:true, fmt:p => esc(p.name) },
+    { k:"gp", label:"GP", get:p => p.gp, tip:"gp" },
+    { k:"toi", label:"Min", get:p => p.toi_all, fmt:p => toiH(p.toi_all), tip:"toitot" },
+    { k:"sa", label:"Shots", get:p => p.sa, tip:"sa" },
+    { k:"ga", label:"GA", get:p => p.ga_, asc:true, tip:"gaG" },
+    { k:"xga", label:"xGA", get:p => p.xga_, fmt:p => f1(p.xga_), tip:"xgaG" },
+    { k:"gsax", label:"GSAx", get:p => p.xga_ - p.ga_, fmt:p => `<b>${signed(p.xga_ - p.ga_)}</b>`, tip:"gsax" },
+    { k:"svp", label:"Sv%", get:p => p.sa ? 1 - p.ga_ / p.sa : null, fmt:p => sv(p.sa ? 1 - p.ga_ / p.sa : null), tip:"svp" },
+    { k:"xsvp", label:"xSv%", get:p => p.sa ? 1 - p.xga_ / p.sa : null, fmt:p => sv(p.sa ? 1 - p.xga_ / p.sa : null), tip:"xsvp" },
+  ];
+  const rer = () => { $("teamPlayers").outerHTML = teamPlayers(ab, sheets, ngames); bindTeamPlayers(ab, sheets, ngames); };
+  return `<div class="card" id="teamPlayers">
+    <div class="sec-head"><span class="eyebrow">Skaters</span>
+      <label class="f">Min. games <select id="tMin">${[1, 3, 5, 10, 20].filter(m => m <= Math.max(1, ngames)).map(m => `<option ${m === st.mingp ? "selected" : ""}>${m}</option>`).join("")}</select></label></div>
+    ${table(sortRows(sk, skCols, st.sk), skCols, st.sk, rer)}
+    <span class="eyebrow" style="display:block;margin-top:16px">Goalies</span>
+    ${table(sortRows(goalies, gkCols, st.gk), gkCols, st.gk, rer)}
+    <p class="note" style="margin-top:8px">Summed over the games above, for this team only. Hover a heading for what it means.</p></div>`;
+}
+function bindTeamPlayers(ab, sheets, ngames){
+  const m = $("tMin");
+  if (m) m.onchange = e => { UI.team.mingp = +e.target.value; $("teamPlayers").outerHTML = teamPlayers(ab, sheets, ngames); bindTeamPlayers(ab, sheets, ngames); };
+}
+
 /* ---------- team lenses ---------- */
 /* Each lens plots one question about every team, splits the field into four
    quadrants at the league average (or 50% / zero where that's the natural
@@ -712,18 +1107,18 @@ const LENSES = {
     q:{ hh:["Dominant","create a lot, allow little"], lh:["Defensive","tight games, few chances either way"],
         hl:["Run & gun","trade chances"], ll:["Outplayed","chasing all night"] } },
   luck: { name:"Luck", desc:"Share of expected goals (the process) against share of actual goals (the results). Above the diagonal a team is scoring more than its chances say, from hot shooting or hot goaltending; below it, the bounces have gone the other way.",
-    x:t => t.xgf_pct, y:t => t.gf / (t.gf + t.ga), mx:.5, my:.5, diag:true, fx:v => pct(v), fy:v => pct(v),
-    xl:"xGF%: share of chances →", yl:"GF%: share of goals ↑",
+    x:t => share(t.xgf, t.xga), y:t => share(t.gf_x, t.ga_x), mx:.5, my:.5, diag:true, fx:v => pct(v), fy:v => pct(v),
+    xl:"xG share: share of chances →", yl:"Goal share ↑",
     q:{ hh:["Good & winning","earning it"], lh:["Riding luck","outscoring their chances"],
         hl:["Unlucky","better than the record"], ll:["Bad & losing","the record is fair"] } },
   finish: { name:"Finishing", desc:"Chances created per game against goals scored above or below those chances. Finishing runs hot and cold and tends to drift back toward zero.",
-    x:t => t.xgf / t.gp, y:t => t.gf - t.xgf, my:0, fx:v => v.toFixed(2), fy:v => (v > 0 ? "+" : "") + v.toFixed(1),
-    xl:"xGF per game: chances created →", yl:"Goals − xGF: finishing ↑",
+    x:t => t.xgf / t.gp, y:t => t.gax, my:0, fx:v => v.toFixed(2), fy:v => (v > 0 ? "+" : "") + v.toFixed(1),
+    xl:"xGF per game: chances created →", yl:"GAx: goals above expected ↑",
     q:{ hh:["Create & finish","chances and the hands to bury them"], lh:["Opportunistic","few chances, cashing in"],
         hl:["Snakebitten","the chances are there, the goals aren't"], ll:["Starved","not much to finish"] } },
   save: { name:"Goaltending", desc:"Chances allowed per game against goals saved above expected. Right is fewer chances allowed; up is the goalies stopping more than an average one would.",
-    x:t => t.xga / t.gp, flipX:true, y:t => t.xga - t.ga, my:0, fx:v => v.toFixed(2), fy:v => (v > 0 ? "+" : "") + v.toFixed(1),
-    xl:"xGA per game: fewer allowed →", yl:"xGA − GA: goalie saves ↑",
+    x:t => t.xga / t.gp, flipX:true, y:t => t.gsax, my:0, fx:v => v.toFixed(2), fy:v => (v > 0 ? "+" : "") + v.toFixed(1),
+    xl:"xGA per game: fewer allowed →", yl:"GSAx: goals saved above expected ↑",
     q:{ hh:["Locked down","few chances, and the goalie stops them"], lh:["Bailed out","leaky, but the goalie is standing on his head"],
         hl:["Leaky goalie","the defence holds, the goalie doesn't"], ll:["Sieve","chances against and nobody stopping them"] } },
 };
@@ -779,14 +1174,14 @@ function lensChart(T, key){
     const g = pts.filter(p => p.q === k).sort((a, b) =>
       Math.hypot((b.x - mx) / sx, (b.y - my) / sy) - Math.hypot((a.x - mx) / sx, (a.y - my) / sy));
     return `<div class="callout" style="--q:${QCOL[k]}"><div class="h">${esc(L.q[k][0])} &middot; ${g.length}</div>
-      <div class="muted">${esc(L.q[k][1])}</div><div>${g.slice(0, 6).map(p => p.t.team).join(", ") || "&ndash;"}</div></div>`;
+      <div class="muted">${esc(L.q[k][1])}</div><div class="qteams">${g.map(p => teamLink(p.t.team)).join(" ") || "&ndash;"}</div></div>`;
   }).join("");
   // Luck is distance from the diagonal, not just which quadrant a team sits in.
   let extra = "";
   if (L.diag) {
     const gap = pts.map(p => ({ p, g:p.y - p.x })).sort((a, b) => a.g - b.g);
     const row = (h, c, list) => `<div class="callout" style="--q:${c}"><div class="h">${h}</div><div>${list.map(({p, g}) =>
-      `${p.t.team} <span class="muted">${g > 0 ? "+" : ""}${(g * 100).toFixed(1)}%</span>`).join(", ")}</div></div>`;
+      `${teamLink(p.t.team)} <span class="muted">${g > 0 ? "+" : ""}${(g * 100).toFixed(1)}%</span>`).join(", ")}</div></div>`;
     extra = row("Unluckiest: goal share furthest below chance share", "var(--t-home)", gap.slice(0, 4))
           + row("Luckiest: goal share furthest above chance share", "var(--t-warn)", gap.slice(-4).reverse());
   }
@@ -799,11 +1194,12 @@ function bindLensTips(res){
     const p = res.pts.find(q => q.t.team === el.dataset.team);
     el.onmousemove = e => {
       tip.innerHTML = `<b>${p.t.team}</b> &middot; ${esc(res.L.q[p.q][0])}<br>${esc(res.L.xl.split(":")[0])}: <b>${res.L.fx ? res.L.fx(p.x) : p.x}</b><br>
-        ${esc(res.L.yl.split(":")[0])}: <b>${res.L.fy ? res.L.fy(p.y) : p.y}</b><br><span class="muted">${p.t.w}-${p.t.l}-${p.t.otl}, ${p.t.pts} pts</span>`;
+        ${esc(res.L.yl.split(":")[0])}: <b>${res.L.fy ? res.L.fy(p.y) : p.y}</b><br><span class="muted">${p.t.w}-${p.t.l}-${p.t.otl}, ${p.t.pts} pts &middot; click to open</span>`;
       tip.style.display = "block";
       tip.style.left = Math.min(e.clientX + 14, innerWidth - 260) + "px"; tip.style.top = (e.clientY + 14) + "px";
     };
     el.onmouseleave = () => tip.style.display = "none";
+    el.onclick = () => location.hash = "team/" + p.t.team;
   });
 }
 
@@ -814,47 +1210,51 @@ function renderPlayers(){
   const P = S.players[UI.phase];
   let rows = (goalies ? P.goalies : P.skaters).slice();
   if (st.team) rows = rows.filter(p => p.team === st.team);
-  if (!goalies && st.pos) rows = rows.filter(p => st.pos === "D" ? p.pos === "D" : p.pos !== "D");
-  rows = rows.filter(p => (p.toi || 0) >= st.min * 60);
+  if (!goalies && st.pos) rows = rows.filter(p => st.pos === "D" ? p.pos === "D" : st.pos === "F" ? p.pos !== "D" : p.pos === st.pos);
+  rows = rows.filter(p => (p.toi || 0) >= st.min * 60 && p.gp >= st.mingp);
   if (st.q) { const q = st.q.toLowerCase(); rows = rows.filter(p => p.name.toLowerCase().includes(q)); }
-  const name = { k:"name", label:goalies?"Goalie":"Skater", l:true, get:p => p.name, asc:true, fmt:p => `${esc(p.name)}` };
+  const name = { k:"name", label:goalies?"Goalie":"Skater", l:true, get:p => p.name, asc:true, fmt:p => esc(p.name) };
+  const team = { k:"team", label:"Team", l:true, get:p => p.team, asc:true, fmt:p => p.team ? teamLink(p.team) : "" };
   const cols = goalies ? [
-    { k:"#", label:"#", cls:"rank" }, name,
-    { k:"team", label:"Team", l:true, get:p => p.team, asc:true },
-    { k:"gp", label:"GP", get:p => p.gp },
-    { k:"toi", label:"Min", get:p => p.toi, fmt:p => toiH(p.toi) },
-    { k:"sa", label:"Shots", get:p => p.sa, title:"Unblocked shots faced" },
-    { k:"ga", label:"GA", get:p => p.ga, asc:true },
-    { k:"xga", label:"xGA", get:p => p.xga, fmt:p => f1(p.xga) },
-    { k:"gsax", label:"GSAx", get:p => p.gsax, fmt:p => `<b>${signed(p.gsax)}</b>`, title:"Goals saved above expected" },
-    { k:"gsax60", label:"GSAx/60", get:p => p.gsax60, fmt:p => signed(p.gsax60, 2) },
-    { k:"sv_pct", label:"Sv%", get:p => p.sv_pct, fmt:p => sv(p.sv_pct), title:"On unblocked shots, misses included" },
-    { k:"xsv_pct", label:"xSv%", get:p => p.xsv_pct, fmt:p => sv(p.xsv_pct), title:"What an average goalie would stop on the same shots" },
+    { k:"#", label:"#", cls:"rank" }, name, team,
+    { k:"gp", label:"GP", get:p => p.gp, tip:"gp" },
+    { k:"toi", label:"Min", get:p => p.toi, fmt:p => toiH(p.toi), tip:"toitot" },
+    { k:"sa", label:"Shots", get:p => p.sa, tip:"sa" },
+    { k:"ga", label:"GA", get:p => p.ga, asc:true, tip:"gaG" },
+    { k:"xga", label:"xGA", get:p => p.xga, fmt:p => f1(p.xga), tip:"xgaG" },
+    { k:"gsax", label:"GSAx", get:p => p.gsax, fmt:p => `<b>${signed(p.gsax)}</b>`, tip:"gsax" },
+    { k:"gsax60", label:"GSAx/60", get:p => p.gsax60, fmt:p => signed(p.gsax60, 2), tip:"gsax60" },
+    { k:"sv_pct", label:"Sv%", get:p => p.sv_pct, fmt:p => sv(p.sv_pct), tip:"svp" },
+    { k:"xsv_pct", label:"xSv%", get:p => p.xsv_pct, fmt:p => sv(p.xsv_pct), tip:"xsvp" },
   ] : [
-    { k:"#", label:"#", cls:"rank" }, name,
-    { k:"team", label:"Team", l:true, get:p => p.team, asc:true },
-    { k:"pos", label:"Pos", l:true, get:p => p.pos, asc:true },
-    { k:"gp", label:"GP", get:p => p.gp },
-    { k:"toi", label:"TOI/GP", get:p => p.toi / p.gp, fmt:p => toi(p.toi / p.gp) },
-    { k:"g", label:"G", get:p => p.g },
-    { k:"ixg", label:"ixG", get:p => p.ixg, fmt:p => `<b>${f1(p.ixg)}</b>`, title:"xG of the player's own shots" },
-    { k:"gax", label:"G−ixG", get:p => p.gax, fmt:p => signed(p.gax), title:"Finishing: goals above expected" },
-    { k:"att", label:"Att", get:p => p.att, title:"Shot attempts, blocked included" },
-    { k:"ixg60_5", label:"5v5 ixG/60", get:p => p.ixg60_5, fmt:p => f2(p.ixg60_5) },
-    { k:"xgf60_5", label:"On xGF/60", get:p => p.xgf60_5, fmt:p => f2(p.xgf60_5), title:"5v5 xG for per 60 while on the ice" },
-    { k:"xga60_5", label:"On xGA/60", get:p => p.xga60_5, fmt:p => f2(p.xga60_5), asc:true, title:"5v5 xG against per 60 while on the ice" },
-    { k:"xgf_pct5", label:"5v5 xGF%", get:p => p.xgf_pct5, fmt:p => pct(p.xgf_pct5) },
+    { k:"#", label:"#", cls:"rank" }, name, team,
+    { k:"pos", label:"Pos", l:true, get:p => posLabel(p.pos), asc:true, fmt:p => posLabel(p.pos) },
+    { k:"gp", label:"GP", get:p => p.gp, tip:"gp" },
+    { k:"toi", label:"TOI/GP", get:p => p.toi / p.gp, fmt:p => toi(p.toi / p.gp), tip:"toi" },
+    { k:"g", label:"G", get:p => p.g, tip:"g" },
+    { k:"a", label:"A", get:p => p.a ?? null, fmt:p => p.a ?? "&ndash;", tip:"a" },
+    { k:"pts", label:"P", get:p => p.pts ?? null, fmt:p => `<b>${p.pts ?? "&ndash;"}</b>`, tip:"p" },
+    { k:"ixg", label:"ixG", get:p => p.ixg, fmt:p => f1(p.ixg), tip:"ixg" },
+    { k:"gax", label:"GAx", get:p => p.gax, fmt:p => signed(p.gax), tip:"gax" },
+    { k:"att", label:"Att", get:p => p.att, tip:"att" },
+    { k:"xgs", label:"xG share", get:p => p.xgf_pct ?? null, fmt:p => pct(p.xgf_pct), tip:"xgs" },
+    { k:"xgs5", label:"5v5 xG share", get:p => p.xgf_pct5, fmt:p => pct(p.xgf_pct5), tip:"xgs5" },
+    { k:"ixg60_5", label:"5v5 ixG/60", get:p => p.ixg60_5, fmt:p => f2(p.ixg60_5), tip:"ixg60" },
+    { k:"xgf60_5", label:"5v5 xGF/60", get:p => p.xgf60_5, fmt:p => f2(p.xgf60_5), tip:"xgf60" },
+    { k:"xga60_5", label:"5v5 xGA/60", get:p => p.xga60_5, fmt:p => f2(p.xga60_5), asc:true, tip:"xga60" },
   ];
-  if (!cols.some(c => c.k === st.sort)) { st.sort = goalies ? "gsax" : "ixg"; st.asc = false; }
+  if (!cols.some(c => c.k === st.sort)) { st.sort = goalies ? "gsax" : "pts"; st.asc = false; }
   const sorted = sortRows(rows, cols, st);
   const opts = ['<option value="">All teams</option>'].concat(teamList().map(t => `<option ${t===st.team?"selected":""}>${t}</option>`)).join("");
+  const posOpts = [["", "All"], ["F", "Forwards"], ["C", "C"], ["L", "LW"], ["R", "RW"], ["D", "D"]]
+    .map(([v, l]) => `<option value="${v}" ${st.pos === v ? "selected" : ""}>${l}</option>`).join("");
   $("view").innerHTML = `
     <div class="filters">
       <div class="seg"><button data-k="skaters" aria-pressed="${!goalies}">Skaters</button><button data-k="goalies" aria-pressed="${goalies}">Goalies</button></div>
       ${phaseSeg(renderPlayers)}
       <label class="f">Team <select id="pTeam">${opts}</select></label>
-      ${goalies ? "" : `<label class="f">Position <select id="pPos"><option value="">All</option>
-        <option value="F" ${st.pos==="F"?"selected":""}>Forwards</option><option value="D" ${st.pos==="D"?"selected":""}>Defense</option></select></label>`}
+      ${goalies ? "" : `<label class="f">Position <select id="pPos">${posOpts}</select></label>`}
+      <label class="f">Min. games <select id="pGp">${[1, 5, 10, 20, 40].map(m => `<option ${m===st.mingp?"selected":""}>${m}</option>`).join("")}</select></label>
       <label class="f">Min. minutes <select id="pMin">${[0,100,300,600,1000].map(m => `<option ${m===st.min?"selected":""}>${m}</option>`).join("")}</select></label>
       <label class="f">Search <input id="pQ" type="search" placeholder="Name" value="${esc(st.q)}"></label>
       <span class="note">${sorted.length} ${goalies?"goalies":"skaters"}</span>
@@ -863,10 +1263,11 @@ function renderPlayers(){
       ${sorted.length > st.shown ? `<button class="btn more" id="pMore">Show more</button>` : ""}</div>
     <p class="note">${goalies
       ? "GSAx compares goals allowed with the xG of the unblocked shots a goalie faced. It needs a big sample: a full season of starts swings by ±5 on luck alone."
-      : "Small samples mislead: a 20-shot sample of G−ixG is mostly noise. On-ice numbers credit everyone on the ice, so they reflect linemates and usage as much as the player."}</p>`;
+      : "Small samples mislead: a 20-shot sample of GAx is mostly noise. On-ice numbers credit everyone on the ice, so they reflect linemates and usage as much as the player."} Hover a heading for what it means.</p>`;
   document.querySelectorAll(".seg button[data-k]").forEach(b => b.onclick = () => { st.kind = b.dataset.k; st.shown = 100; renderPlayers(); });
   $("pTeam").onchange = e => { st.team = e.target.value; renderPlayers(); };
   if ($("pPos")) $("pPos").onchange = e => { st.pos = e.target.value; renderPlayers(); };
+  $("pGp").onchange = e => { st.mingp = +e.target.value; renderPlayers(); };
   $("pMin").onchange = e => { st.min = +e.target.value; renderPlayers(); };
   $("pQ").oninput = e => { st.q = e.target.value; const pos = e.target.selectionStart; renderPlayers(); const i = $("pQ"); i.focus(); i.setSelectionRange(pos, pos); };
   if ($("pMore")) $("pMore").onclick = () => { st.shown += 200; renderPlayers(); };
@@ -888,7 +1289,7 @@ function renderModel(){
       <h3>What it looks at</h3>
       <p><b>The shot:</b> distance, angle, whether it came from behind the net, shot type, the shooter's handedness and wing. <b>The play before it:</b> what the previous event was, where, and how long ago; whether it's a rebound and off what (a save, a miss or a block); how fast the puck moved. <b>Game state:</b> strength (5v5, power play, pulled goalie and why), score, period, time. <b>Fatigue:</b> how long the shooter and both units had been on the ice.</p>
       <h3>What it can't see</h3>
-      <p>The public feed doesn't log passes or zone entries, so <b>royal-road passes and true rushes are invisible</b>. The model uses proxies: seconds since the puck was last outside the zone, since the team won it, and whether the puck crossed the middle. They help a little. Screens, traffic, shot speed and where the shot was aimed aren't in the data at all.</p>
+      <p>The public feed doesn't log passes or zone entries, so <b>cross-ice feeds and true rushes are invisible</b>. The model uses proxies: seconds since the puck was last outside the zone, since the team won it, and whether the puck crossed the middle. They help a little. Screens, traffic, shot speed and where the shot was aimed aren't in the data at all.</p>
       <h3>How good it is</h3>
       <div class="tw"><table>
         <thead><tr><th class="l">Held-out season</th><th>AUC</th><th>Log loss</th><th>xG / goals</th></tr></thead>
