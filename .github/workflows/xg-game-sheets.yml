@@ -6,15 +6,17 @@ name: xG Game Sheets
 #
 # The output is not committed to main (a season is ~1,400 files, rewritten
 # nightly). It is force-pushed as a single commit to the orphan branch
-# xg-sheets-data, which deploy.yml copies into build/xgcalc/games/. Force-push
-# keeps that branch one commit deep, so it never grows the repo's history.
+# xg-sheets-data, which fortknox-deploy.yml builds the High Slot site from.
+# Force-push keeps that branch one commit deep, so it never grows the repo's
+# history.
 
 on:
   schedule:
     # Every 20 minutes from noon to 4am ET (16:00-07:59 UTC): matinees end
     # around 3-6pm ET, late West games around 1am ET. GitHub often starts
     # scheduled runs late, so expect sheets 20-60 minutes after the final horn.
-    - cron: '*/20 16-23,0-7 * * *'
+    # Off the hour (:07/:27/:47): GitHub drops the most scheduled runs at :00.
+    - cron: '7,27,47 16-23,0-7 * * *'
   workflow_dispatch:
     inputs:
       season:
@@ -42,13 +44,13 @@ jobs:
         with:
           python-version: '3.13'
           cache: 'pip'
-          cache-dependency-path: xgcalc/requirements-sheets.txt
+          cache-dependency-path: fortknox/pipeline/requirements.txt
 
-      - run: pip install -r xgcalc/requirements-sheets.txt
+      - run: pip install -r fortknox/pipeline/requirements.txt
 
       - name: Pick season
         id: season
-        working-directory: xgcalc
+        working-directory: fortknox/pipeline
         run: |
           S="${{ github.event.inputs.season }}"
           [ -z "$S" ] && S=$(python -c "from nhl_sheets import current_season; print(current_season())")
@@ -56,18 +58,20 @@ jobs:
           echo "Season $S"
 
       # The raw feed for this season, so a run fetches only what's new. A
-      # final game never changes; the cache only ever grows.
+      # final game never changes; the cache only ever grows. (The cache's
+      # version follows its path, so the first run after the pipeline moved
+      # out of xgcalc/ refetches the season once.)
       - name: Restore raw NHL cache
         id: restore
         uses: actions/cache/restore@v4
         with:
-          path: xgcalc/cache/nhl/${{ steps.season.outputs.season }}
+          path: fortknox/pipeline/cache/nhl/${{ steps.season.outputs.season }}
           key: nhl-raw-${{ steps.season.outputs.season }}-${{ github.run_id }}
           restore-keys: nhl-raw-${{ steps.season.outputs.season }}-
 
       - name: Fetch newly final games
         id: fetch
-        working-directory: xgcalc
+        working-directory: fortknox/pipeline
         run: |
           S=${{ steps.season.outputs.season }}
           sig() { find cache/nhl/$S -type f 2>/dev/null -printf '%f %s\n' | sort | md5sum; }
@@ -85,14 +89,14 @@ jobs:
         if: steps.fetch.outputs.changed == 'true'
         uses: actions/cache/save@v4
         with:
-          path: xgcalc/cache/nhl/${{ steps.season.outputs.season }}
+          path: fortknox/pipeline/cache/nhl/${{ steps.season.outputs.season }}
           key: nhl-raw-${{ steps.season.outputs.season }}-${{ github.run_id }}
 
       # Start from what's published so earlier seasons stay on the site; only
       # this season's folder is rebuilt.
       - name: Build game sheets
         if: steps.fetch.outputs.changed == 'true'
-        working-directory: xgcalc
+        working-directory: fortknox/pipeline
         run: |
           # A clone, not a fetch into the checkout: a quiet fetch that failed
           # here once dropped every earlier season from the site. If the branch
@@ -125,8 +129,8 @@ jobs:
 
       # A push made with GITHUB_TOKEN doesn't trigger other workflows, but a
       # workflow_dispatch does.
-      - name: Redeploy the site
+      - name: Redeploy High Slot
         if: steps.fetch.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run deploy.yml --ref main
+        run: gh workflow run fortknox-deploy.yml --ref main
