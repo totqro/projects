@@ -53,8 +53,8 @@ export function useLensChart({ rows, lens, season }: { rows: StandingRow[]; lens
             </g>
           );
         })}
-        <line x1={cx} x2={cx} y1={PT} y2={H - PB} stroke="oklch(1 0 0 / 0.14)" strokeDasharray="4 4" />
-        <line y1={cy} y2={cy} x1={PL} x2={W - PR} stroke="oklch(1 0 0 / 0.14)" strokeDasharray="4 4" />
+        <line x1={cx} x2={cx} y1={PT} y2={H - PB} stroke="var(--grid)" strokeDasharray="4 4" />
+        <line y1={cy} y2={cy} x1={PL} x2={W - PR} stroke="var(--grid)" strokeDasharray="4 4" />
         {L.diag && (() => {
           const d = x0 + (x1 - x0) * 0.62;
           return (

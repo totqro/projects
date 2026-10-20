@@ -39,7 +39,7 @@ export function FlowChart({ shots, home, away }: { shots: Shot[]; home: string; 
           <text x={L - 6} y={Y(v) + 3} textAnchor="end" fill="var(--muted-foreground)">{v}</text>
         </g>
       ))}
-      {periods.slice(1).map(p => <line key={p} x1={X(p * 1200)} x2={X(p * 1200)} y1={T} y2={H - B} stroke="oklch(1 0 0 / 0.14)" />)}
+      {periods.slice(1).map(p => <line key={p} x1={X(p * 1200)} x2={X(p * 1200)} y1={T} y2={H - B} stroke="var(--grid)" />)}
       {periods.map(p => (
         <text key={p} x={(X(p * 1200) + X(Math.min(end, (p + 1) * 1200))) / 2} y={H - 8} textAnchor="middle" fill="var(--muted-foreground)">{ORD(p + 1)}</text>
       ))}
