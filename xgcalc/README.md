@@ -154,7 +154,8 @@ fit_tagged.py          refit rush/cross-ice on tagged games, shrunk toward the p
 web/scatter.html       the shot chart — CSV in, the real model on a rink, in the browser
 web/tracker.html       live tracker: shots with x/y, scoreboard clock, shifts, rush/cross-ice tags; TOI, xGF, xGA
 web/xg_model.js        the model as a script, so tracker.html runs from file:// offline
-web/serve.py           static server for previewing the pages locally
+nhl_game.py            NHL play-by-play + shift charts -> a tracker backup (shots, TOI)
+web/serve.py           local preview server; also proxies nhl_game.py at /nhl/ for the tracker
 data/                  built dataset + saved model (gitignored — regenerable)
 ```
 
@@ -361,6 +362,31 @@ numbers to three decimals:
 derived, and rebounds are the biggest single thing a coordinate export
 usually lacks — those shots score well below their real value. Both pages say
 so on screen rather than quietly rendering a confident-looking dot.
+
+## Loading an NHL game into the tracker
+
+`nhl_game.py` turns an NHL game into a tracker backup. It writes every shot
+attempt with its rink coordinates and the model's exact situation bucket
+(empty nets included), plus one team's shift chart as line changes. TOI,
+on-ice xGF/xGA, units and the report then derive exactly as if the game had
+been tagged live. On CBJ @ MIN (2026020135), TOI and shift counts match the
+official boxscore for all 20 MIN players.
+
+Locally, use Setup > NHL game in the tracker (served by `web/serve.py`). The
+NHL API sends no CORS headers, so a static host can't call it; there, run:
+
+```bash
+python3 nhl_game.py --date 2026-10-18
+```
+
+```bash
+python3 nhl_game.py 2026020135 --team MIN
+```
+
+and load the file with Setup > Import backup. Limits: the feed has no shot
+type for blocked shots (they import as Unknown), it places a block where it
+was blocked rather than where it was shot from, and shift charts often lag
+live games, so TOI fills in once they're published.
 
 ## Tagged features: rush, cross-ice, blocks
 
