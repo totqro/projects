@@ -94,9 +94,18 @@ jobs:
         if: steps.fetch.outputs.changed == 'true'
         working-directory: xgcalc
         run: |
-          mkdir -p "$RUNNER_TEMP/sheets"
-          if git fetch -q --depth 1 origin xg-sheets-data; then
-            git archive FETCH_HEAD | tar -x -C "$RUNNER_TEMP/sheets"
+          # A clone, not a fetch into the checkout: a quiet fetch that failed
+          # here once dropped every earlier season from the site. If the branch
+          # exists, reading it must succeed or the run stops.
+          REPO="https://github.com/${{ github.repository }}.git"
+          if git ls-remote --exit-code --heads "$REPO" xg-sheets-data > /dev/null; then
+            git clone -q --depth 1 --branch xg-sheets-data "$REPO" "$RUNNER_TEMP/prev"
+            rm -rf "$RUNNER_TEMP/prev/.git"
+            mv "$RUNNER_TEMP/prev" "$RUNNER_TEMP/sheets"
+            echo "Starting from published seasons: $(cat "$RUNNER_TEMP/sheets/seasons.json")"
+          else
+            mkdir -p "$RUNNER_TEMP/sheets"
+            echo "No xg-sheets-data branch yet; starting empty."
           fi
           rm -rf "$RUNNER_TEMP/sheets/${{ steps.season.outputs.season }}"
           python nhl_sheets.py --season ${{ steps.season.outputs.season }} --no-fetch --out "$RUNNER_TEMP/sheets"
