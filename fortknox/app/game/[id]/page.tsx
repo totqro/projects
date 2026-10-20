@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // the site card for older games.
   const image = seasonOfGame(G.id) === currentSeason()
     ? { url: `/og/${G.id}.png`, width: 1200, height: 630, alt: `${G.away.abbrev} ${G.away.score}, ${G.home.abbrev} ${G.home.score}: final score and expected goals` }
-    : { url: "/og/site.png", width: 1200, height: 630, alt: "Fort Knox" };
+    : { url: "/og/site.png", width: 1200, height: 630, alt: "High Slot" };
   return {
     title, description: `${r.headline}. ${r.text}`,
     openGraph: { type: "article", title: r.headline, description: r.text, images: [image] },

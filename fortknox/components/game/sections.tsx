@@ -10,7 +10,7 @@ export function Recap({ G }: { G: Sheet }) {
   const r = recap(G);
   return (
     <header className="mx-auto mb-6 max-w-3xl text-center">
-      <h1 className="vault-headline font-[family-name:var(--font-display)] text-[clamp(28px,4.4vw,44px)] font-bold leading-[1.08] tracking-[-0.03em] text-balance">
+      <h1 className="slot-headline font-[family-name:var(--font-display)] text-[clamp(28px,4.4vw,44px)] font-bold leading-[1.08] tracking-[-0.03em] text-balance">
         {r.headline}
       </h1>
       <p className="mt-3 text-[15px] leading-relaxed text-secondary-foreground text-pretty sm:text-base">{r.text}</p>
@@ -31,7 +31,7 @@ export function ScoreCard({ G }: { G: Sheet }) {
   ];
   const aWon = A.score > H.score;
   return (
-    <Card className="vault-plate mb-4">
+    <Card className="slot-plate mb-4">
       <CardContent className="p-5">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div>
@@ -40,12 +40,12 @@ export function ScoreCard({ G }: { G: Sheet }) {
           </div>
           <div className="text-center">
             <div className="tabular font-[family-name:var(--font-display)] text-[clamp(32px,5vw,48px)] font-bold leading-none tracking-[-0.02em]">
-              <span className={cn(aWon ? "vault-gold" : "text-muted-foreground")}>{A.score}</span>
+              <span className={cn(aWon ? "brand-text" : "text-muted-foreground")}>{A.score}</span>
               <span className="mx-2 text-muted-foreground">&ndash;</span>
-              <span className={cn(!aWon ? "vault-gold" : "text-muted-foreground")}>{H.score}</span>
+              <span className={cn(!aWon ? "brand-text" : "text-muted-foreground")}>{H.score}</span>
             </div>
             <div className="mt-1.5 text-xs text-muted-foreground">
-              <span className="font-medium text-gold">{END[G.end] ?? G.end}</span>, {fmtDate(G.date)}{G.venue ? `, ${G.venue}` : ""}
+              <span className="font-medium text-brand">{END[G.end] ?? G.end}</span>, {fmtDate(G.date)}{G.venue ? `, ${G.venue}` : ""}
             </div>
           </div>
           <div className="text-right">
@@ -71,7 +71,7 @@ export function Stars({ G }: { G: Sheet }) {
       <ol className="space-y-3">
         {stars(G).map(({ p, why }, i) => (
           <li key={p.id} className="flex gap-3">
-            <span className={cn("vault-medal grid size-7 shrink-0 place-items-center rounded-full text-xs font-bold tabular", i === 0 ? "vault-medal-1" : i === 2 ? "vault-medal-3" : "")}>{i + 1}</span>
+            <span className={cn("slot-medal grid size-7 shrink-0 place-items-center rounded-full text-xs font-bold tabular", i === 0 ? "slot-medal-1" : i === 2 ? "slot-medal-3" : "")}>{i + 1}</span>
             <div className="min-w-0">
               <div><b className="font-semibold">{p.name}</b> <span className={p.team === G.home.abbrev ? "text-home" : "text-away"}>{p.team}</span></div>
               <div className="text-xs text-muted-foreground">{why}</div>

@@ -96,7 +96,7 @@ export function ShotMap() {
           })}
           {selShot && selShot.ev !== "BLOCK" && (() => {
             const { x, y } = place(selShot);
-            return <circle cx={x} cy={y} r={shotRadius(selShot.xg) + 2.6} fill="none" stroke="var(--gold)" strokeWidth={0.9}
+            return <circle cx={x} cy={y} r={shotRadius(selShot.xg) + 2.6} fill="none" stroke="var(--brand)" strokeWidth={0.9}
               className="pointer-events-none animate-[ring_1.2s_ease-out_2]" />;
           })()}
         </svg>
@@ -159,7 +159,7 @@ export function BestChances({ n = 5 }: { n?: number }) {
             <TableCell className={cn(cell, "text-muted-foreground")}>{ORD(s.p)} {toi(s.t)}</TableCell>
             <TableCell className={cn(cell, "text-right font-semibold")}>{s.xg.toFixed(2)}</TableCell>
             <TableCell className={cell}>
-              {s.ev === "GOAL" ? <b className="font-semibold text-gold">Goal</b> : s.ev === "SHOT" ? <>Saved <span className="text-muted-foreground">({lastName(G, s.goalie)})</span></> : "Missed"}
+              {s.ev === "GOAL" ? <b className="font-semibold text-brand">Goal</b> : s.ev === "SHOT" ? <>Saved <span className="text-muted-foreground">({lastName(G, s.goalie)})</span></> : "Missed"}
             </TableCell>
           </TableRow>
         ))}

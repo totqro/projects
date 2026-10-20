@@ -27,7 +27,7 @@ export function SiteNav({ current }: { current: number }) {
   const href = (k: string) =>
     k === "games" ? (season === current ? "/" : `/games/${season}`) : k === "model" ? "/model" : `/${k}/${season}`;
   return (
-    <nav aria-label="Sections" className="vault-nav inline-flex gap-0.5 rounded-[0.75rem] bg-card p-1 [box-shadow:var(--shadow-inset-deep)]">
+    <nav aria-label="Sections" className="slot-nav inline-flex gap-0.5 rounded-[0.75rem] bg-card p-1 [box-shadow:var(--shadow-inset-deep)]">
       {SECTIONS.map(s => {
         const on = s.match(path);
         return (

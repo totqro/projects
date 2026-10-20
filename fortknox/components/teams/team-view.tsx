@@ -107,7 +107,7 @@ function GameBars({ games }: { games: TeamGame[] }) {
             <title>{`${fmtDate(g.date)} ${g.home ? "vs" : "@"} ${g.opp}: ${g.res} ${g.gf}-${g.ga}, xG ${g.xgf.toFixed(2)}-${g.xga.toFixed(2)}`}</title>
             <rect x={x - bw / 2} y={mid - Y(g.xgf)} width={bw} height={Y(g.xgf)} rx={1.5} fill="var(--home)" />
             <rect x={x - bw / 2} y={mid} width={bw} height={Y(g.xga)} rx={1.5} fill="var(--away)" opacity={0.75} />
-            <rect x={x - 3} y={H - 9} width={6} height={6} rx={1} fill={g.won ? "var(--gold)" : "none"} stroke={g.won ? "var(--gold)" : "var(--muted-foreground)"} />
+            <rect x={x - 3} y={H - 9} width={6} height={6} rx={1} fill={g.won ? "var(--brand)" : "none"} stroke={g.won ? "var(--brand)" : "var(--muted-foreground)"} />
           </g>
         );
       })}

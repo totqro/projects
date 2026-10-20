@@ -61,7 +61,7 @@ export default async function Player({ params }: Props) {
             {cur.sk && <>
               <Tile label="Games">{cur.sk.gp}</Tile>
               <Tile label="Goals, assists">{cur.sk.g}&ndash;{cur.sk.a}</Tile>
-              <Tile label="Points"><span className="vault-gold">{cur.sk.pts}</span></Tile>
+              <Tile label="Points"><span className="brand-text">{cur.sk.pts}</span></Tile>
               <Tile label="ixG">{f1(cur.sk.ixg)}</Tile>
               <Tile label="Goals above expected"><Signed v={cur.sk.gax} /></Tile>
               <Tile label="5v5 xG share">{pct(cur.sk.xgf_pct5)}</Tile>

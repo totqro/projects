@@ -19,7 +19,7 @@ export function MiniBox({ x }: { x: GameSummary }) {
   const line = (ab: string, s: number, xg: number, sog: number, won: boolean) => (
     <tr className={cn(won ? "font-semibold text-foreground" : "text-secondary-foreground")}>
       <td className="py-1 text-left">{ab}</td>
-      <td className={cn("py-1 text-right", won && "vault-gold")}>{s}</td>
+      <td className={cn("py-1 text-right", won && "brand-text")}>{s}</td>
       <td className="py-1 text-right text-muted-foreground">{f2(xg)}</td>
       <td className="py-1 text-right text-muted-foreground">{sog}</td>
     </tr>
@@ -30,7 +30,7 @@ export function MiniBox({ x }: { x: GameSummary }) {
       <table className="tabular w-full text-[13px]">
         <thead>
           <tr className="border-b border-border text-xs text-muted-foreground">
-            <th className="pb-1.5 text-left font-normal">{fmtDate(x.date)} <span className="font-medium text-gold">{status}</span></th>
+            <th className="pb-1.5 text-left font-normal">{fmtDate(x.date)} <span className="font-medium text-brand">{status}</span></th>
             <th className="pb-1.5 text-right font-normal">G</th>
             <th className="pb-1.5 text-right font-normal">xG</th>
             <th className="pb-1.5 text-right font-normal">SOG</th>

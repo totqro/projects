@@ -14,67 +14,60 @@ import { nickname, teamName } from "./teams";
 export const OG_SIZE = { width: 1200, height: 630 };
 
 const C = {
-  bg: "#070707",          // --background  oklch(0.13 0 0)
-  card: "#0f0f0f",        // --card        oklch(0.17 0 0)
-  well: "#1b1b1b",
+  bg: "#030c17",          // --background  oklch(0.15 0.03 252)
+  card: "#081523",        // --card        oklch(0.19 0.035 252)
+  well: "#05101d",        // --well
   border: "rgba(255,255,255,0.08)",
   fg: "#ffffff",
-  muted: "#868686",       // --muted-foreground oklch(0.62 0 0)
-  away: "#f47c6e",        // oklch(0.72 0.15 28)
-  home: "#65b2f1",        // oklch(0.74 0.12 245)
-  gold: "linear-gradient(180deg, #f4d580 0%, #ca933e 100%)", // --gold-gradient
+  muted: "#8da1b3",       // --muted-foreground oklch(0.7 0.035 245)
+  loser: "#495766",
+  sep: "#243447",
+  away: "#fd7562",        // oklch(0.72 0.17 30)
+  home: "#a1bdf9",        // oklch(0.8 0.09 265)
+  brand: "#6ce6f3",       // --brand oklch(0.86 0.11 205)
+  gradient: "linear-gradient(180deg, #c8f9fc 0%, #16bee1 100%)", // --brand-gradient
+  glow: "rgba(108,230,243,0.12)",
 };
 
-const FONT_DIR = path.join(process.cwd(), "node_modules/@fontsource/inter/files");
-let fonts: { name: string; data: Buffer; weight: 500 | 700 | 800; style: "normal" }[] | null = null;
-/** Inter from @fontsource (Satori needs woff or ttf, not woff2). */
+/** Barlow Condensed for the display type, Inter for the small print, both
+ *  from @fontsource (Satori needs woff or ttf, not woff2). */
+type Font = { name: string; data: Buffer; weight: 500 | 600 | 700; style: "normal" };
+let fonts: Font[] | null = null;
 export function ogFonts() {
-  fonts ??= ([500, 700, 800] as const).map(weight => ({
-    name: "Inter", weight, style: "normal" as const,
-    data: fs.readFileSync(path.join(FONT_DIR, `inter-latin-${weight}-normal.woff`)),
-  }));
+  const file = (pkg: string, f: string) => fs.readFileSync(path.join(process.cwd(), "node_modules/@fontsource", pkg, "files", f));
+  fonts ??= [
+    ...([600, 700] as const).map(weight => ({ name: "Barlow", weight, style: "normal" as const, data: file("barlow-condensed", `barlow-condensed-latin-${weight}-normal.woff`) })),
+    ...([500, 700] as const).map(weight => ({ name: "Inter", weight, style: "normal" as const, data: file("inter", `inter-latin-${weight}-normal.woff`) })),
+  ];
   return fonts;
 }
 
-/** components/site/logo.tsx's vault dial, flattened for Satori. The ticks
- *  are solid: a gradient stroke on a vertical line has a zero-width bounding
- *  box and paints nothing. */
-function Dial({ size }: { size: number }) {
-  const ticks = Array.from({ length: 40 }, (_, i) => i * 9);
+/** components/site/logo.tsx's slot mark, with the colour written out. */
+function Mark({ size }: { size: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 48 48">
-      <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#f6dd90" />
-          <stop offset="1" stopColor="#bf8532" />
-        </linearGradient>
-        <radialGradient id="f" cx=".5" cy=".38" r=".7">
-          <stop offset="0" stopColor="#2e2e2e" />
-          <stop offset="1" stopColor="#0d0d0d" />
-        </radialGradient>
-      </defs>
-      <circle cx="24" cy="24" r="23" fill="url(#g)" />
-      <circle cx="24" cy="24" r="19.5" fill="url(#f)" />
-      {ticks.map(a => (
-        <line key={a} x1="24" y1={a % 45 === 0 ? 6.5 : 5.5} x2="24" y2="8.5" stroke="#e2b862"
-          strokeWidth={a % 45 === 0 ? 1.4 : 0.6} transform={`rotate(${a} 24 24)`} opacity={a % 45 === 0 ? 1 : 0.55} />
-      ))}
-      <circle cx="24" cy="24" r="9" fill="url(#g)" />
-      <circle cx="24" cy="24" r="6.6" fill="url(#f)" />
-      {[0, 120, 240].map(a => (
-        <rect key={a} x="23" y="11.5" width="2" height="6" rx="1" fill="url(#g)" transform={`rotate(${a + 20} 24 24)`} />
-      ))}
-      <path d="M24 2.2 l1.6 2.6 h-3.2 z" fill="#f9efc9" />
+      <path d="M8 6 H40 V22 L24 42 L8 22 Z" fill="none" stroke={C.brand} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M17 6 V12 H31 V6" fill="none" stroke={C.brand} strokeWidth="2" opacity=".6" />
+      <circle cx="24" cy="24" r="4" fill={C.brand} />
     </svg>
   );
 }
 
-const goldText = { backgroundImage: C.gold, backgroundClip: "text", color: "transparent" } as const;
+const brandText = { backgroundImage: C.gradient, backgroundClip: "text", color: "transparent" } as const;
+const display = { fontFamily: "Barlow", textTransform: "uppercase" } as const;
+
+function Brand({ size }: { size: number }) {
+  return (
+    <div style={{ display: "flex", ...display, fontSize: size, fontWeight: 700, letterSpacing: "0.02em", lineHeight: 1 }}>
+      High<span style={{ marginLeft: size * 0.24, ...brandText }}>Slot</span>
+    </div>
+  );
+}
 
 function Team({ abbrev, color, align }: { abbrev: string; color: string; align: "flex-start" | "flex-end" }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: align, width: 300 }}>
-      <div style={{ fontSize: 132, fontWeight: 800, color, letterSpacing: "-0.04em", lineHeight: 1 }}>{abbrev}</div>
+      <div style={{ ...display, fontSize: 168, fontWeight: 700, color, letterSpacing: "0.01em", lineHeight: 0.9 }}>{abbrev}</div>
       <div style={{ fontSize: 30, fontWeight: 500, color: C.muted, marginTop: 10 }}>{nickname(teamName(abbrev))}</div>
     </div>
   );
@@ -82,7 +75,7 @@ function Team({ abbrev, color, align }: { abbrev: string; color: string; align: 
 
 function Score({ v, win }: { v: number; win: boolean }) {
   return (
-    <div style={{ display: "flex", fontSize: 168, fontWeight: 800, lineHeight: 1, letterSpacing: "-0.04em", ...(win ? goldText : { color: "#5a5a5a" }) }}>
+    <div style={{ display: "flex", ...display, fontSize: 200, fontWeight: 700, lineHeight: 0.9, ...(win ? brandText : { color: C.loser }) }}>
       {String(v)}
     </div>
   );
@@ -97,14 +90,12 @@ export function GameCard({ G }: { G: GameSummary }) {
     <div style={{
       width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between",
       padding: "52px 64px 56px", background: C.bg, color: C.fg, fontFamily: "Inter",
-      backgroundImage: "radial-gradient(ellipse 900px 420px at 50% 0%, rgba(244,213,128,0.10), rgba(7,7,7,0))",
+      backgroundImage: `radial-gradient(ellipse 900px 420px at 50% 0%, ${C.glow}, rgba(3,12,23,0))`,
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <Dial size={60} />
-          <div style={{ display: "flex", fontSize: 40, fontWeight: 700, letterSpacing: "-0.03em" }}>
-            Fort<span style={{ marginLeft: 11, ...goldText }}>Knox</span>
-          </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <Mark size={60} />
+          <Brand size={50} />
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
           <div style={{ fontSize: 28, fontWeight: 700 }}>{`${longDate(G.date)}, ${year}`}</div>
@@ -116,7 +107,7 @@ export function GameCard({ G }: { G: GameSummary }) {
         <Team abbrev={G.away} color={C.away} align="flex-start" />
         <div style={{ display: "flex", alignItems: "center", gap: 36 }}>
           <Score v={G.as} win={G.as > G.hs} />
-          <div style={{ width: 44, height: 10, borderRadius: 5, background: "#3a3a3a" }} />
+          <div style={{ width: 44, height: 10, borderRadius: 5, background: C.sep }} />
           <Score v={G.hs} win={G.hs > G.as} />
         </div>
         <Team abbrev={G.home} color={C.home} align="flex-end" />
@@ -124,9 +115,9 @@ export function GameCard({ G }: { G: GameSummary }) {
 
       <div style={{ display: "flex", flexDirection: "column", padding: "26px 30px 30px", borderRadius: 24, background: C.card, border: `1px solid ${C.border}` }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ fontSize: 44, fontWeight: 800, color: C.away }}>{f2(G.axg)}</div>
+          <div style={{ ...display, fontSize: 56, fontWeight: 700, color: C.away, lineHeight: 1 }}>{f2(G.axg)}</div>
           <div style={{ fontSize: 22, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.16em" }}>Expected goals</div>
-          <div style={{ fontSize: 44, fontWeight: 800, color: C.home }}>{f2(G.hxg)}</div>
+          <div style={{ ...display, fontSize: 56, fontWeight: 700, color: C.home, lineHeight: 1 }}>{f2(G.hxg)}</div>
         </div>
         <div style={{ display: "flex", height: 22, marginTop: 16, borderRadius: 11, background: C.well, gap: 6 }}>
           <div style={{ width: `${(awayShare * 100).toFixed(2)}%`, borderRadius: 11, background: C.away }} />
@@ -144,12 +135,10 @@ export function SiteCard() {
     <div style={{
       width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       background: C.bg, color: C.fg, fontFamily: "Inter",
-      backgroundImage: "radial-gradient(ellipse 900px 480px at 50% 30%, rgba(244,213,128,0.12), rgba(7,7,7,0))",
+      backgroundImage: `radial-gradient(ellipse 900px 480px at 50% 30%, ${C.glow}, rgba(3,12,23,0))`,
     }}>
-      <Dial size={168} />
-      <div style={{ display: "flex", fontSize: 108, fontWeight: 800, letterSpacing: "-0.04em", marginTop: 34, lineHeight: 1 }}>
-        Fort<span style={{ marginLeft: 26, ...goldText }}>Knox</span>
-      </div>
+      <Mark size={168} />
+      <div style={{ display: "flex", marginTop: 30 }}><Brand size={150} /></div>
       <div style={{ fontSize: 36, fontWeight: 500, color: C.muted, marginTop: 26 }}>NHL expected goals, every game, shot by shot</div>
     </div>
   );

@@ -1,7 +1,7 @@
-# Fort Knox
+# High Slot
 
 Every NHL game scored shot by shot with a full-data expected-goals model, at
-[fortknox-hockey.web.app](https://fortknox-hockey.web.app). It replaces the
+[highslot.web.app](https://highslot.web.app). It replaces the
 single-page game sheets that used to live at `lknox.web.app/xgcalc/sheets.html`
 (that URL now redirects here).
 
@@ -47,9 +47,14 @@ date), and `site.png` for every other page and for older games.
 The [Inset Dark](https://better-design.com/design-systems/inset-dark) design
 system, installed into `components/ui/` with
 `npx shadcn@latest add -y -o https://better-design.com/registry/inset-dark/all.json`,
-plus a "bullion" vault layer in `app/globals.css`: gold for the logo, the
-active section, the winning score and the first star. Away teams are coral and
-home teams blue, as on the old sheets.
+plus a High Slot layer in `app/globals.css`: navy-tinted surfaces like ice
+under arena lights, Barlow Condensed capitals for headlines and the brand, and
+one accent, ice cyan, for the logo, the active section, the winning score and
+the first star. Away teams are red and home teams periwinkle.
+
+The site was called Fort Knox until October 2026. The folder, the deploy
+workflow (`fortknox-deploy.yml`) and the Firebase hosting target (`fortknox`,
+now pointing at the `highslot` site) keep the old name.
 
 `components/ui/` is vendored and skipped by ESLint; one type fix was needed in
 `toggle-group.tsx`.
