@@ -168,6 +168,36 @@ admission.
     are rebuilt daily from the prediction log. This replaced
     `backtest_results.json`, which came from the legacy similarity model.
 
+13. ❌ **Goalie GSAx — gate FAILS, not shipped** (`goalie_gate.py`,
+    `src/data/goalie_gsax.py`) — starting-goalie quality as goals saved above
+    expected (MoneyPuck shot-level xG on shots faced, shrunk to league average,
+    point-in-time, carried across seasons; 2018-21 seasons seed the ratings).
+    Leave-one-season-out over 2022-26, paired against the 44-feature
+    production model: the actual starter's rating improved log loss in 3 of 4
+    seasons but lost 10e-4 on the gate's held-out 2025-26; the
+    expected-starter version (what a pre-lineup run can actually use) lost
+    41e-4 there. Pooled over all 4,902 games the gap is +3.1e-4 (95% CI
+    -6.7 to +12.9) for the actual starter and -2.2e-4 (-14.5 to +10.6) for the
+    expected starter — indistinguishable from zero, and this sample cannot
+    resolve a true gain smaller than ~10e-4. The old SV%/GAA block is worse in
+    every season. Alone, a goalie-rating edge correlates with home wins
+    (+0.09 to +0.17 in 2022-25, ~0 in 2025-26), but the 44-feature model
+    already carries most of that through team xG-against and form. Default
+    parameters (PRIOR_SHOTS=600, SEASON_CARRY=0.7) were fixed before the first
+    run; the sensitivity grid moves the pooled gap by <2e-4. Not evidence that
+    goalies don't matter — evidence that this rating, on this data, adds
+    nothing measurable.
+
+14. ❌ **Backup-in-net flag — gate FAILS, not shipped**
+    (`goalie_gate.py --feature backup`) — whether the team's usual starter is
+    in net: the actual starter's share of the team's last 20 starts, and a
+    pre-announcement "typical share" version. Same leave-one-season-out test.
+    Best variant (actual share diff): -1.0e-4 mean log loss, -0.5e-4 on
+    held-out 2025-26, better on both metrics in only 2 of 4 seasons — noise.
+    Between this and item 13, goalie identity adds nothing measurable over the
+    44-feature model on 2022-26 data, so there is no starter input for an
+    evening confirmed-starter run to update; that run is not built.
+
 The leaky XGBoost path stays quarantined. The similarity model still supplies
 **expected total goals** — the totals gate found nothing that beats a constant
 league-average Poisson mean, so there's nothing better to wire in yet. The
