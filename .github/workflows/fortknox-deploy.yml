@@ -1,9 +1,10 @@
-name: Deploy Fort Knox
+name: Deploy High Slot
 
-# Builds the Fort Knox site (fortknox/, a static Next.js export) from the
+# Builds the High Slot site (fortknox/, a static Next.js export) from the
 # published game sheets on the xg-sheets-data branch and deploys it to the
-# "fortknox" hosting target (fortknox-hockey.web.app). xg-game-sheets.yml
-# dispatches this after every run that finds new games.
+# "fortknox" hosting target (highslot.web.app). xg-game-sheets.yml
+# dispatches this after every run that finds new games. The site was called
+# Fort Knox at first; the folder, this file and the target keep that name.
 #
 # The build is deterministic (fixed build id, content-hashed assets), so the
 # Firebase CLI only uploads the pages that changed since the last deploy.
