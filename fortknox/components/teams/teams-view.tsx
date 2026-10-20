@@ -60,15 +60,11 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
 
   return (
     <>
-      <div className="mb-5 flex flex-wrap gap-3">
-        {playoff.length > 0 && (
+      {playoff.length > 0 && (
+        <div className="mb-5">
           <Segmented label="Season phase" value={phase} onChange={setPhase} options={[["regular", "Regular season"], ["playoff", "Playoffs"]]} />
-        )}
-        {phase === "regular" && (
-          <Segmented label="Standings grouping" value={group} onChange={setGroup}
-            options={[["league", "League"], ["conference", "Conference"], ["division", "Division"], ["wildcard", "Wild card"]]} />
-        )}
-      </div>
+        </div>
+      )}
 
       <Card className="mb-8">
         <CardHeader className="gap-3 pb-3">
@@ -90,6 +86,12 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
         </CardContent>
       </Card>
 
+      {phase === "regular" && (
+        <div className="mb-5">
+          <Segmented label="Standings grouping" value={group} onChange={setGroup}
+            options={[["league", "League"], ["conference", "Conference"], ["division", "Division"], ["wildcard", "Wild card"]]} />
+        </div>
+      )}
       <div className="space-y-6">
         {groups.map((g, i) => (
           <Section key={g.title ?? i} title={g.title ?? "Standings"}>
