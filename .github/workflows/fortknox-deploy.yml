@@ -13,6 +13,9 @@ on:
     branches: [main]
     paths:
       - 'fortknox/**'
+      # The scoring pipeline publishes data, not site code; its runs dispatch
+      # this workflow themselves.
+      - '!fortknox/pipeline/**'
       - '.github/workflows/fortknox-deploy.yml'
   workflow_dispatch:
 

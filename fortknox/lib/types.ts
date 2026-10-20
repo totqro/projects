@@ -1,4 +1,4 @@
-// Shapes of the published game sheets (xgcalc/nhl_sheets.py on main writes
+// Shapes of the published game sheets (pipeline/nhl_sheets.py writes
 // them to the xg-sheets-data branch). Field names are kept exactly as
 // published so the data never needs translating.
 

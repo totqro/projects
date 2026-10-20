@@ -1526,7 +1526,7 @@ function totalsTable(a, b){
   const row = (l, x, y, cls) => `<tr${cls ? ` class="${cls}"` : ""}><td>${esc(l)}</td><td class="n">${x}</td><td class="n">${y}</td></tr>`;
   const shPct = t => t.sog ? (100*t.g/t.sog).toFixed(1) + "%" : "";
   return `<table><thead><tr><th></th><th class="n" style="color:${RC_US}">${esc(S.us)}</th><th class="n" style="color:${RC_THEM}">${esc(S.opp)}</th></tr></thead><tbody>
-    ${row("Goals", a.g, b.g, "hl")}${row("xG", a.xg.toFixed(2), b.xg.toFixed(2), "hl")}
+    ${row("Goals", a.g, b.g, "hl")}${row("Tagger xG", a.xg.toFixed(2), b.xg.toFixed(2), "hl")}
     ${row("xG share", pctOf(a.xg, b.xg), pctOf(b.xg, a.xg))}${row("Goals − xG", sg2(a.g - a.xg), sg2(b.g - b.xg))}
     ${row("Shots on net", a.sog, b.sog)}${row("Shooting %", shPct(a), shPct(b))}${row("Attempts", a.att, b.att)}
     ${row("High-danger chances", a.hd, b.hd, "hl")}${row("Rebound shots", a.reb, b.reb)}
@@ -1724,8 +1724,8 @@ function buildReport(scope){
     </div>
     <div class="two">${leaderTables(st)}</div>
   </section>
-  <div class="foot"><span>xG (expected goals) is the chance a shot goes in, from a five-feature model fit on 905,483 NHL attempts, plus tagged odd-man rushes and
-    cross-ice feeds; blocks count at ${Math.round(adj().block_factor*100)}%. Danger tiers are the coaches' zones (rush +1, cross-ice feed = high, blocked &minus;1), a label alongside xG.
+  <div class="foot"><span>Tagger xG (expected goals) is the chance a shot goes in, from a five-feature model fit on 905,483 NHL attempts, plus tagged odd-man rushes and
+    cross-ice feeds; blocks count at ${Math.round(adj().block_factor*100)}%. It is not the full-data xG on Fort Knox's NHL game sheets, which uses inputs a tagger can't see. Danger tiers are the coaches' zones (rush +1, cross-ice feed = high, blocked &minus;1), a label alongside xG.
     On-ice numbers come from tracked shifts, strength time from the clock and logged penalties. One game is a small sample.</span><span>${esc(caveats)}</span></div></section></div>`;
 }
 function renderScopeSelect(D){
