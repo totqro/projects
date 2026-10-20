@@ -40,14 +40,14 @@ export default async function GamePage({ params }: Props) {
   return (
     <ShotProvider raw={raw}>
       <Link href={`/games/${season}`} className="mb-4 inline-block text-sm text-muted-foreground hover:text-foreground">&larr; All games</Link>
-      <Recap G={G} />
       <ScoreCard G={G} />
+      <Recap G={G} />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <ShotMap />
         <div className="min-w-0 space-y-4">
           <Panel title="xG over the game">
             <FlowChart shots={G.shots} home={G.home.abbrev} away={G.away.abbrev} />
-            <Note className="mt-2 text-xs">Cumulative expected goals; dots are goals. Steep stretches are where a team was generating chances.</Note>
+            <Note className="mt-2 text-xs">Running total of expected goals. Dots are goals.</Note>
           </Panel>
           <Panel title="Three stars"><Stars G={G} /></Panel>
         </div>
@@ -65,7 +65,6 @@ export default async function GamePage({ params }: Props) {
           <GameRoster players={G.players.filter(p => p.team === G.home.abbrev)} />
         </Section>
       </div>
-      <Note className="mt-3">Hover a column heading for what it means. Time on ice comes from the NHL shift chart.</Note>
     </ShotProvider>
   );
 }

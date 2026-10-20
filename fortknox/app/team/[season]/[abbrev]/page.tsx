@@ -5,6 +5,7 @@ import { ordinal, seasonLabel } from "@/lib/format";
 import { standings, teamGames } from "@/lib/season";
 import { TEAMS, teamName } from "@/lib/teams";
 import { PageHead } from "@/components/site/page-head";
+import { TeamLogo } from "@/components/site/team-logo";
 import { TeamView, type Line, type LogGame, type TeamData } from "@/components/teams/team-view";
 import type { TeamGame } from "@/lib/season";
 
@@ -47,7 +48,7 @@ export default async function Team({ params }: Props) {
   return (
     <>
       <Link href={`/teams/${season}`} className="mb-4 inline-block text-sm text-muted-foreground hover:text-foreground">&larr; All teams</Link>
-      <PageHead title={teamName(ab)} sub={standingLine ?? seasonLabel(season)} />
+      <PageHead title={<span className="inline-flex items-center gap-3"><TeamLogo team={ab} size={56} />{teamName(ab)}</span>} sub={standingLine ?? seasonLabel(season)} />
       <TeamView d={d} />
     </>
   );

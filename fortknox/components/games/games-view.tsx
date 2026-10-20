@@ -9,16 +9,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SelectField } from "@/components/site/field";
 import { Note } from "@/components/site/section";
+import { TeamLogo } from "@/components/site/team-logo";
 
 export const isUpset = (x: GameSummary) => x.hs !== x.as && (x.hxg >= x.axg) !== (x.hs > x.as);
 
 /** A mini box score: the line score a paper prints for every game. */
 export function MiniBox({ x }: { x: GameSummary }) {
   const status = x.end === "REG" ? "Final" : "F/" + x.end;
-  const flags = [x.type === 3 ? "Playoffs" : "", isUpset(x) ? "Upset" : ""].filter(Boolean);
+  const flags = [x.type === 3 ? "Playoffs" : "", isUpset(x) ? "−xG win" : ""].filter(Boolean);
   const line = (ab: string, s: number, xg: number, sog: number, won: boolean) => (
     <tr className={cn(won ? "font-semibold text-foreground" : "text-secondary-foreground")}>
-      <td className="py-1 text-left">{ab}</td>
+      <td className="py-1 text-left"><span className="inline-flex items-center gap-2"><TeamLogo team={ab} size={26} />{ab}</span></td>
       <td className={cn("py-1 text-right", won && "brand-text")}>{s}</td>
       <td className="py-1 text-right text-muted-foreground">{f2(xg)}</td>
       <td className="py-1 text-right text-muted-foreground">{sog}</td>
@@ -42,7 +43,7 @@ export function MiniBox({ x }: { x: GameSummary }) {
         </tbody>
       </table>
       <div className="mt-2 flex min-h-5 items-center justify-between gap-2">
-        <span className="flex gap-1">{flags.map(f => <Badge key={f} variant={f === "Upset" ? "warning" : "default"}>{f}</Badge>)}</span>
+        <span className="flex gap-1">{flags.map(f => <Badge key={f} variant={f === "Playoffs" ? "default" : "warning"}>{f}</Badge>)}</span>
         <span className="flex h-1.5 w-20 gap-px overflow-hidden rounded-full [box-shadow:var(--shadow-inset)]" title={`xG ${f2(x.axg)}–${f2(x.hxg)}`}>
           <i className="block bg-away" style={{ flex: x.axg }} />
           <i className="block bg-home" style={{ flex: x.hxg }} />
@@ -70,7 +71,7 @@ const SORTS: Record<Sort, (a: GameSummary, b: GameSummary) => number> = {
   stole: (a, b) => winXg(a) - winXg(b),
 };
 
-export function GamesView({ games, teams }: { games: GameSummary[]; teams: string[] }) {
+export function GamesView({ games, teams, updated }: { games: GameSummary[]; teams: string[]; updated: string }) {
   const [team, setTeam] = React.useState("");
   const [type, setType] = React.useState("all");
   const [sort, setSort] = React.useState<Sort>("date");
@@ -96,8 +97,9 @@ export function GamesView({ games, teams }: { games: GameSummary[]; teams: strin
             options={[["all", "All"], ["regular", "Regular season"], ["playoff", "Playoffs"]]} />
         )}
         <SelectField label="Sort" value={sort} onChange={reset(v => setSort(v as Sort))}
-          options={[["date", "Newest"], ["lopsided", "Most lopsided xG"], ["total", "Most total xG"], ["stole", "Won despite xG"]]} />
+          options={[["date", "Newest"], ["lopsided", "Most lopsided xG"], ["total", "Most total xG"], ["stole", "−xG wins"]]} />
         <span className="pb-2 text-sm text-muted-foreground">{list.length} games</span>
+        <span className="ml-auto pb-2 text-xs text-muted-foreground">{updated}</span>
       </div>
       {groups.map(d => (
         <section key={d.date ?? "all"} className="mb-6">
@@ -108,7 +110,7 @@ export function GamesView({ games, teams }: { games: GameSummary[]; teams: strin
         </section>
       ))}
       {list.length > shown && <Button variant="secondary" onClick={() => setShown(s => s + 120)}>Show more</Button>}
-      <Note className="mt-4">Each box shows goals, expected goals and shots on goal; the bar splits the xG. An upset is a win while losing the xG battle.</Note>
+      <Note className="mt-4">G goals, xG expected goals, SOG shots on goal. A −xG win is a win with fewer expected goals than the other team.</Note>
     </>
   );
 }

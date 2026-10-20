@@ -1,7 +1,6 @@
 import { seasonIndex, teamsFile } from "@/lib/data";
 import { seasonLabel } from "@/lib/format";
 import { GamesView } from "./games-view";
-import { PageHead } from "@/components/site/page-head";
 
 export function GamesPage({ season, home = false }: { season: number; home?: boolean }) {
   const idx = seasonIndex(season), games = idx.games;
@@ -9,10 +8,8 @@ export function GamesPage({ season, home = false }: { season: number; home?: boo
   const teams = teamsFile(season).regular.map(t => t.team).sort();
   return (
     <>
-      <PageHead
-        title={home ? "Every NHL game, shot by shot" : `${seasonLabel(season)} games`}
-        sub={`Expected goals for all ${games.length} games of ${seasonLabel(season)}. Updated ${updated} ET.`} />
-      <GamesView games={games} teams={teams} />
+      <h1 className="sr-only">{home ? "NHL games and expected goals" : `${seasonLabel(season)} games`}</h1>
+      <GamesView games={games} teams={teams} updated={`Updated ${updated} ET`} />
     </>
   );
 }

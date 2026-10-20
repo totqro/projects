@@ -5,6 +5,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "export",
   images: { unoptimized: true },
+  devIndicators: false,
   // A fixed id keeps unchanged pages byte-identical from one build to the
   // next, so a deploy only uploads the games and pages that actually changed
   // (asset filenames are content-hashed already).

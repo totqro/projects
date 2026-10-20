@@ -278,7 +278,6 @@ html.dark {
   /* The masthead's tint and the headline's fade */
   --mast-top: oklch(0.2 0.05 250);
   --mast-bottom: oklch(0.14 0.03 252);
-  --headline-tint: oklch(0.86 0.1 205);
   color-scheme: dark;
 }
 
@@ -339,26 +338,21 @@ html.dark {
 }
 .slot-nav a[aria-current="page"] { background: var(--brand-gradient); color: var(--brand-ink); text-shadow: none; }
 
-.slot-headline {
-  background: linear-gradient(180deg, var(--foreground) 30%, var(--headline-tint));
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-}
+.slot-headline { color: var(--foreground); }
 
 .slot-plate { position: relative; isolation: isolate; box-shadow: var(--shadow-md), 0 0 0 1px color-mix(in oklch, var(--brand) 35%, transparent); }
-.slot-plate::before {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: -1; pointer-events: none;
-  background: radial-gradient(60% 120% at 50% 0%, color-mix(in oklch, var(--brand) 10%, transparent), transparent 70%);
-}
 
 /* Star medals: cyan for the first star, then silver and bronze. */
 .slot-headline, .brand-text { text-transform: uppercase; letter-spacing: 0.01em; }
 .slot-medal { background: linear-gradient(180deg, oklch(0.85 0 0), oklch(0.6 0 0)); color: oklch(0.2 0 0); box-shadow: var(--shadow-pill); }
-.slot-medal-1 { background: var(--brand-gradient); color: var(--brand-ink); box-shadow: var(--shadow-pill), 0 0 12px color-mix(in oklch, var(--brand) 25%, transparent); }
+.slot-medal-1 { background: var(--brand-gradient); color: var(--brand-ink); box-shadow: var(--shadow-pill); }
 .slot-medal-3 { background: linear-gradient(180deg, oklch(0.72 0.1 55), oklch(0.5 0.09 45)); color: oklch(0.18 0.02 50); }
 
 /* Dense data tables (SortTable): the DS TableRow/TableCell look, set once. */
 .fk-table tbody tr { border-bottom: 1px solid var(--border); transition: background-color 150ms var(--ease-out); }
 .fk-table tbody tr:last-child { border-bottom: 0; }
+/* Alternate rows a shade lighter so a long row is easy to follow. */
+.fk-table tbody tr:nth-child(even) { background: color-mix(in oklch, var(--foreground) 3.5%, transparent); }
 .fk-table tbody tr:hover { background: color-mix(in oklch, var(--accent) 30%, transparent); }
 .fk-table tbody tr[data-state="selected"] { background: color-mix(in oklch, var(--accent) 60%, transparent); }
 .fk-table td { padding: 0.5rem 0.625rem; white-space: nowrap; text-align: right; vertical-align: middle; }

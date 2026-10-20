@@ -102,9 +102,8 @@ export function PlayersView({ season, data, teams }: { season: number; data: Pic
       {count > shown && <Button variant="secondary" className="mt-4" onClick={() => setShown(s => s + 200)}>Show more</Button>}
       <Note className="mt-4">
         {goalies
-          ? "GSAx compares goals allowed with the xG of the unblocked shots a goalie faced. It needs a big sample: a full season of starts swings by ±5 on luck alone."
-          : "Small samples mislead: a 20-shot sample of GAx is mostly noise. On-ice numbers credit everyone on the ice, so they reflect linemates and usage as much as the player."}{" "}
-        Hover a heading for what it means.
+          ? "GSAx (goals saved above expected): positive means the goalie stopped more than an average goalie would have on the same shots."
+          : "GAx (goals above expected): positive means the player scored more than his chances suggest. On-ice numbers (xGF, xGA, shares) count everything while he was on the ice."}
       </Note>
     </>
   );

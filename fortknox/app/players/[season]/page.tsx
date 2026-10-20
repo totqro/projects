@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { playersFile, seasons, teamsFile } from "@/lib/data";
 import { seasonLabel } from "@/lib/format";
-import { PageHead } from "@/components/site/page-head";
 import { PlayersView } from "@/components/players/players-view";
 
 export const dynamicParams = false;
@@ -18,7 +17,7 @@ export default async function Players({ params }: Props) {
   const P = playersFile(season);
   return (
     <>
-      <PageHead title="Players" sub={`Every skater and goalie in ${seasonLabel(season)}, by expected goals.`} />
+      <h1 className="sr-only">{seasonLabel(season)} players</h1>
       <PlayersView season={season} data={{ regular: P.regular, playoff: P.playoff }} teams={teamsFile(season).regular.map(t => t.team).sort()} />
     </>
   );

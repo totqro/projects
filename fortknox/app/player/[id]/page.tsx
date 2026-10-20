@@ -5,7 +5,8 @@ import { f1, f2, pct, seasonLabel, share, sv, toi } from "@/lib/format";
 import { posLabel, teamName } from "@/lib/teams";
 import type { GamePlayer } from "@/lib/types";
 import { PageHead } from "@/components/site/page-head";
-import { Note, Section, Tile } from "@/components/site/section";
+import { TeamLogo } from "@/components/site/team-logo";
+import { Section, Tile } from "@/components/site/section";
 import { PlayerLog } from "@/components/players/player-log";
 import { Signed } from "@/components/tables/sortable";
 
@@ -53,7 +54,7 @@ export default async function Player({ params }: Props) {
 
   return (
     <>
-      <PageHead title={name} sub={<>{posLabel(pos)}, <Link href={`/team/${log[log.length - 1]?.season}/${team}`} className="hover:underline">{teamName(team)}</Link></>} />
+      <PageHead title={name} sub={<span className="inline-flex items-center gap-2">{team && <TeamLogo team={team} size={28} />}{posLabel(pos)}, <Link href={`/team/${log[log.length - 1]?.season}/${team}`} className="hover:underline">{teamName(team)}</Link></span>} />
 
       {cur && (
         <Section title={`${seasonLabel(cur.season)}${cur.phase === "playoff" ? " playoffs" : ""}`} className="mb-8">
@@ -88,7 +89,6 @@ export default async function Player({ params }: Props) {
           </Section>
         ))}
       </div>
-      <Note className="mt-3">Click a date to open that game&apos;s sheet. Hover a heading for what it means.</Note>
     </>
   );
 }

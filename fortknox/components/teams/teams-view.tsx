@@ -5,20 +5,20 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { f1, f2, pct, per60, share, sv } from "@/lib/format";
 import { groupTeams, LENSES, type Grouping, type StandingRow } from "@/lib/season";
-import { nickname, teamName } from "@/lib/teams";
 import type { Phase } from "@/lib/types";
 import { useLensChart } from "@/components/charts/lens";
 import { Signed, SortTable, type Column } from "@/components/tables/sortable";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Note, Section } from "@/components/site/section";
+import { TeamLogo } from "@/components/site/team-logo";
 
 type Row = StandingRow & { rk: string; cut?: boolean };
 
 const cols = (season: number): Column<Row>[] => [
   { k: "std", label: "#", get: t => t.lg, asc: true, cell: t => <span className="text-muted-foreground">{t.rk}</span>, tip: "rank" },
   { k: "team", label: "Team", l: true, get: t => t.team, asc: true,
-    cell: t => <Link href={`/team/${season}/${t.team}`} className="font-medium hover:underline">{t.team} <span className="font-normal text-muted-foreground">{nickname(teamName(t.team))}</span></Link> },
+    cell: t => <Link href={`/team/${season}/${t.team}`} className="flex w-[4.25rem] items-center gap-2.5 font-medium hover:underline"><TeamLogo team={t.team} size={26} />{t.team}</Link> },
   { k: "gp", label: "GP", get: t => t.gp, tip: "gp" },
   { k: "w", label: "W", get: t => t.w, tip: "w" },
   { k: "l", label: "L", get: t => t.l, asc: true, tip: "l" },
@@ -76,11 +76,8 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
 
       <Card className="mb-8">
         <CardHeader className="gap-3 pb-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <CardTitle>Team lenses</CardTitle>
-            <Segmented label="Lens" value={lens} onChange={setLens}
-              options={Object.entries(LENSES).map(([k, l]) => [k, l.name] as [string, string])} />
-          </div>
+          <Segmented label="Chart" value={lens} onChange={setLens}
+            options={Object.entries(LENSES).map(([k, l]) => [k, l.name] as [string, string])} />
           <p className="max-w-3xl text-[13px] leading-relaxed text-muted-foreground">{LENSES[lens].desc}</p>
         </CardHeader>
         <CardContent className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
@@ -88,7 +85,7 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
           <div>
             {chart.callouts}
             <Note className="mt-3 text-xs">
-              Lines split at the league average{lens === "luck" ? " (50% for shares)" : ""}. Hover a team for its numbers; click it to open the team.
+              Top right is better. The dashed lines are the league average{lens === "luck" ? " (50%)" : ""}. + and − mean above or below it.
             </Note>
           </div>
         </CardContent>
@@ -108,10 +105,6 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
           </Section>
         ))}
       </div>
-      <Note className="mt-4">
-        Ranked by points, with the NHL&apos;s tiebreakers. Click a heading to re-sort and hover it for what it means.
-        On 2025-26, a team&apos;s first-half 5v5 xG share predicted its second-half points better (r = 0.60) than its first-half goal share (0.42) or points (0.43).
-      </Note>
     </>
   );
 }

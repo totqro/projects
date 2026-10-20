@@ -5,16 +5,15 @@ import type { Sheet } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Note, Tile } from "@/components/site/section";
+import { TeamLogo } from "@/components/site/team-logo";
 
 export function Recap({ G }: { G: Sheet }) {
   const r = recap(G);
   return (
-    <header className="mx-auto mb-6 max-w-3xl text-center">
-      <h1 className="slot-headline font-[family-name:var(--font-display)] text-[clamp(28px,4.4vw,44px)] font-bold leading-[1.08] tracking-[-0.03em] text-balance">
-        {r.headline}
-      </h1>
-      <p className="mt-3 text-[15px] leading-relaxed text-secondary-foreground text-pretty sm:text-base">{r.text}</p>
-    </header>
+    <>
+      <h1 className="sr-only">{r.headline}</h1>
+      <p className="mb-6 max-w-3xl text-[15px] leading-relaxed text-secondary-foreground text-pretty">{r.text}</p>
+    </>
   );
 }
 
@@ -34,9 +33,12 @@ export function ScoreCard({ G }: { G: Sheet }) {
     <Card className="slot-plate mb-4">
       <CardContent className="p-5">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <div>
-            <div className="font-[family-name:var(--font-display)] text-[clamp(22px,3vw,30px)] font-bold tracking-[-0.02em] text-away">{A.abbrev}</div>
-            <div className="text-xs text-muted-foreground">{A.name}, away</div>
+          <div className="flex items-center gap-3">
+            <TeamLogo team={A.abbrev} size={64} className="max-sm:hidden" />
+            <div>
+              <div className="font-[family-name:var(--font-display)] text-[clamp(22px,3vw,30px)] font-bold tracking-[-0.02em] text-away">{A.abbrev}</div>
+              <div className="text-xs text-muted-foreground">{A.name}, away</div>
+            </div>
           </div>
           <div className="text-center">
             <div className="tabular font-[family-name:var(--font-display)] text-[clamp(32px,5vw,48px)] font-bold leading-none tracking-[-0.02em]">
@@ -48,9 +50,12 @@ export function ScoreCard({ G }: { G: Sheet }) {
               <span className="font-medium text-brand">{END[G.end] ?? G.end}</span>, {fmtDate(G.date)}{G.venue ? `, ${G.venue}` : ""}
             </div>
           </div>
-          <div className="text-right">
-            <div className="font-[family-name:var(--font-display)] text-[clamp(22px,3vw,30px)] font-bold tracking-[-0.02em] text-home">{H.abbrev}</div>
-            <div className="text-xs text-muted-foreground">{H.name}, home</div>
+          <div className="flex items-center justify-end gap-3 text-right">
+            <div>
+              <div className="font-[family-name:var(--font-display)] text-[clamp(22px,3vw,30px)] font-bold tracking-[-0.02em] text-home">{H.abbrev}</div>
+              <div className="text-xs text-muted-foreground">{H.name}, home</div>
+            </div>
+            <TeamLogo team={H.abbrev} size={64} className="max-sm:hidden" />
           </div>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-4">

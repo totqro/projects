@@ -106,61 +106,76 @@ export function groupTeams(rows: StandingRow[], group: Grouping): Group[] {
 }
 
 /* ---------- team lenses ---------- */
-/* Each lens plots one question about every team, splits the field into four
+/* Each lens plots two numbers for every team and splits the field into four
    quadrants at the league average (or 50% / zero where that's the natural
-   line) and names them. q keys: x side then y side, h = the better side. */
+   line). q keys: x side then y side, h = the better side. */
 export type Quad = "hh" | "lh" | "hl" | "ll";
 export interface Lens {
   name: string;
   desc: string;
   x: (t: StandingRow) => number | null;
   y: (t: StandingRow) => number | null;
+  /** Where the quadrants split, and what to call that line; the league
+   *  average when not given. */
   mx?: number;
   my?: number;
+  mxl?: string;
+  myl?: string;
   flipX?: boolean;
   flipY?: boolean;
   diag?: boolean;
   fx: (v: number) => string;
   fy: (v: number) => string;
+  /** Axis titles, with units, and the short names the hover card uses. */
   xl: string;
   yl: string;
-  q: Record<Quad, [string, string]>;
+  xs: string;
+  ys: string;
+  /** How the axis ticks print: plain numbers, percentages, or signed. */
+  tx: "num" | "pct";
+  ty: "num" | "pct" | "signed";
+  /** Sign of the x number, sign of the y number, what that means. */
+  q: Record<Quad, [x: string, y: string, verdict: string]>;
 }
 
 const sgn = (v: number) => (v > 0 ? "+" : "") + v.toFixed(1);
 
 export const LENSES: Record<string, Lens> = {
   drive: {
-    name: "Play-driving",
-    desc: "5-on-5 chances created against chances allowed, per 60 minutes. The best single read of who controls play, and the most predictive of future results.",
+    name: "Chances",
+    desc: "Expected goals for and against per 60 minutes at 5-on-5. The best single measure of which teams control play.",
     x: t => t["5v5"].xgf60, y: t => t["5v5"].xga60, flipY: true, fx: v => v.toFixed(2), fy: v => v.toFixed(2),
-    xl: "5v5 xGF/60: chances created →", yl: "5v5 xGA/60: fewer allowed ↑",
-    q: { hh: ["Dominant", "create a lot, allow little"], lh: ["Defensive", "tight games, few chances either way"],
-      hl: ["Run & gun", "trade chances"], ll: ["Outplayed", "chasing all night"] },
+    xl: "Expected goals for per 60 min, 5v5 (xGF/60) →", yl: "Expected goals against per 60 min, 5v5 (fewer ↑)",
+    xs: "5v5 xGF/60", ys: "5v5 xGA/60", tx: "num", ty: "num",
+    q: { hh: ["+xGF", "−xGA", "Controlling play"], lh: ["−xGF", "−xGA", "Tight, low-event games"],
+      hl: ["+xGF", "+xGA", "Wide-open games"], ll: ["−xGF", "+xGA", "Getting outplayed"] },
   },
   luck: {
     name: "Luck",
-    desc: "Share of expected goals (the process) against share of actual goals (the results). Above the diagonal a team is scoring more than its chances say, from hot shooting or hot goaltending; below it, the bounces have gone the other way.",
-    x: t => share(t.xgf, t.xga), y: t => share(t.gf_x, t.ga_x), mx: 0.5, my: 0.5, diag: true, fx: v => pct(v), fy: v => pct(v),
-    xl: "xG share: share of chances →", yl: "Goal share ↑",
-    q: { hh: ["Good & winning", "earning it"], lh: ["Riding luck", "outscoring their chances"],
-      hl: ["Unlucky", "better than the record"], ll: ["Bad & losing", "the record is fair"] },
+    desc: "Share of expected goals against share of real goals. Teams above the line are scoring more than their chances suggest; teams below are scoring less.",
+    x: t => share(t.xgf, t.xga), y: t => share(t.gf_x, t.ga_x), mx: 0.5, my: 0.5, mxl: "Even", myl: "Even", diag: true, fx: v => pct(v), fy: v => pct(v),
+    xl: "Share of expected goals (xG%) →", yl: "Share of goals (G%) ↑",
+    xs: "xG%", ys: "G%", tx: "pct", ty: "pct",
+    q: { hh: ["+xG%", "+G%", "Earning their results"], lh: ["−xG%", "+G%", "Results ahead of play"],
+      hl: ["+xG%", "−G%", "Results behind play"], ll: ["−xG%", "−G%", "Struggling"] },
   },
   finish: {
     name: "Finishing",
-    desc: "Chances created per game against goals scored above or below those chances. Finishing runs hot and cold and tends to drift back toward zero.",
-    x: t => (t.gp ? t.xgf / t.gp : null), y: t => t.gax, my: 0, fx: v => v.toFixed(2), fy: sgn,
-    xl: "xGF per game: chances created →", yl: "GAx: goals above expected ↑",
-    q: { hh: ["Create & finish", "chances and the hands to bury them"], lh: ["Opportunistic", "few chances, cashing in"],
-      hl: ["Snakebitten", "the chances are there, the goals aren't"], ll: ["Starved", "not much to finish"] },
+    desc: "Expected goals per game against goals scored above or below expected. Finishing runs hot and cold over a season.",
+    x: t => (t.gp ? t.xgf / t.gp : null), y: t => t.gax, my: 0, myl: "As expected", fx: v => v.toFixed(2), fy: sgn,
+    xl: "Expected goals for per game (xGF) →", yl: "Goals above expected, season (GAx) ↑",
+    xs: "xGF per game", ys: "GAx", tx: "num", ty: "signed",
+    q: { hh: ["+xGF", "+GAx", "Finishing well"], lh: ["−xGF", "+GAx", "Few chances, but scoring"],
+      hl: ["+xGF", "−GAx", "Missing their chances"], ll: ["−xGF", "−GAx", "Struggling to score"] },
   },
   save: {
     name: "Goaltending",
-    desc: "Chances allowed per game against goals saved above expected. Right is fewer chances allowed; up is the goalies stopping more than an average one would.",
-    x: t => (t.gp ? t.xga / t.gp : null), flipX: true, y: t => t.gsax, my: 0, fx: v => v.toFixed(2), fy: sgn,
-    xl: "xGA per game: fewer allowed →", yl: "GSAx: goals saved above expected ↑",
-    q: { hh: ["Locked down", "few chances, and the goalie stops them"], lh: ["Bailed out", "leaky, but the goalie is standing on his head"],
-      hl: ["Leaky goalie", "the defence holds, the goalie doesn't"], ll: ["Sieve", "chances against and nobody stopping them"] },
+    desc: "Expected goals allowed per game against goals saved above expected. Right means fewer chances allowed; up means the goalies are stopping more than an average goalie would.",
+    x: t => (t.gp ? t.xga / t.gp : null), flipX: true, y: t => t.gsax, my: 0, myl: "As expected", fx: v => v.toFixed(2), fy: sgn,
+    xl: "Expected goals against per game (xGA, fewer →)", yl: "Goals saved above expected, season (GSAx) ↑",
+    xs: "xGA per game", ys: "GSAx", tx: "num", ty: "signed",
+    q: { hh: ["−xGA", "+GSAx", "Performing well"], lh: ["+xGA", "+GSAx", "Goalie bailing them out"],
+      hl: ["−xGA", "−GSAx", "Goalie letting them down"], ll: ["+xGA", "−GSAx", "Struggling in their end"] },
   },
 };
 export const QCOL: Record<Quad, string> = { hh: "var(--good)", lh: "var(--warn)", hl: "var(--home)", ll: "var(--bad)" };

@@ -3,7 +3,7 @@ import type { Shot } from "@/lib/types";
 
 /** Cumulative expected goals over the game, one line per team; dots are goals. */
 export function FlowChart({ shots, home, away }: { shots: Shot[]; home: string; away: string }) {
-  const W = 420, H = 250, L = 26, R = 8, T = 10, B = 24;
+  const W = 420, H = 262, L = 40, R = 8, T = 10, B = 36;
   const end = Math.max(3600, ...shots.map(s => (s.p - 1) * 1200 + s.t));
   const series = (team: string) => {
     let c = 0;
@@ -41,8 +41,10 @@ export function FlowChart({ shots, home, away }: { shots: Shot[]; home: string; 
       ))}
       {periods.slice(1).map(p => <line key={p} x1={X(p * 1200)} x2={X(p * 1200)} y1={T} y2={H - B} stroke="var(--grid)" />)}
       {periods.map(p => (
-        <text key={p} x={(X(p * 1200) + X(Math.min(end, (p + 1) * 1200))) / 2} y={H - 8} textAnchor="middle" fill="var(--muted-foreground)">{ORD(p + 1)}</text>
+        <text key={p} x={(X(p * 1200) + X(Math.min(end, (p + 1) * 1200))) / 2} y={H - 22} textAnchor="middle" fill="var(--muted-foreground)">{ORD(p + 1)}</text>
       ))}
+      <text x={(L + W - R) / 2} y={H - 4} textAnchor="middle" fill="var(--muted-foreground)">Period</text>
+      <text x={10} y={(T + H - B) / 2} transform={`rotate(-90 10 ${(T + H - B) / 2})`} textAnchor="middle" fill="var(--muted-foreground)">Expected goals (running total)</text>
       {lines.map(({ s, col, ab, ly }) => (
         <g key={ab}>
           <polyline fill="none" stroke={col} strokeWidth={2} points={s.pts.map(p => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(" ")} />

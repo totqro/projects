@@ -15,7 +15,7 @@ const ROWS = [
   ["2024-25 (ours)", "0.767", "0.2206", "1.005"],
   ["2025-26 (ours)", "0.757", "0.2264", "1.062"],
   ["2025-26 (MoneyPuck)", "0.777", "0.2226", "1.004"],
-  ["2026-27 so far (served model)", "0.776", "0.2246", "1.002"],
+  ["2026-27 so far", "0.776", "0.2246", "1.002"],
 ];
 
 export default function Model() {
@@ -27,7 +27,7 @@ export default function Model() {
   const head = "h-9 px-3 text-xs font-medium normal-case tracking-normal";
   return (
     <>
-      <PageHead title="How the xG model works" sub="Every unblocked shot priced as a goal probability." />
+      <PageHead title="How the xG model works" />
       <div className="mb-6 grid max-w-3xl grid-cols-1 gap-2 sm:grid-cols-3">
         <Tile label="Trained on">1.13M shots</Tile>
         <Tile label="Seasons">2015&ndash;2025</Tile>

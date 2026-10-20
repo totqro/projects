@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { seasonIndex, seasons, teamsFile } from "@/lib/data";
 import { seasonLabel } from "@/lib/format";
 import { standings } from "@/lib/season";
-import { PageHead } from "@/components/site/page-head";
 import { TeamsView } from "@/components/teams/teams-view";
 
 export const dynamicParams = false;
@@ -19,7 +18,7 @@ export default async function Teams({ params }: Props) {
   const games = seasonIndex(season).games, T = teamsFile(season);
   return (
     <>
-      <PageHead title="Teams" sub={`${seasonLabel(season)} standings next to how each team is really playing.`} />
+      <h1 className="sr-only">{seasonLabel(season)} teams</h1>
       <TeamsView season={season} regular={standings(T.regular, games, "regular")} playoff={standings(T.playoff, games, "playoff")} />
     </>
   );

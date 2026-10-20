@@ -100,11 +100,14 @@ const LOG_COLS: Column<LogGame>[] = [
 /** Expected goals for (up) and against (down) in each game, with a rolling share. */
 function GameBars({ games }: { games: TeamGame[] }) {
   const router = useRouter();
-  const W = 900, H = 200, L = 30, R = 10, mid = H / 2;
+  const W = 900, H = 220, L = 58, R = 40, mid = H / 2;
   const bw = Math.max(3, Math.min(18, (W - L - R) / games.length - 2));
-  const max = Math.max(3, ...games.map(g => Math.max(g.xgf, g.xga)));
+  const max = Math.ceil(Math.max(3, ...games.map(g => Math.max(g.xgf, g.xga))));
+  const step = max > 6 ? 2 : 1, marks: number[] = [];
+  for (let v = step; v <= max; v += step) marks.push(v);
   const X = (i: number) => L + ((i + 0.5) * (W - L - R)) / games.length;
   const Y = (v: number) => (v / max) * (mid - 14);
+  const shareY = (v: number) => H - 14 - v * (H - 28);
   const roll = games.map((_, i) => {
     const w = games.slice(Math.max(0, i - 4), i + 1);
     return share(w.reduce((s, q) => s + q.xgf, 0), w.reduce((s, q) => s + q.xga, 0)) ?? 0.5;
@@ -112,8 +115,18 @@ function GameBars({ games }: { games: TeamGame[] }) {
   return (
     <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Expected goals by game" className="block h-auto w-full text-[11px]">
       <line x1={L} x2={W - R} y1={mid} y2={mid} stroke="oklch(1 0 0 / 0.14)" />
-      <text x={L - 6} y={mid - Y(max) + 4} textAnchor="end" fill="var(--muted-foreground)">{max.toFixed(0)}</text>
-      <text x={L - 6} y={mid + Y(max) + 4} textAnchor="end" fill="var(--muted-foreground)">{max.toFixed(0)}</text>
+      <text x={L - 6} y={mid + 4} textAnchor="end" fill="var(--muted-foreground)">0</text>
+      {marks.flatMap(v => [mid - Y(v), mid + Y(v)].map(y => (
+        <g key={`${v}${y}`}>
+          <line x1={L - 3} x2={W - R} y1={y} y2={y} stroke="var(--border)" strokeDasharray="2 4" />
+          <text x={L - 6} y={y + 4} textAnchor="end" fill="var(--muted-foreground)">{v}</text>
+        </g>
+      )))}
+      <text x={12} y={mid - Y(max) / 2} transform={`rotate(-90 12 ${mid - Y(max) / 2})`} textAnchor="middle" fill="var(--home)">xG for</text>
+      <text x={12} y={mid + Y(max) / 2} transform={`rotate(-90 12 ${mid + Y(max) / 2})`} textAnchor="middle" fill="var(--away)">xG against</text>
+      {[0.25, 0.5, 0.75].map(v => (
+        <text key={v} x={W - R + 6} y={shareY(v) + 4} fill="var(--foreground)" opacity={0.7}>{v * 100}%</text>
+      ))}
       {games.map((g, i) => {
         const x = X(i);
         return (
@@ -127,7 +140,7 @@ function GameBars({ games }: { games: TeamGame[] }) {
       })}
       {games.length > 2 && (
         <polyline fill="none" stroke="var(--foreground)" strokeWidth={1.5} opacity={0.7}
-          points={roll.map((v, i) => `${X(i).toFixed(1)},${(H - 14 - v * (H - 28)).toFixed(1)}`).join(" ")} />
+          points={roll.map((v, i) => `${X(i).toFixed(1)},${shareY(v).toFixed(1)}`).join(" ")} />
       )}
     </svg>
   );
@@ -189,7 +202,7 @@ export function TeamView({ d }: { d: TeamData }) {
         <CardHeader className="pb-2"><CardTitle>Game by game</CardTitle></CardHeader>
         <CardContent>
           <GameBars games={games} />
-          <Note className="mt-2 text-xs">Expected goals for (up) and against (down) in each game. Gold squares are wins. The line is the rolling five-game xG share.</Note>
+          <Note className="mt-2 text-xs">Expected goals for (up) and against (down), one bar per game. Filled squares are wins. The white line is xG% over the last five games, on the right-hand scale. Click a bar to open the game.</Note>
         </CardContent>
       </Card>
 
@@ -208,7 +221,7 @@ export function TeamView({ d }: { d: TeamData }) {
           <SortTable rows={goalies} cols={GK_COLS} initial={{ sort: "gsax", asc: false }} rowKey={p => p.id} />
         </Section>
       </div>
-      <Note className="mt-3">Player numbers are summed over the games above, for this team only. Hover a heading for what it means.</Note>
+      <Note className="mt-3">Player numbers cover only the games above, for this team.</Note>
     </>
   );
 }
