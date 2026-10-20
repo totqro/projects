@@ -1,0 +1,59 @@
+name: Deploy Fort Knox
+
+# Builds the Fort Knox site (fortknox/, a static Next.js export) from the
+# published game sheets on the xg-sheets-data branch and deploys it to the
+# "fortknox" hosting target (fortknox-hockey.web.app). xg-game-sheets.yml
+# dispatches this after every run that finds new games.
+#
+# The build is deterministic (fixed build id, content-hashed assets), so the
+# Firebase CLI only uploads the pages that changed since the last deploy.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'fortknox/**'
+      - '.github/workflows/fortknox-deploy.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: fortknox-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: fortknox/package-lock.json
+
+      - name: Fetch published game sheets
+        working-directory: fortknox
+        run: |
+          # Without data there is no site to build; fail rather than deploy an empty one.
+          ./scripts/fetch-data.sh
+          test -s data/seasons.json
+
+      - name: Build
+        working-directory: fortknox
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+          test -s out/index.html
+          echo "Pages: $(find out -name '*.html' | wc -l)"
+
+      - name: Deploy to Firebase
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > /tmp/sa.json
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json
+          npm install -g firebase-tools
+          # Only this target: deploy.yml owns "main" and "default".
+          firebase deploy --only hosting:fortknox --project projects-brawlstars --non-interactive

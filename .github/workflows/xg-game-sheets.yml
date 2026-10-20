@@ -6,8 +6,9 @@ name: xG Game Sheets
 #
 # The output is not committed to main (a season is ~1,400 files, rewritten
 # nightly). It is force-pushed as a single commit to the orphan branch
-# xg-sheets-data, which deploy.yml copies into build/xgcalc/games/. Force-push
-# keeps that branch one commit deep, so it never grows the repo's history.
+# xg-sheets-data, which fortknox-deploy.yml builds the Fort Knox site from.
+# Force-push keeps that branch one commit deep, so it never grows the repo's
+# history.
 
 on:
   schedule:
@@ -125,8 +126,8 @@ jobs:
 
       # A push made with GITHUB_TOKEN doesn't trigger other workflows, but a
       # workflow_dispatch does.
-      - name: Redeploy the site
+      - name: Redeploy Fort Knox
         if: steps.fetch.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run deploy.yml --ref main
+        run: gh workflow run fortknox-deploy.yml --ref main

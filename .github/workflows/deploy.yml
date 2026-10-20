@@ -58,16 +58,9 @@ jobs:
           cp xgcalc/web/scatter.html build/xgcalc/
           cp xgcalc/web/xg_model.json build/xgcalc/
           cp xgcalc/web/tracker.html xgcalc/web/xg_model.js xgcalc/web/uoft-logo.png build/xgcalc/
+          # The game sheets moved to Fort Knox (fortknox-deploy.yml); the old
+          # page stays only to redirect links to it.
           cp xgcalc/web/sheets.html build/xgcalc/
-          # xG game sheets: rebuilt after every game by xg-game-sheets.yml and
-          # kept on the orphan branch xg-sheets-data, never on main. Missing
-          # branch (first run) is fine: the page just has no data yet.
-          mkdir -p build/xgcalc/games
-          if git fetch -q --depth 1 origin xg-sheets-data; then
-            git archive FETCH_HEAD | tar -x -C build/xgcalc/games
-          else
-            echo "::warning::no xg-sheets-data branch yet; deploying without game sheets"
-          fi
           # NHL
           cp nhllines/web/index.html build/nhllines/
           cp nhllines/web/app.js build/nhllines/
@@ -138,10 +131,12 @@ jobs:
         run: |
           echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > /tmp/sa.json
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json
-          # Bare --only hosting covers every target in firebase.json: "main"
-          # (the live site at lknox.web.app, from build/) and "default" (the
-          # retired projects-brawlstars.web.app, from retired-site/). Naming
-          # one target here would silently stop deploying the other.
-          firebase deploy --only hosting --project projects-brawlstars --non-interactive
+          # Both targets this workflow builds: "main" (the live site at
+          # lknox.web.app, from build/) and "default" (the retired
+          # projects-brawlstars.web.app, from retired-site/). Not bare
+          # --only hosting: that would also push the "fortknox" target from
+          # fortknox/out, which this job never builds, and wipe that site.
+          # fortknox-deploy.yml deploys it.
+          firebase deploy --only hosting:main,hosting:default --project projects-brawlstars --non-interactive
           echo "✅ Deployed to Firebase (lknox + retired projects-brawlstars)"
 

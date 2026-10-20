@@ -1,0 +1,79 @@
+import "server-only";
+import fs from "node:fs";
+import path from "node:path";
+import type { GamePlayer, PlayersFile, RawSheet, SeasonIndex, Sheet, TeamsFile } from "./types";
+import { unpack } from "./unpack";
+
+// Build-time access to the published sheets in data/ (scripts/fetch-data.sh).
+// Files are read once per build worker and kept in memory.
+
+const ROOT = path.join(process.cwd(), "data");
+const cache = new Map<string, unknown>();
+
+function read<T>(rel: string): T {
+  if (!cache.has(rel)) cache.set(rel, JSON.parse(fs.readFileSync(path.join(ROOT, rel), "utf8")));
+  return cache.get(rel) as T;
+}
+
+/** Published seasons, newest first. */
+export function seasons(): number[] {
+  return read<{ seasons: number[] }>("seasons.json").seasons;
+}
+export const currentSeason = () => seasons()[0];
+
+export const seasonIndex = (s: number) => read<SeasonIndex>(`${s}/index.json`);
+export const teamsFile = (s: number) => read<TeamsFile>(`${s}/teams.json`);
+export const playersFile = (s: number) => read<PlayersFile>(`${s}/players.json`);
+
+/** NHL game ids start with the season's start year. */
+export const seasonOfGame = (id: number | string) => +String(id).slice(0, 4);
+
+export const rawSheet = (id: number | string) => read<RawSheet>(`${seasonOfGame(id)}/games/${id}.json`);
+export const sheet = (id: number | string): Sheet => unpack(rawSheet(id));
+
+/** Every game id published for a season. */
+export const gameIds = (s: number) => seasonIndex(s).games.map(g => g.id);
+
+export interface PlayerGame {
+  id: number;
+  date: string;
+  type: number;
+  season: number;
+  team: string;
+  opp: string;
+  home: boolean;
+  gf: number;
+  ga: number;
+  end: string;
+  line: GamePlayer;
+}
+
+/** Every player's game-by-game lines across all published seasons, built by
+ *  reading each game sheet once. Used by the player pages. */
+let byPlayer: Map<number, PlayerGame[]> | null = null;
+export function playerGames(): Map<number, PlayerGame[]> {
+  if (byPlayer) return byPlayer;
+  byPlayer = new Map();
+  for (const s of seasons()) {
+    for (const g of seasonIndex(s).games) {
+      const raw = read<RawSheet>(`${s}/games/${g.id}.json`);
+      for (const p of raw.players) {
+        if (!(p.toi_all || p.att || p.sa)) continue;
+        const home = p.team === g.home;
+        const list = byPlayer.get(p.id) ?? [];
+        list.push({
+          id: g.id, date: g.date, type: g.type, season: s, team: p.team,
+          opp: home ? g.away : g.home, home, gf: home ? g.hs : g.as, ga: home ? g.as : g.hs, end: g.end, line: p,
+        });
+        byPlayer.set(p.id, list);
+      }
+    }
+  }
+  for (const list of byPlayer.values()) list.sort((a, b) => (a.date + a.id).localeCompare(b.date + b.id));
+  return byPlayer;
+}
+
+/** The (season, team) pairs that have games, for the team pages. */
+export function teamSeasons(): { season: number; team: string }[] {
+  return seasons().flatMap(s => teamsFile(s).regular.map(t => ({ season: s, team: t.team })));
+}
