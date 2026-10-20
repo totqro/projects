@@ -19,17 +19,21 @@ import { Segmented } from "./teams-view";
 export interface Line {
   gid: number; id: number; name: string; pos: string;
   toi_all: number; toi_5v5: number; g: number; a: number; ixg: number; att: number;
-  xgf: number; xga: number; xgf5: number; xga5: number; sa: number; ga_: number; xga_: number;
+  xgf: number; xga: number; xgf5: number; xga5: number; gf: number; ga: number; gf5: number; ga5: number;
+  sa: number; ga_: number; xga_: number;
 }
+
+/** A game in the log, with its 5v5 goals counted from the shot list. */
+export type LogGame = TeamGame & { gf5: number; ga5: number };
 
 interface PlayerSum extends Omit<Line, "gid"> { gp: number }
 
 function sumLines(lines: Line[]) {
   const sk = new Map<number, PlayerSum>(), gk = new Map<number, PlayerSum>();
-  const keys = ["toi_all", "toi_5v5", "g", "a", "ixg", "att", "xgf", "xga", "xgf5", "xga5", "sa", "ga_", "xga_"] as const;
+  const keys = ["toi_all", "toi_5v5", "g", "a", "ixg", "att", "xgf", "xga", "xgf5", "xga5", "gf", "ga", "gf5", "ga5", "sa", "ga_", "xga_"] as const;
   for (const p of lines) {
     const bag = p.pos === "G" ? gk : sk;
-    const r = bag.get(p.id) ?? { id: p.id, name: p.name, pos: p.pos, gp: 0, toi_all: 0, toi_5v5: 0, g: 0, a: 0, ixg: 0, att: 0, xgf: 0, xga: 0, xgf5: 0, xga5: 0, sa: 0, ga_: 0, xga_: 0 };
+    const r = bag.get(p.id) ?? { id: p.id, name: p.name, pos: p.pos, gp: 0, toi_all: 0, toi_5v5: 0, g: 0, a: 0, ixg: 0, att: 0, xgf: 0, xga: 0, xgf5: 0, xga5: 0, gf: 0, ga: 0, gf5: 0, ga5: 0, sa: 0, ga_: 0, xga_: 0 };
     r.gp++;
     for (const k of keys) r[k] += p[k];
     bag.set(p.id, r);
@@ -53,11 +57,17 @@ const SK_COLS: Column<PlayerSum>[] = [
   { k: "gax", label: "GAx", get: p => p.g - p.ixg, cell: p => <Signed v={p.g - p.ixg} />, tip: "gax" },
   { k: "att", label: "Att", get: p => p.att, tip: "att" },
   { k: "xgf", label: "xGF", get: p => p.xgf, cell: p => f1(p.xgf), tip: "xgf" },
+  { k: "gf", label: "GF", get: p => p.gf, tip: "gfOn" },
   { k: "xga", label: "xGA", get: p => p.xga, cell: p => f1(p.xga), asc: true, tip: "xga" },
+  { k: "ga", label: "GA", get: p => p.ga, asc: true, tip: "gaOn" },
   { k: "xgs", label: "xG share", get: p => share(p.xgf, p.xga), cell: p => pct(share(p.xgf, p.xga)), tip: "xgs" },
+  { k: "gs", label: "G share", get: p => share(p.gf, p.ga), cell: p => pct(share(p.gf, p.ga)), tip: "gs" },
   { k: "xgs5", label: "5v5 xG share", get: p => share(p.xgf5, p.xga5), cell: p => pct(share(p.xgf5, p.xga5)), tip: "xgs5" },
+  { k: "gs5", label: "5v5 G share", get: p => share(p.gf5, p.ga5), cell: p => pct(share(p.gf5, p.ga5)), tip: "gs5" },
   { k: "xgf60", label: "5v5 xGF/60", get: p => per60(p.xgf5, p.toi_5v5), cell: p => f2(per60(p.xgf5, p.toi_5v5)), tip: "xgf60" },
+  { k: "gf60", label: "5v5 GF/60", get: p => per60(p.gf5, p.toi_5v5), cell: p => f2(per60(p.gf5, p.toi_5v5)), tip: "gf60" },
   { k: "xga60", label: "5v5 xGA/60", get: p => per60(p.xga5, p.toi_5v5), cell: p => f2(per60(p.xga5, p.toi_5v5)), asc: true, tip: "xga60" },
+  { k: "ga60", label: "5v5 GA/60", get: p => per60(p.ga5, p.toi_5v5), cell: p => f2(per60(p.ga5, p.toi_5v5)), asc: true, tip: "ga60" },
 ];
 const GK_COLS: Column<PlayerSum>[] = [
   { k: "name", label: "Goalie", l: true, get: p => p.name, asc: true, cell: link },
@@ -70,15 +80,19 @@ const GK_COLS: Column<PlayerSum>[] = [
   { k: "svp", label: "Sv%", get: p => (p.sa ? 1 - p.ga_ / p.sa : null), cell: p => sv(p.sa ? 1 - p.ga_ / p.sa : null), tip: "svp" },
   { k: "xsvp", label: "xSv%", get: p => (p.sa ? 1 - p.xga_ / p.sa : null), cell: p => sv(p.sa ? 1 - p.xga_ / p.sa : null), tip: "xsvp" },
 ];
-const LOG_COLS: Column<TeamGame>[] = [
+const LOG_COLS: Column<LogGame>[] = [
   { k: "date", label: "Date", l: true, get: g => g.date + g.id, cell: g => fmtDate(g.date), tip: "date" },
   { k: "opp", label: "Opp", l: true, get: g => g.opp, asc: true, cell: g => `${g.home ? "vs" : "@"} ${g.opp}`, tip: "opp" },
   { k: "res", label: "Result", l: true, get: g => g.gf - g.ga, tip: "res",
     cell: g => <><b className={cn("font-semibold", g.won ? "text-good" : "text-bad")}>{g.res}</b> {g.gf}&ndash;{g.ga}{g.end !== "REG" && <span className="text-muted-foreground"> {g.end}</span>}</> },
   { k: "xgf", label: "xGF", get: g => g.xgf, cell: g => f2(g.xgf), tip: "txgf" },
+  { k: "gf", label: "GF", get: g => g.gf_x, tip: "tgf" },
   { k: "xga", label: "xGA", get: g => g.xga, cell: g => f2(g.xga), asc: true, tip: "txga" },
+  { k: "ga", label: "GA", get: g => g.ga_x, asc: true, tip: "tga" },
   { k: "xgs", label: "xG share", get: g => share(g.xgf, g.xga), cell: g => pct(share(g.xgf, g.xga)), tip: "txgs" },
+  { k: "gs", label: "G share", get: g => share(g.gf_x, g.ga_x), cell: g => pct(share(g.gf_x, g.ga_x)), tip: "tgs" },
   { k: "xgs5", label: "5v5 xG share", get: g => share(g.xgf5, g.xga5), cell: g => pct(share(g.xgf5, g.xga5)), tip: "txgs5" },
+  { k: "gs5", label: "5v5 G share", get: g => share(g.gf5, g.ga5), cell: g => pct(share(g.gf5, g.ga5)), tip: "tgs5" },
   { k: "att", label: "Att", get: g => g.att, cell: g => `${g.att}–${g.atta}`, tip: "att" },
   { k: "sog", label: "SOG", get: g => g.sog, cell: g => `${g.sog}–${g.soga}`, tip: "sog" },
 ];
@@ -124,7 +138,7 @@ export interface TeamData {
   team: string;
   name: string;
   standingLine: string | null;
-  games: Record<Phase, TeamGame[]>;
+  games: Record<Phase, LogGame[]>;
   lines: Line[];
 }
 

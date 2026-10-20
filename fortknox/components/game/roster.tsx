@@ -20,9 +20,13 @@ const SKATER_COLS: Column<GamePlayer>[] = [
   { k: "ixg", label: "ixG", get: p => n(p.ixg), cell: p => f2(n(p.ixg)), tip: "ixg" },
   { k: "att", label: "Att", get: p => n(p.att), tip: "att" },
   { k: "xgf", label: "xGF", get: p => n(p.xgf), cell: p => f2(n(p.xgf)), tip: "xgf" },
+  { k: "gf", label: "GF", get: p => n(p.gf), tip: "gfOn" },
   { k: "xga", label: "xGA", get: p => n(p.xga), cell: p => f2(n(p.xga)), asc: true, tip: "xga" },
+  { k: "ga", label: "GA", get: p => n(p.ga), asc: true, tip: "gaOn" },
   { k: "xgs", label: "xG share", get: p => share(n(p.xgf), n(p.xga)), cell: p => pct(share(n(p.xgf), n(p.xga)), 0), tip: "xgs" },
+  { k: "gs", label: "G share", get: p => share(n(p.gf), n(p.ga)), cell: p => pct(share(n(p.gf), n(p.ga)), 0), tip: "gs" },
   { k: "xgs5", label: "5v5 xG share", get: p => share(n(p.xgf5), n(p.xga5)), cell: p => pct(share(n(p.xgf5), n(p.xga5)), 0), tip: "xgs5" },
+  { k: "gs5", label: "5v5 G share", get: p => share(n(p.gf5), n(p.ga5)), cell: p => pct(share(n(p.gf5), n(p.ga5)), 0), tip: "gs5" },
 ];
 
 /** One team's skaters (sortable) and goalies in a single game. */

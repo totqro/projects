@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { f1, f2, pct, share, sv } from "@/lib/format";
+import { f1, f2, pct, per60, share, sv } from "@/lib/format";
 import { groupTeams, LENSES, type Grouping, type StandingRow } from "@/lib/season";
 import { nickname, teamName } from "@/lib/teams";
 import type { Phase } from "@/lib/types";
@@ -28,13 +28,21 @@ const cols = (season: number): Column<Row>[] => [
   { k: "rw", label: "RW", get: t => t.rw, tip: "rw" },
   { k: "diff", label: "Diff", get: t => t.diff, cell: t => <Signed v={t.diff} d={0} />, tip: "diff" },
   { k: "xgf", label: "xGF", get: t => t.xgf, cell: t => f1(t.xgf), tip: "txgf" },
+  { k: "gf", label: "GF", get: t => t.gf_x, tip: "tgf" },
   { k: "xga", label: "xGA", get: t => t.xga, cell: t => f1(t.xga), asc: true, tip: "txga" },
+  { k: "ga", label: "GA", get: t => t.ga_x, asc: true, tip: "tga" },
   { k: "xgs", label: "xG share", get: t => share(t.xgf, t.xga), cell: t => pct(share(t.xgf, t.xga)), tip: "txgs" },
+  { k: "gs", label: "G share", get: t => share(t.gf_x, t.ga_x), cell: t => pct(share(t.gf_x, t.ga_x)), tip: "tgs" },
   { k: "xgs5", label: "5v5 xG share", get: t => t["5v5"].xgf_pct, cell: t => <b className="font-semibold">{pct(t["5v5"].xgf_pct)}</b>, tip: "txgs5" },
+  { k: "gs5", label: "5v5 G share", get: t => share(t["5v5"].gf, t["5v5"].ga), cell: t => pct(share(t["5v5"].gf, t["5v5"].ga)), tip: "tgs5" },
   { k: "xgf60", label: "5v5 xGF/60", get: t => t["5v5"].xgf60, cell: t => f2(t["5v5"].xgf60), tip: "txgf60" },
+  { k: "gf60", label: "5v5 GF/60", get: t => per60(t["5v5"].gf, t["5v5"].toi), cell: t => f2(per60(t["5v5"].gf, t["5v5"].toi)), tip: "tgf60" },
   { k: "xga60", label: "5v5 xGA/60", get: t => t["5v5"].xga60, cell: t => f2(t["5v5"].xga60), asc: true, tip: "txga60" },
+  { k: "ga60", label: "5v5 GA/60", get: t => per60(t["5v5"].ga, t["5v5"].toi), cell: t => f2(per60(t["5v5"].ga, t["5v5"].toi)), asc: true, tip: "tga60" },
   { k: "pp60", label: "PP xGF/60", get: t => t.pp.xgf60, cell: t => f2(t.pp.xgf60), tip: "pp60" },
+  { k: "ppg60", label: "PP GF/60", get: t => per60(t.pp.gf, t.pp.toi), cell: t => f2(per60(t.pp.gf, t.pp.toi)), tip: "ppg60" },
   { k: "pk60", label: "PK xGA/60", get: t => t.pk.xga60, cell: t => f2(t.pk.xga60), asc: true, tip: "pk60" },
+  { k: "pkg60", label: "PK GA/60", get: t => per60(t.pk.ga, t.pk.toi), cell: t => f2(per60(t.pk.ga, t.pk.toi)), asc: true, tip: "pkg60" },
   { k: "gax", label: "GAx", get: t => t.gax, cell: t => <Signed v={t.gax} />, tip: "tgax" },
   { k: "gsax", label: "GSAx", get: t => t.gsax, cell: t => <Signed v={t.gsax} />, tip: "tgsax" },
 ];

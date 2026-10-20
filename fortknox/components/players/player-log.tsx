@@ -28,8 +28,11 @@ const SKATER: Column<LogRow>[] = [
   { k: "ixg", label: "ixG", get: g => n(g.line.ixg), cell: g => f2(n(g.line.ixg)), tip: "ixg" },
   { k: "att", label: "Att", get: g => n(g.line.att), tip: "att" },
   { k: "xgf", label: "xGF", get: g => n(g.line.xgf), cell: g => f2(n(g.line.xgf)), tip: "xgf" },
+  { k: "gf", label: "GF", get: g => n(g.line.gf), tip: "gfOn" },
   { k: "xga", label: "xGA", get: g => n(g.line.xga), cell: g => f2(n(g.line.xga)), asc: true, tip: "xga" },
+  { k: "ga", label: "GA", get: g => n(g.line.ga), asc: true, tip: "gaOn" },
   { k: "xgs", label: "xG share", get: g => share(n(g.line.xgf), n(g.line.xga)), cell: g => pct(share(n(g.line.xgf), n(g.line.xga)), 0), tip: "xgs" },
+  { k: "gs", label: "G share", get: g => share(n(g.line.gf), n(g.line.ga)), cell: g => pct(share(n(g.line.gf), n(g.line.ga)), 0), tip: "gs" },
 ];
 const GOALIE: Column<LogRow>[] = [
   dateCol, oppCol, resCol,

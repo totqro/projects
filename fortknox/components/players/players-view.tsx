@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { f1, f2, pct, sv, toi, toiMin } from "@/lib/format";
+import { f1, f2, pct, per60, share, sv, toi, toiMin } from "@/lib/format";
 import { posLabel } from "@/lib/teams";
 import type { GoalieSeason, Phase, PlayersFile, SkaterSeason } from "@/lib/types";
 import { Signed, SortTable, type Column } from "@/components/tables/sortable";
@@ -30,10 +30,15 @@ const skCols = (season: number): Column<SkaterSeason>[] => [
   { k: "gax", label: "GAx", get: p => p.gax, cell: p => <Signed v={p.gax} />, tip: "gax" },
   { k: "att", label: "Att", get: p => p.att, tip: "att" },
   { k: "xgs", label: "xG share", get: p => p.xgf_pct, cell: p => pct(p.xgf_pct), tip: "xgs" },
+  { k: "gs", label: "G share", get: p => share(p.gf, p.ga), cell: p => pct(share(p.gf, p.ga)), tip: "gs" },
   { k: "xgs5", label: "5v5 xG share", get: p => p.xgf_pct5, cell: p => pct(p.xgf_pct5), tip: "xgs5" },
+  { k: "gs5", label: "5v5 G share", get: p => share(p.gf5, p.ga5), cell: p => pct(share(p.gf5, p.ga5)), tip: "gs5" },
   { k: "ixg60_5", label: "5v5 ixG/60", get: p => p.ixg60_5, cell: p => f2(p.ixg60_5), tip: "ixg60" },
+  { k: "g60_5", label: "5v5 G/60", get: p => per60(p.g5, p.toi5), cell: p => f2(per60(p.g5, p.toi5)), tip: "g60" },
   { k: "xgf60_5", label: "5v5 xGF/60", get: p => p.xgf60_5, cell: p => f2(p.xgf60_5), tip: "xgf60" },
+  { k: "gf60_5", label: "5v5 GF/60", get: p => per60(p.gf5, p.toi5), cell: p => f2(per60(p.gf5, p.toi5)), tip: "gf60" },
   { k: "xga60_5", label: "5v5 xGA/60", get: p => p.xga60_5, cell: p => f2(p.xga60_5), asc: true, tip: "xga60" },
+  { k: "ga60_5", label: "5v5 GA/60", get: p => per60(p.ga5, p.toi5), cell: p => f2(per60(p.ga5, p.toi5)), asc: true, tip: "ga60" },
 ];
 const gkCols = (season: number): Column<GoalieSeason>[] => [
   rank as Column<GoalieSeason>, nameCol("Goalie"), teamCol(season),

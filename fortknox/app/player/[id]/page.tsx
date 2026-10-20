@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { playerGames, playersFile, seasons } from "@/lib/data";
-import { f1, f2, pct, seasonLabel, sv, toi } from "@/lib/format";
+import { f1, f2, pct, seasonLabel, share, sv, toi } from "@/lib/format";
 import { posLabel, teamName } from "@/lib/teams";
 import type { GamePlayer } from "@/lib/types";
 import { PageHead } from "@/components/site/page-head";
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /** Only the keys the game log shows, so each page stays small. */
-const SK_KEYS = ["toi_all", "g", "a", "ixg", "att", "xgf", "xga"] as const;
+const SK_KEYS = ["toi_all", "g", "a", "ixg", "att", "xgf", "xga", "gf", "ga"] as const;
 const GK_KEYS = ["toi_all", "sa", "ga_", "xga_"] as const;
 function trim(line: GamePlayer, goalie: boolean): GamePlayer {
   const out: GamePlayer = { id: line.id, name: line.name, team: line.team, pos: line.pos, num: line.num };
@@ -65,6 +65,7 @@ export default async function Player({ params }: Props) {
               <Tile label="ixG">{f1(cur.sk.ixg)}</Tile>
               <Tile label="Goals above expected"><Signed v={cur.sk.gax} /></Tile>
               <Tile label="5v5 xG share">{pct(cur.sk.xgf_pct5)}</Tile>
+              <Tile label="5v5 goal share">{pct(share(cur.sk.gf5, cur.sk.ga5))}</Tile>
               <Tile label="TOI per game">{toi(cur.sk.toi / cur.sk.gp)}</Tile>
             </>}
             {cur.gk && <>
@@ -74,6 +75,7 @@ export default async function Player({ params }: Props) {
               <Tile label="Expected save %">{sv(cur.gk.xsv_pct)}</Tile>
               <Tile label="GSAx per 60"><Signed v={cur.gk.gsax60} d={2} /></Tile>
               <Tile label="xGA">{f2(cur.gk.xga)}</Tile>
+              <Tile label="Goals allowed">{cur.gk.ga}</Tile>
             </>}
           </div>
         </Section>
