@@ -436,6 +436,22 @@
         </div>
       </a>
 
+      <a href="/xgcalc/sheets.html" class="project-card cy-panel cy-panel--hover cy-card" data-id="sheets" data-category="active" draggable="false" style="--cy-panel-line: var(--cy-magenta);">
+        <div class="card-header">
+          <span class="card-title cy-h3">NHL Game Sheets</span>
+          <span class="cy-badge cy-badge--ok" data-status="live"><span class="cy-led"></span>Live</span>
+        </div>
+        <p class="card-desc">Every NHL game scored shot by shot with a full-data expected-goals model, updated after each final horn &mdash; box scores with a written recap, shot maps, the xG race, team lenses for luck and play-driving, and player and goalie stats.</p>
+        <div class="card-footer">
+          <div class="tags">
+            <span class="cy-tag">scikit-learn</span>
+            <span class="cy-tag">GitHub Actions</span>
+            <span class="cy-tag">SVG</span>
+          </div>
+          <span class="card-arrow" aria-hidden="true">&gt;&gt;</span>
+        </div>
+      </a>
+
       <a href="/swingai" class="project-card cy-panel cy-panel--hover cy-card" data-id="swingai" data-category="active" draggable="false" style="--cy-panel-line: var(--cy-green);">
         <div class="card-header">
           <span class="card-title cy-h3">SwingAI</span>
@@ -699,6 +715,7 @@
       nfl:     { href: '/nfllines',            name: 'NFL Game Predictions' },
       xgcalc:  { href: '/xgcalc',              name: 'Rinkside Shot Tagger' },
       shots:   { href: '/xgcalc/scatter.html', name: 'Shot Chart' },
+      sheets:  { href: '/xgcalc/sheets.html',  name: 'NHL Game Sheets' },
       swingai: { href: '/swingai',             name: 'SwingAI' },
       github:  { href: 'https://github.com/totqro', name: 'GitHub', ext: true },
     };
@@ -721,7 +738,7 @@
     const COMMANDS = {
       help() {
         out('commands: <span class="ok">help ls open cd status whoami date theme field reset clear echo history neofetch</span>');
-        out('open &lt;name&gt; &mdash; nhl · mlb · nfl · xgcalc · shots · swingai · github');
+        out('open &lt;name&gt; &mdash; nhl · mlb · nfl · xgcalc · shots · sheets · swingai · github');
         out('theme &lt;colour&gt; &mdash; ' + ACCENTS.join(' · '));
       },
       ls(args) {

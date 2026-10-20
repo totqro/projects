@@ -58,6 +58,16 @@ jobs:
           cp xgcalc/web/scatter.html build/xgcalc/
           cp xgcalc/web/xg_model.json build/xgcalc/
           cp xgcalc/web/tracker.html xgcalc/web/xg_model.js xgcalc/web/uoft-logo.png build/xgcalc/
+          cp xgcalc/web/sheets.html build/xgcalc/
+          # xG game sheets: rebuilt after every game by xg-game-sheets.yml and
+          # kept on the orphan branch xg-sheets-data, never on main. Missing
+          # branch (first run) is fine: the page just has no data yet.
+          mkdir -p build/xgcalc/games
+          if git fetch -q --depth 1 origin xg-sheets-data; then
+            git archive FETCH_HEAD | tar -x -C build/xgcalc/games
+          else
+            echo "::warning::no xg-sheets-data branch yet; deploying without game sheets"
+          fi
           # NHL
           cp nhllines/web/index.html build/nhllines/
           cp nhllines/web/app.js build/nhllines/
@@ -92,7 +102,8 @@ jobs:
           for page in index.html cyber.css dashboard.css \
                       nhllines/index.html mlblines/index.html nfllines/index.html \
                       swingai/index.html xgcalc/index.html xgcalc/scatter.html \
-                      icons/hub.svg icons/nhl.svg icons/mlb.svg icons/nfl.svg; do
+                      icons/hub.svg icons/nhl.svg icons/mlb.svg icons/nfl.svg \
+                      xgcalc/sheets.html icons/sheets.svg; do
             if [ ! -s "build/$page" ]; then
               echo "::error::build/$page is missing or empty — refusing to deploy"
               exit 1
