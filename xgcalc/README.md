@@ -371,7 +371,7 @@ applies them the same way, through `tag_features.py`:
 | Tag | Key | Effect |
 |---|---|---|
 | Odd-man rush | `f` | `+b_rush` on the logit |
-| Cross-ice (royal-road) pass: passer and shooter on opposite sides of the road (`|y| > 3` ft), both below the circle tops (`x ≥ 54`), shot within 0.5 s | `p` | `+b_cross` on the logit |
+| Cross-ice feed: passer and shooter on opposite sides of the middle line (`|y| > 3` ft), both below the circle tops (`x ≥ 54`), shot within 0.5 s | `p` | `+b_cross` on the logit |
 | Blocked | `k` | xG × `block_factor` instead of 0 |
 
 MoneyPuck has no passes, a broken rush flag and no blocks, so none of these
@@ -393,10 +393,10 @@ tops or on the road is shown but not counted; the passer's spot is the
 tagger's call. Only exports with `Rush`/`CrossIce` columns count; older games would read as
 "no rushes" and pull the coefficients down. Where the numbers come from:
 
-- **Royal road: real data.** `bdc_royal_road.py` fits it on Stathletes'
+- **Cross-ice feeds: real data.** `bdc_royal_road.py` fits it on Stathletes'
   Big Data Cup events (women's NCAA, NWHL, 2022 Olympics), the only public
-  data with pass coordinates: 2,976 unblocked shots, 87 royal-road, 16 goals.
-  With the base model as an offset and a league intercept, a royal-road pass
+  data with pass coordinates: 2,976 unblocked shots, 87 cross-ice feeds, 16 goals.
+  With the base model as an offset and a league intercept, a cross-ice feed
   is +0.91 ± 0.30 (2.5×, 95% range 1.4× to 4.4×). That is the prior now.
 - **Odd-man rush: a judgment call above a measured floor.** NHL shots
   within 6 s of a neutral/defensive-zone turnover score at 1.58× (+0.46 ±
@@ -420,7 +420,7 @@ from the goal line to the faceoff-dot line, `|y| <= 11`; medium is the
 trapezoid from that box's edges at the goal line out to the dots (`|y| = 22`)
 plus the band `|y| <= 22` out to the circle tops (`x = 54`); everything else,
 behind the net included, is low. Then, in order: an odd-man rush moves a
-shot up one tier, a counted royal-road pass makes it high, and a blocked
+shot up one tier, a counted cross-ice feed makes it high, and a blocked
 attempt drops it one tier (never below low). Tier and xG can disagree on purpose:
 one is a coaching category, the other a probability. `web/index.html` still
 prices shots off its own 16-zone tiers and is unchanged.
@@ -794,7 +794,7 @@ where both exist. Shot coordinates and types agree with MoneyPuck's to within
 0.3 ft (median) on the 98% of 2018+ shots that join.
 
 **What the public feed can't give.** Passes and zone entries are not logged,
-so royal-road passes and true rushes are invisible. The model gets proxies
+so cross-ice feeds and true rushes are invisible. The model gets proxies
 built from the event trail instead (`src/data/nhl_events.py`): seconds since
 the play was last outside the offensive zone and since the shooting team won
 the puck, lateral movement and middle-crossings from the previous event, and

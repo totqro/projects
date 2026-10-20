@@ -473,9 +473,9 @@ const ZONE_NAMES={1:"L corner",2:"behind net",3:"R corner",4:"L post",5:"crease"
 /* The coaches' danger tiers, same as zone_tagging.danger_tier: a label,
    never fed into xG. High is the box from the goal line to the dot line;
    medium the trapezoid out to the dots plus the band to the circle tops;
-   the rest low. A rush moves up one tier, a royal-road pass makes it high,
+   the rest low. A rush moves up one tier, a cross-ice feed makes it high,
    then a block drops it one. */
-const TIER={HIGH:{label:"High",css:"hi",zones:"net-front box to the dots · royal road"},
+const TIER={HIGH:{label:"High",css:"hi",zones:"net-front box to the dots · cross-ice feeds"},
             MED:{label:"Medium",css:"md",zones:"out to the dots and circle tops"},
             LOW:{label:"Low",css:"lo",zones:"everything else"}};
 /* The tier, and which tags actually moved it off the zone's tier (a rush
@@ -595,7 +595,7 @@ function loadShots(text){
       is_rebound:("rebound" in r && /^(1|true|yes|y)$/i.test(r.rebound))?1:0,
       goal:event==="goal"?1:0, unblocked:!!UNBLOCKED[event], blocked:!!BLOCKED[event],
       rush:/^(1|true|yes|y)$/i.test(r.rush||"")?1:0,
-      /* A royal-road pass can't end above the circle tops or on the road. */
+      /* A cross-ice feed can't end above the circle tops or on the middle line. */
       cross_ice:/^(1|true|yes|y)$/i.test(r.crossice||"")&&X>=54&&Math.abs(Y)>3?1:0
     });
     const last=out[out.length-1];
@@ -1238,11 +1238,11 @@ function fullRinkMarkup(){
    the rink says whose shot it is), and the coaches' zones sit faintly
    underneath. Orange/amber/green stay clear of the two team colours. */
 const TIER_COL={HIGH:"#E4572E", MED:"#F3A712", LOW:"#6BAA5E"}, TIER_ORDER=["HIGH","MED","LOW"];
-/* A shot whose tier a royal-road pass or an odd-man rush raised gets a thin
-   edge in that tag's colour and its glyph beside it: teal ⇄ royal road,
+/* A shot whose tier a cross-ice feed or an odd-man rush raised gets a thin
+   edge in that tag's colour and its glyph beside it: teal ⇄ cross-ice feed,
    purple » rush. A block's square already says blocked, so it gets nothing. */
 const WHY_COL={rush:"#7B4FC9", royal:"#0E9FB3"};
-const WHY_NAME={rush:"odd-man rush", royal:"royal road"}, WHY_GLYPH={rush:"\u00BB", royal:"\u21C4"};
+const WHY_NAME={rush:"odd-man rush", royal:"cross-ice feed"}, WHY_GLYPH={rush:"\u00BB", royal:"\u21C4"};
 function tagMark(svg,why,kind,cx,cy){
   why=(why||[]).filter(w=>WHY_COL[w]); if(!why.length) return svg;
   const off=kind==="goal"?2.8:1.9;
@@ -1566,7 +1566,7 @@ function buildReportMarkup(events, home, away, flips, scope, tracked, shootout){
   </section>
 
   <div class="foot">
-    <span>xG (expected goals) is the chance a shot goes in, from a five-feature model fit on 905,483 NHL attempts, plus tagged odd-man rushes and royal-road passes; blocks count at ${Math.round(((MODEL.adjust||{}).block_factor??0.25)*100)}%. Danger tiers are the coaches' zones (rush +1, royal road = high, blocked &minus;1); ${notes}.</span>
+    <span>xG (expected goals) is the chance a shot goes in, from a five-feature model fit on 905,483 NHL attempts, plus tagged odd-man rushes and cross-ice feeds; blocks count at ${Math.round(((MODEL.adjust||{}).block_factor??0.25)*100)}%. Danger tiers are the coaches' zones (rush +1, cross-ice feed = high, blocked &minus;1); ${notes}.</span>
     <span>lknox.web.app/xgcalc</span>
   </div></section></div>`;
 }
