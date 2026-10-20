@@ -2,7 +2,7 @@
 """Build the game-sheet data for one season: every final game scored with
 the full-data xG model, plus season tables for teams, skaters and goalies.
 
-  python nhl_sheets.py                       the current season, into web/games/
+  python nhl_sheets.py                       the current season, into ../data/ (the site reads it)
   python nhl_sheets.py --season 2025 --out /tmp/sheets
   python nhl_sheets.py --no-fetch            use only what's already cached
 
@@ -40,7 +40,7 @@ from src.data.nhl_toi import STATES, game_toi  # noqa: E402
 
 MODEL_PATH = ROOT / "data" / "nhl_xg_model.joblib"
 CACHE = nhl_backfill.CACHE
-OUT = ROOT / "web" / "games"
+OUT = ROOT.parent / "data"   # fortknox/data, where the site build reads the sheets
 
 # Compact shot rows in games/{id}.json; the key order is in the file too.
 SHOT_KEYS = ["p", "t", "team", "ev", "x", "y", "type", "xg", "shooter", "goalie", "sit",

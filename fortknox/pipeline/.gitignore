@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+
+# Raw NHL feed cached by nhl_backfill.py, and the dataset built from it
+cache/
+data/*.parquet
+data/*.joblib
+# The full-data xG model is tracked: the nightly game-sheet job runs on an
+# ephemeral runner and has to load it (scikit-learn is pinned in
+# requirements.txt so the pickle stays loadable).
+!data/nhl_xg_model.joblib

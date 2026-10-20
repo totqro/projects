@@ -8,7 +8,7 @@ single-page game sheets that used to live at `lknox.web.app/xgcalc/sheets.html`
 ## How it fits together
 
 1. `.github/workflows/xg-game-sheets.yml` runs every 20 minutes on game days.
-   It fetches newly final games, scores every shot (`xgcalc/nhl_sheets.py`) and
+   It fetches newly final games, scores every shot (`pipeline/nhl_sheets.py`) and
    force-pushes the JSON to the orphan branch `xg-sheets-data`.
 2. It then dispatches `.github/workflows/fortknox-deploy.yml`, which copies that
    branch into `data/`, builds this site as a static export and deploys the
