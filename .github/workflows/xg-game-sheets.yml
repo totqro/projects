@@ -14,7 +14,8 @@ on:
     # Every 20 minutes from noon to 4am ET (16:00-07:59 UTC): matinees end
     # around 3-6pm ET, late West games around 1am ET. GitHub often starts
     # scheduled runs late, so expect sheets 20-60 minutes after the final horn.
-    - cron: '*/20 16-23,0-7 * * *'
+    # Off the hour (:07/:27/:47): GitHub drops the most scheduled runs at :00.
+    - cron: '7,27,47 16-23,0-7 * * *'
   workflow_dispatch:
     inputs:
       season:
