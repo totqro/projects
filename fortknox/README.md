@@ -37,6 +37,11 @@ npm run dev
 `npm run build` writes the static site to `out/`. Builds are deterministic
 (fixed build id), so a deploy only uploads pages whose content changed.
 
+Before each build, `scripts/og-images.tsx` (the `prebuild` script) draws the
+share cards into `public/og/` with Satori and resvg: one per game of the
+current season, which a link to `/game/<id>` unfurls with (score, xG split,
+date), and `site.png` for every other page and for older games.
+
 ## Design
 
 The [Inset Dark](https://better-design.com/design-systems/inset-dark) design

@@ -11,6 +11,10 @@ export const metadata: Metadata = {
   title: { default: "Fort Knox · NHL expected goals", template: "%s · Fort Knox" },
   description: "Every NHL game scored shot by shot with a full-data expected-goals model: game sheets, team and player xG, goalie GSAx. Updated after every game.",
   icons: { icon: "/icon.svg" },
+  // Pages that set their own openGraph replace this whole object, so the game
+  // pages name their image again (app/game/[id]/page.tsx).
+  openGraph: { siteName: "Fort Knox", images: [{ url: "/og/site.png", width: 1200, height: 630, alt: "Fort Knox" }] },
+  twitter: { card: "summary_large_image", images: ["/og/site.png"] },
 };
 
 export const viewport: Viewport = { themeColor: "#0e0e0e", colorScheme: "dark" };

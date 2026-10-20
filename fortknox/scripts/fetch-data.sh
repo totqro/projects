@@ -6,5 +6,6 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 git fetch -q --depth 1 origin xg-sheets-data
 rm -rf data && mkdir -p data
-git archive FETCH_HEAD | tar -x -C data
+# git archive only exports the current subdirectory, so run it from the root.
+(cd "$(git rev-parse --show-toplevel)" && git archive FETCH_HEAD) | tar -x -C data
 echo "data/: seasons $(cat data/seasons.json)"

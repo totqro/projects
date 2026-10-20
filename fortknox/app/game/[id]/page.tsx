@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { gameIds, rawSheet, seasons } from "@/lib/data";
+import { currentSeason, gameIds, rawSheet, seasonOfGame, seasons } from "@/lib/data";
 import { unpack } from "@/lib/unpack";
 import { fmtDate } from "@/lib/format";
 import { recap } from "@/lib/game";
@@ -21,7 +21,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const G = unpack(rawSheet((await params).id));
   const r = recap(G);
   const title = `${G.away.abbrev} ${G.away.score}, ${G.home.abbrev} ${G.home.score} (${fmtDate(G.date)})`;
-  return { title, description: `${r.headline}. ${r.text}`, openGraph: { title: r.headline, description: r.text } };
+  // Share cards come from scripts/og-images.tsx: one per game this season,
+  // the site card for older games.
+  const image = seasonOfGame(G.id) === currentSeason()
+    ? { url: `/og/${G.id}.png`, width: 1200, height: 630, alt: `${G.away.abbrev} ${G.away.score}, ${G.home.abbrev} ${G.home.score}: final score and expected goals` }
+    : { url: "/og/site.png", width: 1200, height: 630, alt: "Fort Knox" };
+  return {
+    title, description: `${r.headline}. ${r.text}`,
+    openGraph: { type: "article", title: r.headline, description: r.text, images: [image] },
+    twitter: { card: "summary_large_image", title: r.headline, description: r.text, images: [image] },
+  };
 }
 
 export default async function GamePage({ params }: Props) {
