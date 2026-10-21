@@ -23,7 +23,7 @@ const toggleVariants = cva(
     "cursor-pointer select-none",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
     "disabled:pointer-events-none disabled:opacity-50",
-    "text-[rgba(255,255,255,0.55)] hover:text-[rgba(255,255,255,0.8)]",
+    "text-muted-foreground hover:text-secondary-foreground",
     "data-[state=on]:text-foreground",
     "data-[state=on]:[background:var(--pill-gradient)]",
     "data-[state=on]:[box-shadow:var(--shadow-pill)]",

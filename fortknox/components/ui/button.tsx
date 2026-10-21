@@ -39,15 +39,15 @@ const buttonVariants = cva(
           "hover:[background:var(--pill-gradient-hover)] hover:[box-shadow:var(--shadow-pill-hover)] " +
           "active:[box-shadow:var(--shadow-sm)]",
         secondary:
-          "bg-card text-[rgba(255,255,255,0.78)] " +
+          "bg-card text-secondary-foreground " +
           "[box-shadow:var(--shadow-sm)] " +
           "hover:bg-accent hover:text-foreground hover:[box-shadow:var(--shadow-md)] " +
           "active:[box-shadow:var(--shadow-xs)]",
         outline:
           "bg-transparent text-foreground border border-border " +
-          "hover:bg-accent hover:border-[rgba(255,255,255,0.16)]",
+          "hover:bg-accent hover:border-ring",
         ghost:
-          "bg-transparent text-[rgba(255,255,255,0.55)] " +
+          "bg-transparent text-muted-foreground " +
           "hover:bg-accent hover:text-foreground",
         destructive:
           "bg-destructive text-destructive-foreground " +

@@ -73,5 +73,8 @@ export function gameColors(away: string, home: string): CSSProperties | undefine
     if (!clash(a, h) && (!best || c < best.cost)) best = { cost: c, a, h };
   }));
   const pick = best as { a: Col; h: Col } | null;
-  return pick ? { "--away": css(pick.a), "--home": css(pick.h) } as CSSProperties : undefined;
+  return pick ? { "--away-c": css(pick.a), "--home-c": css(pick.h) } as CSSProperties : undefined;
 }
+
+/** A team's first colour, for the swatches in the team pickers. */
+export const teamColor = (ab: string) => (TEAM[ab] ? css(TEAM[ab][0]) : undefined);
