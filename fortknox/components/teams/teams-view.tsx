@@ -102,7 +102,7 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
           <Section key={g.title ?? i} title={g.title ?? "Standings"}>
             <SortTable rows={g.rows} cols={columns} initial={{ sort: "std", asc: true }} naturalKey="std"
               csv={`teams-${season}${g.title ? "-" + g.title.toLowerCase().replace(/[^a-z]+/g, "-") : ""}`}
-              rowKey={t => t.team} rowProps={t => ({ className: cn(t.cut && "border-b-2 border-b-[oklch(1_0_0/0.2)]") })} />
+              rowKey={t => t.team} rowProps={t => ({ className: cn(t.cut && "cut") })} />
           </Section>
         ))}
       </div>
