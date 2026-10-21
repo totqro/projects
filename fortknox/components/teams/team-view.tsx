@@ -109,7 +109,7 @@ function GameBars({ games }: { games: TeamGame[] }) {
   });
   return (
     <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Expected goals by game" className="block h-auto w-full text-[11px]">
-      <line x1={L} x2={W - R} y1={mid} y2={mid} stroke="oklch(1 0 0 / 0.14)" />
+      <line x1={L} x2={W - R} y1={mid} y2={mid} stroke="var(--grid)" />
       <text x={L - 6} y={mid + 4} textAnchor="end" fill="var(--muted-foreground)">0</text>
       {marks.flatMap(v => [mid - Y(v), mid + Y(v)].map(y => (
         <g key={`${v}${y}`}>

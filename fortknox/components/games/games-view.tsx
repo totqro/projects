@@ -109,7 +109,7 @@ export function GamesView({ season, recent, total, dates, hasPlayoffs, teams, up
   return (
     <>
       <div className="mb-5 flex flex-wrap items-end gap-3">
-        <SelectField label="Team" value={team} onChange={reset(setTeam)} options={[["", "All teams"], ...teams]} />
+        <SelectField label="Team" teams value={team} onChange={reset(setTeam)} options={[["", "All teams"], ...teams]} />
         {hasPlayoffs && (
           <SelectField label="Games" value={type} onChange={reset(setType)}
             options={[["all", "All"], ["regular", "Regular season"], ["playoff", "Playoffs"]]} />

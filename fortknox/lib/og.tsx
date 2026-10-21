@@ -14,30 +14,28 @@ import { nickname, teamName } from "./teams";
 export const OG_SIZE = { width: 1200, height: 630 };
 
 const C = {
-  bg: "#030c17",          // --background  oklch(0.15 0.03 252)
-  card: "#081523",        // --card        oklch(0.19 0.035 252)
-  well: "#05101d",        // --well
-  border: "rgba(255,255,255,0.08)",
-  fg: "#ffffff",
-  muted: "#8da1b3",       // --muted-foreground oklch(0.7 0.035 245)
-  loser: "#495766",
-  sep: "#243447",
+  bg: "#0c1722",          // --background  oklch(0.2 0.028 252)
+  card: "#131f2c",        // --card        oklch(0.235 0.03 252)
+  well: "#0f1925",        // --well
+  border: "rgba(255,255,255,0.075)",
+  fg: "#d6dfe8",          // --foreground  oklch(0.9 0.015 245)
+  muted: "#8c9ead",       // --muted-foreground oklch(0.69 0.03 245)
+  loser: "#4a5868",
+  sep: "#253546",
   away: "#fd7562",        // oklch(0.72 0.17 30)
   home: "#a1bdf9",        // oklch(0.8 0.09 265)
-  brand: "#6ce6f3",       // --brand oklch(0.86 0.11 205)
-  gradient: "linear-gradient(180deg, #c8f9fc 0%, #16bee1 100%)", // --brand-gradient
-  glow: "rgba(108,230,243,0.12)",
+  brand: "#72cede",       // --brand oklch(0.8 0.09 210)
 };
 
-/** Barlow Condensed for the display type, Inter for the small print, both
- *  from @fontsource (Satori needs woff or ttf, not woff2). */
-type Font = { name: string; data: Buffer; weight: 500 | 600 | 700; style: "normal" };
+/** Big Shoulders for the display type, IBM Plex Sans for the small print,
+ *  both from @fontsource (Satori needs woff or ttf, not woff2). */
+type Font = { name: string; data: Buffer; weight: 500 | 700 | 800; style: "normal" };
 let fonts: Font[] | null = null;
 export function ogFonts() {
   const file = (pkg: string, f: string) => fs.readFileSync(path.join(process.cwd(), "node_modules/@fontsource", pkg, "files", f));
   fonts ??= [
-    ...([600, 700] as const).map(weight => ({ name: "Barlow", weight, style: "normal" as const, data: file("barlow-condensed", `barlow-condensed-latin-${weight}-normal.woff`) })),
-    ...([500, 700] as const).map(weight => ({ name: "Inter", weight, style: "normal" as const, data: file("inter", `inter-latin-${weight}-normal.woff`) })),
+    ...([800] as const).map(weight => ({ name: "Big Shoulders", weight, style: "normal" as const, data: file("big-shoulders-display", `big-shoulders-display-latin-${weight}-normal.woff`) })),
+    ...([500, 700] as const).map(weight => ({ name: "Plex", weight, style: "normal" as const, data: file("ibm-plex-sans", `ibm-plex-sans-latin-${weight}-normal.woff`) })),
   ];
   return fonts;
 }
@@ -53,12 +51,12 @@ function Mark({ size }: { size: number }) {
   );
 }
 
-const brandText = { backgroundImage: C.gradient, backgroundClip: "text", color: "transparent" } as const;
-const display = { fontFamily: "Barlow", textTransform: "uppercase" } as const;
+const brandText = { color: C.brand } as const;
+const display = { fontFamily: "Big Shoulders", fontWeight: 800, textTransform: "uppercase" } as const;
 
 function Brand({ size }: { size: number }) {
   return (
-    <div style={{ display: "flex", ...display, fontSize: size, fontWeight: 700, letterSpacing: "0.02em", lineHeight: 1 }}>
+    <div style={{ display: "flex", ...display, fontSize: size, letterSpacing: "0.02em", lineHeight: 1 }}>
       High<span style={{ marginLeft: size * 0.24, ...brandText }}>Slot</span>
     </div>
   );
@@ -67,7 +65,7 @@ function Brand({ size }: { size: number }) {
 function Team({ abbrev, color, align }: { abbrev: string; color: string; align: "flex-start" | "flex-end" }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: align, width: 300 }}>
-      <div style={{ ...display, fontSize: 168, fontWeight: 700, color, letterSpacing: "0.01em", lineHeight: 0.9 }}>{abbrev}</div>
+      <div style={{ ...display, fontSize: 168, color, letterSpacing: "0.01em", lineHeight: 0.9 }}>{abbrev}</div>
       <div style={{ fontSize: 30, fontWeight: 500, color: C.muted, marginTop: 10 }}>{nickname(teamName(abbrev))}</div>
     </div>
   );
@@ -75,7 +73,7 @@ function Team({ abbrev, color, align }: { abbrev: string; color: string; align: 
 
 function Score({ v, win }: { v: number; win: boolean }) {
   return (
-    <div style={{ display: "flex", ...display, fontSize: 200, fontWeight: 700, lineHeight: 0.9, ...(win ? brandText : { color: C.loser }) }}>
+    <div style={{ display: "flex", ...display, fontSize: 200, lineHeight: 0.9, ...(win ? brandText : { color: C.loser }) }}>
       {String(v)}
     </div>
   );
@@ -89,8 +87,7 @@ export function GameCard({ G }: { G: GameSummary }) {
   return (
     <div style={{
       width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between",
-      padding: "52px 64px 56px", background: C.bg, color: C.fg, fontFamily: "Inter",
-      backgroundImage: `radial-gradient(ellipse 900px 420px at 50% 0%, ${C.glow}, rgba(3,12,23,0))`,
+      padding: "52px 64px 56px", background: C.bg, color: C.fg, fontFamily: "Plex",
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -115,9 +112,9 @@ export function GameCard({ G }: { G: GameSummary }) {
 
       <div style={{ display: "flex", flexDirection: "column", padding: "26px 30px 30px", borderRadius: 24, background: C.card, border: `1px solid ${C.border}` }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ ...display, fontSize: 56, fontWeight: 700, color: C.away, lineHeight: 1 }}>{f2(G.axg)}</div>
+          <div style={{ ...display, fontSize: 56, color: C.away, lineHeight: 1 }}>{f2(G.axg)}</div>
           <div style={{ fontSize: 22, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.16em" }}>Expected goals</div>
-          <div style={{ ...display, fontSize: 56, fontWeight: 700, color: C.home, lineHeight: 1 }}>{f2(G.hxg)}</div>
+          <div style={{ ...display, fontSize: 56, color: C.home, lineHeight: 1 }}>{f2(G.hxg)}</div>
         </div>
         <div style={{ display: "flex", height: 22, marginTop: 16, borderRadius: 11, background: C.well, gap: 6 }}>
           <div style={{ width: `${(awayShare * 100).toFixed(2)}%`, borderRadius: 11, background: C.away }} />
@@ -134,8 +131,7 @@ export function SiteCard() {
   return (
     <div style={{
       width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      background: C.bg, color: C.fg, fontFamily: "Inter",
-      backgroundImage: `radial-gradient(ellipse 900px 480px at 50% 30%, ${C.glow}, rgba(3,12,23,0))`,
+      background: C.bg, color: C.fg, fontFamily: "Plex",
     }}>
       <Mark size={168} />
       <div style={{ display: "flex", marginTop: 30 }}><Brand size={150} /></div>

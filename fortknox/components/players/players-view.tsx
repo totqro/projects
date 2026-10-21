@@ -90,7 +90,7 @@ export function PlayersView({ season, data, teams }: { season: number; data: Pic
       <div className="mb-5 flex flex-wrap items-end gap-3">
         <Segmented label="Players" value={kind} onChange={v => { setKind(v); setShown(100); }} options={[["skaters", "Skaters"], ["goalies", "Goalies"]]} />
         {hasPlayoffs && <Segmented label="Season phase" value={phase} onChange={setPhase} options={[["regular", "Regular season"], ["playoff", "Playoffs"]]} />}
-        <SelectField label="Team" value={team} onChange={setTeam} options={[["", "All teams"], ...teams]} />
+        <SelectField label="Team" teams value={team} onChange={setTeam} options={[["", "All teams"], ...teams]} />
         {!goalies && <SelectField label="Position" value={pos} onChange={setPos} options={POS_OPTS} />}
         <SelectField label="Min. games" value={minGp} onChange={v => setMinGp(+v)} options={[1, 5, 10, 20, 40]} />
         <SelectField label="Min. minutes" value={minMin} onChange={v => setMinMin(+v)} options={[0, 100, 300, 600, 1000]} />
