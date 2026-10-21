@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useId, useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
 import { seasonLabel } from "@/lib/format";
+import { Dropdown } from "@/components/site/dropdown";
 
 const SECTIONS = [
   { key: "games", label: "Games", match: (p: string) => p === "/" || p.startsWith("/game") },
@@ -55,22 +55,18 @@ function useSeason(current: number) {
   return { path, season: own ?? last ?? current, own };
 }
 
-/** Primary navigation: a recessed track with the active section raised. */
+/** Primary navigation: plain tabs, the current one underlined in cyan. */
 export function SiteNav({ current }: { current: number }) {
   const { path, season } = useSeason(current);
   const href = (k: string) =>
     k === "games" ? (season === current ? "/" : `/games/${season}`) : k === "model" ? "/model" : `/${k}/${season}`;
   return (
-    <nav aria-label="Sections" className="slot-nav inline-flex gap-0.5 rounded-[0.75rem] bg-card p-1 [box-shadow:var(--shadow-inset-deep)]">
+    <nav aria-label="Sections" className="slot-nav inline-flex gap-1">
       {SECTIONS.map(s => {
         const on = s.match(path);
         return (
           <Link key={s.key} href={href(s.key)} aria-current={on ? "page" : undefined}
-            className={cn(
-              "rounded-[0.5625rem] px-3.5 py-1.5 text-sm font-medium text-muted-foreground transition-[color,background,box-shadow]",
-              "hover:text-foreground",
-              on && "pill text-pressed text-foreground",
-            )}>
+            className="px-2.5 py-2 text-sm font-medium text-muted-foreground transition-[color,box-shadow] hover:text-foreground">
             {s.label}
           </Link>
         );
@@ -92,13 +88,12 @@ export function SeasonSelect({ seasons, current }: { seasons: number[]; current:
     if (path.startsWith("/team/")) return router.push(path.replace(/^\/team\/\d{4}/, `/team/${s}`));
     router.push(s === current ? "/" : `/games/${s}`);
   };
+  const labelId = useId();
   return (
-    <label className="flex items-center gap-2 text-sm text-muted-foreground">
-      <span className="sr-only sm:not-sr-only">Season</span>
-      <select value={season} onChange={e => go(+e.target.value)}
-        className="h-9 rounded-lg bg-input px-2.5 text-sm text-foreground [box-shadow:var(--shadow-inset)] outline-none focus-visible:ring-2 focus-visible:ring-ring">
-        {seasons.map(s => <option key={s} value={s}>{seasonLabel(s)}</option>)}
-      </select>
-    </label>
+    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+      <span id={labelId} className="sr-only sm:not-sr-only">Season</span>
+      <Dropdown labelId={labelId} align="end" value={String(season)} onChange={v => go(+v)}
+        options={seasons.map(s => ({ value: String(s), label: seasonLabel(s) }))} />
+    </div>
   );
 }

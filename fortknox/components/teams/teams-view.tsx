@@ -9,6 +9,7 @@ import type { Phase } from "@/lib/types";
 import { useLensChart } from "@/components/charts/lens";
 import { Signed, SortTable, type Column } from "@/components/tables/sortable";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Note, Section } from "@/components/site/section";
 import { TeamLogo } from "@/components/site/team-logo";
@@ -47,9 +48,22 @@ const cols = (season: number): Column<Row>[] => [
   { k: "gsax", label: "GSAx", get: t => t.gsax, cell: t => <Signed v={t.gsax} />, tip: "tgsax" },
 ];
 
-export function Segmented<T extends string>({ value, onChange, options, label }: {
-  value: T; onChange: (v: T) => void; options: [T, string][]; label: string;
+/** A one-of-several picker. `tabs` draws it like the masthead's sections:
+ *  plain text with the current one underlined in cyan (.slot-tabs). */
+export function Segmented<T extends string>({ value, onChange, options, label, tabs }: {
+  value: T; onChange: (v: T) => void; options: [T, string][]; label: string; tabs?: boolean;
 }) {
+  if (tabs) return (
+    <ToggleGroupPrimitive.Root type="single" value={value} onValueChange={v => v && onChange(v as T)} aria-label={label}
+      className="slot-tabs flex flex-wrap gap-1">
+      {options.map(([k, l]) => (
+        <ToggleGroupPrimitive.Item key={k} value={k}
+          className="cursor-pointer px-2.5 py-2 text-sm font-medium text-muted-foreground transition-[color,box-shadow] hover:text-foreground">
+          {l}
+        </ToggleGroupPrimitive.Item>
+      ))}
+    </ToggleGroupPrimitive.Root>
+  );
   return (
     <ToggleGroup type="single" value={value} onValueChange={v => v && onChange(v as T)} aria-label={label} className="flex-wrap">
       {options.map(([k, l]) => <ToggleGroupItem key={k} value={k}>{l}</ToggleGroupItem>)}
@@ -76,7 +90,7 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
 
       <Card className="mb-8">
         <CardHeader className="gap-3 pb-3">
-          <Segmented label="Chart" value={lens} onChange={setLens}
+          <Segmented tabs label="Chart" value={lens} onChange={setLens}
             options={Object.entries(LENSES).map(([k, l]) => [k, l.name] as [string, string])} />
           <p className="max-w-3xl text-[13px] leading-relaxed text-muted-foreground">{LENSES[lens].desc}</p>
         </CardHeader>
@@ -93,7 +107,7 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
 
       <div className="mb-5 flex flex-wrap items-center gap-3">
         {phase === "regular" && (
-          <Segmented label="Standings grouping" value={group} onChange={setGroup}
+          <Segmented tabs label="Standings grouping" value={group} onChange={setGroup}
             options={[["league", "League"], ["conference", "Conference"], ["division", "Division"], ["wildcard", "Wild card"]]} />
         )}
       </div>

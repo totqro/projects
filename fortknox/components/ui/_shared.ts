@@ -2,11 +2,11 @@ export const formFieldBase =
   "w-full rounded-[9px] px-3 text-sm " +
   "bg-input text-foreground " +
   "border-0 " +
-  "placeholder:text-[rgba(255,255,255,0.35)] " +
+  "placeholder:text-muted-foreground " +
   "transition-[color,box-shadow] duration-150 " +
   "[box-shadow:var(--shadow-inset)] " +
   "hover:[box-shadow:var(--shadow-inset-deep)] " +
-  "focus-visible:outline-none focus-visible:[box-shadow:var(--shadow-inset),0_0_0_2px_rgba(255,255,255,0.18)] " +
+  "focus-visible:outline-none focus-visible:[box-shadow:var(--shadow-inset),0_0_0_2px_var(--ring)] " +
   "disabled:cursor-not-allowed disabled:opacity-50"
 
 export const formFieldSingleLine = "flex h-9 py-1.5"

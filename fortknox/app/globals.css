@@ -7,8 +7,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-  --font-display: "Barlow Condensed", system-ui, sans-serif;
+  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-display: "Big Shoulders Display", "Barlow Condensed", system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   --color-home: var(--home);
   --color-away: var(--away);
@@ -237,23 +237,31 @@
  * arena lights, and adds one accent: cyan, kept for the logo, the active state
  * and the final score. The data needs a few more hues for the two teams.
  *
- * html.dark (0,1,1) beats the DS's own .dark block (0,1,0).
+ * Two themes: soft navy (html.dark) and chalk (html.light). The reader's
+ * pick lives in localStorage; the script in app/layout.tsx sets the class
+ * before first paint, following the system setting until they choose.
+ * html.dark / html.light (0,1,1) beat the DS's own :root and .dark (0,1,0).
  */
 html.dark {
-  --background: oklch(0.15 0.03 252);
-  --card: oklch(0.19 0.035 252);
-  --popover: oklch(0.23 0.04 252);
-  --primary: oklch(0.28 0.04 252);
-  --secondary: oklch(0.19 0.035 252);
-  --muted: oklch(0.19 0.035 252);
-  --accent: oklch(0.26 0.045 252);
-  --input: oklch(0.19 0.035 252);
-  --muted-foreground: oklch(0.7 0.035 245);
-  --secondary-foreground: oklch(0.84 0.025 245);
-  --pill-gradient: linear-gradient(180deg, oklch(0.3 0.045 252) 0%, oklch(0.24 0.04 252) 100%);
-  --pill-gradient-hover: linear-gradient(180deg, oklch(0.33 0.05 252) 0%, oklch(0.26 0.045 252) 100%);
-}
-:root {
+  --background: oklch(0.2 0.028 252);
+  --foreground: oklch(0.9 0.015 245);
+  --card: oklch(0.235 0.03 252);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.27 0.033 252);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.31 0.035 252);
+  --primary-foreground: var(--foreground);
+  --secondary: oklch(0.235 0.03 252);
+  --secondary-foreground: oklch(0.8 0.02 245);
+  --muted: oklch(0.235 0.03 252);
+  --muted-foreground: oklch(0.69 0.03 245);
+  --accent: oklch(0.3 0.035 252);
+  --accent-foreground: var(--foreground);
+  --input: oklch(0.21 0.028 252);
+  --border: oklch(1 0 0 / 0.075);
+  --pill-gradient: linear-gradient(180deg, oklch(0.33 0.04 252) 0%, oklch(0.28 0.036 252) 100%);
+  --pill-gradient-hover: linear-gradient(180deg, oklch(0.36 0.045 252) 0%, oklch(0.3 0.04 252) 100%);
+
   /* Data: the away team is red, the home team periwinkle. */
   --home: oklch(0.8 0.09 265);
   --away: oklch(0.72 0.17 30);
@@ -261,24 +269,86 @@ html.dark {
   --bad: oklch(0.66 0.19 25);
   --warn: oklch(0.8 0.13 80);
   /* The accent: ice cyan, and the text that sits on it */
-  --brand: oklch(0.86 0.11 205);
-  --brand-dim: oklch(0.66 0.11 215);
-  --brand-gradient: linear-gradient(180deg, oklch(0.95 0.05 200) 0%, oklch(0.74 0.13 218) 100%);
-  --brand-ink: oklch(0.18 0.05 250);
+  --brand: oklch(0.8 0.09 210);
+  --brand-dim: oklch(0.64 0.09 215);
+  --brand-gradient: linear-gradient(180deg, oklch(0.92 0.05 205) 0%, oklch(0.72 0.11 218) 100%);
+  --brand-ink: oklch(0.2 0.04 250);
   /* A recessed well a shade below the card */
-  --well: oklch(0.17 0.032 252);
+  --well: oklch(0.21 0.028 252);
+  /* The masthead, one flat step above the page */
+  --bar: oklch(0.225 0.03 252);
+  /* Drop shadows and scroll hints */
+  --shade: oklch(0 0 0 / 0.5);
   /* The rink on dark ice */
-  --ice: oklch(0.22 0.035 248);
+  --ice: oklch(0.26 0.032 248);
   --paint: oklch(1 0 0 / 0.16);
   --rink-blue: oklch(0.62 0.12 250);
   --rink-red: oklch(0.6 0.17 25);
   --board: oklch(1 0 0 / 0.22);
   --ring-goal: oklch(1 0 0);
   --grid: oklch(1 0 0 / 0.14);
-  /* The masthead's tint and the headline's fade */
-  --mast-top: oklch(0.2 0.05 250);
-  --mast-bottom: oklch(0.14 0.03 252);
   color-scheme: dark;
+}
+html.light {
+  --background: oklch(0.955 0.002 260);
+  --foreground: oklch(0.28 0.01 260);
+  --card: oklch(0.99 0 0);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.995 0 0);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.88 0.006 260);
+  --primary-foreground: var(--foreground);
+  --secondary: oklch(0.99 0 0);
+  --secondary-foreground: oklch(0.4 0.01 260);
+  --muted: oklch(0.935 0.003 260);
+  --muted-foreground: oklch(0.5 0.01 260);
+  --accent: oklch(0.93 0.004 260);
+  --accent-foreground: var(--foreground);
+  --input: oklch(0.935 0.003 260);
+  --border: oklch(0.25 0.01 260 / 0.11);
+  --ring: oklch(0.25 0.01 260 / 0.3);
+  --pill-gradient: oklch(1 0 0);
+  --pill-gradient-hover: oklch(1 0 0);
+  --text-shadow-pressed: none;
+  --shadow-pill: 0 0 0 0.0313rem oklch(0 0 0 / 0.1), 0 0.0625rem 0.125rem oklch(0 0 0 / 0.08), 0 0.125rem 0.375rem oklch(0 0 0 / 0.05);
+  --shadow-pill-hover: 0 0 0 0.0313rem oklch(0 0 0 / 0.14), 0 0.0625rem 0.1875rem oklch(0 0 0 / 0.1), 0 0.25rem 0.75rem oklch(0 0 0 / 0.07);
+  --shadow-xs: 0 0.0625rem 0.0625rem oklch(0 0 0 / 0.06);
+  --shadow-sm: 0 0 0 0.0313rem oklch(0 0 0 / 0.08), 0 0.0625rem 0.125rem oklch(0 0 0 / 0.07);
+  --shadow-md: 0 0 0 0.0313rem oklch(0 0 0 / 0.09), 0 0.125rem 0.25rem oklch(0 0 0 / 0.07), 0 0.25rem 0.75rem oklch(0 0 0 / 0.05);
+  --shadow-lg: 0 0 0 0.0313rem oklch(0 0 0 / 0.1), 0 0.375rem 0.75rem oklch(0 0 0 / 0.08), 0 0.75rem 1.5rem oklch(0 0 0 / 0.06);
+  --shadow-xl: 0 0 0 0.0313rem oklch(0 0 0 / 0.1), 0 0.75rem 1.5rem oklch(0 0 0 / 0.1), 0 1.5rem 3rem oklch(0 0 0 / 0.08);
+  --shadow-inset: inset 0 0.0625rem 0.125rem oklch(0 0 0 / 0.09);
+  --shadow-inset-deep: inset 0 0.0625rem 0.1875rem oklch(0 0 0 / 0.13);
+
+  --home: oklch(0.5 0.13 265);
+  --away: oklch(0.56 0.18 30);
+  --good: oklch(0.52 0.14 150);
+  --bad: oklch(0.55 0.19 25);
+  --warn: oklch(0.6 0.13 75);
+  --brand: oklch(0.55 0.1 215);
+  --brand-dim: oklch(0.62 0.08 215);
+  --brand-gradient: linear-gradient(oklch(0.55 0.1 215), oklch(0.55 0.1 215));
+  --brand-ink: oklch(1 0 0);
+  --well: oklch(0.935 0.003 260);
+  --bar: oklch(0.975 0.002 260);
+  --shade: oklch(0.25 0.01 260 / 0.16);
+  /* The rink on white ice */
+  --ice: oklch(0.975 0.004 240);
+  --paint: oklch(0.3 0.02 252 / 0.16);
+  --rink-blue: oklch(0.55 0.13 250);
+  --rink-red: oklch(0.56 0.18 25);
+  --board: oklch(0.3 0.02 252 / 0.32);
+  --ring-goal: oklch(0.25 0.02 252);
+  --grid: oklch(0.3 0.02 252 / 0.12);
+  color-scheme: light;
+}
+/* A game's team colours (lib/team-colors.ts) are lifted to read on dark ice;
+   on white they are pulled down to a readable lightness. gameColors() sets
+   --away-c/--home-c inline, so match on that. */
+[style*="--away-c"] { --away: var(--away-c); --home: var(--home-c); }
+html.light [style*="--away-c"] {
+  --away: oklch(from var(--away-c) min(l, 0.58) c h);
+  --home: oklch(from var(--home-c) min(l, 0.58) c h);
 }
 
 @layer base {
@@ -291,7 +361,7 @@ html.dark {
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.005em;
   }
   ::selection {
     background-color: var(--primary);
@@ -308,12 +378,7 @@ html.dark {
   .text-pressed { text-shadow: var(--text-shadow-pressed); }
   .well { background: var(--well); box-shadow: var(--shadow-inset); }
   .pill { background: var(--pill-gradient); box-shadow: var(--shadow-pill); }
-  .brand-text {
-    background: var(--brand-gradient);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
+  .brand-text { color: var(--brand); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -327,23 +392,19 @@ html.dark {
  */
 @keyframes ring { 0% { stroke-width: 2.4; opacity: .3 } 100% { stroke-width: .9; opacity: 1 } }
 
-.slot-mast {
-  position: relative;
-  background: linear-gradient(180deg, var(--mast-top) 0%, var(--mast-bottom) 100%);
-  box-shadow: inset 0 -1px 0 oklch(1 0 0 / 0.06), 0 1px 0 oklch(0 0 0 / 0.6);
-}
-.slot-mast::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
-  background: linear-gradient(90deg, transparent, var(--brand-dim) 30%, var(--brand) 50%, var(--brand-dim) 70%, transparent);
-}
-.slot-nav a[aria-current="page"] { background: var(--brand-gradient); color: var(--brand-ink); text-shadow: none; }
+/* The masthead: flat, one step above the page, a hairline underneath.
+   Logo left, sections centred, season and theme right. */
+.slot-mast { background: var(--bar); box-shadow: inset 0 -1px 0 var(--border); }
+/* Section tabs: plain text, the current one underlined in cyan. */
+.slot-nav a[aria-current="page"], .slot-tabs [data-state="on"] { color: var(--foreground); box-shadow: inset 0 -2px 0 var(--brand); }
 
 .slot-headline { color: var(--foreground); }
 
 .slot-plate { position: relative; isolation: isolate; box-shadow: var(--shadow-md), 0 0 0 1px color-mix(in oklch, var(--brand) 35%, transparent); }
 
 /* Star medals: cyan for the first star, then silver and bronze. */
-.slot-headline, .brand-text { text-transform: uppercase; letter-spacing: 0.01em; }
+.slot-headline, .brand-text { text-transform: uppercase; letter-spacing: 0.02em; }
+.slot-headline { font-weight: 800; letter-spacing: 0.03em; }
 .slot-medal { background: linear-gradient(180deg, oklch(0.85 0 0), oklch(0.6 0 0)); color: oklch(0.2 0 0); box-shadow: var(--shadow-pill); }
 .slot-medal-1 { background: var(--brand-gradient); color: var(--brand-ink); box-shadow: var(--shadow-pill); }
 .slot-medal-3 { background: linear-gradient(180deg, oklch(0.72 0.1 55), oklch(0.5 0.09 45)); color: oklch(0.18 0.02 50); }
@@ -356,7 +417,7 @@ html.dark {
 .fk-table thead th, .fk-table tbody tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
 .fk-table tbody tr { transition: background-color 150ms var(--ease-out); }
 /* The playoff line in the wild-card standings. */
-.fk-table tbody tr.cut td { border-bottom: 2px solid oklch(1 0 0 / 0.2); }
+.fk-table tbody tr.cut td { border-bottom: 2px solid color-mix(in oklch, var(--foreground) 22%, transparent); }
 /* Alternate rows a shade lighter so a long row is easy to follow. */
 .fk-table tbody tr:nth-child(even) { background: color-mix(in oklch, var(--foreground) 3.5%, transparent); }
 .fk-table tbody tr:hover { background: color-mix(in oklch, var(--accent) 30%, transparent); }
@@ -374,7 +435,7 @@ html.dark {
 div:has(> table.fk-table) {
   background:
     linear-gradient(to left, var(--card) 40%, transparent) right / 48px 100% no-repeat local,
-    radial-gradient(farthest-side at 100% 50%, oklch(0 0 0 / 0.55), transparent) right / 14px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, var(--shade), transparent) right / 14px 100% no-repeat scroll,
     var(--card);
 }
 
@@ -391,3 +452,38 @@ div:has(> table.fk-table) {
 .pshot { fill: var(--brand-dim); fill-opacity: 0.18; stroke: var(--brand-dim); stroke-width: 0.45; }
 .pshot.g { fill: var(--brand); fill-opacity: 0.95; stroke: var(--ring-goal); stroke-width: 0.9; }
 .pshot:hover { stroke: var(--foreground); stroke-width: 1; }
+
+/* The site's dropdowns (components/site/dropdown.tsx). At rest only text and
+   a chevron; a faint fill on hover and while open. The list is a card with a
+   team-colour bar per option where the picker has them. */
+.hs-dd { position: relative; }
+.hs-dd-btn {
+  display: inline-flex; align-items: center; gap: 0.5rem; height: 2.25rem; padding: 0 0.5rem 0 0.625rem;
+  border-radius: 0.5rem; font-size: 0.875rem; color: var(--foreground); white-space: nowrap; cursor: pointer;
+  transition: background-color 150ms var(--ease-out);
+}
+.hs-dd-btn:hover, .hs-dd[data-open] .hs-dd-btn { background: color-mix(in oklch, var(--foreground) 7%, transparent); }
+.hs-dd-chev { width: 0.875rem; height: 0.875rem; color: var(--muted-foreground); transition: transform 150ms var(--ease-out); flex: none; }
+.hs-dd[data-open] .hs-dd-chev { transform: rotate(180deg); }
+.hs-dd-dot { width: 0.625rem; height: 0.625rem; border-radius: 0.1875rem; background: var(--sw); flex: none; }
+.hs-dd-dot[data-none] { background: none; box-shadow: inset 0 0 0 1px var(--muted-foreground); }
+.hs-dd-list {
+  position: absolute; z-index: 50; top: calc(100% + 0.375rem); left: 0; min-width: 100%; width: max-content; max-width: min(20rem, 88vw);
+  max-height: 18rem; overflow-y: auto; padding: 0.25rem; outline: none;
+  background: var(--card); color: var(--foreground); font-size: 0.875rem;
+  border: 1px solid color-mix(in oklch, var(--foreground) 16%, transparent); border-radius: 0.5625rem;
+  box-shadow: 0 0.625rem 1.5rem var(--shade);
+}
+.hs-dd-list[data-align="end"] { left: auto; right: 0; }
+.hs-dd-list li { display: flex; align-items: center; gap: 0.5625rem; padding: 0.4375rem 0.625rem; border-radius: 0.375rem; cursor: pointer; }
+.hs-dd-list li[data-active] { background: color-mix(in oklch, var(--foreground) 9%, transparent); }
+.hs-dd-bar { width: 0.25rem; height: 1.125rem; border-radius: 0.125rem; background: var(--sw, transparent); flex: none; }
+.hs-dd-tag { min-width: 2.6em; font-weight: 600; font-variant-numeric: tabular-nums; }
+.hs-dd-check { width: 0.875rem; height: 0.875rem; margin-left: auto; padding-left: 0.5rem; box-sizing: content-box; color: var(--brand); visibility: hidden; flex: none; }
+.hs-dd-list li[aria-selected="true"] .hs-dd-check { visibility: visible; }
+/* Team colours are lifted for dark ice; pull them down on white. */
+html.light .hs-dd-dot, html.light .hs-dd-bar { background: oklch(from var(--sw) min(l, 0.62) c h); }
+html.light .hs-dd-dot[data-none] { background: none; }
+
+/* Team logos (components/site/team-logo.tsx): one version per theme. */
+html.dark .logo-light, html.light .logo-dark { display: none; }
