@@ -9,3 +9,5 @@ rm -rf data && mkdir -p data
 # git archive only exports the current subdirectory, so run it from the root.
 (cd "$(git rev-parse --show-toplevel)" && git archive FETCH_HEAD) | tar -x -C data
 echo "data/: seasons $(cat data/seasons.json)"
+# Tonight's slate for the home page strip; never fails the fetch.
+node scripts/fetch-tonight.mjs || true

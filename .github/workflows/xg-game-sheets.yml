@@ -127,10 +127,41 @@ jobs:
           git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" xg-sheets-data
           echo "Published seasons: $(cat seasons.json)"
 
+      # The home page's "Tonight" strip is fetched at deploy time
+      # (fortknox/scripts/fetch-tonight.mjs), so redeploy when the slate
+      # changes even with no new sheets: a new day, a puck drop, a final. The
+      # last slate seen is kept in the cache; an NHL API error changes nothing.
+      - name: Restore last slate
+        uses: actions/cache/restore@v4
+        with:
+          path: .slate
+          key: tonight-slate-${{ github.run_id }}
+          restore-keys: tonight-slate-
+
+      - name: Check tonight's slate
+        id: slate
+        run: |
+          now=$(node fortknox/scripts/fetch-tonight.mjs --sig 2>/dev/null || true)
+          last=$(cat .slate/sig 2>/dev/null || true)
+          echo "Slate: ${now:-unavailable}"
+          if [ -n "$now" ] && [ "$now" != "$last" ]; then
+            mkdir -p .slate && echo "$now" > .slate/sig
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Save slate
+        if: steps.slate.outputs.changed == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .slate
+          key: tonight-slate-${{ github.run_id }}
+
       # A push made with GITHUB_TOKEN doesn't trigger other workflows, but a
       # workflow_dispatch does.
       - name: Redeploy High Slot
-        if: steps.fetch.outputs.changed == 'true'
+        if: steps.fetch.outputs.changed == 'true' || steps.slate.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run fortknox-deploy.yml --ref main

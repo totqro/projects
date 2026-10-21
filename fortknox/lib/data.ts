@@ -1,7 +1,7 @@
 import "server-only";
 import fs from "node:fs";
 import path from "node:path";
-import type { GamePlayer, LinesFile, PlayersFile, RawSheet, SeasonIndex, Sheet, Shot, TeamsFile } from "./types";
+import type { GamePlayer, LinesFile, PlayersFile, RawSheet, SeasonIndex, Sheet, Shot, TeamsFile, Tonight } from "./types";
 import { unpack } from "./unpack";
 
 // Build-time access to the published sheets in data/ (scripts/fetch-data.sh).
@@ -26,6 +26,10 @@ export const teamsFile = (s: number) => read<TeamsFile>(`${s}/teams.json`);
 export const playersFile = (s: number) => read<PlayersFile>(`${s}/players.json`);
 /** Lines, pairs and WOWY; null for seasons published before lines.json existed. */
 export const linesFile = (s: number) => (fs.existsSync(path.join(ROOT, `${s}/lines.json`)) ? read<LinesFile>(`${s}/lines.json`) : null);
+
+/** Tonight's slate (scripts/fetch-tonight.mjs), or null when the fetch
+ *  was skipped. */
+export const tonight = () => (fs.existsSync(path.join(ROOT, "tonight.json")) ? read<Tonight>("tonight.json") : null);
 
 /** NHL game ids start with the season's start year. */
 export const seasonOfGame = (id: number | string) => +String(id).slice(0, 4);
