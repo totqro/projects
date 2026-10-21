@@ -349,8 +349,14 @@ html.dark {
 .slot-medal-3 { background: linear-gradient(180deg, oklch(0.72 0.1 55), oklch(0.5 0.09 45)); color: oklch(0.18 0.02 50); }
 
 /* Dense data tables (SortTable): the DS TableRow/TableCell look, set once. */
-.fk-table tbody tr { border-bottom: 1px solid var(--border); transition: background-color 150ms var(--ease-out); }
-.fk-table tbody tr:last-child { border-bottom: 0; }
+/* Borders on the cells, not the rows (separate, not collapsed), so the pinned
+   column's background can't cover a row's line or shift it half a pixel. */
+.fk-table { border-collapse: separate; border-spacing: 0; }
+.fk-table thead tr { border-bottom: 0; }
+.fk-table thead th, .fk-table tbody tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
+.fk-table tbody tr { transition: background-color 150ms var(--ease-out); }
+/* The playoff line in the wild-card standings. */
+.fk-table tbody tr.cut td { border-bottom: 2px solid oklch(1 0 0 / 0.2); }
 /* Alternate rows a shade lighter so a long row is easy to follow. */
 .fk-table tbody tr:nth-child(even) { background: color-mix(in oklch, var(--foreground) 3.5%, transparent); }
 .fk-table tbody tr:hover { background: color-mix(in oklch, var(--accent) 30%, transparent); }
@@ -361,8 +367,6 @@ html.dark {
    background repeats the row's tint over the card so nothing shows through. */
 .fk-table .pin { position: sticky; left: 0; z-index: 1; background: var(--card); box-shadow: inset -1px 0 var(--border); }
 /* The row's stripe laid over the card, so the pinned cell composites exactly like the cells beside it. */
-/* Its background hides the row's bottom border, so it draws its own. */
-.fk-table tbody tr:not(:last-child) td.pin { box-shadow: inset -1px 0 var(--border), inset 0 -1px var(--border); }
 .fk-table tbody tr:nth-child(even) td.pin { background: linear-gradient(color-mix(in oklch, var(--foreground) 3.5%, transparent)), var(--card); }
 .fk-table tbody tr:hover td.pin { background: color-mix(in oklch, var(--accent) 30%, var(--card)); }
 .fk-table tbody tr[data-state="selected"] td.pin { background: color-mix(in oklch, var(--accent) 60%, var(--card)); }
