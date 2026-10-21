@@ -41,6 +41,11 @@ function setPicked(s: number) {
 }
 const subscribe = (f: () => void) => (listeners.add(f), () => { listeners.delete(f); });
 
+/** The season last picked in the nav, for pages without one in the path (a
+ *  player page shows that season). Null until something is picked. */
+export const usePickedSeason = () => useSyncExternalStore(subscribe, readPicked, () => null);
+export { setPicked as pickSeason };
+
 /** The season the nav should show: the page's own, else the last one picked. */
 function useSeason(current: number) {
   const path = usePathname() ?? "/";
@@ -79,8 +84,8 @@ export function SeasonSelect({ seasons, current }: { seasons: number[]; current:
   const router = useRouter();
   const { path, season, own } = useSeason(current);
   const go = (s: number) => {
-    // Pages without a season (the model, a player) stay put; the pick carries
-    // to the next section opened.
+    // Pages without a season stay put: a player page switches to the pick,
+    // and it carries to the next section opened.
     if (own == null) return setPicked(s);
     if (path.startsWith("/teams")) return router.push(`/teams/${s}`);
     if (path.startsWith("/players")) return router.push(`/players/${s}`);

@@ -7,7 +7,6 @@ import { currentSeason, seasons } from "@/lib/data";
 import { Wordmark } from "@/components/site/logo";
 import { SeasonSelect, SiteNav } from "@/components/site/nav";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { introScript } from "@/lib/intro";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://highslot.web.app"),
@@ -26,9 +25,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   const cur = currentSeason();
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: introScript }} />
-      </head>
       <body className="min-h-dvh">
         <TooltipProvider delayDuration={150}>
           <header className="slot-mast">
