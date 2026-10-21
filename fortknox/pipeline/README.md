@@ -29,8 +29,15 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 ```
 
 ```bash
-.venv/bin/python nhl_sheets.py                    # game sheets + team/player tables -> ../data/
+.venv/bin/python nhl_sheets.py                    # game sheets + team/player/lines tables -> ../data/
 ```
+
+**Lines.** `src/data/nhl_units.py` rebuilds which five skaters each team had
+on the ice for every 5v5 second, and `nhl_sheets.py` adds up time, xG, goals
+and attempts for every forward trio, defence pair and pair of teammates
+(`lines.json`), plus each skater's team numbers with him on the bench (the
+`*_off` keys in `players.json`). Units with under a minute together are
+dropped.
 
 **Data.** Play-by-play and shift charts for every final regular-season and
 playoff game since 2015-16. When the shift-chart API has nothing for a game

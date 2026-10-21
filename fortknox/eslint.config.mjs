@@ -23,6 +23,8 @@ const eslintConfig = [
       "components/ui/**",
       ".better-design/**",
       "data/**",
+      // The Python scoring pipeline, with its venv and raw-feed cache.
+      "pipeline/**",
     ],
   },
 ];

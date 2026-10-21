@@ -104,6 +104,13 @@ export interface SkaterSeason {
   xgf60_5: number | null;
   xga60_5: number | null;
   ixg60_5: number | null;
+  /** His teams' 5v5 numbers in his games with him on the bench. Missing
+   *  from seasons built before October 2026. */
+  toi5_off?: number;
+  xgf5_off?: number;
+  xga5_off?: number;
+  gf5_off?: number;
+  ga5_off?: number;
 }
 
 export interface GoalieSeason {
@@ -121,6 +128,28 @@ export interface GoalieSeason {
   sv_pct: number | null;
   xsv_pct: number | null;
   gsax60: number | null;
+}
+
+/** A group of teammates at 5v5: [ids, toi (s), xgf, xga, gf, ga, cf, ca]. */
+export type UnitRow = [ids: number[], toi: number, xgf: number, xga: number, gf: number, ga: number, cf: number, ca: number];
+
+/** One team's 5v5 units for a season phase (lines.json). */
+export interface TeamUnits {
+  /** id to [name, position] */
+  players: Record<string, [string, string]>;
+  /** each skater's own totals with this team */
+  solo: UnitRow[];
+  fwd: UnitRow[];
+  def: UnitRow[];
+  /** every pair of teammates, for with-or-without-you */
+  pairs: UnitRow[];
+}
+
+export interface LinesFile {
+  season: string;
+  updated: string;
+  regular: Record<string, TeamUnits>;
+  playoff: Record<string, TeamUnits>;
 }
 
 export interface PlayersFile {

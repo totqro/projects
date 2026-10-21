@@ -4,7 +4,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { ORD, toi } from "@/lib/format";
 import { bestChances, lastName, pname, scoring } from "@/lib/game";
-import { EVN, SHOT_TYPE, SIT } from "@/lib/teams";
+import { EVN, shotNoun, SIT } from "@/lib/teams";
 import type { RawSheet, Sheet, Shot } from "@/lib/types";
 import { unpack } from "@/lib/unpack";
 import { RinkMarks, shotRadius } from "@/components/charts/rink";
@@ -42,7 +42,7 @@ function ShotDetail({ G, s }: { G: Sheet; s: Shot }) {
   return (
     <div className="leading-relaxed">
       <div><b className="font-semibold">{pname(G, s.shooter)}</b> <span className={sideClass(G, s.team)}>{s.team}</span></div>
-      <div>{EVN[s.ev]}, {(SHOT_TYPE[s.type] ?? s.type).toLowerCase()}{s.ev === "SHOT" && s.goalie ? ` (${lastName(G, s.goalie)})` : ""}</div>
+      <div>{EVN[s.ev]}, {shotNoun(s.type)}{s.ev === "SHOT" && s.goalie ? ` (${lastName(G, s.goalie)})` : ""}</div>
       <div>xG <b className="tabular font-semibold">{s.xg.toFixed(3)}</b>, {SIT[s.sit] ?? s.sit}</div>
       <div className="text-muted-foreground">{ORD(s.p)} {toi(s.t)}{reb}{s.rush ? " · rush" : ""}</div>
     </div>
@@ -60,7 +60,7 @@ export function ShotMap() {
   const ordered = sel == null ? shots : [...shots.filter(s => s.i !== sel), ...shots.filter(s => s.i === sel)];
   const place = (s: Shot) => {
     const home = s.team === H;
-    return { x: home ? s.x : -s.x, y: home ? -s.y : s.y, col: home ? "var(--home)" : "var(--away)" };
+    return { x: home ? s.x : -s.x, y: home ? -s.y : s.y, col: home ? "var(--home)" : "var(--away)", side: home ? "h" : "a" };
   };
   const selShot = sel != null ? G.shots[sel] : null;
   return (
@@ -73,7 +73,7 @@ export function ShotMap() {
         <svg ref={mapRef} viewBox="-102 -45 204 90" role="img" aria-label="Shot map" className="block h-auto w-full">
           <RinkMarks />
           {ordered.map(s => {
-            const { x, y, col } = place(s);
+            const { x, y, col, side } = place(s);
             if (s.ev === "BLOCK") {
               return (
                 <g key={s.i} stroke={col} strokeWidth={0.6} opacity={0.55}>
@@ -83,12 +83,11 @@ export function ShotMap() {
               );
             }
             const goal = s.ev === "GOAL", on = sel === s.i;
+            // Styling lives in globals.css (.shot): a hundred circles with
+            // inline paint attributes were a big share of each game page.
             return (
               <circle key={s.i} cx={x.toFixed(1)} cy={y.toFixed(1)} r={shotRadius(s.xg).toFixed(2)}
-                fill={col} fillOpacity={goal ? 0.95 : 0.4}
-                stroke={on ? "var(--foreground)" : goal ? "var(--ring-goal)" : col} strokeWidth={on ? 1.4 : goal ? 1.2 : 0.5}
-                opacity={sel != null && !on ? 0.12 : 1}
-                className="cursor-pointer transition-opacity"
+                className={cn("shot", side, goal && "g", on && "on", sel != null && !on && "dim")}
                 onMouseMove={e => setHover({ s, x: e.clientX, y: e.clientY })}
                 onMouseLeave={() => setHover(null)}
                 onClick={() => pick(s.i)} />
@@ -188,7 +187,7 @@ export function Scoring() {
             <TableCell className={cn(cell, "whitespace-normal")}>
               <span className={sideClass(G, s.team)}>{s.team}</span> <b className="font-semibold">{pname(G, s.shooter)}</b>
               <div className="text-xs text-muted-foreground">
-                {assists.length ? assists.join(", ") : "Unassisted"}; {SIT[s.sit] ?? s.sit}{s.reb !== "NONE" ? ", rebound" : ""}, {(SHOT_TYPE[s.type] ?? "").toLowerCase()}
+                {assists.length ? assists.join(", ") : "Unassisted"}; {SIT[s.sit] ?? s.sit}{s.reb !== "NONE" ? ", rebound" : ""}, {shotNoun(s.type)}
               </div>
             </TableCell>
             <TableCell className={cn(cell, "text-right")}>{s.xg.toFixed(2)}</TableCell>

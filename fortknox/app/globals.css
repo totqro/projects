@@ -357,3 +357,33 @@ html.dark {
 .fk-table tbody tr[data-state="selected"] { background: color-mix(in oklch, var(--accent) 60%, transparent); }
 .fk-table td { padding: 0.5rem 0.625rem; white-space: nowrap; text-align: right; vertical-align: middle; }
 .fk-table td.l { text-align: left; }
+/* The identity column stays put while a wide table scrolls sideways; its
+   background repeats the row's tint over the card so nothing shows through. */
+.fk-table .pin { position: sticky; left: 0; z-index: 1; background: var(--card); box-shadow: inset -1px 0 var(--border); }
+.fk-table tbody tr:nth-child(even) td.pin { background: color-mix(in oklch, var(--foreground) 3.5%, var(--card)); }
+.fk-table tbody tr:hover td.pin { background: color-mix(in oklch, var(--accent) 30%, var(--card)); }
+.fk-table tbody tr[data-state="selected"] td.pin { background: color-mix(in oklch, var(--accent) 60%, var(--card)); }
+/* A shadow on the right edge while there are more columns to scroll to. */
+div:has(> table.fk-table) {
+  background:
+    linear-gradient(to left, var(--card) 40%, transparent) right / 48px 100% no-repeat local,
+    radial-gradient(farthest-side at 100% 50%, oklch(0 0 0 / 0.55), transparent) right / 14px 100% no-repeat scroll,
+    var(--card);
+}
+
+/* The games-feed introduction, once closed (components/games/intro.tsx). */
+.no-intro .slot-intro { display: none; }
+
+/* Game shot map dots (components/game/shots.tsx): away red, home periwinkle,
+   goals filled and ringed, the picked shot outlined, the rest faded. */
+.shot { cursor: pointer; transition: opacity 150ms; fill-opacity: 0.4; stroke-width: 0.5; }
+.shot.a { fill: var(--away); stroke: var(--away); }
+.shot.h { fill: var(--home); stroke: var(--home); }
+.shot.g { fill-opacity: 0.95; stroke: var(--ring-goal); stroke-width: 1.2; }
+.shot.on { stroke: var(--foreground); stroke-width: 1.4; }
+.shot.dim { opacity: 0.12; }
+
+/* Player shot map (components/players/player-shots.tsx). */
+.pshot { fill: var(--brand-dim); fill-opacity: 0.18; stroke: var(--brand-dim); stroke-width: 0.45; }
+.pshot.g { fill: var(--brand); fill-opacity: 0.95; stroke: var(--ring-goal); stroke-width: 0.9; }
+.pshot:hover { stroke: var(--foreground); stroke-width: 1; }

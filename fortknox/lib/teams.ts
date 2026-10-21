@@ -31,9 +31,9 @@ export const SIT: Record<string, string> = {
   PP_4v3: "PP 4v3", SH_3v5: "SH 3v5", EN_AGAINST: "Empty net", EN_6v5_PULLED: "6v5 goalie pulled", EN_6v5_DELAYED_PEN: "6v5 delayed penalty",
 };
 export const EVN: Record<string, string> = { GOAL: "Goal", SHOT: "Saved", MISS: "Missed", BLOCK: "Blocked" };
-export const SHOT_TYPE: Record<string, string> = {
-  WRIST: "Wrist", SNAP: "Snap", SLAP: "Slap", BACK: "Backhand", TIP: "Tip-in", DEFL: "Deflection", WRAP: "Wrap-around", UNKNOWN: "Unknown",
-};
+/** The shot type as a noun for running text: "wrist shot", not "wrist". */
+export const shotNoun = (type: string) =>
+  ({ WRIST: "wrist shot", SNAP: "snap shot", SLAP: "slap shot", BACK: "backhand", TIP: "tip", DEFL: "deflection", WRAP: "wraparound" })[type] ?? "shot";
 
 /** Every column's hover explanation, shared by every table on the site. */
 export const TIPS: Record<string, string> = {
@@ -46,6 +46,7 @@ export const TIPS: Record<string, string> = {
   xga: "Expected goals against: the xG of every unblocked shot the other team took while he was on the ice.",
   xgs: "xG share: xGF / (xGF + xGA) while he was on the ice. Above 50% means his team out-chanced the opponent with him out there.",
   xgs5: "xG share at 5-on-5 only, which strips out power plays and penalty kills.",
+  rel: "Relative xG share at 5-on-5, in percentage points: his on-ice xG share minus his team's with him on the bench, in the games he played. Positive means the team out-chanced opponents more with him than without him.",
   gfOn: "Goals for: goals his team scored while he was on the ice.", gaOn: "Goals against: goals the other team scored while he was on the ice.",
   gs: "Goal share: GF / (GF + GA) while he was on the ice. The actual result next to xG share, which is the better guide to how he played.",
   gs5: "Goal share at 5-on-5 only.",
@@ -58,7 +59,7 @@ export const TIPS: Record<string, string> = {
   gsax: "Goals saved above expected (GSAx): xGA minus goals allowed. Positive means he stopped more than an average goalie would on the same shots.",
   gsax60: "GSAx per 60 minutes in net.", svp: "Save percentage on unblocked shots. Misses count as saves here, so it runs higher than the NHL's figure.",
   xsvp: "Expected save percentage: what an average goalie would stop on the same unblocked shots.",
-  rank: "Standings position, by points with the NHL's tiebreakers (points %, regulation wins, regulation + overtime wins, wins, goal differential).",
+  rank: "Standings position: by points (or points %, when that toggle is on), then the NHL's tiebreakers: regulation wins, regulation + overtime wins, wins, goal differential.",
   w: "Wins.", l: "Regulation losses.", otl: "Overtime and shootout losses (one point each).", pts: "Standings points: 2 for a win, 1 for an overtime or shootout loss.",
   ppct: "Points percentage: points / (2 x games played).", rw: "Regulation wins, the NHL's first standings tiebreaker.",
   row: "Regulation plus overtime wins (shootout wins excluded).", gf: "Goals for. A shootout win counts as one, as in the standings.",

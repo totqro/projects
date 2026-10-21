@@ -12,7 +12,8 @@ this one command. Writes, under --out/{season}/:
   index.json            every game: teams, score, xG, attempts
   games/{game_id}.json  one game: shots (compact rows) and a player table
   teams.json            season totals and 5v5 / PP / PK rates per team
-  players.json          skaters (individual and on-ice) and goalies (GSAx)
+  players.json          skaters (individual, on-ice and off-ice) and goalies (GSAx)
+  lines.json            5v5 forward lines, defence pairs and every pair of teammates
 
 and refreshes --out/seasons.json, the list of seasons present, newest first.
 
@@ -25,6 +26,7 @@ import gzip
 import json
 import sys
 from collections import defaultdict
+from itertools import combinations
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -37,6 +39,7 @@ import nhl_backfill  # noqa: E402
 from build_nhl_dataset import load_bios  # noqa: E402
 from src.data.nhl_events import game_shots  # noqa: E402
 from src.data.nhl_toi import STATES, game_toi  # noqa: E402
+from src.data.nhl_units import game_units  # noqa: E402
 
 MODEL_PATH = ROOT / "data" / "nhl_xg_model.joblib"
 CACHE = nhl_backfill.CACHE
@@ -92,13 +95,13 @@ def build(season, root, fetch):
     # Season tables are kept apart by game type: playoff games would
     # otherwise pad some teams' and players' totals and not others'.
     agg_of = lambda: defaultdict(lambda: defaultdict(float))
-    teams_by, skaters_by, goalies_by = ({"regular": agg_of(), "playoff": agg_of()} for _ in range(3))
+    teams_by, skaters_by, goalies_by, units_by = ({"regular": agg_of(), "playoff": agg_of()} for _ in range(4))
     info = {}
 
     for pbp, shifts, _ in games:
         gid = pbp["id"]
         phase = "playoff" if pbp.get("gameType") == 3 else "regular"
-        teams, skaters, goalies = teams_by[phase], skaters_by[phase], goalies_by[phase]
+        teams, skaters, goalies, units = teams_by[phase], skaters_by[phase], goalies_by[phase], units_by[phase]
         sh = by_game.get(gid, shots.iloc[0:0])
         home, away = pbp["homeTeam"], pbp["awayTeam"]
         ab = {home["id"]: home["abbrev"], away["id"]: away["abbrev"]}
@@ -150,6 +153,27 @@ def build(season, root, fetch):
             if t_toi:
                 t["toi_all"] += t_toi[tid]["all"]
 
+        # --- 5v5 units: lines, pairs, teammates ----------------------------------
+        pos_of = {pid: r["positionCode"] for pid, r in roster.items()}
+        for tid, ids, secs in game_units(pbp, shifts):
+            for key in unit_keys(ab[tid], ids, pos_of):
+                units[key]["toi"] += secs
+        ev5 = sh[sh.situation == "EV_5v5"]
+        for row in ev5.itertuples():
+            opp = away["abbrev"] if row.team == home["abbrev"] else home["abbrev"]
+            for ids, team, fa in ((row.shoot_on_ice, row.team, "f"), (row.def_on_ice, opp, "a")):
+                for key in unit_keys(team, [int(s) for s in (ids or "").split(",") if s], pos_of):
+                    u = units[key]
+                    u[f"xg{fa}"] += row.xg
+                    u[f"g{fa}"] += row.goal
+                    u[f"c{fa}"] += 1
+        # Each team's 5v5 totals for the game, for every player's off-ice numbers.
+        team5 = {}
+        for tid in (home["id"], away["id"]):
+            mine, theirs = ev5[ev5.team == ab[tid]], ev5[ev5.team != ab[tid]]
+            team5[tid] = {"toi5": t_toi[tid]["5v5"] if t_toi else 0, "xgf5": mine.xg.sum(), "xga5": theirs.xg.sum(),
+                          "gf5": mine.goal.sum(), "ga5": theirs.goal.sum()}
+
         # --- players -------------------------------------------------------------
         game_players = {}
         for pid, r in roster.items():
@@ -200,6 +224,9 @@ def build(season, root, fetch):
             agg["toi_gp"] += bool(toi)
             for k, v in gp.items():
                 agg[k] += v
+            if toi.get("5v5") and roster[pid]["teamId"] in team5:
+                for k, v in team5[roster[pid]["teamId"]].items():
+                    agg[f"tm_{k}"] += v
 
         def shot_row(r):
             return [int(r.period), int(r.time_seconds - (r.period - 1) * 1200), r.team, r.event,
@@ -226,12 +253,51 @@ def build(season, root, fetch):
         ph: {"skaters": [skater_row(pid, info[pid], v) for pid, v in skaters_by[ph].items()],
              "goalies": [goalie_row(pid, info[pid], v) for pid, v in goalies_by[ph].items() if v["sa"]]}
         for ph in skaters_by}})
+    write(out / "lines.json", {"season": season, "updated": stamp, **{
+        ph: lines_tables(units_by[ph], info) for ph in units_by}})
     seasons = sorted((int(p.name) for p in root.iterdir()
                       if p.is_dir() and p.name.isdigit() and (p / "index.json").exists()),
                      reverse=True)
     write(root / "seasons.json", {"seasons": seasons, "updated": stamp})
     print(f"{season}: {len(index)} games, {int(unblocked.sum()):,} unblocked shots, "
           f"xG {shots.xg.sum():.0f} vs {int(shots.goal.sum())} goals -> {out}")
+
+
+def unit_keys(team, ids, pos_of):
+    """The groups a set of on-ice skaters counts toward: each skater alone
+    ("S"), every pair of them ("P", for WOWY), the forward trio ("F") and
+    the defence pair ("D") when there are exactly three and two."""
+    ids = sorted(ids)
+    fwd = tuple(i for i in ids if pos_of.get(i) in ("C", "L", "R"))
+    dee = tuple(i for i in ids if pos_of.get(i) == "D")
+    keys = [(team, "S", (i,)) for i in ids] + [(team, "P", p) for p in combinations(ids, 2)]
+    if len(fwd) == 3:
+        keys.append((team, "F", fwd))
+    if len(dee) == 2:
+        keys.append((team, "D", dee))
+    return keys
+
+
+# Units with less 5v5 time together than this are left out of lines.json.
+MIN_UNIT_SECS = 60
+
+
+def lines_tables(units, info):
+    """lines.json for one phase: per team, its skaters' 5v5 totals with that
+    team ("solo"), forward lines, defence pairs and every pair of teammates
+    ("pairs"), each row [ids, toi, xgf, xga, gf, ga, cf, ca]."""
+    out = defaultdict(lambda: {"players": {}, "solo": [], "fwd": [], "def": [], "pairs": []})
+    name = {"S": "solo", "F": "fwd", "D": "def", "P": "pairs"}
+    for (team, kind, ids), u in sorted(units.items(), key=lambda kv: -kv[1]["toi"]):
+        if u["toi"] < MIN_UNIT_SECS and kind != "S":
+            continue
+        t = out[team]
+        for i in ids:
+            if i not in t["players"] and i in info:
+                t["players"][i] = [info[i]["name"], info[i]["pos"]]
+        t[name[kind]].append([list(ids), int(u["toi"]), r1(u["xgf"]), r1(u["xga"]), int(u["gf"]), int(u["ga"]),
+                              int(u["cf"]), int(u["ca"])])
+    return {k: out[k] for k in sorted(out)}
 
 
 def nhl_team_name(t):
@@ -273,7 +339,11 @@ def skater_row(pid, info, v):
             "xgf": r1(v["xgf"]), "xga": r1(v["xga"]), "gf": int(v["gf"]), "ga": int(v["ga"]),
             "xgf_pct": pct(v["xgf"], v["xga"]),
             "xgf60_5": per60(v["xgf5"], toi5), "xga60_5": per60(v["xga5"], toi5),
-            "ixg60_5": per60(v["ixg5"], toi5)}
+            "ixg60_5": per60(v["ixg5"], toi5),
+            # His teams' 5v5 numbers in his games while he was on the bench.
+            "toi5_off": int(v["tm_toi5"] - toi5), "xgf5_off": r1(v["tm_xgf5"] - v["xgf5"]),
+            "xga5_off": r1(v["tm_xga5"] - v["xga5"]), "gf5_off": int(v["tm_gf5"] - v["gf5"]),
+            "ga5_off": int(v["tm_ga5"] - v["ga5"])}
 
 
 def goalie_row(pid, info, v):

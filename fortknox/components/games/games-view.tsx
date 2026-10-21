@@ -71,22 +71,39 @@ const SORTS: Record<Sort, (a: GameSummary, b: GameSummary) => number> = {
   stole: (a, b) => winXg(a) - winXg(b),
 };
 
-export function GamesView({ games, teams, updated }: { games: GameSummary[]; teams: string[]; updated: string }) {
+export function GamesView({ season, recent, total, dates, hasPlayoffs, teams, updated }: {
+  season: number; recent: GameSummary[]; total: number; dates: string[]; hasPlayoffs: boolean; teams: string[]; updated: string;
+}) {
   const [team, setTeam] = React.useState("");
   const [type, setType] = React.useState("all");
   const [sort, setSort] = React.useState<Sort>("date");
-  const [shown, setShown] = React.useState(60);
-  const reset = <T,>(f: (v: T) => void) => (v: T) => { f(v); setShown(60); };
+  const [date, setDate] = React.useState("");
+  const [shown, setShown] = React.useState(recent.length);
+  const [all, setAll] = React.useState<GameSummary[] | null>(null);
+  const [failed, setFailed] = React.useState(false);
+  const reset = <T,>(f: (v: T) => void) => (v: T) => { f(v); setShown(recent.length); };
+
+  // The pre-rendered nights cover the default view; anything else needs the
+  // whole season (app/data/[season]/games.json).
+  const needAll = !!team || type !== "all" || sort !== "date" || !!date || shown > recent.length;
+  React.useEffect(() => {
+    if (!needAll || all) return;
+    fetch(`/data/${season}/games.json`).then(r => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then(setAll).catch(() => setFailed(true));
+  }, [needAll, all, season]);
+  const games = all ?? recent;
+  const loading = needAll && !all && !failed;
 
   const list = React.useMemo(() => {
     let g = games.slice();
     if (team) g = g.filter(x => x.home === team || x.away === team);
     if (type !== "all") g = g.filter(x => x.type === (type === "playoff" ? 3 : 2));
+    if (date) g = g.filter(x => x.date === date);
     return g.sort(SORTS[sort]);
-  }, [games, team, type, sort]);
+  }, [games, team, type, sort, date]);
   const visible = list.slice(0, shown);
   const groups = sort === "date" ? byDate(visible) : [{ date: null as string | null, games: visible }];
-  const hasPlayoffs = games.some(g => g.type === 3);
+  const count = all || !needAll ? (needAll ? list.length : total) : null;
 
   return (
     <>
@@ -96,9 +113,10 @@ export function GamesView({ games, teams, updated }: { games: GameSummary[]; tea
           <SelectField label="Games" value={type} onChange={reset(setType)}
             options={[["all", "All"], ["regular", "Regular season"], ["playoff", "Playoffs"]]} />
         )}
+        <SelectField label="Date" value={date} onChange={reset(setDate)} options={[["", "All dates"], ...dates.map(d => [d, fmtDate(d)] as [string, string])]} />
         <SelectField label="Sort" value={sort} onChange={reset(v => setSort(v as Sort))}
           options={[["date", "Newest"], ["lopsided", "Most lopsided xG"], ["total", "Most total xG"], ["stole", "−xG wins"]]} />
-        <span className="pb-2 text-sm text-muted-foreground">{list.length} games</span>
+        <span className="pb-2 text-sm text-muted-foreground" aria-live="polite">{loading ? "Loading…" : count != null ? `${count} games` : ""}</span>
         <span className="ml-auto pb-2 text-xs text-muted-foreground">{updated}</span>
       </div>
       {groups.map(d => (
@@ -109,7 +127,10 @@ export function GamesView({ games, teams, updated }: { games: GameSummary[]; tea
           </div>
         </section>
       ))}
-      {list.length > shown && <Button variant="secondary" onClick={() => setShown(s => s + 120)}>Show more</Button>}
+      {failed && <Note className="mb-4">Couldn&apos;t load the rest of the season. Reload the page to try again.</Note>}
+      {(all ? list.length > shown : !needAll && total > recent.length) && (
+        <Button variant="secondary" onClick={() => setShown(s => s + 60)}>Show more</Button>
+      )}
       <Note className="mt-4">G goals, xG expected goals, SOG shots on goal. A −xG win is a win with fewer expected goals than the other team.</Note>
     </>
   );

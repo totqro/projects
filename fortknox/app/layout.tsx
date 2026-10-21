@@ -7,6 +7,7 @@ import { currentSeason, seasons } from "@/lib/data";
 import { Wordmark } from "@/components/site/logo";
 import { SeasonSelect, SiteNav } from "@/components/site/nav";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { introScript } from "@/lib/intro";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://highslot.web.app"),
@@ -24,7 +25,10 @@ export const viewport: Viewport = { themeColor: "#030c17", colorScheme: "dark" }
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const cur = currentSeason();
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: introScript }} />
+      </head>
       <body className="min-h-dvh">
         <TooltipProvider delayDuration={150}>
           <header className="slot-mast">
@@ -39,8 +43,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </div>
           </header>
           <main className="mx-auto max-w-[1180px] px-4 pb-16 pt-6">{children}</main>
-          <footer className="mx-auto max-w-[1180px] px-4 pb-10 text-xs text-muted-foreground">
-            Data from the NHL&apos;s public play-by-play and shift charts, scored after every game.
+          <footer className="mx-auto flex max-w-[1180px] flex-wrap justify-between gap-x-6 gap-y-2 px-4 pb-10 text-xs text-muted-foreground">
+            <span>Data from the NHL&apos;s public play-by-play and shift charts, scored after every game. Not affiliated with the NHL.</span>
+            <nav aria-label="Site" className="flex gap-4">
+              <Link href="/about" className="hover:text-foreground">About</Link>
+              <Link href="/about#glossary" className="hover:text-foreground">Glossary</Link>
+              <Link href="/model" className="hover:text-foreground">Model</Link>
+            </nav>
           </footer>
         </TooltipProvider>
       </body>

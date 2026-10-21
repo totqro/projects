@@ -12,8 +12,8 @@ const n = (v?: number) => v ?? 0;
 const SKATER_COLS: Column<GamePlayer>[] = [
   { k: "name", label: "Skater", l: true, get: p => p.name, asc: true,
     cell: p => <><Link href={`/player/${p.id}`} className="hover:underline">{p.name}</Link> <span className="text-muted-foreground">{posLabel(p.pos)}</span></> },
-  { k: "toi", label: "TOI", get: p => n(p.toi_all), cell: p => toi(p.toi_all), tip: "toitot" },
-  { k: "toi5", label: "5v5", get: p => n(p.toi_5v5), cell: p => toi(p.toi_5v5), tip: "toi5" },
+  { k: "toi", label: "TOI", unit: "sec", get: p => n(p.toi_all), cell: p => toi(p.toi_all), tip: "toitot" },
+  { k: "toi5", label: "5v5", unit: "sec", get: p => n(p.toi_5v5), cell: p => toi(p.toi_5v5), tip: "toi5" },
   { k: "g", label: "G", get: p => n(p.g), tip: "g" },
   { k: "a", label: "A", get: p => n(p.a), tip: "a" },
   { k: "p", label: "P", get: p => n(p.g) + n(p.a), tip: "p" },

@@ -20,6 +20,10 @@ export interface Column<R> {
   asc?: boolean;
   /** Key into TIPS, shown on hover. */
   tip?: string;
+  /** Stays in view while the table scrolls sideways (the name or team). */
+  pin?: boolean;
+  /** Unit of the raw sort value, named in the CSV header ("sec"). */
+  unit?: string;
   className?: string;
 }
 
@@ -66,13 +70,34 @@ interface Props<R> {
   naturalKey?: string;
   limit?: number;
   className?: string;
+  /** File name (no extension) for a "Download CSV" link under the table. */
+  csv?: string;
+}
+
+/** The sorted rows as CSV: every column with a sort value, raw numbers. */
+function toCsv<R>(rows: R[], cols: Column<R>[]) {
+  const out = cols.filter(c => c.get);
+  const esc = (v: SortValue) => {
+    if (v == null) return "";
+    if (typeof v === "number") return Number.isInteger(v) ? String(v) : String(+v.toFixed(4));
+    return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+  };
+  return [out.map(c => esc(c.unit ? `${c.label} (${c.unit})` : c.label)).join(","),
+    ...rows.map(r => out.map(c => esc(c.get!(r))).join(","))].join("\n");
+}
+
+function download(name: string, text: string) {
+  const url = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8" }));
+  const a = Object.assign(document.createElement("a"), { href: url, download: `${name}.csv` });
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 /** A table that re-sorts on any heading. The DS Table, with a sort state.
  *  Body rows are plain <tr>/<td> styled once by .fk-table (globals.css): a
  *  season table has thousands of cells, and per-cell utility classes made
  *  each static page several times larger. */
-export function SortTable<R>({ rows, cols, initial, rowKey, rowProps, naturalKey, limit, className }: Props<R>) {
+export function SortTable<R>({ rows, cols, initial, rowKey, rowProps, naturalKey, limit, className, csv }: Props<R>) {
   const [st, setSt] = React.useState(initial);
   const sorted = React.useMemo(() => {
     if (naturalKey && st.sort === naturalKey) return st.asc ? rows : rows.slice().reverse();
@@ -83,7 +108,7 @@ export function SortTable<R>({ rows, cols, initial, rowKey, rowProps, naturalKey
     if (!c.get && c.k !== naturalKey) return;
     setSt(s => (s.sort === c.k ? { sort: c.k, asc: !s.asc } : { sort: c.k, asc: c.asc === true }));
   };
-  return (
+  const table = (
     <Table className={cn("fk-table tabular text-[13px]", className)}>
       <TableHeader className="bg-transparent">
         <TableRow className="hover:bg-transparent">
@@ -94,7 +119,7 @@ export function SortTable<R>({ rows, cols, initial, rowKey, rowProps, naturalKey
               <TipHead key={c.k} tip={c.tip}
                 aria-sort={on ? (st.asc ? "ascending" : "descending") : undefined}
                 onClick={() => click(c)}
-                className={cn(c.l && "text-left", sortable && "cursor-pointer select-none hover:text-foreground", on && "text-foreground")}>
+                className={cn(c.l && "text-left", c.pin && "pin", sortable && "cursor-pointer select-none hover:text-foreground", on && "text-foreground")}>
                 {c.label}{on ? (st.asc ? " ▴" : " ▾") : ""}
               </TipHead>
             );
@@ -105,7 +130,7 @@ export function SortTable<R>({ rows, cols, initial, rowKey, rowProps, naturalKey
         {shown.map((r, i) => (
           <tr key={rowKey(r)} {...rowProps?.(r)}>
             {cols.map(c => (
-              <td key={c.k} className={cn(c.l && "l", c.className) || undefined}>
+              <td key={c.k} className={cn(c.l && "l", c.pin && "pin", c.className) || undefined}>
                 {c.cell ? c.cell(r, i) : String(c.get?.(r) ?? "\u2013")}
               </td>
             ))}
@@ -113,6 +138,18 @@ export function SortTable<R>({ rows, cols, initial, rowKey, rowProps, naturalKey
         ))}
       </TableBody>
     </Table>
+  );
+  if (!csv) return table;
+  return (
+    <>
+      {table}
+      <div className="mt-1.5 flex justify-end">
+        <button type="button" onClick={() => download(csv, toCsv(sorted, cols))}
+          className="rounded px-1.5 py-0.5 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+          Download CSV
+        </button>
+      </div>
+    </>
   );
 }
 

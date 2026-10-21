@@ -7,21 +7,15 @@ import { cn } from "@/lib/utils";
 import { f1, f2, fmtDate, pct, per60, share, sv, toi, toiMin } from "@/lib/format";
 import { summarize, type TeamGame } from "@/lib/season";
 import { posLabel, TIPS } from "@/lib/teams";
-import type { Phase } from "@/lib/types";
+import type { Phase, TeamUnits } from "@/lib/types";
 import { Signed, SortTable, type Column } from "@/components/tables/sortable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SelectField } from "@/components/site/field";
 import { Note, Section, Tile } from "@/components/site/section";
 import { Segmented } from "./teams-view";
-
-/** One player's line in one of this team's games, trimmed for the page. */
-export interface Line {
-  gid: number; id: number; name: string; pos: string;
-  toi_all: number; toi_5v5: number; g: number; a: number; ixg: number; att: number;
-  xgf: number; xga: number; xgf5: number; xga5: number; gf: number; ga: number; gf5: number; ga5: number;
-  sa: number; ga_: number; xga_: number;
-}
+import { LinesTables, TeamWowy } from "./lines-view";
+import { LINE_KEYS, unpackLines, type Line, type PackedLines } from "@/lib/pack";
 
 /** A game in the log, with its 5v5 goals counted from the shot list. */
 export type LogGame = TeamGame & { gf5: number; ga5: number };
@@ -30,7 +24,7 @@ interface PlayerSum extends Omit<Line, "gid"> { gp: number }
 
 function sumLines(lines: Line[]) {
   const sk = new Map<number, PlayerSum>(), gk = new Map<number, PlayerSum>();
-  const keys = ["toi_all", "toi_5v5", "g", "a", "ixg", "att", "xgf", "xga", "xgf5", "xga5", "gf", "ga", "gf5", "ga5", "sa", "ga_", "xga_"] as const;
+  const keys = LINE_KEYS;
   for (const p of lines) {
     const bag = p.pos === "G" ? gk : sk;
     const r = bag.get(p.id) ?? { id: p.id, name: p.name, pos: p.pos, gp: 0, toi_all: 0, toi_5v5: 0, g: 0, a: 0, ixg: 0, att: 0, xgf: 0, xga: 0, xgf5: 0, xga5: 0, gf: 0, ga: 0, gf5: 0, ga5: 0, sa: 0, ga_: 0, xga_: 0 };
@@ -46,10 +40,10 @@ const WINDOWS: [string, string, number][] = [["season", "Season", Infinity], ["2
 const link = (p: { id: number; name: string }) => <Link href={`/player/${p.id}`} className="hover:underline">{p.name}</Link>;
 
 const SK_COLS: Column<PlayerSum>[] = [
-  { k: "name", label: "Skater", l: true, get: p => p.name, asc: true, cell: link },
+  { k: "name", label: "Skater", l: true, pin: true, get: p => p.name, asc: true, cell: link },
   { k: "pos", label: "Pos", l: true, get: p => posLabel(p.pos), asc: true, cell: p => posLabel(p.pos) },
   { k: "gp", label: "GP", get: p => p.gp, tip: "gp" },
-  { k: "toi", label: "TOI/GP", get: p => p.toi_all / p.gp, cell: p => toi(p.toi_all / p.gp), tip: "toi" },
+  { k: "toi", label: "TOI/GP", unit: "sec", get: p => p.toi_all / p.gp, cell: p => toi(p.toi_all / p.gp), tip: "toi" },
   { k: "g", label: "G", get: p => p.g, tip: "g" },
   { k: "a", label: "A", get: p => p.a, tip: "a" },
   { k: "pts", label: "P", get: p => p.g + p.a, cell: p => <b className="font-semibold">{p.g + p.a}</b>, tip: "p" },
@@ -70,9 +64,9 @@ const SK_COLS: Column<PlayerSum>[] = [
   { k: "ga60", label: "5v5 GA/60", get: p => per60(p.ga5, p.toi_5v5), cell: p => f2(per60(p.ga5, p.toi_5v5)), asc: true, tip: "ga60" },
 ];
 const GK_COLS: Column<PlayerSum>[] = [
-  { k: "name", label: "Goalie", l: true, get: p => p.name, asc: true, cell: link },
+  { k: "name", label: "Goalie", l: true, pin: true, get: p => p.name, asc: true, cell: link },
   { k: "gp", label: "GP", get: p => p.gp, tip: "gp" },
-  { k: "toi", label: "Min", get: p => p.toi_all, cell: p => toiMin(p.toi_all), tip: "toitot" },
+  { k: "toi", label: "Min", unit: "sec", get: p => p.toi_all, cell: p => toiMin(p.toi_all), tip: "toitot" },
   { k: "sa", label: "Shots", get: p => p.sa, tip: "sa" },
   { k: "ga", label: "GA", get: p => p.ga_, asc: true, tip: "gaG" },
   { k: "xga", label: "xGA", get: p => p.xga_, cell: p => f1(p.xga_), tip: "xgaG" },
@@ -81,7 +75,7 @@ const GK_COLS: Column<PlayerSum>[] = [
   { k: "xsvp", label: "xSv%", get: p => (p.sa ? 1 - p.xga_ / p.sa : null), cell: p => sv(p.sa ? 1 - p.xga_ / p.sa : null), tip: "xsvp" },
 ];
 const LOG_COLS: Column<LogGame>[] = [
-  { k: "date", label: "Date", l: true, get: g => g.date + g.id, cell: g => fmtDate(g.date), tip: "date" },
+  { k: "date", label: "Date", l: true, pin: true, get: g => g.date + g.id, cell: g => fmtDate(g.date), tip: "date" },
   { k: "opp", label: "Opp", l: true, get: g => g.opp, asc: true, cell: g => `${g.home ? "vs" : "@"} ${g.opp}`, tip: "opp" },
   { k: "res", label: "Result", l: true, get: g => g.gf - g.ga, tip: "res",
     cell: g => <><b className={cn("font-semibold", g.won ? "text-good" : "text-bad")}>{g.res}</b> {g.gf}&ndash;{g.ga}{g.end !== "REG" && <span className="text-muted-foreground"> {g.end}</span>}</> },
@@ -152,7 +146,9 @@ export interface TeamData {
   name: string;
   standingLine: string | null;
   games: Record<Phase, LogGame[]>;
-  lines: Line[];
+  lines: PackedLines;
+  /** 5v5 lines, pairs and WOWY; null before lines.json existed. */
+  units: Record<Phase, TeamUnits | null>;
 }
 
 export function TeamView({ d }: { d: TeamData }) {
@@ -166,7 +162,8 @@ export function TeamView({ d }: { d: TeamData }) {
   const games = all.slice(-Math.min(n, all.length));
   const t = summarize(games);
   const ids = new Set(games.map(g => g.id));
-  const { skaters, goalies } = React.useMemo(() => sumLines(d.lines.filter(l => ids.has(l.gid))), [d.lines, games]); // eslint-disable-line react-hooks/exhaustive-deps
+  const lines = React.useMemo(() => unpackLines(d.lines), [d.lines]);
+  const { skaters, goalies } = React.useMemo(() => sumLines(lines.filter(l => ids.has(l.gid))), [lines, games]); // eslint-disable-line react-hooks/exhaustive-deps
   const sk = skaters.filter(p => p.gp >= Math.min(minGp, games.length));
 
   const tile = (label: string, v: React.ReactNode, tip: string) => (
@@ -208,20 +205,27 @@ export function TeamView({ d }: { d: TeamData }) {
 
       <div className="space-y-8">
         <Section title="Game log">
-          <SortTable rows={games} cols={LOG_COLS} initial={{ sort: "date", asc: false }} rowKey={g => g.id}
+          <SortTable rows={games} cols={LOG_COLS} initial={{ sort: "date", asc: false }} rowKey={g => g.id} csv={`${d.team}-${d.season}-games`}
             rowProps={g => ({ className: "cursor-pointer", onClick: () => router.push(`/game/${g.id}`) })} />
         </Section>
         <Section title="Skaters" aside={
           <SelectField label="Min. games" value={minGp} onChange={v => setMinGp(+v)} className="flex-row items-center gap-2"
             options={[1, 3, 5, 10, 20].filter(m => m <= Math.max(1, games.length))} />
         }>
-          <SortTable rows={sk} cols={SK_COLS} initial={{ sort: "pts", asc: false }} rowKey={p => p.id} />
+          <SortTable rows={sk} cols={SK_COLS} initial={{ sort: "pts", asc: false }} rowKey={p => p.id} csv={`${d.team}-${d.season}-skaters`} />
         </Section>
         <Section title="Goalies">
-          <SortTable rows={goalies} cols={GK_COLS} initial={{ sort: "gsax", asc: false }} rowKey={p => p.id} />
+          <SortTable rows={goalies} cols={GK_COLS} initial={{ sort: "gsax", asc: false }} rowKey={p => p.id} csv={`${d.team}-${d.season}-goalies`} />
         </Section>
       </div>
       <Note className="mt-3">Player numbers cover only the games above, for this team.</Note>
+      {d.units[phase] && (
+        <div className="mt-10 space-y-8">
+          <p className="text-[13px] text-muted-foreground">Lines and with-or-without-you cover the whole {phase === "playoff" ? "playoffs" : "season"}, whatever window is picked above.</p>
+          <LinesTables units={d.units[phase]!} csvName={`${d.team}-${d.season}`} />
+          <TeamWowy units={d.units[phase]!} csvName={`${d.team}-${d.season}`} />
+        </div>
+      )}
     </>
   );
 }

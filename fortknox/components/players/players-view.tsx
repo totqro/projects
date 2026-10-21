@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { f1, f2, pct, per60, share, sv, toi, toiMin } from "@/lib/format";
 import { posLabel } from "@/lib/teams";
+import { relXg } from "@/lib/season";
 import type { GoalieSeason, Phase, PlayersFile, SkaterSeason } from "@/lib/types";
 import { Signed, SortTable, type Column } from "@/components/tables/sortable";
 import { Button } from "@/components/ui/button";
@@ -14,15 +15,17 @@ import { Segmented } from "@/components/teams/teams-view";
 
 const rank: Column<never> = { k: "#", label: "#", cell: (_, i) => <span className="text-muted-foreground">{i + 1}</span>, className: "w-px" };
 const nameCol = <R extends { id: number; name: string }>(label: string): Column<R> =>
-  ({ k: "name", label, l: true, get: p => p.name, asc: true, cell: p => <Link href={`/player/${p.id}`} className="font-medium hover:underline">{p.name}</Link> });
+  ({ k: "name", label, l: true, pin: true, get: p => p.name, asc: true, cell: p => <Link href={`/player/${p.id}`} className="font-medium hover:underline">{p.name}</Link> });
 const teamCol = <R extends { team: string }>(season: number): Column<R> =>
   ({ k: "team", label: "Team", l: true, get: p => p.team, asc: true, cell: p => p.team ? <Link href={`/team/${season}/${p.team}`} className="hover:underline">{p.team}</Link> : "" });
+
+const SignedPct = ({ v }: { v: number | null }) => (v == null ? <>{"–"}</> : <Signed v={v * 100} />);
 
 const skCols = (season: number): Column<SkaterSeason>[] => [
   rank as Column<SkaterSeason>, nameCol("Skater"), teamCol(season),
   { k: "pos", label: "Pos", l: true, get: p => posLabel(p.pos), asc: true, cell: p => posLabel(p.pos) },
   { k: "gp", label: "GP", get: p => p.gp, tip: "gp" },
-  { k: "toi", label: "TOI/GP", get: p => p.toi / p.gp, cell: p => toi(p.toi / p.gp), tip: "toi" },
+  { k: "toi", label: "TOI/GP", unit: "sec", get: p => p.toi / p.gp, cell: p => toi(p.toi / p.gp), tip: "toi" },
   { k: "g", label: "G", get: p => p.g, tip: "g" },
   { k: "a", label: "A", get: p => p.a, tip: "a" },
   { k: "pts", label: "P", get: p => p.pts, cell: p => <b className="font-semibold">{p.pts}</b>, tip: "p" },
@@ -33,6 +36,7 @@ const skCols = (season: number): Column<SkaterSeason>[] => [
   { k: "gs", label: "G share", get: p => share(p.gf, p.ga), cell: p => pct(share(p.gf, p.ga)), tip: "gs" },
   { k: "xgs5", label: "5v5 xG share", get: p => p.xgf_pct5, cell: p => pct(p.xgf_pct5), tip: "xgs5" },
   { k: "gs5", label: "5v5 G share", get: p => share(p.gf5, p.ga5), cell: p => pct(share(p.gf5, p.ga5)), tip: "gs5" },
+  { k: "rel5", label: "5v5 Rel xG%", get: relXg, cell: p => <SignedPct v={relXg(p)} />, tip: "rel" },
   { k: "ixg60_5", label: "5v5 ixG/60", get: p => p.ixg60_5, cell: p => f2(p.ixg60_5), tip: "ixg60" },
   { k: "g60_5", label: "5v5 G/60", get: p => per60(p.g5, p.toi5), cell: p => f2(per60(p.g5, p.toi5)), tip: "g60" },
   { k: "xgf60_5", label: "5v5 xGF/60", get: p => p.xgf60_5, cell: p => f2(p.xgf60_5), tip: "xgf60" },
@@ -43,7 +47,7 @@ const skCols = (season: number): Column<SkaterSeason>[] => [
 const gkCols = (season: number): Column<GoalieSeason>[] => [
   rank as Column<GoalieSeason>, nameCol("Goalie"), teamCol(season),
   { k: "gp", label: "GP", get: p => p.gp, tip: "gp" },
-  { k: "toi", label: "Min", get: p => p.toi, cell: p => toiMin(p.toi), tip: "toitot" },
+  { k: "toi", label: "Min", unit: "sec", get: p => p.toi, cell: p => toiMin(p.toi), tip: "toitot" },
   { k: "sa", label: "Shots", get: p => p.sa, tip: "sa" },
   { k: "ga", label: "GA", get: p => p.ga, asc: true, tip: "gaG" },
   { k: "xga", label: "xGA", get: p => p.xga, cell: p => f1(p.xga), tip: "xgaG" },
@@ -97,8 +101,8 @@ export function PlayersView({ season, data, teams }: { season: number; data: Pic
         <span className="pb-2 text-sm text-muted-foreground">{count} {kind}</span>
       </div>
       {goalies
-        ? <SortTable key="g" rows={gk} cols={gkC} initial={{ sort: "gsax", asc: false }} rowKey={p => p.id} limit={shown} />
-        : <SortTable key="s" rows={sk} cols={skC} initial={{ sort: "pts", asc: false }} rowKey={p => p.id} limit={shown} />}
+        ? <SortTable key="g" rows={gk} cols={gkC} initial={{ sort: "gsax", asc: false }} rowKey={p => p.id} limit={shown} csv={`goalies-${season}-${phase}`} />
+        : <SortTable key="s" rows={sk} cols={skC} initial={{ sort: "pts", asc: false }} rowKey={p => p.id} limit={shown} csv={`skaters-${season}-${phase}`} />}
       {count > shown && <Button variant="secondary" className="mt-4" onClick={() => setShown(s => s + 200)}>Show more</Button>}
       <Note className="mt-4">
         {goalies

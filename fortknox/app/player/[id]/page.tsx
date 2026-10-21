@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { playerGames, playersFile, seasons } from "@/lib/data";
-import { f1, f2, pct, seasonLabel, share, sv, toi } from "@/lib/format";
+import { linesFile, playerGames, playersFile, seasons, shotsByShooter } from "@/lib/data";
+import { f1, f2, fmtDate, pct, seasonLabel, share, sv, toi } from "@/lib/format";
 import { posLabel, teamName } from "@/lib/teams";
-import type { GamePlayer } from "@/lib/types";
+import type { GamePlayer, TeamUnits } from "@/lib/types";
 import { PageHead } from "@/components/site/page-head";
 import { TeamLogo } from "@/components/site/team-logo";
-import { Section, Tile } from "@/components/site/section";
+import { Note, Section, Tile } from "@/components/site/section";
 import { PlayerLog } from "@/components/players/player-log";
 import { Signed } from "@/components/tables/sortable";
+import { PlayerShotMap, type PlayerShot } from "@/components/players/player-shots";
+import { WowyTable } from "@/components/teams/lines-view";
+import { relXg } from "@/lib/season";
 
 export const dynamicParams = false;
 export const generateStaticParams = () => [...playerGames().keys()].map(id => ({ id: String(id) }));
@@ -26,11 +29,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: `${name}, ${teamName(team)}`, description: `${name}'s expected goals, game by game.` };
 }
 
-/** Only the keys the game log shows, so each page stays small. */
+/** Only the keys the game log shows, so each page stays small (the name and
+ *  team would repeat on every row). */
 const SK_KEYS = ["toi_all", "g", "a", "ixg", "att", "xgf", "xga", "gf", "ga"] as const;
 const GK_KEYS = ["toi_all", "sa", "ga_", "xga_"] as const;
 function trim(line: GamePlayer, goalie: boolean): GamePlayer {
-  const out: GamePlayer = { id: line.id, name: line.name, team: line.team, pos: line.pos, num: line.num };
+  const out = {} as GamePlayer;
   for (const k of goalie ? GK_KEYS : SK_KEYS) if (line[k] != null) out[k] = line[k];
   return out;
 }
@@ -44,6 +48,32 @@ function seasonLines(id: number) {
   }));
 }
 
+/** His unblocked shots in one season's games, compact for the shot map. */
+function seasonShots(id: number, log: { id: number; date: string; opp: string; home: boolean }[]) {
+  const mine = shotsByShooter().get(id) ?? [];
+  const games: string[] = [], shots: PlayerShot[] = [];
+  for (const g of log) {
+    const these = mine.filter(s => s.gid === g.id);
+    if (!these.length) continue;
+    games.push(`${fmtDate(g.date)} ${g.home ? "vs" : "@"} ${g.opp}`);
+    for (const s of these)
+      shots.push([Math.round(s.x * 10) / 10, Math.round(s.y * 10) / 10, Math.round(s.xg * 1000) / 1000,
+        s.ev === "GOAL" ? "G" : s.ev === "SHOT" ? "S" : "M", s.type, s.p, s.t, games.length - 1]);
+  }
+  return { games, shots };
+}
+
+/** Only the rows WOWY needs for one player: his pairs and his teammates' totals. */
+function wowyUnits(u: TeamUnits | undefined, id: number): TeamUnits | null {
+  if (!u || !u.solo.some(r => r[0][0] === id)) return null;
+  const pairs = u.pairs.filter(r => r[0].includes(id));
+  const ids = new Set(pairs.flatMap(r => r[0]));
+  return {
+    players: Object.fromEntries(Object.entries(u.players).filter(([k]) => ids.has(+k))),
+    solo: u.solo.filter(r => ids.has(r[0][0])), fwd: [], def: [], pairs,
+  };
+}
+
 export default async function Player({ params }: Props) {
   const id = +(await params).id;
   const { log, name, pos, team } = who(id);
@@ -51,6 +81,9 @@ export default async function Player({ params }: Props) {
   const lines = seasonLines(id);
   const cur = lines[0];
   const bySeason = seasons().map(s => ({ s, rows: log.filter(g => g.season === s) })).filter(x => x.rows.length);
+  const { games: shotGames, shots } = !goalie && cur ? seasonShots(id, log.filter(g => g.season === cur.season)) : { games: [], shots: [] };
+  const wowy = !goalie && cur ? wowyUnits(linesFile(cur.season)?.[cur.phase][cur.sk?.team ?? team], id) : null;
+  const rel = cur?.sk ? relXg(cur.sk) : null;
 
   return (
     <>
@@ -68,6 +101,10 @@ export default async function Player({ params }: Props) {
               <Tile label="5v5 xG share">{pct(cur.sk.xgf_pct5)}</Tile>
               <Tile label="5v5 goal share">{pct(share(cur.sk.gf5, cur.sk.ga5))}</Tile>
               <Tile label="TOI per game">{toi(cur.sk.toi / cur.sk.gp)}</Tile>
+              {rel != null && <>
+                <Tile label="5v5 xG share, off ice">{pct(share(cur.sk.xgf5_off ?? 0, cur.sk.xga5_off ?? 0))}</Tile>
+                <Tile label="Rel 5v5 xG%"><Signed v={rel * 100} /></Tile>
+              </>}
             </>}
             {cur.gk && <>
               <Tile label="Games">{cur.gk.gp}</Tile>
@@ -80,6 +117,23 @@ export default async function Player({ params }: Props) {
             </>}
           </div>
         </Section>
+      )}
+
+      {cur && (shots.length > 0 || wowy) && (
+        <div className="mb-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
+          {shots.length > 0 && (
+            <Section title={`Shots, ${seasonLabel(cur.season)}`}>
+              <PlayerShotMap shots={shots} games={shotGames} />
+              <Note className="mt-2 text-xs">{shots.length} unblocked shots, {f1(shots.reduce((a, s) => a + s[2], 0))} xG, {shots.filter(s => s[3] === "G").length} goals. Attacking to the right; hover a dot for the shot.</Note>
+            </Section>
+          )}
+          {wowy && (
+            <Section title="With or without you, 5v5">
+              <WowyTable units={wowy} playerId={id} minSecs={120} csvName={`${name.toLowerCase().replace(/[^a-z]+/g, "-")}-${cur.season}`} />
+              <Note className="mt-2 text-xs">{cur.season ? seasonLabel(cur.season) : ""}{cur.phase === "playoff" ? " playoffs" : ""}, teammates with at least two minutes together. Rel xG% is his 5v5 xG share minus his team&apos;s with him on the bench.</Note>
+            </Section>
+          )}
+        </div>
       )}
 
       <div className="space-y-8">
