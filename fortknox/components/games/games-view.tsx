@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { SelectField } from "@/components/site/field";
 import { Note } from "@/components/site/section";
 import { TeamLogo } from "@/components/site/team-logo";
+import { gameColors } from "@/lib/team-colors";
 
 export const isUpset = (x: GameSummary) => x.hs !== x.as && (x.hxg >= x.axg) !== (x.hs > x.as);
 
@@ -26,7 +27,7 @@ export function MiniBox({ x }: { x: GameSummary }) {
     </tr>
   );
   return (
-    <Link href={`/game/${x.id}`} aria-label={`${x.away} ${x.as}, ${x.home} ${x.hs}, ${fmtDate(x.date)}`}
+    <Link href={`/game/${x.id}`} aria-label={`${x.away} ${x.as}, ${x.home} ${x.hs}, ${fmtDate(x.date)}`} style={gameColors(x.away, x.home)}
       className="block rounded-[0.75rem] bg-card px-3.5 pb-3 pt-2.5 [box-shadow:var(--shadow-md)] transition-[background-color,box-shadow] hover:bg-accent/60 hover:[box-shadow:var(--shadow-lg)]">
       <table className="tabular w-full text-[13px]">
         <thead>
