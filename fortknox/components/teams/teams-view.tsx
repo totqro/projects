@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { f1, f2, pct, per60, share, sv } from "@/lib/format";
-import { defaultRankBy, groupTeams, LENSES, rankRows, type Grouping, type RankBy, type StandingRow } from "@/lib/season";
+import { groupTeams, LENSES, type Grouping, type StandingRow } from "@/lib/season";
 import type { Phase } from "@/lib/types";
 import { useLensChart } from "@/components/charts/lens";
 import { Signed, SortTable, type Column } from "@/components/tables/sortable";
@@ -61,8 +61,7 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
   const [phase, setPhase] = React.useState<Phase>("regular");
   const [group, setGroup] = React.useState<Grouping>("league");
   const [lens, setLens] = React.useState("drive");
-  const [by, setBy] = React.useState<RankBy>(() => defaultRankBy(regular));
-  const rows = React.useMemo(() => rankRows(phase === "playoff" ? playoff : regular, by), [phase, playoff, regular, by]);
+  const rows = phase === "playoff" ? playoff : regular;
   const chart = useLensChart({ rows, lens, season });
   const groups = groupTeams(rows, phase === "playoff" ? "league" : group);
   const columns = React.useMemo(() => cols(season), [season]);
@@ -97,8 +96,6 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
           <Segmented label="Standings grouping" value={group} onChange={setGroup}
             options={[["league", "League"], ["conference", "Conference"], ["division", "Division"], ["wildcard", "Wild card"]]} />
         )}
-        <Segmented label="Rank by" value={by} onChange={setBy} options={[["pts", "Points"], ["ppct", "Points %"]]} />
-        {by === "ppct" && <span className="text-xs text-muted-foreground">Ranked by points percentage while teams have played different numbers of games.</span>}
       </div>
       <div className="space-y-6">
         {groups.map((g, i) => (

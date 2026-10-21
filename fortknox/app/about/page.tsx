@@ -33,13 +33,13 @@ export default function About() {
         <CardContent className="p-6">
           <H2>What this is</H2>
           <P>High Slot puts an expected-goals number on every shot of every NHL game, then adds them up into game sheets, standings, team and player tables, lines and goalie numbers. The question it answers is <b>who created the better chances</b>, which says more about how a team is playing than the score does over a handful of games.</P>
-          <P>It&apos;s an independent project, free, with no ads and no account. Pages rebuild every 20 minutes on game days, from noon to 4 a.m. ET.</P>
+          <P>It&apos;s an independent project, free, with no ads and no account. Pages update through the day as games finish.</P>
 
           <H2>Where the numbers come from</H2>
           <P>Everything is built from the NHL&apos;s public play-by-play and shift charts. The model is a gradient-boosted classifier trained on 1.13 million shots since 2015-16; <Link href="/model">the model page</Link> covers what it looks at, what it can&apos;t see, how accurate it is, and how it compares with MoneyPuck&apos;s public model.</P>
 
           <H2>Reading the numbers</H2>
-          <P><b>Early in a season, everything is noisy.</b> Ten games is about 500 shots for a team and a few dozen for a player. Shooting and save percentages swing wildly over that stretch; xG settles down sooner, which is why it&apos;s the better early guide, but treat any player rate built on under 200 minutes as a hint, not a verdict. Tables let you set a minimum number of games or minutes.</P>
+          <P><b>Early in a season, everything is noisy.</b> There just aren&apos;t many shots yet, so shooting and save percentages swing a lot from week to week. xG settles down sooner, which makes it the better early guide, but treat small samples as a hint, not a verdict. Tables let you set a minimum number of games or minutes.</P>
 
           <H2 id="glossary">Glossary</H2>
           <dl className="mb-4 max-w-[72ch] space-y-3 text-[15px] leading-relaxed">
@@ -51,9 +51,6 @@ export default function About() {
             ))}
           </dl>
           <P>Every column heading on the site explains itself on hover.</P>
-
-          <H2>Feedback</H2>
-          <P>Spotted a wrong number or have an idea? Open an issue on <a href="https://github.com/totqro/projects/issues">GitHub</a>.</P>
 
           <H2>Not affiliated with the NHL</H2>
           <P>High Slot isn&apos;t affiliated with or endorsed by the National Hockey League. NHL, team names and logos are trademarks of the NHL and its teams.</P>

@@ -60,7 +60,7 @@ export const TIPS: Record<string, string> = {
   gsax60: "GSAx per 60 minutes in net.", svp: "Save percentage on unblocked shots: misses count as saves, so it runs higher than NHL Sv%. Pairs with Unbl. xSv%, the same shots.",
   nsvp: "Save percentage as the NHL counts it: saves / shots on goal. Missed shots are left out.",
   xsvp: "Expected save percentage: what an average goalie would stop on the same unblocked shots. Compare it with Unbl. Sv%, not NHL Sv%.",
-  rank: "Standings position: by points (or points %, when that toggle is on), then the NHL's tiebreakers: regulation wins, regulation + overtime wins, wins, goal differential.",
+  rank: "Standings position: by points, then the NHL's tiebreakers: regulation wins, regulation + overtime wins, wins, goal differential.",
   w: "Wins.", l: "Regulation losses.", otl: "Overtime and shootout losses (one point each).", pts: "Standings points: 2 for a win, 1 for an overtime or shootout loss.",
   ppct: "Points percentage: points / (2 x games played).", rw: "Regulation wins, the NHL's first standings tiebreaker.",
   row: "Regulation plus overtime wins (shootout wins excluded).", gf: "Goals for. A shootout win counts as one, as in the standings.",

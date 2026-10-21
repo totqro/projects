@@ -10,6 +10,7 @@ import { Note, Section, Tile } from "@/components/site/section";
 import { PlayerLog } from "@/components/players/player-log";
 import { Signed } from "@/components/tables/sortable";
 import { PlayerShotMap, type PlayerShot } from "@/components/players/player-shots";
+import { PlayerSeasons } from "@/components/players/player-seasons";
 import { WowyTable } from "@/components/teams/lines-view";
 import { relXg } from "@/lib/season";
 
@@ -79,70 +80,77 @@ export default async function Player({ params }: Props) {
   const { log, name, pos, team } = who(id);
   const goalie = pos === "G";
   const lines = seasonLines(id);
-  const cur = lines[0];
-  const bySeason = seasons().map(s => ({ s, rows: log.filter(g => g.season === s) })).filter(x => x.rows.length);
-  const { games: shotGames, shots } = !goalie && cur ? seasonShots(id, log.filter(g => g.season === cur.season)) : { games: [], shots: [] };
-  const wowy = !goalie && cur ? wowyUnits(linesFile(cur.season)?.[cur.phase][cur.sk?.team ?? team], id) : null;
-  const rel = cur?.sk ? relXg(cur.sk) : null;
+  const seasonsPlayed = seasons().filter(s => log.some(g => g.season === s));
+
+  /** Everything below the header for one season: the tiles, shot map, WOWY and game log. */
+  function seasonBlock(s: number) {
+    const cur = lines.find(l => l.season === s);
+    const rows = log.filter(g => g.season === s);
+    const { games: shotGames, shots } = !goalie && cur ? seasonShots(id, rows) : { games: [], shots: [] };
+    const wowy = !goalie && cur ? wowyUnits(linesFile(cur.season)?.[cur.phase][cur.sk?.team ?? team], id) : null;
+    const rel = cur?.sk ? relXg(cur.sk) : null;
+    return (
+      <>
+        {cur && (
+          <Section title={`${seasonLabel(cur.season)}${cur.phase === "playoff" ? " playoffs" : ""}`} className="mb-8">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-[repeat(auto-fit,minmax(128px,1fr))]">
+              {cur.sk && <>
+                <Tile label="Games">{cur.sk.gp}</Tile>
+                <Tile label="Goals, assists">{cur.sk.g}&ndash;{cur.sk.a}</Tile>
+                <Tile label="Points"><span className="brand-text">{cur.sk.pts}</span></Tile>
+                <Tile label="ixG">{f1(cur.sk.ixg)}</Tile>
+                <Tile label="Goals above expected"><Signed v={cur.sk.gax} /></Tile>
+                <Tile label="5v5 xG share">{pct(cur.sk.xgf_pct5)}</Tile>
+                <Tile label="5v5 goal share">{pct(share(cur.sk.gf5, cur.sk.ga5))}</Tile>
+                <Tile label="TOI per game">{toi(cur.sk.toi / cur.sk.gp)}</Tile>
+                {rel != null && <>
+                  <Tile label="5v5 xG share, off ice">{pct(share(cur.sk.xgf5_off ?? 0, cur.sk.xga5_off ?? 0))}</Tile>
+                  <Tile label="Rel 5v5 xG%"><Signed v={rel * 100} /></Tile>
+                </>}
+              </>}
+              {cur.gk && <>
+                <Tile label="Games">{cur.gk.gp}</Tile>
+                <Tile label="GSAx"><Signed v={cur.gk.gsax} /></Tile>
+                <Tile label="Save %">{sv(cur.gk.sv_pct)}</Tile>
+                <Tile label="Expected save %">{sv(cur.gk.xsv_pct)}</Tile>
+                <Tile label="GSAx per 60"><Signed v={cur.gk.gsax60} d={2} /></Tile>
+                <Tile label="xGA">{f2(cur.gk.xga)}</Tile>
+                <Tile label="Goals allowed">{cur.gk.ga}</Tile>
+              </>}
+            </div>
+          </Section>
+        )}
+
+        {cur && (shots.length > 0 || wowy) && (
+          <div className="mb-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
+            {shots.length > 0 && (
+              <Section title={`Shots, ${seasonLabel(cur.season)}`}>
+                <PlayerShotMap shots={shots} games={shotGames} />
+                <Note className="mt-2 text-xs">{shots.length} unblocked shots, {f1(shots.reduce((a, s) => a + s[2], 0))} xG, {shots.filter(s => s[3] === "G").length} goals. Attacking to the right; hover a dot for the shot.</Note>
+              </Section>
+            )}
+            {wowy && (
+              <Section title="With or without you, 5v5">
+                <WowyTable units={wowy} playerId={id} minSecs={120} csvName={`${name.toLowerCase().replace(/[^a-z]+/g, "-")}-${cur.season}`} />
+                <Note className="mt-2 text-xs">{cur.season ? seasonLabel(cur.season) : ""}{cur.phase === "playoff" ? " playoffs" : ""}, teammates with at least two minutes together. Rel xG% is his 5v5 xG share minus his team&apos;s with him on the bench.</Note>
+              </Section>
+            )}
+          </div>
+        )}
+
+        <Section title={`${seasonLabel(s)} game log`}>
+          <PlayerLog goalie={goalie} rows={rows.map(r => ({ ...r, line: trim(r.line, goalie) }))} />
+        </Section>
+      </>
+    );
+  }
+  const blocks = seasonsPlayed.map(s => ({ season: s, label: seasonLabel(s), node: seasonBlock(s) }));
 
   return (
     <>
       <PageHead title={name} sub={<span className="inline-flex items-center gap-2">{team && <TeamLogo team={team} size={28} />}{posLabel(pos)}, <Link href={`/team/${log[log.length - 1]?.season}/${team}`} className="hover:underline">{teamName(team)}</Link></span>} />
 
-      {cur && (
-        <Section title={`${seasonLabel(cur.season)}${cur.phase === "playoff" ? " playoffs" : ""}`} className="mb-8">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-[repeat(auto-fit,minmax(128px,1fr))]">
-            {cur.sk && <>
-              <Tile label="Games">{cur.sk.gp}</Tile>
-              <Tile label="Goals, assists">{cur.sk.g}&ndash;{cur.sk.a}</Tile>
-              <Tile label="Points"><span className="brand-text">{cur.sk.pts}</span></Tile>
-              <Tile label="ixG">{f1(cur.sk.ixg)}</Tile>
-              <Tile label="Goals above expected"><Signed v={cur.sk.gax} /></Tile>
-              <Tile label="5v5 xG share">{pct(cur.sk.xgf_pct5)}</Tile>
-              <Tile label="5v5 goal share">{pct(share(cur.sk.gf5, cur.sk.ga5))}</Tile>
-              <Tile label="TOI per game">{toi(cur.sk.toi / cur.sk.gp)}</Tile>
-              {rel != null && <>
-                <Tile label="5v5 xG share, off ice">{pct(share(cur.sk.xgf5_off ?? 0, cur.sk.xga5_off ?? 0))}</Tile>
-                <Tile label="Rel 5v5 xG%"><Signed v={rel * 100} /></Tile>
-              </>}
-            </>}
-            {cur.gk && <>
-              <Tile label="Games">{cur.gk.gp}</Tile>
-              <Tile label="GSAx"><Signed v={cur.gk.gsax} /></Tile>
-              <Tile label="Save %">{sv(cur.gk.sv_pct)}</Tile>
-              <Tile label="Expected save %">{sv(cur.gk.xsv_pct)}</Tile>
-              <Tile label="GSAx per 60"><Signed v={cur.gk.gsax60} d={2} /></Tile>
-              <Tile label="xGA">{f2(cur.gk.xga)}</Tile>
-              <Tile label="Goals allowed">{cur.gk.ga}</Tile>
-            </>}
-          </div>
-        </Section>
-      )}
-
-      {cur && (shots.length > 0 || wowy) && (
-        <div className="mb-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
-          {shots.length > 0 && (
-            <Section title={`Shots, ${seasonLabel(cur.season)}`}>
-              <PlayerShotMap shots={shots} games={shotGames} />
-              <Note className="mt-2 text-xs">{shots.length} unblocked shots, {f1(shots.reduce((a, s) => a + s[2], 0))} xG, {shots.filter(s => s[3] === "G").length} goals. Attacking to the right; hover a dot for the shot.</Note>
-            </Section>
-          )}
-          {wowy && (
-            <Section title="With or without you, 5v5">
-              <WowyTable units={wowy} playerId={id} minSecs={120} csvName={`${name.toLowerCase().replace(/[^a-z]+/g, "-")}-${cur.season}`} />
-              <Note className="mt-2 text-xs">{cur.season ? seasonLabel(cur.season) : ""}{cur.phase === "playoff" ? " playoffs" : ""}, teammates with at least two minutes together. Rel xG% is his 5v5 xG share minus his team&apos;s with him on the bench.</Note>
-            </Section>
-          )}
-        </div>
-      )}
-
-      <div className="space-y-8">
-        {bySeason.map(({ s, rows }) => (
-          <Section key={s} title={`${seasonLabel(s)} game log`}>
-            <PlayerLog goalie={goalie} rows={rows.map(r => ({ ...r, line: trim(r.line, goalie) }))} />
-          </Section>
-        ))}
-      </div>
+      <PlayerSeasons blocks={blocks} />
     </>
   );
 }

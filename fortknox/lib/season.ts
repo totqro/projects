@@ -68,28 +68,14 @@ export function summarize(games: TeamGame[]): Summary {
 
 export type StandingRow = TeamSeason & Summary & { lg: number };
 
-/** Rank by points (the NHL's order) or by points percentage, which is fairer
- *  while teams have played different numbers of games. */
-export type RankBy = "pts" | "ppct";
-const tiebreak = (a: Summary, b: Summary) => b.rw - a.rw || b.row - a.row || b.w - a.w || b.diff - a.diff;
-const COMPARE: Record<RankBy, (a: Summary, b: Summary) => number> = {
-  pts: (a, b) => b.pts - a.pts || (b.ppct ?? 0) - (a.ppct ?? 0) || tiebreak(a, b),
-  ppct: (a, b) => (b.ppct ?? 0) - (a.ppct ?? 0) || b.pts - a.pts || tiebreak(a, b),
-};
+/** The NHL's order: points, then points %, then its tiebreakers. */
+const byPoints = (a: Summary, b: Summary) =>
+  b.pts - a.pts || (b.ppct ?? 0) - (a.ppct ?? 0) || b.rw - a.rw || b.row - a.row || b.w - a.w || b.diff - a.diff;
 
-export function rankRows<R extends Summary>(rows: R[], by: RankBy): (R & { lg: number })[] {
-  return rows.slice().sort(COMPARE[by]).map((t, i) => ({ ...t, lg: i + 1 }));
+export function standings(teams: TeamSeason[], games: GameSummary[], phase: Phase): StandingRow[] {
+  return teams.map(m => ({ ...m, ...summarize(teamGames(games, m.team, phase)), team: m.team }))
+    .sort(byPoints).map((t, i) => ({ ...t, lg: i + 1 }));
 }
-
-export function standings(teams: TeamSeason[], games: GameSummary[], phase: Phase, by: RankBy = "pts"): StandingRow[] {
-  return rankRows(teams.map(m => ({ ...m, ...summarize(teamGames(games, m.team, phase)), team: m.team })), by);
-}
-
-/** Points % while the games-played spread is wide; points once it has evened out. */
-export const defaultRankBy = (rows: Summary[]): RankBy => {
-  const gp = rows.map(r => r.gp);
-  return gp.length && Math.max(...gp) - Math.min(...gp) >= 2 ? "ppct" : "pts";
-};
 
 export type Grouping = "league" | "conference" | "division" | "wildcard";
 export interface Group { title: string | null; rows: (StandingRow & { rk: string; cut?: boolean })[] }

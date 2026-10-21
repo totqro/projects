@@ -38,11 +38,11 @@ export default function Model() {
         <CardContent className="p-6">
           <P>Each unblocked shot gets a probability of becoming a goal, from a gradient-boosted model trained on every NHL shot since 2015-16 and built from the league&apos;s own play-by-play and shift charts, the same feed it scores after each game. A team&apos;s or player&apos;s xG is the sum of those probabilities.</P>
           <H3>What it looks at</H3>
-          <P><b>The shot:</b> distance, angle, whether it came from behind the net, shot type, the shooter&apos;s handedness and wing. <b>The play before it:</b> what the previous event was, where, and how long ago; whether it&apos;s a rebound and off what (a save, a miss or a block); how fast the puck moved. <b>Game state:</b> strength (5v5, power play, pulled goalie and why), score, period, time. <b>Fatigue:</b> how long the shooter and both units had been on the ice.</P>
+          <P>Mostly <b>the shot itself</b>, meaning its distance, angle, type, whether it came from behind the net, and the shooter&apos;s handedness and wing. It also looks at <b>the play before it</b>, such as what the previous event was, where and how long ago it happened, whether this is a rebound (and off a save, a miss or a block), and how fast the puck moved. On top of that it knows the <b>game state</b> (strength, including a pulled goalie and why, plus score, period and time) and <b>fatigue</b>, which is how long the shooter and both units had been on the ice.</P>
           <H3>What it can&apos;t see</H3>
           <P>The public feed doesn&apos;t log passes or zone entries, so <b>cross-ice feeds and true rushes are invisible</b>. The model uses proxies: seconds since the puck was last outside the zone, since the team won it, and whether the puck crossed the middle. They help a little. Screens, traffic, shot speed and where the shot was aimed aren&apos;t in the data at all.</P>
           <H3>How good it is</H3>
-          <P>There are two models. The <b>served model</b> scores every game on this site: trained on 2015-16 to 2024-25, then calibrated on 2025-26. The <b>evaluation model</b> exists only to measure honestly: trained through 2022-23 and calibrated on 2023-24, it never saw the seasons it&apos;s tested on.</P>
+          <P>There are two models. The <b>served model</b> scores every game on this site. It was trained on 2015-16 to 2024-25 and then calibrated on 2025-26. The <b>evaluation model</b> exists only to measure the served one honestly. It was trained through 2022-23 and calibrated on 2023-24, so it never saw the seasons it&apos;s tested on.</P>
           <Table className="tabular text-[13px]">
             <TableHeader className="bg-transparent">
               <TableRow className="hover:bg-transparent">
@@ -67,9 +67,9 @@ export default function Model() {
             </TableBody>
           </Table>
           <div className="mt-4" />
-          <P><b>AUC</b> is how well it ranks dangerous shots over safe ones (0.5 is a coin flip). <b>Log loss</b> scores each probability against what happened; lower is better. <b>xG / goals</b> is whether the totals are right: 1.00 is perfect. MoneyPuck, the best-known public model, still ranks individual shots a little better; our inputs match theirs almost exactly, so the gap is in the modelling. Early in a season the live row moves a lot from week to week.</P>
+          <P><b>AUC</b> is how well it ranks dangerous shots over safe ones (0.5 is a coin flip). <b>Log loss</b> scores each probability against what happened; lower is better. <b>xG / goals</b> checks whether the totals are right, and 1.00 is perfect. MoneyPuck, the best-known public model, still ranks individual shots a little better. Our inputs match theirs almost exactly, so the gap is in the modelling. Early in a season the live row moves a lot from week to week.</P>
           <H3>Are the probabilities right?</H3>
-          <P>Every unblocked shot of {seasonLabel(s)} so far, grouped by its xG. If the model is calibrated, shots it calls 10% go in about 10% of the time and the dots sit on the dashed line. The bars are 95% ranges: wide where there are few shots.</P>
+          <P>Every unblocked shot of {seasonLabel(s)} so far, grouped by its xG. If the model is calibrated, shots it calls 10% go in about 10% of the time and the dots sit on the dashed line. The bars are 95% ranges, which get wide where there are few shots.</P>
           <CalibrationChart bins={m.bins} />
           <details className="mt-3 text-[13px]">
             <summary className="cursor-pointer text-muted-foreground hover:text-foreground">The numbers behind the chart</summary>
@@ -94,7 +94,7 @@ export default function Model() {
           </details>
           <H3>Caveats</H3>
           <P><b>The league&apos;s logging drifts.</b> A shot within three seconds of another was 4% of non-goals in 2015 and 10% in 2025. The model weights recent seasons more and is recalibrated on the latest complete season, but it still slips a few percent a year, so it gets refit each summer.</P>
-          <P><b>2025-26 game pages are partly in-sample:</b> the served model was calibrated on that season, so the site&apos;s 2025-26 xG totals match goals by construction. The 1.062 in the table is the evaluation model, which never saw 2025-26. This season&apos;s games are fully out of sample.</P>
+          <P><b>2025-26 game pages are partly in-sample.</b> The served model was calibrated on that season, so the site&apos;s 2025-26 xG totals match goals by construction. The 1.062 in the table is the evaluation model, which never saw 2025-26. This season&apos;s games are fully out of sample.</P>
           <P><b>Blocked shots</b> count as attempts but carry no xG; their coordinates are where they were blocked, not where they were taken.</P>
         </CardContent>
       </Card>
