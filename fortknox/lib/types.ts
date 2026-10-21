@@ -241,3 +241,19 @@ export interface RawSheet {
 export interface Sheet extends Omit<RawSheet, "shots" | "shot_keys"> {
   shots: Shot[];
 }
+
+/** data/tonight.json: the NHL's slate for tonight, fetched at deploy time. */
+export interface TonightTeam { abbrev: string; score: number | null; record: string | null }
+export interface TonightGame {
+  id: number;
+  type: number;
+  /** Puck drop, ISO UTC. */
+  start: string;
+  /** off: postponed or cancelled. */
+  state: "pre" | "live" | "final" | "off";
+  /** REG, OT or SO once final. */
+  end: string | null;
+  away: TonightTeam;
+  home: TonightTeam;
+}
+export interface Tonight { date: string; fetched: string; games: TonightGame[] }
