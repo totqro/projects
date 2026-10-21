@@ -1,10 +1,12 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { f2, fmtDate, pct, share, toi } from "@/lib/format";
 import type { GamePlayer } from "@/lib/types";
 import { Signed, SortTable, type Column } from "@/components/tables/sortable";
+import { Button } from "@/components/ui/button";
 
 /** One game in a player's log, as the player page passes it. */
 export interface LogRow {
@@ -43,6 +45,16 @@ const GOALIE: Column<LogRow>[] = [
   { k: "gsax", label: "GSAx", get: g => n(g.line.xga_) - n(g.line.ga_), cell: g => <Signed v={n(g.line.xga_) - n(g.line.ga_)} d={2} />, tip: "gsax" },
 ];
 
+/** Rows rendered before "Show all": a full season pre-rendered was most of
+ *  a veteran's page. */
+const FIRST = 20;
+
 export function PlayerLog({ rows, goalie }: { rows: LogRow[]; goalie: boolean }) {
-  return <SortTable rows={rows} cols={goalie ? GOALIE : SKATER} initial={{ sort: "date", asc: false }} rowKey={g => g.id} />;
+  const [all, setAll] = React.useState(rows.length <= FIRST);
+  return (
+    <>
+      <SortTable rows={rows} cols={goalie ? GOALIE : SKATER} initial={{ sort: "date", asc: false }} rowKey={g => g.id} limit={all ? undefined : FIRST} />
+      {!all && <Button variant="secondary" size="sm" className="mt-3" onClick={() => setAll(true)}>Show all {rows.length} games</Button>}
+    </>
+  );
 }

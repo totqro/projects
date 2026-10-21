@@ -1,7 +1,7 @@
 import "server-only";
 import fs from "node:fs";
 import path from "node:path";
-import type { GamePlayer, PlayersFile, RawSheet, SeasonIndex, Sheet, TeamsFile } from "./types";
+import type { GamePlayer, LinesFile, PlayersFile, RawSheet, SeasonIndex, Sheet, Shot, TeamsFile } from "./types";
 import { unpack } from "./unpack";
 
 // Build-time access to the published sheets in data/ (scripts/fetch-data.sh).
@@ -24,6 +24,8 @@ export const currentSeason = () => seasons()[0];
 export const seasonIndex = (s: number) => read<SeasonIndex>(`${s}/index.json`);
 export const teamsFile = (s: number) => read<TeamsFile>(`${s}/teams.json`);
 export const playersFile = (s: number) => read<PlayersFile>(`${s}/players.json`);
+/** Lines, pairs and WOWY; null for seasons published before lines.json existed. */
+export const linesFile = (s: number) => (fs.existsSync(path.join(ROOT, `${s}/lines.json`)) ? read<LinesFile>(`${s}/lines.json`) : null);
 
 /** NHL game ids start with the season's start year. */
 export const seasonOfGame = (id: number | string) => +String(id).slice(0, 4);
@@ -71,6 +73,23 @@ export function playerGames(): Map<number, PlayerGame[]> {
   }
   for (const list of byPlayer.values()) list.sort((a, b) => (a.date + a.id).localeCompare(b.date + b.id));
   return byPlayer;
+}
+
+/** Every unblocked shot by shooter, with its game id, read once per build.
+ *  Used by the player shot maps. */
+let byShooter: Map<number, (Shot & { gid: number })[]> | null = null;
+export function shotsByShooter() {
+  if (byShooter) return byShooter;
+  byShooter = new Map();
+  for (const s of seasons())
+    for (const g of seasonIndex(s).games)
+      for (const shot of sheet(g.id).shots) {
+        if (shot.ev === "BLOCK") continue;
+        const list = byShooter.get(shot.shooter) ?? [];
+        list.push({ ...shot, gid: g.id });
+        byShooter.set(shot.shooter, list);
+      }
+  return byShooter;
 }
 
 /** The (season, team) pairs that have games, for the team pages. */

@@ -73,6 +73,9 @@
         "**/.*",
         "**/node_modules/**"
       ],
+      "rewrites": [
+        { "regex": "^/game/\\d{10}$", "destination": "/game/archive.html" }
+      ],
       "headers": [
         {
           "source": "/_next/static/**",
@@ -80,6 +83,24 @@
             {
               "key": "Cache-Control",
               "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "/data/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=0, must-revalidate"
+            }
+          ]
+        },
+        {
+          "source": "/logos/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=604800"
             }
           ]
         },

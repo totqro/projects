@@ -14,17 +14,22 @@ single-page game sheets that used to live at `lknox.web.app/xgcalc/sheets.html`
    branch into `data/`, builds this site as a static export and deploys the
    `fortknox` hosting target.
 
-Every game, team and player has its own pre-rendered page:
+Every team and player and every game of the current season has its own
+pre-rendered page:
 
 | Route | Page |
 |---|---|
 | `/`, `/games/<season>` | All games as mini box scores |
 | `/game/<id>` | Recap, line score, shot map, xG race, stars, chances, scoring, rosters |
+| `/game/archive` | The same page drawn in the browser for older seasons' games, which `firebase.json` rewrites to it |
 | `/teams/<season>` | Standings (league, conference, division, wild card) and team lenses |
 | `/team/<season>/<abbrev>` | A team over the season or its last 20, 10 or 5 games |
 | `/players/<season>` | Skater and goalie tables |
 | `/player/<id>` | A player's season and game log |
-| `/model` | How the xG model works |
+| `/model` | How the xG model works, with live accuracy and calibration |
+| `/about` | What the site is, glossary, credits |
+| `/data/<season>/games.json` | Every game of a season; the games pages load it on demand |
+| `/data/<season>/game/<id>.json` | An older season's game sheet, loaded by `/game/archive` |
 
 ## Develop
 
@@ -41,6 +46,15 @@ Before each build, `scripts/og-images.tsx` (the `prebuild` script) draws the
 share cards into `public/og/` with Satori and resvg: one per game of the
 current season, which a link to `/game/<id>` unfurls with (score, xG split,
 date), and `site.png` for every other page and for older games.
+
+Team pages show 5v5 forward lines, defence pairs and with-or-without-you
+from `lines.json`; player pages add on-ice/off-ice numbers, WOWY and a season
+shot map. Seasons published before October 2026 have no `lines.json` until
+they are rebuilt (run the sheets workflow by hand with that season), and
+those sections stay hidden for them.
+
+Team logos are the NHL's dark-background SVGs, copied into `public/logos/`
+so the site doesn't depend on `assets.nhle.com` at view time.
 
 ## Design
 

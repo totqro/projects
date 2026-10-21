@@ -1,7 +1,7 @@
 // Reading a single game sheet: the written recap, the three stars and the
 // lists the game page shows. Ported from xgcalc/web/sheets.html.
 import { f2, ORD, signed, toi } from "./format";
-import { nickname, SHOT_TYPE } from "./teams";
+import { nickname, shotNoun } from "./teams";
 import type { GamePlayer, Sheet, SheetSide, Shot } from "./types";
 
 export const pname = (G: Sheet, id: number | null) => G.players.find(p => p.id === id)?.name ?? "Unknown";
@@ -40,9 +40,13 @@ function fiveOnFive(w: SheetSide, l: SheetSide) {
     : `, though the ${nickname(l.name)} had the better of five-on-five, ${f2(l.xg5)} to ${f2(w.xg5)}`;
 }
 
-/** Unblocked, non-empty-net shots, most dangerous first. */
+/** Unblocked, non-empty-net shots, most dangerous first. xG is compared as
+ *  printed (two places), and a goal wins a tie, so the recap never names a
+ *  save over a goal that reads the same. */
+const xg2 = (s: Shot) => Math.round(s.xg * 100);
 export const bestChances = (G: Sheet, n: number) =>
-  G.shots.filter(s => s.ev !== "BLOCK" && s.sit !== "EN_AGAINST").sort((a, b) => b.xg - a.xg).slice(0, n);
+  G.shots.filter(s => s.ev !== "BLOCK" && s.sit !== "EN_AGAINST")
+    .sort((a, b) => xg2(b) - xg2(a) || +(b.ev === "GOAL") - +(a.ev === "GOAL") || b.xg - a.xg).slice(0, n);
 
 export function recap(G: Sheet) {
   const H = G.home, A = G.away, w = H.score > A.score ? H : A, l = w === H ? A : H;
@@ -60,7 +64,7 @@ export function recap(G: Sheet) {
   const best = bestChances(G, 1)[0];
   if (best) {
     const how = best.ev === "GOAL" ? ", and it went in" : best.ev === "SHOT" ? `, stopped by ${pname(G, best.goalie)}` : ", and it missed";
-    s.push(`The best chance was ${pname(G, best.shooter)}'s ${(SHOT_TYPE[best.type] ?? "").toLowerCase()} (${best.xg.toFixed(2)} xG) at ${toi(best.t)} of the ${ORD(best.p)}${how}.`);
+    s.push(`The best chance was ${pname(G, best.shooter)}'s ${shotNoun(best.type)} (${best.xg.toFixed(2)} xG) at ${toi(best.t)} of the ${ORD(best.p)}${how}.`);
   }
   const gks = G.players.filter(p => p.pos === "G" && p.sa).map(p => ({ p, gsax: gsaxOf(p) })).sort((a, b) => b.gsax - a.gsax);
   if (gks[0] && gks[0].gsax > 0.75) {

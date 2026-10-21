@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { seasonIndex, sheet, teamSeasons, teamsFile } from "@/lib/data";
+import { linesFile, seasonIndex, sheet, teamSeasons, teamsFile } from "@/lib/data";
 import { ordinal, seasonLabel } from "@/lib/format";
 import { standings, teamGames } from "@/lib/season";
 import { TEAMS, teamName } from "@/lib/teams";
 import { PageHead } from "@/components/site/page-head";
 import { TeamLogo } from "@/components/site/team-logo";
-import { TeamView, type Line, type LogGame, type TeamData } from "@/components/teams/team-view";
+import { TeamView, type LogGame, type TeamData } from "@/components/teams/team-view";
+import { packLines, type Line } from "@/lib/pack";
 import type { TeamGame } from "@/lib/season";
 
 export const dynamicParams = false;
@@ -37,14 +38,21 @@ export default async function Team({ params }: Props) {
   };
   const tg = { regular: teamGames(games, ab, "regular").map(with5), playoff: teamGames(games, ab, "playoff").map(with5) };
   // Each game's lines for this team's players, trimmed to what the page sums.
-  const lines: Line[] = [...tg.regular, ...tg.playoff].flatMap(g =>
-    sheet(g.id).players.filter(p => p.team === ab && (p.toi_all || p.att || p.sa)).map(p => ({
+  // Shots on goal each goalie faced (saves + goals), counted from the shots too.
+  const lines: Line[] = [...tg.regular, ...tg.playoff].flatMap(g => {
+    const S = sheet(g.id), sogA = new Map<number, number>();
+    for (const x of S.shots) if (x.goalie != null && (x.ev === "SHOT" || x.ev === "GOAL")) sogA.set(x.goalie, (sogA.get(x.goalie) ?? 0) + 1);
+    return S.players.filter(p => p.team === ab && (p.toi_all || p.att || p.sa)).map(p => ({
       gid: g.id, id: p.id, name: p.name, pos: p.pos,
       toi_all: p.toi_all ?? 0, toi_5v5: p.toi_5v5 ?? 0, g: p.g ?? 0, a: p.a ?? 0, ixg: p.ixg ?? 0, att: p.att ?? 0,
       xgf: p.xgf ?? 0, xga: p.xga ?? 0, xgf5: p.xgf5 ?? 0, xga5: p.xga5 ?? 0,
       gf: p.gf ?? 0, ga: p.ga ?? 0, gf5: p.gf5 ?? 0, ga5: p.ga5 ?? 0, sa: p.sa ?? 0, ga_: p.ga_ ?? 0, xga_: p.xga_ ?? 0,
-    })));
-  const d: TeamData = { season, team: ab, name: teamName(ab), standingLine, games: tg, lines };
+      sog_a: sogA.get(p.id) ?? 0,
+    }));
+  });
+  const L = linesFile(season);
+  const units = { regular: L?.regular[ab] ?? null, playoff: L?.playoff[ab] ?? null };
+  const d: TeamData = { season, team: ab, name: teamName(ab), standingLine, games: tg, lines: packLines(lines), units };
   return (
     <>
       <Link href={`/teams/${season}`} className="mb-4 inline-block text-sm text-muted-foreground hover:text-foreground">&larr; All teams</Link>
