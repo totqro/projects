@@ -7,10 +7,12 @@ export interface Line {
   toi_all: number; toi_5v5: number; g: number; a: number; ixg: number; att: number;
   xgf: number; xga: number; xgf5: number; xga5: number; gf: number; ga: number; gf5: number; ga5: number;
   sa: number; ga_: number; xga_: number;
+  /** goalies: shots on goal faced (saves + goals), the NHL's save % denominator */
+  sog_a: number;
 }
 
 /** The numeric keys of a Line, in the order a packed row carries them. */
-export const LINE_KEYS = ["toi_all", "toi_5v5", "g", "a", "ixg", "att", "xgf", "xga", "xgf5", "xga5", "gf", "ga", "gf5", "ga5", "sa", "ga_", "xga_"] as const;
+export const LINE_KEYS = ["toi_all", "toi_5v5", "g", "a", "ixg", "att", "xgf", "xga", "xgf5", "xga5", "gf", "ga", "gf5", "ga5", "sa", "ga_", "xga_", "sog_a"] as const;
 
 /** Lines as the page ships them: a name table and one array per line,
  *  [game id, player id, ...LINE_KEYS]. Objects repeated every key for every

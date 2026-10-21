@@ -27,7 +27,7 @@ function sumLines(lines: Line[]) {
   const keys = LINE_KEYS;
   for (const p of lines) {
     const bag = p.pos === "G" ? gk : sk;
-    const r = bag.get(p.id) ?? { id: p.id, name: p.name, pos: p.pos, gp: 0, toi_all: 0, toi_5v5: 0, g: 0, a: 0, ixg: 0, att: 0, xgf: 0, xga: 0, xgf5: 0, xga5: 0, gf: 0, ga: 0, gf5: 0, ga5: 0, sa: 0, ga_: 0, xga_: 0 };
+    const r = bag.get(p.id) ?? { id: p.id, name: p.name, pos: p.pos, gp: 0, toi_all: 0, toi_5v5: 0, g: 0, a: 0, ixg: 0, att: 0, xgf: 0, xga: 0, xgf5: 0, xga5: 0, gf: 0, ga: 0, gf5: 0, ga5: 0, sa: 0, ga_: 0, xga_: 0, sog_a: 0 };
     r.gp++;
     for (const k of keys) r[k] += p[k];
     bag.set(p.id, r);
@@ -71,8 +71,9 @@ const GK_COLS: Column<PlayerSum>[] = [
   { k: "ga", label: "GA", get: p => p.ga_, asc: true, tip: "gaG" },
   { k: "xga", label: "xGA", get: p => p.xga_, cell: p => f1(p.xga_), tip: "xgaG" },
   { k: "gsax", label: "GSAx", get: p => p.xga_ - p.ga_, cell: p => <b className="font-semibold"><Signed v={p.xga_ - p.ga_} /></b>, tip: "gsax" },
-  { k: "svp", label: "Sv%", get: p => (p.sa ? 1 - p.ga_ / p.sa : null), cell: p => sv(p.sa ? 1 - p.ga_ / p.sa : null), tip: "svp" },
-  { k: "xsvp", label: "xSv%", get: p => (p.sa ? 1 - p.xga_ / p.sa : null), cell: p => sv(p.sa ? 1 - p.xga_ / p.sa : null), tip: "xsvp" },
+  { k: "nsvp", label: "NHL Sv%", get: p => (p.sog_a ? 1 - p.ga_ / p.sog_a : null), cell: p => sv(p.sog_a ? 1 - p.ga_ / p.sog_a : null), tip: "nsvp" },
+  { k: "svp", label: "Unbl. Sv%", get: p => (p.sa ? 1 - p.ga_ / p.sa : null), cell: p => sv(p.sa ? 1 - p.ga_ / p.sa : null), tip: "svp" },
+  { k: "xsvp", label: "Unbl. xSv%", get: p => (p.sa ? 1 - p.xga_ / p.sa : null), cell: p => sv(p.sa ? 1 - p.xga_ / p.sa : null), tip: "xsvp" },
 ];
 const LOG_COLS: Column<LogGame>[] = [
   { k: "date", label: "Date", l: true, pin: true, get: g => g.date + g.id, cell: g => fmtDate(g.date), tip: "date" },
