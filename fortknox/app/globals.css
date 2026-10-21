@@ -361,6 +361,8 @@ html.dark {
    background repeats the row's tint over the card so nothing shows through. */
 .fk-table .pin { position: sticky; left: 0; z-index: 1; background: var(--card); box-shadow: inset -1px 0 var(--border); }
 /* The row's stripe laid over the card, so the pinned cell composites exactly like the cells beside it. */
+/* Its background hides the row's bottom border, so it draws its own. */
+.fk-table tbody tr:not(:last-child) td.pin { box-shadow: inset -1px 0 var(--border), inset 0 -1px var(--border); }
 .fk-table tbody tr:nth-child(even) td.pin { background: linear-gradient(color-mix(in oklch, var(--foreground) 3.5%, transparent)), var(--card); }
 .fk-table tbody tr:hover td.pin { background: color-mix(in oklch, var(--accent) 30%, var(--card)); }
 .fk-table tbody tr[data-state="selected"] td.pin { background: color-mix(in oklch, var(--accent) 60%, var(--card)); }
