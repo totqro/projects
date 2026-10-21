@@ -14,12 +14,14 @@ single-page game sheets that used to live at `lknox.web.app/xgcalc/sheets.html`
    branch into `data/`, builds this site as a static export and deploys the
    `fortknox` hosting target.
 
-Every game, team and player has its own pre-rendered page:
+Every team and player and every game of the current season has its own
+pre-rendered page:
 
 | Route | Page |
 |---|---|
 | `/`, `/games/<season>` | All games as mini box scores |
 | `/game/<id>` | Recap, line score, shot map, xG race, stars, chances, scoring, rosters |
+| `/game/archive` | The same page drawn in the browser for older seasons' games, which `firebase.json` rewrites to it |
 | `/teams/<season>` | Standings (league, conference, division, wild card) and team lenses |
 | `/team/<season>/<abbrev>` | A team over the season or its last 20, 10 or 5 games |
 | `/players/<season>` | Skater and goalie tables |
@@ -27,6 +29,7 @@ Every game, team and player has its own pre-rendered page:
 | `/model` | How the xG model works, with live accuracy and calibration |
 | `/about` | What the site is, glossary, credits |
 | `/data/<season>/games.json` | Every game of a season; the games pages load it on demand |
+| `/data/<season>/game/<id>.json` | An older season's game sheet, loaded by `/game/archive` |
 
 ## Develop
 

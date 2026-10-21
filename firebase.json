@@ -73,6 +73,9 @@
         "**/.*",
         "**/node_modules/**"
       ],
+      "rewrites": [
+        { "regex": "^/game/\\d{10}$", "destination": "/game/archive.html" }
+      ],
       "headers": [
         {
           "source": "/_next/static/**",

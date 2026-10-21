@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
-// A fully static site: every game, team and player page is pre-rendered at
-// build time from the published sheets in data/ (see scripts/fetch-data.sh).
+// A fully static site: every team and player page and this season's games are
+// pre-rendered at build time from the published sheets in data/ (see
+// scripts/fetch-data.sh). Older games load their sheet in app/game/archive.
 const nextConfig: NextConfig = {
   output: "export",
   images: { unoptimized: true },
