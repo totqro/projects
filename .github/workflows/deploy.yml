@@ -122,8 +122,11 @@ jobs:
                   print(f'{sport}: no data yet')
           "
 
+      # Pinned: 15.34.1 checks the Hosting API through serviceusage.googleapis.com,
+      # which the deploy service account can't read (403). Unpin once it has the
+      # Service Usage Consumer role.
       - name: Install Firebase CLI
-        run: npm install -g firebase-tools
+        run: npm install -g firebase-tools@15.34.0
 
       - name: Deploy to Firebase
         env:
