@@ -785,7 +785,7 @@ function derive(extraChange){
 function playerStats(D, scope){
   const inScope = p => scope === undefined || scope === null || p === scope;
   const st = {};
-  S.roster.forEach(p => st[p.num] = {p, toi:0, shifts:0, cf:0, ca:0, gf:0, ga:0, xgf:0, xga:0, uxga:0, sa:0});
+  S.roster.forEach(p => st[p.num] = {p, toi:0, shifts:0, cf:0, ca:0, gf:0, ga:0, xgf:0, xga:0, uxga:0, sa:0, xgf5:0, xga5:0});
   for(const seg of D.segments){ if(!inScope(seg.p)) continue;
     for(const n of seg.board) if(st[n]) st[n].toi += seg.s1 - seg.s2; }
   for(const sh of D.shifts){ const r = st[sh.num]; if(!r) continue;
@@ -797,8 +797,9 @@ function playerStats(D, scope){
     if(dur > 0 || sh.open) r.shifts++; }
   for(const s of D.ordered){
     if(!inScope(s.p)) continue;
-    const I = D.shotInfo[s.id], us = s.team === "us";
+    const I = D.shotInfo[s.id], us = s.team === "us", ev5 = I.situation === "EV_5v5";
     for(const n of I.onIce){ const r = st[n]; if(!r) continue;
+      if(ev5) r[us ? "xgf5" : "xga5"] += I.xg || 0;
       if(us){ r.cf++; r.xgf += I.xg || 0; if(s.result === "GOAL") r.gf++; }
       else  { r.ca++; r.xga += I.xg || 0; if(s.result !== "BLOCK") r.uxga += I.xg || 0; if(s.result === "GOAL") r.ga++; if(s.result === "SAVE" || s.result === "GOAL") r.sa++; }
     }
@@ -1618,7 +1619,9 @@ function leaderTables(st){
   return table("Highest on-ice xG", "· xG for with them on", best) + table("Lowest on-ice xG", "", worst);
 }
 /* Page two: every skater who played, once ranked by on-ice xGF and once
-   by on-ice xGA, each highest first. Goalies sit out: they're on for the
+   by on-ice xGA, each highest first, with the 5v5 share beside it (from
+   each shot's own strength, so it holds even when penalties weren't
+   logged; no 5v5 /60, since 5v5 TOI does need them). Goalies sit out: they're on for the
    whole game, and the goalie table already has their xGA. */
 function rankTables(st){
   const sk = Object.values(st).filter(r => r.p.pos !== "G" && r.toi > 0);
@@ -1626,9 +1629,9 @@ function rankTables(st){
   const table = (title, sub, key, col) => {
     const rows = sk.slice().sort((a,b) => b[key] - a[key] || b.toi - a.toi), top = rows.length ? rows[0][key] : 0;
     return `<div><h3>${title} <span class="sub">${sub}</span></h3>` + (rows.length
-      ? `<table><thead><tr><th class="n">#</th><th>Skater</th><th class="n">TOI</th><th class="n">${key === "xgf" ? "xGF" : "xGA"}</th><th class="n">/60</th><th></th></tr></thead><tbody>` +
+      ? `<table><thead><tr><th class="n">#</th><th>Skater</th><th class="n">TOI</th><th class="n">${key === "xgf" ? "xGF" : "xGA"}</th><th class="n">5v5</th><th class="n">/60</th><th></th></tr></thead><tbody>` +
         rows.map((r, i) => `<tr><td class="n rk">${i + 1}</td><td class="nm">${pname(r.p)}</td><td class="n">${fmt(r.toi)}</td><td class="n">${r[key].toFixed(2)}</td>
-          <td class="n">${per60(r[key], r.toi)}</td><td class="xgbar">${top > 0 ? `<i style="width:${(100*r[key]/top).toFixed(1)}%; background:${col}"></i>` : ""}</td></tr>`).join("") + `</tbody></table>`
+          <td class="n">${r[key + "5"].toFixed(2)}</td><td class="n">${per60(r[key], r.toi)}</td><td class="xgbar">${top > 0 ? `<i style="width:${(100*r[key]/top).toFixed(1)}%; background:${col}"></i>` : ""}</td></tr>`).join("") + `</tbody></table>`
       : `<p class="empty">No shifts logged in this scope.</p>`) + `</div>`;
   };
   return table("On-ice xGF", "· highest to lowest", "xgf", RC_US) + table("On-ice xGA", "· highest to lowest", "xga", RC_THEM);
@@ -1756,7 +1759,7 @@ function buildReport(scope){
     <h2>On-ice xG by player <span class="sub">&middot; skaters &middot; xG for and against with each one on the ice</span></h2>
     <div class="two">${rankTables(st)}</div>
   </section>
-  <div class="foot"><span>On-ice xGF and xGA count every tagged shot, for and against, while the player was on the ice by the tracked shifts. /60 is per 60 minutes of their TOI, shown from 30 seconds up. One game is a small sample.</span><span>${esc(caveats)}</span></div></section></div>`;
+  <div class="foot"><span>On-ice xGF and xGA count every tagged shot, for and against, while the player was on the ice by the tracked shifts. 5v5 counts only the shots taken five on five with both goalies in. /60 is per 60 minutes of their TOI in all situations, shown from 30 seconds up. One game is a small sample.</span><span>${esc(caveats)}</span></div></section></div>`;
 }
 function renderScopeSelect(D){
   const sel = $("rScope"), cur = sel.value, ps = periodsInGame(D);
