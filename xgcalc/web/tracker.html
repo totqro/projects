@@ -219,6 +219,10 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
 /* fitReport() scales .rp inside .rpfit; the box takes the scaled height. */
 #reportOut .rpfit{overflow:hidden; break-inside:avoid; page-break-inside:avoid}
 #reportOut .rp{transform-origin:top center}
+#reportOut .rpfit + .rpfit{break-before:page; page-break-before:always}
+#reportOut td.rk{color:#7B8B9C; width:1.6em; text-align:right; padding-right:6px}
+#reportOut td.xgbar{width:34%; padding-left:8px}
+#reportOut td.xgbar i{display:block; height:7px; border-radius:2px}
 #reportOut .cmp-head{display:flex; justify-content:space-between; font-size:10px; font-weight:800; margin-bottom:2px}
 #reportOut .cmp-row{display:grid; grid-template-columns:44px minmax(0,1fr) 44px; align-items:end; gap:8px; margin-bottom:3px}
 #reportOut .cv{font-size:12px; font-variant-numeric:tabular-nums; font-weight:600; line-height:1.1}
@@ -352,7 +356,7 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
     <div class="actions">
       <select id="rScope" aria-label="Report scope"></select>
       <button class="primary" id="xReport">Report PDF</button>
-      <span class="note" style="align-self:center">Opens the print dialog: choose <b>Save as PDF</b>. One portrait page.</span>
+      <span class="note" style="align-self:center">Opens the print dialog: choose <b>Save as PDF</b>. Two portrait pages.</span>
     </div>
     <div class="note" style="margin-top:6px">The shots CSV keeps the shot-plotter columns, so Shot Chart and <code>score_tagged.py</code> read it as-is, plus clock, rebound, situation, xG, who was on the ice, and the rush and cross-ice tags (<code>fit_tagged.py</code> refits those from it).</div>
   </div>
@@ -1613,6 +1617,22 @@ function leaderTables(st){
     : `<p class="empty">No shifts logged in this scope.</p>`) + `</div>`;
   return table("Highest on-ice xG", "· xG for with them on", best) + table("Lowest on-ice xG", "", worst);
 }
+/* Page two: every skater who played, once ranked by on-ice xGF and once
+   by on-ice xGA, each highest first. Goalies sit out: they're on for the
+   whole game, and the goalie table already has their xGA. */
+function rankTables(st){
+  const sk = Object.values(st).filter(r => r.p.pos !== "G" && r.toi > 0);
+  const per60 = (v, t) => t >= 30 ? (v*3600/t).toFixed(2) : "";
+  const table = (title, sub, key, col) => {
+    const rows = sk.slice().sort((a,b) => b[key] - a[key] || b.toi - a.toi), top = rows.length ? rows[0][key] : 0;
+    return `<div><h3>${title} <span class="sub">${sub}</span></h3>` + (rows.length
+      ? `<table><thead><tr><th class="n">#</th><th>Skater</th><th class="n">TOI</th><th class="n">${key === "xgf" ? "xGF" : "xGA"}</th><th class="n">/60</th><th></th></tr></thead><tbody>` +
+        rows.map((r, i) => `<tr><td class="n rk">${i + 1}</td><td class="nm">${pname(r.p)}</td><td class="n">${fmt(r.toi)}</td><td class="n">${r[key].toFixed(2)}</td>
+          <td class="n">${per60(r[key], r.toi)}</td><td class="xgbar">${top > 0 ? `<i style="width:${(100*r[key]/top).toFixed(1)}%; background:${col}"></i>` : ""}</td></tr>`).join("") + `</tbody></table>`
+      : `<p class="empty">No shifts logged in this scope.</p>`) + `</div>`;
+  };
+  return table("On-ice xGF", "· highest to lowest", "xgf", RC_US) + table("On-ice xGA", "· highest to lowest", "xga", RC_THEM);
+}
 function strengthTable(D, shots, tl){
   const rows = {EV:{}, PP:{}, PK:{}}; Object.values(rows).forEach(r => Object.assign(r, {xgf:0, xga:0, gf:0, ga:0}));
   for(const s of shots){ const I = D.shotInfo[s.id], r = rows[strOf(I.us, I.them)], xg = I.xg || 0, goal = s.result === "GOAL";
@@ -1700,15 +1720,16 @@ function buildReport(scope){
   const usTag = `<span style="color:${RC_US}">${esc(showName(S.us))}</span>`, themTag = `<span style="color:${RC_THEM}">${esc(S.opp)}</span>`;
   const match = S.venue === "away" ? `${usTag} @ ${themTag}` : `${themTag} @ ${usTag}`;
   const logo = LOGO.naturalWidth ? `<img class="logo" src="${LOGO.src}" alt="University of Toronto Varsity Blues">` : "";
-  return `<div class="rpfit"><section class="rp">
-  <header class="head">
+  const head = `<header class="head">
     <div class="side l"><div class="match">${match}${esc(short)}</div><div class="meta">${esc(long)}</div></div>
     ${logo}
     <div class="side r">
       <div class="score"><span class="tm" style="color:${RC_US}">${esc(showName(S.us))}</span><span class="num">${a.g}&ndash;${b.g}</span><span class="tm" style="color:${RC_THEM}">${esc(S.opp)}</span></div>
       <div class="meta">${statusLine(scope)}</div>
     </div>
-  </header>
+  </header>`;
+  return `<div class="rpfit"><section class="rp">
+  ${head}
   <section class="blk">
     <h2>Shot map <span class="sub">&middot; coloured by danger tier &middot; ${esc(S.us)} always shooting right &middot; stars are goals</span></h2>
     ${reportRink(D, shots)}${reportKeys()}
@@ -1728,26 +1749,36 @@ function buildReport(scope){
   </section>
   <div class="foot"><span>Tagger xG (expected goals) is the chance a shot goes in, from a five-feature model fit on 905,483 NHL attempts, plus tagged odd-man rushes and
     cross-ice feeds; blocks count at ${Math.round(adj().block_factor*100)}%. It is not the full-data xG on High Slot's NHL game sheets, which uses inputs a tagger can't see. Danger tiers are the coaches' zones (rush +1, cross-ice feed = high, blocked &minus;1), a label alongside xG.
-    On-ice numbers come from tracked shifts, strength time from the clock and logged penalties. One game is a small sample.</span><span>${esc(caveats)}</span></div></section></div>`;
+    On-ice numbers come from tracked shifts, strength time from the clock and logged penalties. One game is a small sample.</span><span>${esc(caveats)}</span></div></section></div>
+<div class="rpfit"><section class="rp">
+  ${head}
+  <section class="blk">
+    <h2>On-ice xG by player <span class="sub">&middot; skaters &middot; xG for and against with each one on the ice</span></h2>
+    <div class="two">${rankTables(st)}</div>
+  </section>
+  <div class="foot"><span>On-ice xGF and xGA count every tagged shot, for and against, while the player was on the ice by the tracked shifts. /60 is per 60 minutes of their TOI, shown from 30 seconds up. One game is a small sample.</span><span>${esc(caveats)}</span></div></section></div>`;
 }
 function renderScopeSelect(D){
   const sel = $("rScope"), cur = sel.value, ps = periodsInGame(D);
   sel.innerHTML = `<option value="">Full game</option>` + ps.map(p => `<option value="${p}">${p <= 3 ? "Period " + p : perLabel(p)}</option>`).join("");
   sel.value = [...sel.options].some(o => o.value === cur) ? cur : "";
 }
-/* One page, always, in any browser. Safari ignores zoom when it prints and
+/* One page per sheet, always, in any browser. Safari ignores zoom when it prints and
    lays a letter page out at about 696 x 922 CSS px (Chrome: 748 x 988), so
    scale the report with a transform, inside a box of the scaled height,
    until it fits the smaller of the two. */
 /* SLACK: print wraps small text a little taller than the screen measures. */
 const REPORT_MAX_W = 690, REPORT_MAX_H = 900, REPORT_SLACK = 12;
 function fitReport(out){
-  const page = out.querySelector(".rp"), box = page.parentNode;
-  page.style.transform = ""; box.style.height = "";
   out.style.cssText = "display:block; position:absolute; left:-20000px; top:0";
-  const r = page.getBoundingClientRect(), k = Math.min(1, REPORT_MAX_W / r.width, (REPORT_MAX_H - REPORT_SLACK) / r.height);
+  const fits = [...out.querySelectorAll(".rp")].map(page => {
+    page.style.transform = ""; page.parentNode.style.height = "";
+    const r = page.getBoundingClientRect();
+    return [page, r.height, Math.min(1, REPORT_MAX_W / r.width, (REPORT_MAX_H - REPORT_SLACK) / r.height)];
+  });
   out.style.cssText = "";
-  if(k < 1){ page.style.transform = `scale(${k.toFixed(4)})`; box.style.height = (r.height * k + REPORT_SLACK).toFixed(1) + "px"; }
+  for(const [page, h, k] of fits)
+    if(k < 1){ page.style.transform = `scale(${k.toFixed(4)})`; page.parentNode.style.height = (h * k + REPORT_SLACK).toFixed(1) + "px"; }
 }
 function exportReport(){
   const v = $("rScope").value, go = () => {
