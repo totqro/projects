@@ -1,0 +1,1178 @@
+<title>Vellum Room Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --paper:#eef0e9;
+  --sheet:#f4f6ef;
+  --panel:#f8f9f4;
+  --panel-2:#e8ebe1;
+  --ink:#1b2320;
+  --ink-2:#5d6862;
+  --ink-3:#8b958f;
+  --rule:#d2d8c9;
+  --rule-strong:#b0b9a6;
+  --accent:#d8541f;
+  --accent-ink:#fff;
+  --accent-soft:rgba(216,84,31,.13);
+  --dim:#15756c;
+  --fill-op:.30;
+  --stroke-op:.95;
+  --shadow:0 1px 0 rgba(27,35,32,.05), 0 10px 28px -16px rgba(27,35,32,.45);
+  --focus:0 0 0 2px var(--paper), 0 0 0 4px var(--accent);
+  --sans:"Barlow", ui-sans-serif, system-ui, sans-serif;
+  --cond:"Barlow Condensed", "Barlow", ui-sans-serif, system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#121716;
+    --sheet:#1a201e;
+    --panel:#171d1c;
+    --panel-2:#222a28;
+    --ink:#e3eae2;
+    --ink-2:#97a29c;
+    --ink-3:#6d7a74;
+    --rule:#2a3331;
+    --rule-strong:#43514c;
+    --accent:#f3703c;
+    --accent-ink:#1b1008;
+    --accent-soft:rgba(243,112,60,.16);
+    --dim:#45b8a9;
+    --fill-op:.34;
+    --stroke-op:1;
+    --shadow:0 1px 0 rgba(0,0,0,.3), 0 12px 30px -18px #000;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#121716; --sheet:#1a201e; --panel:#171d1c; --panel-2:#222a28;
+  --ink:#e3eae2; --ink-2:#97a29c; --ink-3:#6d7a74;
+  --rule:#2a3331; --rule-strong:#43514c;
+  --accent:#f3703c; --accent-ink:#1b1008; --accent-soft:rgba(243,112,60,.16);
+  --dim:#45b8a9; --fill-op:.34; --stroke-op:1;
+  --shadow:0 1px 0 rgba(0,0,0,.3), 0 12px 30px -18px #000;
+}
+
+*{box-sizing:border-box}
+body{background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:14px; -webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit; color:inherit}
+:focus-visible{outline:none; box-shadow:var(--focus)}
+@media (prefers-reduced-motion: reduce){ *{transition:none !important; animation:none !important} }
+
+/* ---------- shell ---------- */
+.app{height:100dvh; min-height:520px; display:flex; flex-direction:column; background:var(--paper)}
+.body{flex:1; min-height:0; display:grid; grid-template-columns:236px minmax(0,1fr) 272px}
+
+/* ---------- title block ---------- */
+.titleblock{
+  display:flex; align-items:stretch; gap:0;
+  border-bottom:1px solid var(--rule-strong); background:var(--panel);
+  flex:0 0 auto;
+}
+.tb-mark{display:flex; flex-direction:column; justify-content:center; padding:9px 16px; border-right:1px solid var(--rule-strong)}
+.tb-mark b{font-family:var(--cond); font-weight:700; font-size:19px; letter-spacing:.10em; text-transform:uppercase; line-height:1}
+.tb-mark span{font-family:var(--cond); font-weight:500; font-size:11.5px; letter-spacing:.20em; text-transform:uppercase; color:var(--ink-3); line-height:1; margin-top:3px}
+.tb-cells{display:flex}
+.tb-cell{padding:9px 16px; border-right:1px solid var(--rule); display:flex; flex-direction:column; justify-content:center; min-width:96px}
+.tb-cell dt{font-family:var(--cond); font-size:10.5px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3); line-height:1; margin:0}
+.tb-cell dd{margin:4px 0 0; font-family:var(--mono); font-size:13px; font-weight:500; line-height:1; font-variant-numeric:tabular-nums}
+.tb-actions{margin-left:auto; display:flex; align-items:center; gap:6px; padding:0 12px; border-left:1px solid var(--rule-strong)}
+
+/* ---------- controls ---------- */
+.btn{
+  appearance:none; background:var(--panel-2); border:1px solid var(--rule-strong); color:var(--ink);
+  padding:6px 11px; border-radius:3px; font-family:var(--cond); font-weight:600; font-size:13px;
+  letter-spacing:.07em; text-transform:uppercase; cursor:pointer; white-space:nowrap; line-height:1.25;
+}
+.btn:hover{border-color:var(--ink-3)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.btn.ghost{background:transparent}
+.btn.danger:hover{border-color:var(--accent); color:var(--accent)}
+.btn[disabled]{opacity:.4; cursor:not-allowed}
+
+.seg{display:inline-flex; border:1px solid var(--rule-strong); border-radius:3px; overflow:hidden; background:var(--panel-2)}
+.seg button{
+  appearance:none; background:transparent; border:0; border-right:1px solid var(--rule-strong);
+  padding:6px 10px; cursor:pointer; font-family:var(--cond); font-weight:600; font-size:12.5px;
+  letter-spacing:.09em; text-transform:uppercase; color:var(--ink-2);
+}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink)}
+
+.field{display:flex; flex-direction:column; gap:5px; min-width:0}
+.field label{font-family:var(--cond); font-size:10.5px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3)}
+.field input, .field select{
+  width:100%; background:var(--sheet); border:1px solid var(--rule-strong); border-radius:3px;
+  padding:6px 8px; font-family:var(--mono); font-size:13px; font-variant-numeric:tabular-nums;
+}
+.field input:hover, .field select:hover{border-color:var(--ink-3)}
+.field.text input{font-family:var(--sans)}
+.row2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px}
+
+/* ---------- rails ---------- */
+.rail{background:var(--panel); overflow-y:auto; overflow-x:hidden; display:flex; flex-direction:column}
+.rail-left{border-right:1px solid var(--rule-strong)}
+.rail-right{border-left:1px solid var(--rule-strong)}
+.sec{border-bottom:1px solid var(--rule); padding:14px 14px 16px; display:flex; flex-direction:column; gap:10px}
+.sec:last-child{border-bottom:0}
+.sec > h2{
+  margin:0; font-family:var(--cond); font-size:11px; font-weight:700; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--ink-3); display:flex; align-items:center; gap:8px;
+}
+.sec > h2::after{content:""; flex:1; height:1px; background:var(--rule)}
+
+.cat{display:flex; flex-direction:column; gap:2px}
+.cat-h{font-family:var(--cond); font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2); padding:8px 0 3px}
+.cat button{
+  display:flex; align-items:baseline; justify-content:space-between; gap:8px; width:100%;
+  text-align:left; background:transparent; border:0; border-radius:3px; padding:5px 7px; cursor:pointer;
+}
+.cat button:hover{background:var(--accent-soft)}
+.cat button .n{font-size:13.5px}
+.cat button .d{font-family:var(--mono); font-size:11px; color:var(--ink-3); white-space:nowrap; font-variant-numeric:tabular-nums}
+
+.shapes{display:grid; grid-template-columns:repeat(4,1fr); gap:6px}
+.shapes button{
+  aspect-ratio:1; display:grid; place-items:center; background:var(--sheet);
+  border:1px solid var(--rule-strong); border-radius:3px; cursor:pointer; padding:0;
+}
+.shapes button:hover{border-color:var(--accent)}
+.shapes button[aria-pressed="true"]{border-color:var(--accent); background:var(--accent-soft)}
+.shapes svg{width:22px; height:22px; stroke:var(--ink-2); fill:none; stroke-width:1.5}
+.shapes button:hover svg, .shapes button[aria-pressed="true"] svg{stroke:var(--accent)}
+
+.swatches{display:flex; gap:6px; flex-wrap:wrap}
+.swatches button{width:24px; height:24px; border-radius:3px; border:1px solid var(--rule-strong); cursor:pointer; padding:0}
+.swatches button[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--panel), 0 0 0 2px var(--ink)}
+
+.empty{color:var(--ink-3); font-size:13px; line-height:1.5}
+.empty b{color:var(--ink-2); font-weight:600}
+
+/* inventory */
+.inv{display:flex; flex-direction:column; gap:1px}
+.inv-row{
+  display:grid; grid-template-columns:10px minmax(0,1fr) auto; align-items:center; gap:8px;
+  padding:5px 7px; border-radius:3px; cursor:pointer; border:0; background:transparent; text-align:left; width:100%;
+}
+.inv-row:hover{background:var(--accent-soft)}
+.inv-row[aria-current="true"]{background:var(--accent); color:var(--accent-ink)}
+.inv-row[aria-current="true"] .d{color:var(--accent-ink); opacity:.8}
+.inv-chip{width:10px; height:10px; border-radius:2px; border:1px solid rgba(0,0,0,.25)}
+.inv-row .n{font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.inv-row .d{font-family:var(--mono); font-size:11px; color:var(--ink-3); font-variant-numeric:tabular-nums}
+
+/* clearances readout */
+.clear{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:3px; overflow:hidden}
+.clear div{background:var(--panel); padding:6px 4px; text-align:center}
+.clear dt{margin:0; font-family:var(--cond); font-size:10px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3)}
+.clear dd{margin:3px 0 0; font-family:var(--mono); font-size:11.5px; color:var(--dim); font-variant-numeric:tabular-nums}
+
+/* ---------- sheet ---------- */
+.sheetwrap{position:relative; min-width:0; display:flex; flex-direction:column; background:var(--paper)}
+#sheet{flex:1; min-height:0; width:100%; display:block; touch-action:none; cursor:default}
+#sheet.panning{cursor:grabbing}
+#sheet.drawing{cursor:crosshair}
+
+.statusbar{
+  flex:0 0 auto; border-top:1px solid var(--rule-strong); background:var(--panel);
+  display:flex; align-items:center; gap:14px; padding:0 14px; height:34px;
+  font-family:var(--mono); font-size:11.5px; color:var(--ink-2); font-variant-numeric:tabular-nums;
+}
+.statusbar .sb-k{font-family:var(--cond); font-size:10.5px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3)}
+.statusbar .spacer{flex:1}
+.scalebar{display:flex; align-items:center; gap:7px}
+.scalebar svg{display:block; overflow:visible}
+
+.hint{
+  position:absolute; left:50%; top:12px; transform:translateX(-50%);
+  background:var(--ink); color:var(--paper); padding:6px 12px; border-radius:3px;
+  font-family:var(--cond); font-size:12.5px; font-weight:600; letter-spacing:.09em; text-transform:uppercase;
+  box-shadow:var(--shadow); pointer-events:none;
+}
+
+/* ---------- modal ---------- */
+.scrim{position:fixed; inset:0; background:rgba(12,18,16,.55); display:grid; place-items:center; padding:24px; z-index:50}
+.dialog{
+  background:var(--panel); border:1px solid var(--rule-strong); border-radius:4px;
+  box-shadow:var(--shadow); width:min(620px,100%); max-height:84dvh; display:flex; flex-direction:column;
+}
+.dialog header{padding:12px 16px; border-bottom:1px solid var(--rule); display:flex; align-items:center; gap:12px}
+.dialog header h2{margin:0; font-family:var(--cond); font-size:15px; font-weight:700; letter-spacing:.14em; text-transform:uppercase}
+.dialog .content{padding:16px; overflow:auto; display:flex; flex-direction:column; gap:12px}
+.dialog footer{padding:12px 16px; border-top:1px solid var(--rule); display:flex; gap:8px; justify-content:flex-end}
+.dialog textarea{
+  width:100%; min-height:220px; resize:vertical; background:var(--sheet); color:var(--ink);
+  border:1px solid var(--rule-strong); border-radius:3px; padding:10px; font-family:var(--mono); font-size:12px; line-height:1.5;
+}
+.dialog img{width:100%; height:auto; border:1px solid var(--rule-strong); border-radius:3px; background:#fff}
+.dialog p{margin:0; color:var(--ink-2); line-height:1.55}
+kbd{
+  font-family:var(--mono); font-size:11px; background:var(--panel-2); border:1px solid var(--rule-strong);
+  border-bottom-width:2px; border-radius:3px; padding:1px 5px;
+}
+.keys{display:grid; grid-template-columns:auto 1fr; gap:6px 14px; align-items:center}
+.keys span{color:var(--ink-2)}
+
+/* ---------- responsive ---------- */
+@media (max-width: 1040px){
+  .body{grid-template-columns:210px minmax(0,1fr) 240px}
+  .tb-cell{min-width:78px; padding:9px 11px}
+}
+@media (max-width: 860px){
+  .app{height:auto; min-height:100dvh}
+  .body{grid-template-columns:1fr; grid-template-rows:auto 62dvh auto}
+  .rail-left{border-right:0; border-bottom:1px solid var(--rule-strong); max-height:38dvh}
+  .rail-right{border-left:0; border-top:1px solid var(--rule-strong)}
+  .titleblock{flex-wrap:wrap}
+  .tb-actions{margin-left:0; border-left:0; border-top:1px solid var(--rule); width:100%; padding:8px 12px; flex-wrap:wrap}
+}
+</style>
+
+<div class="app">
+  <header class="titleblock">
+    <div class="tb-mark"><b>Vellum</b><span>Room Planner</span></div>
+    <dl class="tb-cells">
+      <div class="tb-cell"><dt>Room</dt><dd id="tbRoom">—</dd></div>
+      <div class="tb-cell"><dt>Floor area</dt><dd id="tbArea">—</dd></div>
+      <div class="tb-cell"><dt>Items</dt><dd id="tbCount">—</dd></div>
+    </dl>
+    <div class="tb-actions">
+      <div class="seg" role="group" aria-label="Units">
+        <button id="uImp" aria-pressed="true">ft / in</button>
+        <button id="uMet" aria-pressed="false">m / cm</button>
+      </div>
+      <button class="btn ghost" id="btnSnap" aria-pressed="true" title="Snap to grid and walls">Snap</button>
+      <button class="btn ghost" id="btnGrid" aria-pressed="true" title="Show grid">Grid</button>
+      <button class="btn ghost" id="btnFit" title="Fit room to view">Fit</button>
+      <button class="btn ghost" id="btnKeys" title="Keyboard shortcuts">Keys</button>
+      <button class="btn ghost" id="btnExport">Export</button>
+      <button class="btn ghost danger" id="btnClear">Clear</button>
+    </div>
+  </header>
+
+  <div class="body">
+    <aside class="rail rail-left">
+      <section class="sec">
+        <h2>Room</h2>
+        <div class="row2">
+          <div class="field"><label for="roomW">Width</label><input id="roomW" inputmode="text"></div>
+          <div class="field"><label for="roomH">Length</label><input id="roomH" inputmode="text"></div>
+        </div>
+        <p class="empty">Type <b>12'6"</b>, <b>150</b>, or <b>3.8m</b> — it reads whichever you use.</p>
+      </section>
+
+      <section class="sec">
+        <h2>Draw a shape</h2>
+        <div class="shapes" id="shapeTools">
+          <button data-shape="rect" title="Rectangle"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1"/></svg></button>
+          <button data-shape="square" title="Square"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1"/></svg></button>
+          <button data-shape="oval" title="Oval"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9" ry="6.5"/></svg></button>
+          <button data-shape="free" title="Freehand — draw on the sheet"><svg viewBox="0 0 24 24"><path d="M5 15c-1-5 3-9 7-8s6 4 5 8-4 5-7 4-4-3-3-5 4-2 4 0"/></svg></button>
+        </div>
+      </section>
+
+      <section class="sec">
+        <h2>Furniture</h2>
+        <div id="catalog"></div>
+      </section>
+    </aside>
+
+    <main class="sheetwrap">
+      <svg id="sheet" aria-label="Room floor plan"></svg>
+      <div class="statusbar">
+        <span class="sb-k">Cursor</span><span id="sbPos">—</span>
+        <span class="spacer"></span>
+        <span class="sb-k">Scale</span>
+        <span class="scalebar"><svg id="scaleBar" width="120" height="16"></svg><span id="scaleTxt">—</span></span>
+      </div>
+    </main>
+
+    <aside class="rail rail-right">
+      <section class="sec" id="inspector"></section>
+      <section class="sec">
+        <h2>Inventory</h2>
+        <div class="inv" id="inventory"></div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+
+<script>
+"use strict";
+/* ============================ units ============================ */
+const MM_IN = 25.4, MM_FT = 304.8;
+const IN = v => v * MM_IN;                 // catalog authoring helper
+
+function trimNum(s){ return s.replace(/\.?0+$/, ""); }
+
+function fmtLen(mm){
+  if (state.unit === "metric"){
+    const cm = mm / 10;
+    if (Math.abs(cm) >= 100) return trimNum((cm/100).toFixed(2)) + " m";
+    return trimNum(cm.toFixed(1)) + " cm";
+  }
+  const totalIn = mm / MM_IN;
+  const sign = totalIn < 0 ? "-" : "";
+  let t = Math.abs(totalIn);
+  let ft = Math.floor(t / 12);
+  let inch = Math.round((t - ft * 12) * 2) / 2;      // nearest half inch
+  if (inch >= 12){ ft += 1; inch -= 12; }
+  const iStr = (inch % 1 === 0) ? String(inch) : (Math.floor(inch) + "½");
+  if (ft === 0) return sign + iStr + '"';
+  return sign + ft + "'" + (inch > 0 ? " " + iStr + '"' : "");
+}
+
+function parseLen(str){
+  const s = String(str).trim().toLowerCase().replace(/′/g,"'").replace(/″/g,'"');
+  if (!s) return null;
+  if (state.unit === "metric"){
+    let m;
+    if ((m = s.match(/^(-?[\d.]+)\s*mm$/))) return +m[1];
+    if ((m = s.match(/^(-?[\d.]+)\s*m$/)))  return +m[1] * 1000;
+    if ((m = s.match(/^(-?[\d.]+)\s*cm$/))) return +m[1] * 10;
+    const v = parseFloat(s);
+    return isNaN(v) ? null : v * 10;
+  }
+  const m = s.match(/^(?:(-?[\d.]+)\s*(?:'|ft|feet))?\s*(?:(-?[\d.]+)\s*(?:"|in|inch|inches)?)?$/);
+  if (m && (m[1] || m[2])){
+    const ft = m[1] ? parseFloat(m[1]) : 0;
+    const inch = m[2] ? parseFloat(m[2]) : 0;
+    return (m[1] ? ft * 12 + inch : inch) * MM_IN;
+  }
+  const v = parseFloat(s);
+  return isNaN(v) ? null : v * MM_IN;
+}
+
+/** Short numeric form for list rows: 38 × 75" or 97 × 191 cm. */
+function fmtCompact(w, h){
+  if (state.unit === "metric") return Math.round(w/10) + " × " + Math.round(h/10) + " cm";
+  return trimNum((w/MM_IN).toFixed(1)) + " × " + trimNum((h/MM_IN).toFixed(1)) + '"';
+}
+
+function fmtArea(mm2){
+  if (state.unit === "metric") return (mm2 / 1e6).toFixed(2) + " m²";
+  return (mm2 / (MM_FT * MM_FT)).toFixed(1) + " sq ft";
+}
+
+const snapStep  = () => state.unit === "metric" ? 10 : MM_IN;      // 1 cm / 1 in
+const gridMinor = () => state.unit === "metric" ? 100 : MM_FT / 2; // 10 cm / 6 in
+const gridMajor = () => state.unit === "metric" ? 500 : MM_FT;     // 50 cm / 1 ft
+const WALL_SNAP = 76;                                              // ~3 in flush-to-wall zone
+
+/* ============================ catalog ============================ */
+const SWATCHES = ["#6f8f6a","#b5714a","#5b7a92","#8a6a93","#ab9147","#6c7671"];
+
+const CATALOG = [
+  { group:"Beds", color:0, items:[
+    { name:"Twin",       w:38, h:75 },
+    { name:"Twin XL",    w:38, h:80 },
+    { name:"Full",       w:54, h:75 },
+    { name:"Queen",      w:60, h:80 },
+    { name:"King",       w:76, h:80 },
+    { name:"Cal king",   w:72, h:84 },
+    { name:"Crib",       w:28, h:52 },
+  ]},
+  { group:"Storage", color:1, items:[
+    { name:"Wardrobe",   w:48, h:24 },
+    { name:"Dresser",    w:60, h:18 },
+    { name:"Nightstand", w:20, h:18 },
+    { name:"Bookshelf",  w:32, h:12 },
+    { name:"Closet",     w:72, h:24 },
+  ]},
+  { group:"Work & seating", color:2, items:[
+    { name:"Desk",         w:48, h:24 },
+    { name:"Corner desk",  w:60, h:60 },
+    { name:"Desk chair",   w:24, h:24, shape:"oval" },
+    { name:"Armchair",     w:34, h:34 },
+    { name:"Sofa",         w:84, h:36 },
+    { name:"Loveseat",     w:58, h:34 },
+    { name:"Dining table", w:60, h:36 },
+    { name:"Round table",  w:48, h:48, shape:"oval" },
+  ]},
+  { group:"Rugs", color:4, back:true, items:[
+    { name:"Rug 5×8",  w:60,  h:96  },
+    { name:"Rug 8×10", w:96,  h:120 },
+    { name:"Rug 9×12", w:108, h:144 },
+    { name:"Round rug 6'",  w:72,  h:72, shape:"oval" },
+  ]},
+  { group:"Walls & extras", color:5, items:[
+    { name:"Door",      w:32, h:5, shape:"door" },
+    { name:"Window",    w:36, h:5, shape:"window" },
+    { name:"TV stand",  w:58, h:16 },
+    { name:"Radiator",  w:30, h:8 },
+    { name:"Plant",     w:16, h:16, shape:"oval" },
+  ]},
+];
+
+/* ============================ state ============================ */
+const STORE_KEY = "vellum.roomplanner.v1";
+let uid = 1;
+const nextId = () => "i" + (uid++);
+
+function sample(){
+  const mk = (name, xi, yi, wi, hi, rot, color, shape) => ({
+    id: nextId(), label: name, shape: shape || "rect",
+    x: IN(xi), y: IN(yi), w: IN(wi), h: IN(hi), rot: rot || 0, color, pts: null
+  });
+  return {
+    room: { w: IN(144), h: IN(168) },
+    items: [
+      mk("Rug 8×10",  72, 98, 96, 120, 0, 4),
+      mk("Queen bed",      72, 44, 60,  80, 0, 0),
+      mk("Nightstand",     30, 13, 20,  18, 0, 1),
+      mk("Nightstand",    114, 13, 20,  18, 0, 1),
+      mk("Dresser",        72,159, 60,  18, 0, 1),
+      mk("Wardrobe",      132,120, 48,  24, 90, 1),
+      mk("Desk",           12,120, 48,  24, 90, 2),
+      mk("Desk chair",     42,120, 24,  24, 0, 2, "oval"),
+      mk("Window",        141, 60, 36,   5, 90, 5, "window"),
+      mk("Door",           28,165, 32,   5, 180, 5, "door"),
+    ]
+  };
+}
+
+const state = {
+  unit: "imperial",
+  grid: true,
+  snap: true,
+  room: { w: IN(144), h: IN(168) },
+  items: [],
+  sel: null,
+  scale: 0.2,          // px per mm
+  pan: { x: 0, y: 0 }, // world mm at viewport top-left
+  drawShape: null,     // pending shape tool
+  cursor: null,
+};
+
+const undoStack = [], redoStack = [];
+const serialize = () => JSON.stringify({ room: state.room, items: state.items });
+function pushUndo(){
+  undoStack.push(serialize());
+  if (undoStack.length > 80) undoStack.shift();
+  redoStack.length = 0;
+}
+function applySnapshot(json){
+  const d = JSON.parse(json);
+  state.room = d.room; state.items = d.items;
+  if (state.sel && !state.items.some(i => i.id === state.sel)) state.sel = null;
+}
+function undo(){ if (!undoStack.length) return; redoStack.push(serialize()); applySnapshot(undoStack.pop()); render(); save(); }
+function redo(){ if (!redoStack.length) return; undoStack.push(serialize()); applySnapshot(redoStack.pop()); render(); save(); }
+
+let saveTimer = null;
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify({ unit: state.unit, room: state.room, items: state.items })); }
+    catch (e) { /* storage unavailable — the plan still works for this session */ }
+  }, 250);
+}
+function load(){
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); } catch (e) { d = null; }
+  if (d && d.room && Array.isArray(d.items)){
+    state.unit = d.unit === "metric" ? "metric" : "imperial";
+    state.room = d.room; state.items = d.items;
+  } else {
+    const s = sample();
+    state.room = s.room; state.items = s.items;
+  }
+  state.items.forEach(it => { const n = +String(it.id).slice(1); if (n >= uid) uid = n + 1; });
+}
+
+/* ============================ geometry ============================ */
+const sel = () => state.items.find(i => i.id === state.sel) || null;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const rad = d => d * Math.PI / 180;
+
+function rot(px, py, deg){
+  const a = rad(deg), c = Math.cos(a), s = Math.sin(a);
+  return { x: px * c - py * s, y: px * s + py * c };
+}
+function toLocal(wx, wy, it){
+  const d = rot(wx - it.x, wy - it.y, -it.rot);
+  return d;
+}
+/** Axis-aligned bounding box of a rotated item, in world mm. */
+function bbox(it){
+  const c = Math.abs(Math.cos(rad(it.rot))), s = Math.abs(Math.sin(rad(it.rot)));
+  const w = it.w * c + it.h * s, h = it.w * s + it.h * c;
+  return { x: it.x - w / 2, y: it.y - h / 2, w, h };
+}
+function outlinePoints(it){
+  if (it.shape === "free" && it.pts && it.pts.length > 1)
+    return it.pts.map(p => ({ x: -it.w / 2 + p[0] * it.w, y: -it.h / 2 + p[1] * it.h }));
+  return [
+    { x:-it.w/2, y:-it.h/2 }, { x: it.w/2, y:-it.h/2 },
+    { x: it.w/2, y: it.h/2 }, { x:-it.w/2, y: it.h/2 },
+  ];
+}
+
+/* ============================ svg helpers ============================ */
+const sheet = document.getElementById("sheet");
+const NS = "http://www.w3.org/2000/svg";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+
+sheet.innerHTML =
+  '<g id="gGrid"></g><g id="gItems"></g><g id="gDims"></g><g id="gOverlay"></g><g id="gGhost"></g>';
+const gGrid = sheet.querySelector("#gGrid"), gItems = sheet.querySelector("#gItems"),
+      gDims = sheet.querySelector("#gDims"), gOverlay = sheet.querySelector("#gOverlay"),
+      gGhost = sheet.querySelector("#gGhost");
+
+function viewSize(){ const r = sheet.getBoundingClientRect(); return { w: r.width || 800, h: r.height || 600 }; }
+function syncViewBox(){
+  const v = viewSize();
+  sheet.setAttribute("viewBox", `${state.pan.x} ${state.pan.y} ${v.w / state.scale} ${v.h / state.scale}`);
+}
+function screenToWorld(ev){
+  const r = sheet.getBoundingClientRect();
+  return { x: state.pan.x + (ev.clientX - r.left) / state.scale,
+           y: state.pan.y + (ev.clientY - r.top)  / state.scale };
+}
+function fitView(){
+  const v = viewSize();
+  const m = Math.max(state.room.w, state.room.h) * 0.14 + 400;
+  state.scale = Math.min(v.w / (state.room.w + m * 2), v.h / (state.room.h + m * 2));
+  state.pan.x = state.room.w / 2 - v.w / state.scale / 2;
+  state.pan.y = state.room.h / 2 - v.h / state.scale / 2;
+  syncViewBox();
+}
+const mmPerPx = () => 1 / state.scale;
+
+/* ============================ render: grid & room ============================ */
+function renderGrid(){
+  const R = state.room, out = [];
+  out.push(`<rect x="0" y="0" width="${R.w}" height="${R.h}" fill="var(--sheet)"/>`);
+
+  if (state.grid){
+    const minor = gridMinor(), major = gridMajor();
+    let d1 = "", d2 = "";
+    for (let x = 0; x <= R.w + 0.5; x += minor){
+      const s = `M${x} 0V${R.h}`;
+      (Math.abs(x % major) < 0.5 || Math.abs(x % major - major) < 0.5) ? d2 += s : d1 += s;
+    }
+    for (let y = 0; y <= R.h + 0.5; y += minor){
+      const s = `M0 ${y}H${R.w}`;
+      (Math.abs(y % major) < 0.5 || Math.abs(y % major - major) < 0.5) ? d2 += s : d1 += s;
+    }
+    out.push(`<path d="${d1}" stroke="var(--rule)" stroke-width="1" fill="none" vector-effect="non-scaling-stroke"/>`);
+    out.push(`<path d="${d2}" stroke="var(--rule-strong)" stroke-width="1" fill="none" vector-effect="non-scaling-stroke"/>`);
+  }
+  // wall: drawn as a heavy double line, the way a plan reads
+  out.push(`<rect x="0" y="0" width="${R.w}" height="${R.h}" fill="none" stroke="var(--ink)" stroke-width="3" vector-effect="non-scaling-stroke"/>`);
+  out.push(`<rect x="${-mmPerPx()*4}" y="${-mmPerPx()*4}" width="${R.w + mmPerPx()*8}" height="${R.h + mmPerPx()*8}" fill="none" stroke="var(--ink)" stroke-width="1" vector-effect="non-scaling-stroke"/>`);
+  gGrid.innerHTML = out.join("");
+}
+
+/* ============================ render: items ============================ */
+function shapeMarkup(it, fill){
+  const w = it.w, h = it.h, hw = w / 2, hh = h / 2;
+  const common = `fill="${fill}" fill-opacity="var(--fill-op)" stroke="${fill}" stroke-opacity="var(--stroke-op)" stroke-width="1.5" vector-effect="non-scaling-stroke"`;
+  switch (it.shape){
+    case "oval":
+      return `<ellipse cx="0" cy="0" rx="${hw}" ry="${hh}" ${common}/>`;
+    case "free": {
+      if (!it.pts || it.pts.length < 2) return `<rect x="${-hw}" y="${-hh}" width="${w}" height="${h}" ${common}/>`;
+      const pts = outlinePoints(it).map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+      return `<polygon points="${pts}" ${common} stroke-linejoin="round"/>`;
+    }
+    case "door":
+      return `<rect x="${-hw}" y="${-hh}" width="${w}" height="${h}" fill="var(--sheet)" stroke="${fill}" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`
+           + `<path d="M${-hw} ${hh} L${-hw} ${hh + w} M${hw} ${hh} A${w} ${w} 0 0 1 ${-hw} ${hh + w}"`
+           + ` fill="none" stroke="${fill}" stroke-width="1.5" stroke-dasharray="none" vector-effect="non-scaling-stroke"/>`;
+    case "window":
+      return `<rect x="${-hw}" y="${-hh}" width="${w}" height="${h}" fill="var(--sheet)" stroke="${fill}" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`
+           + `<line x1="${-hw}" y1="0" x2="${hw}" y2="0" stroke="${fill}" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
+    default:
+      return `<rect x="${-hw}" y="${-hh}" width="${w}" height="${h}" ${common}/>`;
+  }
+}
+
+function renderItems(){
+  const mp = mmPerPx();
+  const out = state.items.map(it => {
+    const fill = SWATCHES[it.color % SWATCHES.length];
+    const label = it.label || "";
+    const fs = 12 * mp, fs2 = 10 * mp;
+    const fits = it.w > fs * label.length * 0.52 && it.h > fs * 2.4;
+    let text = "";
+    if (fits && label){
+      text = `<g transform="rotate(${-it.rot})" pointer-events="none">`
+           + `<text x="0" y="${-1.5 * mp}" text-anchor="middle" font-family="Barlow, sans-serif" font-size="${fs}" font-weight="500" fill="var(--ink)">${esc(label)}</text>`
+           + `<text x="0" y="${fs2 * 1.35}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="${fs2}" fill="var(--ink-3)">${esc(fmtLen(it.w) + " × " + fmtLen(it.h))}</text>`
+           + `</g>`;
+    }
+    return `<g class="item" data-id="${it.id}" transform="translate(${it.x} ${it.y}) rotate(${it.rot})" style="cursor:move">`
+         + shapeMarkup(it, fill) + text + `</g>`;
+  });
+  gItems.innerHTML = out.join("");
+}
+
+/* ============================ render: dimensions ============================ */
+function dimLine(x1, y1, x2, y2, text, color){
+  const mp = mmPerPx(), t = 5 * mp;
+  const horiz = Math.abs(y2 - y1) < Math.abs(x2 - x1);
+  const tx = (x1 + x2) / 2, ty = (y1 + y2) / 2;
+  const tick = horiz
+    ? `M${x1} ${y1 - t}L${x1} ${y1 + t}M${x2} ${y2 - t}L${x2} ${y2 + t}`
+    : `M${x1 - t} ${y1}L${x1 + t} ${y1}M${x2 - t} ${y2}L${x2 + t} ${y2}`;
+  const rotT = horiz ? "" : ` transform="rotate(-90 ${tx} ${ty})"`;
+  const dy = horiz ? -4 * mp : -4 * mp;
+  return `<g pointer-events="none">`
+    + `<path d="M${x1} ${y1}L${x2} ${y2}${tick}" stroke="${color}" stroke-width="1" fill="none" vector-effect="non-scaling-stroke"/>`
+    + `<text x="${tx}" y="${ty + dy}"${rotT} text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="${11 * mp}" fill="${color}">${esc(text)}</text>`
+    + `</g>`;
+}
+
+function renderDims(){
+  const R = state.room, mp = mmPerPx(), off = 28 * mp, out = [];
+  out.push(dimLine(0, -off, R.w, -off, fmtLen(R.w), "var(--dim)"));
+  out.push(dimLine(-off, 0, -off, R.h, fmtLen(R.h), "var(--dim)"));
+
+  const it = sel();
+  if (it){
+    const b = bbox(it);
+    const gaps = [
+      ["l", b.x,              0,      b.y + b.h / 2],
+      ["r", R.w - (b.x + b.w), 0,     b.y + b.h / 2],
+      ["t", b.y,              b.x + b.w / 2, 0],
+      ["b", R.h - (b.y + b.h), b.x + b.w / 2, 0],
+    ];
+    if (gaps[0][1] > 30) out.push(dimLine(0, gaps[0][3], b.x, gaps[0][3], fmtLen(gaps[0][1]), "var(--accent)"));
+    if (gaps[1][1] > 30) out.push(dimLine(b.x + b.w, gaps[1][3], R.w, gaps[1][3], fmtLen(gaps[1][1]), "var(--accent)"));
+    if (gaps[2][1] > 30) out.push(dimLine(gaps[2][2], 0, gaps[2][2], b.y, fmtLen(gaps[2][1]), "var(--accent)"));
+    if (gaps[3][1] > 30) out.push(dimLine(gaps[3][2], b.y + b.h, gaps[3][2], R.h, fmtLen(gaps[3][1]), "var(--accent)"));
+  }
+  gDims.innerHTML = out.join("");
+}
+
+/* ============================ render: selection overlay ============================ */
+const CORNERS = [[-1,-1],[1,-1],[1,1],[-1,1]];
+function renderOverlay(){
+  const it = sel();
+  if (!it){ gOverlay.innerHTML = ""; return; }
+  const mp = mmPerPx(), hs = 9 * mp, hw = it.w / 2, hh = it.h / 2;
+  let s = `<g transform="translate(${it.x} ${it.y}) rotate(${it.rot})">`;
+  s += `<rect x="${-hw}" y="${-hh}" width="${it.w}" height="${it.h}" fill="none" stroke="var(--accent)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
+  s += `<line x1="0" y1="${-hh}" x2="0" y2="${-hh - 26 * mp}" stroke="var(--accent)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
+  s += `<circle cx="0" cy="${-hh - 26 * mp}" r="${hs * 0.62}" fill="var(--accent)" data-handle="rot" style="cursor:grab"/>`;
+  CORNERS.forEach(([sx, sy], i) => {
+    s += `<rect x="${sx * hw - hs / 2}" y="${sy * hh - hs / 2}" width="${hs}" height="${hs}"`
+       + ` fill="var(--paper)" stroke="var(--accent)" stroke-width="1.5" vector-effect="non-scaling-stroke"`
+       + ` data-handle="c${i}" style="cursor:pointer"/>`;
+  });
+  s += `</g>`;
+  gOverlay.innerHTML = s;
+}
+
+/* ============================ render: chrome ============================ */
+function renderTitleBlock(){
+  document.getElementById("tbRoom").textContent  = fmtLen(state.room.w) + " × " + fmtLen(state.room.h);
+  document.getElementById("tbArea").textContent  = fmtArea(state.room.w * state.room.h);
+  document.getElementById("tbCount").textContent = String(state.items.length).padStart(2, "0");
+}
+
+function renderCatalog(){
+  const host = document.getElementById("catalog");
+  host.innerHTML = CATALOG.map((g, gi) =>
+    `<div class="cat"><div class="cat-h">${esc(g.group)}</div>`
+    + g.items.map((it, ii) =>
+        `<button type="button" data-g="${gi}" data-i="${ii}">`
+        + `<span class="n">${esc(it.name)}</span>`
+        + `<span class="d">${esc(fmtCompact(IN(it.w), IN(it.h)))}</span>`
+        + `</button>`).join("")
+    + `</div>`).join("");
+}
+
+function renderInventory(){
+  const host = document.getElementById("inventory");
+  if (!state.items.length){
+    host.innerHTML = `<p class="empty">Nothing placed yet. Pick something from the left rail.</p>`;
+    return;
+  }
+  host.innerHTML = state.items.slice().reverse().map(it =>
+    `<button type="button" class="inv-row" data-id="${it.id}" aria-current="${it.id === state.sel}">`
+    + `<span class="inv-chip" style="background:${SWATCHES[it.color % SWATCHES.length]}"></span>`
+    + `<span class="n">${esc(it.label || "Untitled")}</span>`
+    + `<span class="d">${esc(fmtCompact(it.w, it.h))}</span>`
+    + `</button>`).join("");
+}
+
+let inspectorFor = " ";
+function renderInspector(force){
+  const host = document.getElementById("inspector"), it = sel();
+  const key = it ? it.id : "none";
+  if (!force && key === inspectorFor){ updateInspectorValues(); return; }
+  inspectorFor = key;
+
+  if (!it){
+    host.innerHTML = `<h2>Selection</h2>`
+      + `<p class="empty">Click a piece on the sheet to move, turn and resize it. Drag empty sheet to pan, scroll to zoom.</p>`;
+    return;
+  }
+  const canFree = !!(it.pts && it.pts.length > 1);
+  host.innerHTML =
+    `<h2>Selection</h2>`
+  + `<div class="field text"><label for="fLabel">Label</label><input id="fLabel" value="${esc(it.label || "")}"></div>`
+  + `<div class="row2">`
+    + `<div class="field"><label for="fW">Width</label><input id="fW"></div>`
+    + `<div class="field"><label for="fH">Depth</label><input id="fH"></div>`
+  + `</div>`
+  + `<div class="row3">`
+    + `<div class="field"><label for="fX">X</label><input id="fX"></div>`
+    + `<div class="field"><label for="fY">Y</label><input id="fY"></div>`
+    + `<div class="field"><label for="fR">Turn°</label><input id="fR" type="number" step="15"></div>`
+  + `</div>`
+  + `<div class="field"><label>Shape</label><div class="shapes" id="fShape">`
+    + `<button data-s="rect" title="Rectangle" aria-pressed="${it.shape==="rect"}"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1"/></svg></button>`
+    + `<button data-s="square" title="Square" aria-pressed="${it.shape==="square"}"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1"/></svg></button>`
+    + `<button data-s="oval" title="Oval" aria-pressed="${it.shape==="oval"}"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9" ry="6.5"/></svg></button>`
+    + `<button data-s="free" title="Freehand outline" aria-pressed="${it.shape==="free"}" ${canFree?"":"disabled"}><svg viewBox="0 0 24 24"><path d="M5 15c-1-5 3-9 7-8s6 4 5 8-4 5-7 4-4-3-3-5 4-2 4 0"/></svg></button>`
+  + `</div></div>`
+  + `<div class="field"><label>Colour</label><div class="swatches" id="fColor">`
+    + SWATCHES.map((c, i) => `<button data-c="${i}" style="background:${c}" aria-pressed="${i===it.color}" title="Swatch ${i+1}"></button>`).join("")
+  + `</div></div>`
+  + `<div class="field"><label>Clearance to walls</label><dl class="clear" id="fClear">`
+    + `<div><dt>Left</dt><dd data-k="l">—</dd></div><div><dt>Right</dt><dd data-k="r">—</dd></div>`
+    + `<div><dt>Top</dt><dd data-k="t">—</dd></div><div><dt>Bottom</dt><dd data-k="b">—</dd></div>`
+  + `</dl></div>`
+  + `<div style="display:flex; gap:6px; flex-wrap:wrap">`
+    + `<button class="btn ghost" id="bTurn">Turn 90°</button>`
+    + `<button class="btn ghost" id="bDup">Duplicate</button>`
+    + `<button class="btn ghost" id="bBack">To back</button>`
+    + `<button class="btn ghost" id="bFront">To front</button>`
+    + `<button class="btn ghost danger" id="bDel">Delete</button>`
+  + `</div>`;
+  updateInspectorValues();
+}
+
+function setVal(id, v){
+  const el = document.getElementById(id);
+  if (el && document.activeElement !== el) el.value = v;
+}
+function updateInspectorValues(){
+  const it = sel(); if (!it) return;
+  setVal("fW", fmtLen(it.w));
+  setVal("fH", fmtLen(it.h));
+  setVal("fX", fmtLen(it.x));
+  setVal("fY", fmtLen(it.y));
+  setVal("fR", String(Math.round(it.rot)));
+  const b = bbox(it), c = document.getElementById("fClear");
+  if (c){
+    const g = { l: b.x, r: state.room.w - (b.x + b.w), t: b.y, b: state.room.h - (b.y + b.h) };
+    c.querySelectorAll("dd").forEach(dd => {
+      const v = g[dd.dataset.k];
+      dd.textContent = fmtLen(v);
+      dd.style.color = v < -1 ? "var(--accent)" : "var(--dim)";
+    });
+  }
+}
+
+function renderStatus(){
+  document.getElementById("sbPos").textContent = state.cursor
+    ? fmtLen(state.cursor.x) + ",  " + fmtLen(state.cursor.y)
+    : "—";
+  // graphic scale bar: one major grid unit wide, drawn to the current zoom
+  const unitMm = state.unit === "metric" ? 1000 : MM_FT * 3;   // 1 m / 3 ft
+  let px = unitMm * state.scale, n = 1;
+  while (px < 34){ n *= 2; px = unitMm * n * state.scale; }
+  while (px > 120){ n /= 2; px = unitMm * n * state.scale; }
+  const w = Math.max(8, Math.round(px));
+  document.getElementById("scaleBar").innerHTML =
+    `<path d="M1 3V13M1 8H${w + 1}M${w + 1} 3V13" stroke="var(--ink-3)" stroke-width="1" fill="none"/>`
+  + `<rect x="1" y="6" width="${w / 2}" height="4" fill="var(--ink-3)"/>`;
+  document.getElementById("scaleTxt").textContent =
+    state.unit === "metric" ? trimNum((n).toFixed(2)) + " m" : trimNum((n * 3).toFixed(2)) + " ft";
+}
+
+let frame = null;
+function render(){
+  if (frame) return;
+  frame = requestAnimationFrame(() => {
+    frame = null;
+    syncViewBox();
+    renderGrid(); renderItems(); renderDims(); renderOverlay();
+    renderTitleBlock(); renderInventory(); renderInspector(); renderStatus(); syncRoomFields();
+  });
+}
+
+/* ============================ adding items ============================ */
+function placeAt(){
+  // cascade near the room centre so a run of adds doesn't stack invisibly
+  const n = state.items.length % 6;
+  return { x: state.room.w / 2 + n * IN(4), y: state.room.h / 2 + n * IN(4) };
+}
+function addItem(o, sendBack){
+  pushUndo();
+  const p = placeAt();
+  const it = Object.assign({ id: nextId(), x: p.x, y: p.y, rot: 0, color: 0, pts: null, shape: "rect" }, o);
+  if (sendBack) state.items.unshift(it); else state.items.push(it);
+  state.sel = it.id;
+  render(); save();
+  return it;
+}
+
+document.getElementById("catalog").addEventListener("click", e => {
+  const b = e.target.closest("button[data-g]"); if (!b) return;
+  const g = CATALOG[+b.dataset.g], c = g.items[+b.dataset.i];
+  addItem({ label: c.name, w: IN(c.w), h: IN(c.h), shape: c.shape || "rect", color: g.color }, g.back);
+});
+
+document.getElementById("shapeTools").addEventListener("click", e => {
+  const b = e.target.closest("button[data-shape]"); if (!b) return;
+  const s = b.dataset.shape;
+  if (s === "free"){
+    state.drawShape = state.drawShape === "free" ? null : "free";
+    updateShapeTools();
+    return;
+  }
+  state.drawShape = null; updateShapeTools();
+  const side = state.unit === "metric" ? 600 : IN(24);
+  addItem({ label: s === "oval" ? "Oval" : s === "square" ? "Square" : "Rectangle",
+            w: s === "rect" ? side * 1.6 : side, h: side,
+            shape: s === "square" ? "rect" : s, color: 5 });
+});
+function updateShapeTools(){
+  document.querySelectorAll("#shapeTools button").forEach(b =>
+    b.setAttribute("aria-pressed", String(b.dataset.shape === state.drawShape)));
+  sheet.classList.toggle("drawing", state.drawShape === "free");
+  document.getElementById("drawHint")?.remove();
+  if (state.drawShape === "free"){
+    const h = document.createElement("div");
+    h.className = "hint"; h.id = "drawHint";
+    h.textContent = "Drag on the sheet to trace an outline · Esc to cancel";
+    sheet.parentElement.appendChild(h);
+  }
+}
+
+/* ============================ inventory + inspector wiring ============================ */
+document.getElementById("inventory").addEventListener("click", e => {
+  const b = e.target.closest(".inv-row"); if (!b) return;
+  state.sel = b.dataset.id; render();
+});
+
+document.getElementById("inspector").addEventListener("input", e => {
+  const it = sel(); if (!it) return;
+  if (e.target.id === "fLabel"){ it.label = e.target.value; renderItems(); renderInventory(); save(); }
+});
+document.getElementById("inspector").addEventListener("change", e => {
+  const it = sel(); if (!it) return;
+  const id = e.target.id;
+  const num = () => parseLen(e.target.value);
+  if (id === "fW" || id === "fH" || id === "fX" || id === "fY"){
+    const v = num();
+    if (v === null){ updateInspectorValues(); return; }
+    pushUndo();
+    if (id === "fW") it.w = Math.max(20, v);
+    if (id === "fH") it.h = Math.max(20, v);
+    if (id === "fX") it.x = v;
+    if (id === "fY") it.y = v;
+  } else if (id === "fR"){
+    pushUndo(); it.rot = ((+e.target.value % 360) + 360) % 360;
+  } else if (id === "fLabel"){ renderInventory(); save(); return; }
+  render(); save();
+});
+document.getElementById("inspector").addEventListener("click", e => {
+  const it = sel(); if (!it) return;
+  const shapeBtn = e.target.closest("#fShape button[data-s]");
+  if (shapeBtn){
+    pushUndo();
+    const s = shapeBtn.dataset.s;
+    if (s === "square"){ const m = Math.max(it.w, it.h); it.w = it.h = m; it.shape = "rect"; }
+    else it.shape = s;
+    render(true); renderInspector(true); save(); return;
+  }
+  const colBtn = e.target.closest("#fColor button[data-c]");
+  if (colBtn){ pushUndo(); it.color = +colBtn.dataset.c; render(); renderInspector(true); save(); return; }
+
+  switch (e.target.id){
+    case "bTurn":  pushUndo(); it.rot = (it.rot + 90) % 360; break;
+    case "bDup":   { pushUndo();
+                     const c = Object.assign({}, it, { id: nextId(), x: it.x + IN(6), y: it.y + IN(6), pts: it.pts ? it.pts.slice() : null });
+                     state.items.push(c); state.sel = c.id; break; }
+    case "bBack":  pushUndo(); state.items = [it].concat(state.items.filter(i => i !== it)); break;
+    case "bFront": pushUndo(); state.items = state.items.filter(i => i !== it).concat([it]); break;
+    case "bDel":   pushUndo(); state.items = state.items.filter(i => i !== it); state.sel = null; break;
+    default: return;
+  }
+  render(); renderInspector(true); save();
+});
+
+/* ============================ room fields ============================ */
+["roomW", "roomH"].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener("change", () => {
+    const v = parseLen(el.value);
+    if (v === null || v < 300){ el.value = fmtLen(id === "roomW" ? state.room.w : state.room.h); return; }
+    pushUndo();
+    if (id === "roomW") state.room.w = v; else state.room.h = v;
+    render(); save();
+  });
+});
+function syncRoomFields(){
+  const a = document.getElementById("roomW"), b = document.getElementById("roomH");
+  if (document.activeElement !== a) a.value = fmtLen(state.room.w);
+  if (document.activeElement !== b) b.value = fmtLen(state.room.h);
+}
+
+/* ============================ pointer interaction ============================ */
+let drag = null;
+
+function snapVal(v){ return state.snap ? Math.round(v / snapStep()) * snapStep() : v; }
+
+function applyWallSnap(it){
+  if (!state.snap || it.rot % 90 !== 0) return;
+  const b = bbox(it);
+  if (Math.abs(b.x) < WALL_SNAP)                       it.x += -b.x;
+  if (Math.abs(state.room.w - (b.x + b.w)) < WALL_SNAP) it.x += state.room.w - (b.x + b.w);
+  if (Math.abs(b.y) < WALL_SNAP)                       it.y += -b.y;
+  if (Math.abs(state.room.h - (b.y + b.h)) < WALL_SNAP) it.y += state.room.h - (b.y + b.h);
+}
+
+sheet.addEventListener("pointerdown", e => {
+  if (e.button !== 0) return;
+  const w = screenToWorld(e);
+  sheet.setPointerCapture(e.pointerId);
+
+  if (state.drawShape === "free"){
+    drag = { mode: "draw", pts: [[w.x, w.y]] };
+    return;
+  }
+  const handle = e.target.closest("[data-handle]");
+  const it = sel();
+  if (handle && it){
+    const h = handle.dataset.handle;
+    pushUndo();
+    if (h === "rot") drag = { mode: "rot", it, start: it.rot, a0: Math.atan2(w.y - it.y, w.x - it.x) };
+    else drag = { mode: "size", it, corner: CORNERS[+h.slice(1)] };
+    return;
+  }
+  const node = e.target.closest(".item");
+  if (node){
+    const item = state.items.find(i => i.id === node.dataset.id);
+    state.sel = item.id;
+    pushUndo();
+    drag = { mode: "move", it: item, dx: w.x - item.x, dy: w.y - item.y, moved: false };
+    render();
+    return;
+  }
+  state.sel = null;
+  drag = { mode: "pan", sx: e.clientX, sy: e.clientY, px: state.pan.x, py: state.pan.y };
+  sheet.classList.add("panning");
+  render();
+});
+
+sheet.addEventListener("pointermove", e => {
+  const w = screenToWorld(e);
+  state.cursor = w;
+
+  if (!drag){ renderStatus(); return; }
+
+  if (drag.mode === "pan"){
+    state.pan.x = drag.px - (e.clientX - drag.sx) / state.scale;
+    state.pan.y = drag.py - (e.clientY - drag.sy) / state.scale;
+    syncViewBox(); renderStatus(); return;
+  }
+  if (drag.mode === "draw"){
+    const last = drag.pts[drag.pts.length - 1];
+    if (Math.hypot(w.x - last[0], w.y - last[1]) > 12 * mmPerPx()) drag.pts.push([w.x, w.y]);
+    gGhost.innerHTML = `<polyline points="${drag.pts.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ")}"`
+      + ` fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
+    return;
+  }
+
+  const it = drag.it;
+  if (drag.mode === "move"){
+    it.x = snapVal(w.x - drag.dx);
+    it.y = snapVal(w.y - drag.dy);
+    applyWallSnap(it);
+    drag.moved = true;
+  } else if (drag.mode === "rot"){
+    const a = Math.atan2(w.y - it.y, w.x - it.x);
+    let deg = drag.start + (a - drag.a0) * 180 / Math.PI;
+    if (!e.altKey) deg = Math.round(deg / 15) * 15;
+    it.rot = ((deg % 360) + 360) % 360;
+  } else if (drag.mode === "size"){
+    const p = toLocal(w.x, w.y, it);
+    const [sx, sy] = drag.corner;
+    const ox = -sx * it.w / 2, oy = -sy * it.h / 2;      // opposite corner stays put
+    let nw = Math.max(50, Math.abs(p.x - ox)), nh = Math.max(50, Math.abs(p.y - oy));
+    if (state.snap){ nw = Math.round(nw / snapStep()) * snapStep(); nh = Math.round(nh / snapStep()) * snapStep(); }
+    if (e.shiftKey || it.shape === "square"){ const m = Math.max(nw, nh); nw = m; nh = m; }
+    const cx = ox + sx * nw / 2, cy = oy + sy * nh / 2;   // new centre in local space
+    const d = rot(cx, cy, it.rot);
+    it.w = nw; it.h = nh; it.x = it.x + d.x; it.y = it.y + d.y;
+  }
+  renderItems(); renderOverlay(); renderDims(); updateInspectorValues(); renderStatus();
+});
+
+function endDrag(e){
+  if (!drag) return;
+  if (drag.mode === "draw"){
+    gGhost.innerHTML = "";
+    finishFreehand(drag.pts);
+  } else if (drag.mode === "pan"){
+    sheet.classList.remove("panning");
+  } else {
+    save();
+  }
+  drag = null;
+  renderInventory(); renderTitleBlock();
+}
+sheet.addEventListener("pointerup", endDrag);
+sheet.addEventListener("pointercancel", endDrag);
+sheet.addEventListener("pointerleave", () => { state.cursor = null; renderStatus(); });
+
+function finishFreehand(pts){
+  state.drawShape = null; updateShapeTools();
+  if (!pts || pts.length < 3) return;
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const w = Math.max(60, x1 - x0), h = Math.max(60, y1 - y0);
+  pushUndo();
+  const it = {
+    id: nextId(), label: "Freehand", shape: "free", color: 3,
+    x: (x0 + x1) / 2, y: (y0 + y1) / 2, w, h, rot: 0,
+    pts: pts.map(p => [(p[0] - x0) / w, (p[1] - y0) / h]),
+  };
+  state.items.push(it);
+  state.sel = it.id;
+  render(); save();
+}
+
+sheet.addEventListener("wheel", e => {
+  e.preventDefault();
+  const r = sheet.getBoundingClientRect();
+  const px = e.clientX - r.left, py = e.clientY - r.top;
+  const wx = state.pan.x + px / state.scale, wy = state.pan.y + py / state.scale;
+  const f = Math.exp(-e.deltaY * 0.0018);
+  state.scale = clamp(state.scale * f, 0.012, 3);
+  state.pan.x = wx - px / state.scale;
+  state.pan.y = wy - py / state.scale;
+  render();
+}, { passive: false });
+
+/* ============================ keyboard ============================ */
+addEventListener("keydown", e => {
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT")){
+    if (e.key === "Enter") t.blur();
+    return;
+  }
+  const mod = e.metaKey || e.ctrlKey;
+  if (mod && e.key.toLowerCase() === "z"){ e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+  if (e.key === "Escape"){
+    if (state.drawShape){ state.drawShape = null; updateShapeTools(); }
+    else { state.sel = null; render(); }
+    return;
+  }
+  const it = sel();
+  if (mod && e.key.toLowerCase() === "d" && it){
+    e.preventDefault(); pushUndo();
+    const c = Object.assign({}, it, { id: nextId(), x: it.x + IN(6), y: it.y + IN(6), pts: it.pts ? it.pts.slice() : null });
+    state.items.push(c); state.sel = c.id; render(); renderInspector(true); save(); return;
+  }
+  if (!it) return;
+  if (e.key === "Delete" || e.key === "Backspace"){
+    e.preventDefault(); pushUndo();
+    state.items = state.items.filter(i => i !== it); state.sel = null;
+    render(); renderInspector(true); save(); return;
+  }
+  if (e.key.toLowerCase() === "r"){ pushUndo(); it.rot = (it.rot + 90) % 360; render(); save(); return; }
+  if (e.key === "[" ){ pushUndo(); state.items = [it].concat(state.items.filter(i => i !== it)); render(); save(); return; }
+  if (e.key === "]" ){ pushUndo(); state.items = state.items.filter(i => i !== it).concat([it]); render(); save(); return; }
+  const step = (e.shiftKey ? 10 : 1) * snapStep();
+  const nudge = { ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,-1], ArrowDown:[0,1] }[e.key];
+  if (nudge){
+    e.preventDefault(); pushUndo();
+    it.x += nudge[0] * step; it.y += nudge[1] * step;
+    render(); save();
+  }
+});
+
+/* ============================ top bar ============================ */
+function setUnit(u){
+  state.unit = u;
+  document.getElementById("uImp").setAttribute("aria-pressed", String(u === "imperial"));
+  document.getElementById("uMet").setAttribute("aria-pressed", String(u === "metric"));
+  renderCatalog(); syncRoomFields(); render(); renderInspector(true); save();
+}
+document.getElementById("uImp").onclick = () => setUnit("imperial");
+document.getElementById("uMet").onclick = () => setUnit("metric");
+
+document.getElementById("btnGrid").onclick = e => {
+  state.grid = !state.grid; e.currentTarget.setAttribute("aria-pressed", String(state.grid)); render();
+};
+document.getElementById("btnSnap").onclick = e => {
+  state.snap = !state.snap; e.currentTarget.setAttribute("aria-pressed", String(state.snap));
+};
+document.getElementById("btnFit").onclick = () => { fitView(); render(); };
+document.getElementById("btnClear").onclick = () => {
+  if (!state.items.length) return;
+  pushUndo(); state.items = []; state.sel = null; render(); renderInspector(true); save();
+};
+
+/* ---------- modals ---------- */
+function modal(title, contentHTML, footerHTML){
+  const root = document.getElementById("modalRoot");
+  root.innerHTML = `<div class="scrim"><div class="dialog" role="dialog" aria-modal="true" aria-label="${esc(title)}">`
+    + `<header><h2>${esc(title)}</h2></header><div class="content">${contentHTML}</div>`
+    + `<footer>${footerHTML || ""}<button class="btn primary" data-close>Close</button></footer></div></div>`;
+  root.querySelector(".scrim").addEventListener("click", ev => {
+    if (ev.target.classList.contains("scrim") || ev.target.hasAttribute("data-close")) root.innerHTML = "";
+  });
+  return root;
+}
+
+document.getElementById("btnKeys").onclick = () => modal("Shortcuts", `<div class="keys">
+  <kbd>drag</kbd><span>Move a piece · drag empty sheet to pan</span>
+  <kbd>scroll</kbd><span>Zoom at the cursor</span>
+  <kbd>R</kbd><span>Turn 90°</span>
+  <kbd>← ↑ → ↓</kbd><span>Nudge one ${state.unit === "metric" ? "cm" : "inch"} · <kbd>Shift</kbd> for ten</span>
+  <kbd>Shift</kbd><span>Hold while resizing to keep it square</span>
+  <kbd>Alt</kbd><span>Hold while turning for free angles (otherwise 15° steps)</span>
+  <kbd>[</kbd> <kbd>]</kbd><span>Send to back / bring to front</span>
+  <kbd>⌘ D</kbd><span>Duplicate</span>
+  <kbd>⌘ Z</kbd><span>Undo · <kbd>⌘ ⇧ Z</kbd> redo</span>
+  <kbd>Delete</kbd><span>Remove the selected piece</span>
+</div>`);
+
+document.getElementById("btnExport").onclick = () => {
+  const json = JSON.stringify({ unit: state.unit, room: state.room, items: state.items }, null, 2);
+  modal("Export plan",
+      `<p>The plan JSON below carries every dimension in millimetres, so it re-opens identically in either unit system. Copy it to keep a version, or paste one back in to restore it.</p>`
+    + `<textarea id="exJson" spellcheck="false">${esc(json)}</textarea>`,
+      `<button class="btn ghost" id="exCopy">Copy</button><button class="btn ghost" id="exLoad">Load pasted plan</button>`);
+  document.getElementById("exCopy").onclick = async e => {
+    try { await navigator.clipboard.writeText(document.getElementById("exJson").value); e.target.textContent = "Copied"; }
+    catch (err) { document.getElementById("exJson").select(); e.target.textContent = "Press ⌘C"; }
+  };
+  document.getElementById("exLoad").onclick = e => {
+    try {
+      const d = JSON.parse(document.getElementById("exJson").value);
+      if (!d.room || !Array.isArray(d.items)) throw new Error("bad");
+      pushUndo();
+      state.room = d.room; state.items = d.items; state.sel = null;
+      if (d.unit) setUnit(d.unit);
+      state.items.forEach(i => { const n = +String(i.id).slice(1); if (n >= uid) uid = n + 1; });
+      fitView(); render(); renderInspector(true); save();
+      document.getElementById("modalRoot").innerHTML = "";
+    } catch (err){ e.target.textContent = "That isn't a plan — check the JSON"; }
+  };
+};
+
+/* ============================ boot ============================ */
+load();
+setUnit(state.unit);
+renderCatalog();
+syncRoomFields();
+fitView();
+render();
+addEventListener("resize", () => { syncViewBox(); render(); });
+</script>
