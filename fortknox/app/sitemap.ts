@@ -13,8 +13,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const dateOf = new Map(seasons().flatMap(s => seasonIndex(s).games.map(g => [g.id, g.date] as const)));
   const page = (path: string, lastModified?: string) => ({ url: BASE + path, ...(lastModified && { lastModified }) });
   return [
-    page("/", last(seasons()[0])), page("/about"), page("/model"),
-    ...seasons().flatMap(s => [`/games/${s}`, `/teams/${s}`, `/players/${s}`].map(p => page(p, last(s)))),
+    page("/", last(seasons()[0])), page("/about"), page("/model"), page("/compare"),
+    ...seasons().flatMap(s => [`/games/${s}`, `/teams/${s}`, `/players/${s}`, `/regression/${s}`].map(p => page(p, last(s)))),
     ...teamSeasons().map(({ season, team }) => page(`/team/${season}/${team}`, last(season))),
     ...[...playerGames()].map(([id, log]) => page(`/player/${id}`, log[log.length - 1]?.date)),
     ...seasons().flatMap(s => gameIds(s).map(id => page(`/game/${id}`, dateOf.get(id)))),

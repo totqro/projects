@@ -99,6 +99,7 @@ export function PlayersView({ season, data, teams }: { season: number; data: Pic
           <SearchInput value={q} onChange={e => setQ(e.target.value)} onClear={() => setQ("")} placeholder="Name" className="h-9 w-44 text-sm" />
         </label>
         <span className="pb-2 text-sm text-muted-foreground">{count} {kind}</span>
+        <Link href="/compare" className="ml-auto pb-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:underline">Compare players</Link>
       </div>
       {goalies
         ? <SortTable key="g" rows={gk} cols={gkC} initial={{ sort: "gsax", asc: false }} rowKey={p => p.id} limit={shown} csv={`goalies-${season}-${phase}`} />

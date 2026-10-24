@@ -77,5 +77,12 @@ export const TIPS: Record<string, string> = {
   ppg60: "Power-play goals per 60 power-play minutes.", pkg60: "Penalty-kill goals against per 60 shorthanded minutes. Lower is better.",
   tgax: "Goals above expected (GAx): goals scored minus xGF, shootouts excluded. Finishing; tends to drift back toward zero.",
   tgsax: "Goals saved above expected (GSAx): xGA minus goals allowed, shootouts excluded. Goaltending.",
+  tgap: "Goal share minus xG share, in percentage points. Positive means results are running ahead of the chances; it usually narrows as the season goes on.",
+  gap5: "His 5-on-5 on-ice goal share minus his on-ice xG share, in percentage points. Big gaps either way usually narrow.",
+  xgf5: "5-on-5 expected goals for while he was on the ice.", xga5: "5-on-5 expected goals against while he was on the ice.",
+  gf5: "5-on-5 goals for while he was on the ice.", ga5: "5-on-5 goals against while he was on the ice.",
+  shp: "Shooting percentage: goals / shots on goal.",
+  gpace: "Goals per game, over 82 games.", xpace: "Individual xG per game, over 82 games: what an average finisher would score on his chances.",
+  gsaxpace: "GSAx per game, over 82 games.",
   date: "Game date.", opp: "Opponent; @ means a road game.", res: "Result and final score.",
 };
