@@ -1470,10 +1470,14 @@ const TIER_NAME = {HIGH:"High", MEDIUM:"Medium", LOW:"Low"}, TIER_ORDER = ["HIGH
 const WHY_COL = {rush:"#7B4FC9", royal:"#0E9FB3"};
 const WHY_NAME = {rush:"odd-man rush", royal:"cross-ice feed"}, WHY_GLYPH = {rush:"\u00BB", royal:"\u21C4"};
 const tagsOf = (s, I) => [s.rush && "rush", s.xi && !I.xiSuspect && "royal"].filter(Boolean);
+/* Both tags at once: the edge splits down the middle, rush on the left and
+   cross-ice on the right, in the same order as the glyphs beside it. A hard
+   stop at 50% of the mark's own box, so one gradient serves every mark. */
+const bothGrad = id => `<defs><linearGradient id="${id}"><stop offset=".5" stop-color="${WHY_COL.rush}"/><stop offset=".5" stop-color="${WHY_COL.royal}"/></linearGradient></defs>`;
 function tagMark(svg, why, kind, cx, cy){
   if(!why.length) return svg;
-  const off = kind === "GOAL" ? 2.8 : 1.9;
-  if(kind !== "MISS") svg = svg.replace(/stroke="#fff" stroke-width=".35"/, `stroke="${WHY_COL[why[why.length-1]]}" stroke-width=".55"`);
+  const off = kind === "GOAL" ? 2.8 : 1.9, edge = why.length > 1 ? "url(#tagBoth)" : WHY_COL[why[0]];
+  if(kind !== "MISS") svg = svg.replace(/stroke="#fff" stroke-width=".35"/, `stroke="${edge}" stroke-width="${why.length > 1 ? ".7" : ".55"}"`);
   return svg + why.map((w, i) => `<text x="${(cx+off+.2+i*2.6).toFixed(2)}" y="${(cy-off+1.4).toFixed(2)}" font-size="3.3" font-weight="900" fill="${WHY_COL[w]}" stroke="#fff" stroke-width=".35" paint-order="stroke">${WHY_GLYPH[w]}</text>`).join("");
 }
 function zoneShapes(dir){
@@ -1498,7 +1502,7 @@ function reportRink(D, shots){
   }).join("");
   const zones = `<g clip-path="url(#iceFull)">${zoneShapes(1)}${zoneShapes(-1)}</g>`;
   const lab = (x, txt, col) => `<text x="${x}" y="-45.5" text-anchor="middle" font-size="4.6" font-weight="700" fill="${col}">${esc(txt)}</text>`;
-  return `<svg viewBox="-104 -50 208 99" class="rinkfull">${fullRink()}${zones}${lab(-50, "← " + S.opp + " attacking", RC_THEM)}${lab(50, S.us + " attacking →", RC_US)}${marks}</svg>`;
+  return `<svg viewBox="-104 -50 208 99" class="rinkfull">${bothGrad("tagBoth")}${fullRink()}${zones}${lab(-50, "← " + S.opp + " attacking", RC_THEM)}${lab(50, S.us + " attacking →", RC_US)}${marks}</svg>`;
 }
 function reportKeys(){
   const ic = k => `<svg viewBox="-3.8 -3.8 7.6 7.6" class="rkeyi">${iconMark(k, 0, 0, "#48586A")}</svg>`;
@@ -1506,6 +1510,7 @@ function reportKeys(){
     <span class="rkey">${ic("BLOCK")} Blocked</span><span class="rkey">${ic("MISS")} Missed</span><span class="sep"></span>
     ${TIER_ORDER.map(k => `<span><b style="background:${TIER_COL[k]}"></b>${TIER_NAME[k]}</span>`).join("")} danger
     <span class="sep"></span><span>tagged</span>${Object.keys(WHY_COL).map(w => `<span class="rkey"><svg viewBox="-3.8 -3.8 7.6 7.6" class="rkeyi"><circle r="2.2" fill="#9AA8B6" stroke="${WHY_COL[w]}" stroke-width=".8"/></svg><b style="color:${WHY_COL[w]};background:none;width:auto;height:auto;margin:0">${WHY_GLYPH[w]}</b> ${WHY_NAME[w]}</span>`).join("")}
+    <span class="rkey"><svg viewBox="-3.8 -3.8 7.6 7.6" class="rkeyi">${bothGrad("tagBothKey")}<circle r="2.2" fill="#9AA8B6" stroke="url(#tagBothKey)" stroke-width=".8"/></svg>both</span>
     <span>${esc(S.us)} shoots right, ${esc(S.opp)} left</span></div>`;
 }
 /* Shots into an empty net are kept apart so the opponent's GSAx only
