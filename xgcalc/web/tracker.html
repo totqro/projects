@@ -393,6 +393,17 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
       <input type="file" id="sFile" accept=".json,application/json" class="hidden">
     </div>
   </div>
+  <div class="panel">
+    <h2>NHL game</h2>
+    <div class="note">Loads an NHL game from the league's play-by-play and shift charts: every shot with its rink spot, and one team's line changes, so TOI and on-ice xG come out as if tagged live. It replaces the current game. Load it again during a live game to pick up new events (shift charts often lag).</div>
+    <div class="form" style="margin-top:8px">
+      <label for="nDate">Date</label><span><input type="date" id="nDate"> <button id="nFind">Find games</button></span>
+      <label for="nGame">Game</label><select id="nGame"></select>
+      <label for="nTeam">Track shifts for</label><select id="nTeam"></select>
+    </div>
+    <div class="actions"><button class="primary" id="nLoad" disabled>Load game</button></div>
+    <div class="note" id="nNote" style="margin-top:8px"></div>
+  </div>
 </main>
 
 <div class="help hidden" id="help"><div class="box" id="helpBox"></div></div>
@@ -764,7 +775,7 @@ function derive(extraChange){
     const e = elapsed(s.p, I.sec), known = I.onIce.length > 0;
     const cnt = s.str ? STR_COUNTS(s.str, otAt(s.p)) : null, mp = MP.at(e);
     I.us = cnt ? cnt[0] : mp.us; I.them = cnt ? cnt[1] : mp.them; I.oppEN = MP.en(e);
-    I.situation = situationFrom(s.team, I.us, I.them, known && !I.goalie, I.oppEN);
+    I.situation = s.sit || situationFrom(s.team, I.us, I.them, known && !I.goalie, I.oppEN);  // sit: exact bucket from an NHL import
     const right = attacksRight(s.team, s.p), X = right ? s.x : -s.x, Y = right ? s.y : -s.y;
     const g = geometry(X, Y);
     I.distance = g.d; I.angle = g.a; I.X = X; I.Y = Y;
@@ -1312,7 +1323,7 @@ function exportShots(){
   const D = derive();
   const rows = [["Period","Team","Player","Type","X","Y","Shot Type","Strength","Clock","Rebound","Situation","xG","OnIce","Goalie","OnIceTeam","Rush","CrossIce","Tier","OffDefender"]];
   D.ordered.forEach(s => { const I = D.shotInfo[s.id];
-    rows.push([s.p <= 3 ? s.p : "OT", s.team === "us" ? S.us : S.opp, "", RESULT_EXPORT[s.result], s.x, s.y,
+    rows.push([s.p <= 3 ? s.p : "OT", s.team === "us" ? S.us : S.opp, s.who || "", RESULT_EXPORT[s.result], s.x, s.y,
       TYPE_EXPORT[s.type], SIT_TEXT[I.situation] || "", fmt(I.sec), I.rebound ? 1 : 0, I.situation,
       I.xg === null ? "" : I.xg.toFixed(4), I.onIce.filter(n => n !== I.goalie).join(" "), I.goalie || "", S.us,
       s.rush ? 1 : 0, s.xi ? 1 : 0, I.tier, s.offd && s.result === "GOAL" ? 1 : 0]); });
@@ -1934,14 +1945,58 @@ $("sNew").onclick = () => {
 $("sImport").onclick = () => $("sFile").click();
 $("sFile").onchange = async e => {
   const f = e.target.files[0]; if(!f) return;
-  try{ const d = JSON.parse(await f.text());
-    if(!d.setup || !d.game || !Array.isArray(d.game.shots)) throw new Error("not a tracker backup");
-    S = Object.assign(blankSetup(), d.setup); G = d.game; if(!Array.isArray(G.flips)) G.flips = [];
-    ["strOps","pens","enOps","poss"].forEach(k => { if(!Array.isArray(G[k])) G[k] = []; });
-G.shots.forEach(s => { if(s.type === "DEFL") s.type = "TIP"; }); hist.length = 0; saveSetup(); saveGame(); renderSetup(); render();
+  try{ loadBackup(JSON.parse(await f.text()));
     $("setupNote").textContent = `Loaded ${G.shots.length} shots and ${G.changes.length} changes.`;
   }catch(err){ $("setupNote").textContent = "Couldn't read that file: " + err.message; }
   e.target.value = "";
+};
+function loadBackup(d){
+  if(!d.setup || !d.game || !Array.isArray(d.game.shots)) throw new Error("not a tracker backup");
+  S = Object.assign(blankSetup(), d.setup); G = d.game; if(!Array.isArray(G.flips)) G.flips = [];
+  ["strOps","pens","enOps","poss"].forEach(k => { if(!Array.isArray(G[k])) G[k] = []; });
+  G.shots.forEach(s => { if(s.type === "DEFL") s.type = "TIP"; });
+  hist.length = 0; selId = null; saveSetup(); saveGame(); renderSetup(); render();
+}
+
+/* NHL import. The league's API sends no CORS headers, so serve.py proxies
+   nhl_game.py at nhl/...; a static host has no proxy, and the note says
+   to use the CLI there. */
+let nhlGames = [];
+async function nhlFetch(path){
+  let r;
+  try{ r = await fetch(path); }catch(e){ throw new Error("the local server isn't reachable"); }
+  const t = await r.text();
+  let d; try{ d = JSON.parse(t); }catch(e){ throw new Error("no NHL proxy here. Run python3 nhl_game.py <game id> --team ABC, then Import backup"); }
+  if(!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+  return d;
+}
+function nhlTeams(){
+  const g = nhlGames.find(x => String(x.id) === $("nGame").value);
+  const was = $("nTeam").value;
+  $("nTeam").innerHTML = g ? [g.home, g.away].map(t => `<option${t === was ? " selected" : ""}>${esc(t)}</option>`).join("") : "";
+  $("nLoad").disabled = !g;
+}
+$("nDate").value = today();
+$("nFind").onclick = async () => {
+  $("nNote").textContent = "Looking up games…";
+  try{ nhlGames = (await nhlFetch(`nhl/games?date=${encodeURIComponent($("nDate").value || today())}`)).games;
+    $("nGame").innerHTML = nhlGames.map(g => `<option value="${g.id}">${esc(g.label)} · ${esc(g.state)}</option>`).join("");
+    $("nNote").textContent = nhlGames.length ? "" : "No NHL games that day.";
+  }catch(err){ nhlGames = []; $("nGame").innerHTML = ""; $("nNote").textContent = "Couldn't list games: " + err.message; }
+  nhlTeams();
+};
+$("nGame").onchange = nhlTeams;
+$("nLoad").onclick = async () => {
+  if((G.shots.length || G.changes.length) && !(S.nhl && String(S.nhl.game) === $("nGame").value) &&
+     !confirm("Load this game? It replaces every shot and change. Export first if you need them.")) return;
+  $("nNote").textContent = "Loading play-by-play and shifts…"; $("nLoad").disabled = true;
+  try{ const d = await nhlFetch(`nhl/import?game=${encodeURIComponent($("nGame").value)}&team=${encodeURIComponent($("nTeam").value)}`);
+    loadBackup(d); const m = d.summary;
+    $("nNote").textContent = `${m.label} (${m.state}): ${m.shots} shots, ${m.shifts} ${m.team} shifts as ${m.changes} line changes.` +
+      (m.shifts ? "" : " No shift chart published yet, so TOI and on-ice stats are empty until it is.") +
+      (m.skipped ? ` ${m.skipped} shots had no coordinates and were left out.` : "");
+  }catch(err){ $("nNote").textContent = "Couldn't load it: " + err.message; }
+  $("nLoad").disabled = false;
 };
 
 document.addEventListener("keydown", e => {
