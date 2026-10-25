@@ -13,7 +13,7 @@ type Props = { params: Promise<{ season: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const s = seasonLabel(+(await params).season);
-  return { title: `${s} regression watch`, description: `Which NHL teams, shooters and goalies are ahead of or behind their expected goals in ${s}.` };
+  return { title: `${s} vs. expected`, description: `Which NHL teams, shooters and goalies are ahead of or behind their expected goals in ${s}.` };
 }
 
 /** One phase, trimmed to the columns the page shows. */
@@ -33,7 +33,7 @@ export default async function Regression({ params }: Props) {
   const season = +(await params).season;
   return (
     <>
-      <PageHead title="Regression watch" sub={`Who is ahead of or behind their chances in ${seasonLabel(season)}. Shooting and save percentages drift back toward normal; expected goals hold up, so the gap between the two is the part of a record most likely to fade.`} />
+      <PageHead title="Vs. expected" sub={`Who is ahead of or behind their chances in ${seasonLabel(season)}. Shooting and save percentages drift back toward normal; expected goals hold up, so the gap between the two is the part of a record most likely to fade.`} />
       <RegressionView season={season} data={{ regular: phaseData(season, "regular"), playoff: phaseData(season, "playoff") }} />
     </>
   );

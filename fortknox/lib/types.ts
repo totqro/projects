@@ -25,6 +25,9 @@ export interface GameSummary {
   hsog: number;
   asog: number;
   shifts: boolean;
+  /** Who deserved to win, from the shots (lib/deserve.ts). Not in
+   *  index.json: added at build time by seasonGames(). */
+  dv?: import("./deserve").Deserved;
 }
 
 export interface SeasonIndex {

@@ -83,20 +83,35 @@ const goalieCols = (season: number): Column<RegGoalie>[] => [
   { k: "sv_pct", label: "Unbl. Sv%", get: p => p.sv_pct, cell: p => sv(p.sv_pct), tip: "svp" },
   { k: "xsv_pct", label: "Unbl. xSv%", get: p => p.xsv_pct, cell: p => sv(p.xsv_pct), tip: "xsvp" },
   { k: "gsax", label: "GSAx", get: p => p.gsax, cell: p => <b className="font-semibold"><Signed v={p.gsax} /></b>, tip: "gsax" },
-  { k: "gsax_pace", label: "GSAx pace", get: p => pace(p.gsax, p.gp), cell: p => <Signed v={pace(p.gsax, p.gp)} />, tip: "gsaxpace" },
 ];
 
 const FIRST = 15;
+// Skater lists open at half the most games anyone has played: enough to cut
+// the call-ups, few enough to keep most of the league.
+const half = (most: number) => most / 2;
+
+const GP_STEPS = [1, 3, 5, 10, 20, 40];
 
 /** One ranked list with an ahead/behind switch: the same rows, sorted from
- *  either end. */
-function Ranked<R>({ title, rows, cols, by, labels, csv, rowKey, children }: {
-  title: string; rows: R[]; cols: Column<R>[]; by: string; labels: [string, string]; csv: string; rowKey: (r: R) => string | number; children: React.ReactNode;
+ *  either end, with its own games-played floor. `start` picks the floor it
+ *  opens at from the most games anyone in the list has played. */
+function Ranked<R extends { gp: number }>({ title, rows: allRows, cols, by, labels, csv, rowKey, start, children }: {
+  title: string; rows: R[]; cols: Column<R>[]; by: string; labels: [string, string]; csv: string; rowKey: (r: R) => string | number;
+  start: (most: number) => number; children: React.ReactNode;
 }) {
   const [end, setEnd] = React.useState<"hi" | "lo">("hi");
   const [all, setAll] = React.useState(false);
+  const most = Math.max(1, ...allRows.map(r => r.gp));
+  const gpOpts = GP_STEPS.filter(m => m <= most);
+  const [minGp, setMinGp] = React.useState(() => GP_STEPS.filter(m => m <= start(most)).pop() ?? 1);
+  const rows = React.useMemo(() => allRows.filter(r => r.gp >= minGp), [allRows, minGp]);
   return (
-    <Section title={title} aside={<Segmented label={title} value={end} onChange={v => { setEnd(v); setAll(false); }} options={[["hi", labels[0]], ["lo", labels[1]]]} />}>
+    <Section title={title} aside={
+      <div className="flex flex-wrap items-end gap-3">
+        <SelectField label="Min. games" value={minGp} onChange={v => { setMinGp(+v); setAll(false); }} options={gpOpts} />
+        <Segmented label={title} value={end} onChange={v => { setEnd(v); setAll(false); }} options={[["hi", labels[0]], ["lo", labels[1]]]} />
+      </div>
+    }>
       <SortTable key={end} rows={rows} cols={cols} initial={{ sort: by, asc: end === "lo" }} rowKey={rowKey} limit={all ? undefined : FIRST} csv={csv} />
       {!all && rows.length > FIRST && <Button variant="secondary" size="sm" className="mt-3" onClick={() => setAll(true)}>Show all {rows.length}</Button>}
       <Note className="mt-2 text-xs">{children}</Note>
@@ -108,16 +123,8 @@ export function RegressionView({ season, data }: { season: number; data: Record<
   const hasPlayoffs = data.playoff.teams.some(t => t.gp > 0);
   const [phase, setPhase] = React.useState<Phase>("regular");
   const d = data[phase];
-  // Start at half the most games anyone has played: enough to cut the
-  // call-ups, few enough to keep most of the league.
-  const most = Math.max(1, ...d.skaters.map(p => p.gp));
-  const gpOpts = [1, 3, 5, 10, 20, 40].filter(m => m <= most);
-  const [minGp, setMinGp] = React.useState(() => gpOpts.filter(m => m <= most / 2).pop() ?? 1);
-
-  const sk = React.useMemo(() => d.skaters.filter(p => p.gp >= minGp), [d, minGp]);
-  const shooters = React.useMemo(() => sk.filter(p => p.att > 0), [sk]);
-  const onIce = React.useMemo(() => sk.filter(p => p.xgf5 + p.xga5 > 0), [sk]);
-  const gk = React.useMemo(() => d.goalies.filter(p => p.gp >= Math.min(minGp, 5)), [d, minGp]);
+  const shooters = React.useMemo(() => d.skaters.filter(p => p.att > 0), [d]);
+  const onIce = React.useMemo(() => d.skaters.filter(p => p.xgf5 + p.xga5 > 0), [d]);
   const teams = React.useMemo(() => d.teams.filter(t => t.gp > 0), [d]);
   const tc = React.useMemo(() => teamCols(season), [season]);
   const shc = React.useMemo(() => shooterCols(season), [season]);
@@ -127,22 +134,23 @@ export function RegressionView({ season, data }: { season: number; data: Record<
 
   return (
     <>
-      <div className="mb-6 flex flex-wrap items-end gap-3">
-        {hasPlayoffs && <Segmented label="Season phase" value={phase} onChange={setPhase} options={[["regular", "Regular season"], ["playoff", "Playoffs"]]} />}
-        <SelectField label="Min. games" value={minGp} onChange={v => setMinGp(+v)} options={gpOpts} />
-      </div>
+      {hasPlayoffs && (
+        <div className="mb-6">
+          <Segmented label="Season phase" value={phase} onChange={setPhase} options={[["regular", "Regular season"], ["playoff", "Playoffs"]]} />
+        </div>
+      )}
 
       <div className="space-y-10">
-        <Ranked title="Teams" rows={teams} cols={tc} by="gap" labels={["Results ahead of play", "Results behind play"]} csv={csv("teams")} rowKey={t => t.team}>
+        <Ranked key={`Teams-${phase}`} title="Teams" start={() => 1} rows={teams} cols={tc} by="gap" labels={["Results ahead of play", "Results behind play"]} csv={csv("teams")} rowKey={t => t.team}>
           Gap is goal share minus xG share, in percentage points, all situations. A team well ahead of its chances is usually leaning on hot shooting or goaltending (the last two columns), and those are the parts that fade.
         </Ranked>
-        <Ranked title="Shooters" rows={shooters} cols={shc} by="gax" labels={["Running hot", "Due for goals"]} csv={csv("shooters")} rowKey={p => p.id}>
+        <Ranked key={`Shooters-${phase}`} title="Shooters" start={half} rows={shooters} cols={shc} by="gax" labels={["Running hot", "Due for goals"]} csv={csv("shooters")} rowKey={p => p.id}>
           GAx is goals minus the expected goals of his own shots. The best finishers sit a little above zero year after year, but most big gaps shrink. Paces are per 82 games.
         </Ranked>
-        <Ranked title="On-ice results, 5v5" rows={onIce} cols={oic} by="gap" labels={["Ahead of play", "Behind play"]} csv={csv("on-ice")} rowKey={p => p.id}>
+        <Ranked key={`On-ice results-${phase}`} title="On-ice results, 5v5" start={half} rows={onIce} cols={oic} by="gap" labels={["Ahead of play", "Behind play"]} csv={csv("on-ice")} rowKey={p => p.id}>
           His team&apos;s 5-on-5 goal share with him on the ice, against its xG share. A skater whose goal share runs far ahead has usually had hot shooting or goaltending behind him; one far behind has usually had the opposite.
         </Ranked>
-        <Ranked title="Goalies" rows={gk} cols={gkc} by="gsax" labels={["Stealing goals", "Leaking goals"]} csv={csv("goalies")} rowKey={p => p.id}>
+        <Ranked key={`Goalies-${phase}`} title="Goalies" start={most => Math.min(half(most), 5)} rows={d.goalies} cols={gkc} by="gsax" labels={["Stealing goals", "Leaking goals"]} csv={csv("goalies")} rowKey={p => p.id}>
           GSAx is how many goals he saved beyond an average goalie on the same shots. Goaltending is the noisiest thing in hockey over a few weeks: a season&apos;s worth of shots is needed before it says much.
         </Ranked>
       </div>

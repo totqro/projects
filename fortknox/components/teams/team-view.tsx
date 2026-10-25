@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { f1, f2, fmtDate, pct, per60, share, sv, toi, toiMin } from "@/lib/format";
 import { summarize, type TeamGame } from "@/lib/season";
-import { posLabel, TIPS } from "@/lib/teams";
+import { nickname, posLabel, teamName, TIPS } from "@/lib/teams";
 import type { Phase, TeamUnits } from "@/lib/types";
 import { Signed, SortTable, type Column } from "@/components/tables/sortable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,8 +93,22 @@ const LOG_COLS: Column<LogGame>[] = [
 ];
 
 /** Expected goals for (up) and against (down) in each game, with a rolling share. */
-function GameBars({ games }: { games: TeamGame[] }) {
+function GameBars({ games, team }: { games: TeamGame[]; team: string }) {
   const router = useRouter();
+  // A hover card, not the browser's own tooltip: that one waits a second,
+  // vanishes when the mouse moves, and never shows on a phone. On touch the
+  // first tap on a game shows its card and a second one opens the game.
+  const [hover, setHover] = React.useState<{ i: number; x: number; y: number } | null>(null);
+  const touch = React.useRef(false);
+  const box = React.useRef<HTMLDivElement>(null);
+  // The card is pinned to the viewport, so drop it on scroll or a tap elsewhere.
+  React.useEffect(() => {
+    if (!hover) return;
+    const off = (e: Event) => { if (e.type === "scroll" || !box.current?.contains(e.target as Node)) setHover(null); };
+    addEventListener("scroll", off, { passive: true, capture: true });
+    addEventListener("pointerdown", off);
+    return () => { removeEventListener("scroll", off, { capture: true }); removeEventListener("pointerdown", off); };
+  }, [hover]);
   const W = 900, H = 220, L = 58, R = 40, mid = H / 2;
   const bw = Math.max(3, Math.min(18, (W - L - R) / games.length - 2));
   const max = Math.ceil(Math.max(3, ...games.map(g => Math.max(g.xgf, g.xga))));
@@ -108,7 +122,9 @@ function GameBars({ games }: { games: TeamGame[] }) {
     return share(w.reduce((s, q) => s + q.xgf, 0), w.reduce((s, q) => s + q.xga, 0)) ?? 0.5;
   });
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Expected goals by game" className="block h-auto w-full text-[11px]">
+    <div ref={box} className="relative">
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Expected goals by game" className="block h-auto w-full text-[11px]"
+      onPointerLeave={e => { if (e.pointerType === "mouse") setHover(null); }}>
       <line x1={L} x2={W - R} y1={mid} y2={mid} stroke="var(--grid)" />
       <text x={L - 6} y={mid + 4} textAnchor="end" fill="var(--muted-foreground)">0</text>
       {marks.flatMap(v => [mid - Y(v), mid + Y(v)].map(y => (
@@ -123,10 +139,18 @@ function GameBars({ games }: { games: TeamGame[] }) {
         <text key={v} x={W - R + 6} y={shareY(v) + 4} fill="var(--foreground)" opacity={0.7}>{v * 100}%</text>
       ))}
       {games.map((g, i) => {
-        const x = X(i);
+        const x = X(i), slot = (W - L - R) / games.length;
         return (
-          <g key={g.id} className="cursor-pointer hover:opacity-70" onClick={() => router.push(`/game/${g.id}`)}>
-            <title>{`${fmtDate(g.date)} ${g.home ? "vs" : "@"} ${g.opp}: ${g.res} ${g.gf}-${g.ga}, xG ${g.xgf.toFixed(2)}-${g.xga.toFixed(2)}`}</title>
+          <g key={g.id} className={cn("cursor-pointer", hover?.i === i && "opacity-70")}
+            onPointerDown={e => { touch.current = e.pointerType !== "mouse"; }}
+            onPointerMove={e => { if (e.pointerType === "mouse") setHover({ i, x: e.clientX, y: e.clientY }); }}
+            onPointerLeave={e => { if (e.pointerType === "mouse") setHover(null); }}
+            onClick={e => {
+              if (touch.current && hover?.i !== i) setHover({ i, x: e.clientX, y: e.clientY });
+              else router.push(`/game/${g.id}`);
+            }}>
+            {/* the whole column is the target, not just the bars */}
+            <rect x={x - slot / 2} y={0} width={slot} height={H} fill="transparent" />
             <rect x={x - bw / 2} y={mid - Y(g.xgf)} width={bw} height={Y(g.xgf)} rx={1.5} fill="var(--home)" />
             <rect x={x - bw / 2} y={mid} width={bw} height={Y(g.xga)} rx={1.5} fill="var(--away)" opacity={0.75} />
             <rect x={x - 3} y={H - 9} width={6} height={6} rx={1} fill={g.won ? "var(--brand)" : "none"} stroke={g.won ? "var(--brand)" : "var(--muted-foreground)"} />
@@ -138,6 +162,31 @@ function GameBars({ games }: { games: TeamGame[] }) {
           points={roll.map((v, i) => `${X(i).toFixed(1)},${shareY(v).toFixed(1)}`).join(" ")} />
       )}
     </svg>
+    {hover && games[hover.i] && <GameCard g={games[hover.i]} team={team} x={hover.x} y={hover.y} />}
+    </div>
+  );
+}
+
+const XRES = { W: "Win, 2 pts", OTL: "Close loss, 1 pt", L: "Loss, 0 pts" } as const;
+
+function GameCard({ g, team, x, y }: { g: TeamGame; team: string; x: number; y: number }) {
+  return (
+    <div className="tabular pointer-events-none fixed z-50 rounded-md border border-border bg-popover px-2.5 py-2 text-xs leading-relaxed [box-shadow:var(--shadow-l)]"
+      style={{ left: Math.min(x + 14, innerWidth - 200), top: y + 14 }}>
+      <div className="text-muted-foreground">{fmtDate(g.date)} {g.home ? "vs" : "@"} {g.opp}</div>
+      <div>
+        <b className={cn("font-semibold", g.won ? "text-good" : "text-bad")}>{g.res}</b> {g.gf}&ndash;{g.ga}
+        {g.end !== "REG" && <span className="text-muted-foreground"> {g.end}</span>}
+      </div>
+      <div className="mt-1 text-muted-foreground">Expected goals</div>
+      <div><b className="font-semibold text-home">{nickname(teamName(team))} {f2(g.xgf)}</b></div>
+      <div><b className="font-semibold text-away">{nickname(teamName(g.opp))} {f2(g.xga)}</b></div>
+      {g.xres && (
+        <div className="mt-1 text-muted-foreground">
+          xG result: <b className={cn("font-semibold", g.xres === "W" ? "text-good" : g.xres === "L" ? "text-bad" : "text-foreground")}>{XRES[g.xres]}</b>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -199,7 +248,7 @@ export function TeamView({ d }: { d: TeamData }) {
       <Card className="mb-6">
         <CardHeader className="pb-2"><CardTitle>Game by game</CardTitle></CardHeader>
         <CardContent>
-          <GameBars games={games} />
+          <GameBars games={games} team={d.team} />
           <Note className="mt-2 text-xs">Expected goals for (up) and against (down), one bar per game. Filled squares are wins. The white line is xG% over the last five games, on the right-hand scale. Click a bar to open the game.</Note>
         </CardContent>
       </Card>

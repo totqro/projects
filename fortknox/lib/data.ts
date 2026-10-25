@@ -1,8 +1,9 @@
 import "server-only";
 import fs from "node:fs";
 import path from "node:path";
-import type { GamePlayer, LinesFile, PlayersFile, RawSheet, SeasonIndex, Sheet, Shot, TeamsFile, Tonight } from "./types";
+import type { GamePlayer, GameSummary, LinesFile, PlayersFile, RawSheet, SeasonIndex, Sheet, Shot, TeamsFile, Tonight } from "./types";
 import { unpack } from "./unpack";
+import { deserved } from "./deserve";
 
 // Build-time access to the published sheets in data/ (scripts/fetch-data.sh).
 // Files are read once per build worker and kept in memory.
@@ -22,6 +23,12 @@ export function seasons(): number[] {
 export const currentSeason = () => seasons()[0];
 
 export const seasonIndex = (s: number) => read<SeasonIndex>(`${s}/index.json`);
+/** The season's games, each with who deserved to win it from its shots. */
+const withDv = new Map<number, GameSummary[]>();
+export function seasonGames(s: number): GameSummary[] {
+  if (!withDv.has(s)) withDv.set(s, seasonIndex(s).games.map(g => ({ ...g, dv: deserved(sheet(g.id).shots, g.home) })));
+  return withDv.get(s)!;
+}
 export const teamsFile = (s: number) => read<TeamsFile>(`${s}/teams.json`);
 export const playersFile = (s: number) => read<PlayersFile>(`${s}/players.json`);
 /** Lines, pairs and WOWY; null for seasons published before lines.json existed. */
