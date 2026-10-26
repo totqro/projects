@@ -8,12 +8,14 @@ import { Dropdown, type DropdownOption } from "@/components/site/dropdown";
 
 /** A labelled dropdown, the filter bars' building block. `teams` marks the
  *  values as team abbreviations: each option gets its colour and full name. */
-export function SelectField({ label, value, onChange, options, teams, className }: {
+export function SelectField({ label, value, onChange, options, teams, align, className }: {
   label: string;
   value: string | number;
   onChange: (v: string) => void;
   options: (string | number | [value: string | number, label: string])[];
   teams?: boolean;
+  /** Which edge the open list lines up with; "end" for a field at the right. */
+  align?: "start" | "end";
   className?: string;
 }) {
   const labelId = useId();
@@ -27,7 +29,7 @@ export function SelectField({ label, value, onChange, options, teams, className 
   return (
     <div className={cn("flex flex-col gap-1 text-xs text-muted-foreground", className)}>
       <span id={labelId}>{label}</span>
-      <Dropdown labelId={labelId} value={String(value)} onChange={onChange} options={opts} />
+      <Dropdown labelId={labelId} value={String(value)} onChange={onChange} options={opts} align={align} />
     </div>
   );
 }

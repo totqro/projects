@@ -8,6 +8,7 @@ import { PageHead } from "@/components/site/page-head";
 import { TeamLogo } from "@/components/site/team-logo";
 import { Note, Section, Tile } from "@/components/site/section";
 import { PlayerLog } from "@/components/players/player-log";
+import { PlayerTrend } from "@/components/players/player-trend";
 import { Signed } from "@/components/tables/sortable";
 import { PlayerShotMap, type PlayerShot } from "@/components/players/player-shots";
 import { PlayerSeasons } from "@/components/players/player-seasons";
@@ -49,15 +50,15 @@ function seasonLines(id: number) {
   }));
 }
 
-/** His unblocked shots in one season's games, compact for the shot map. */
+/** His unblocked shots in one season's games, compact for the shot map.
+ *  Every game he played is listed, shots or not, so the map's last-N-games
+ *  windows count games played. */
 function seasonShots(id: number, log: { id: number; date: string; opp: string; home: boolean }[]) {
   const mine = shotsByShooter().get(id) ?? [];
   const games: string[] = [], shots: PlayerShot[] = [];
   for (const g of log) {
-    const these = mine.filter(s => s.gid === g.id);
-    if (!these.length) continue;
     games.push(`${fmtDate(g.date)} ${g.home ? "vs" : "@"} ${g.opp}`);
-    for (const s of these)
+    for (const s of mine.filter(s => s.gid === g.id))
       shots.push([Math.round(s.x * 10) / 10, Math.round(s.y * 10) / 10, Math.round(s.xg * 1000) / 1000,
         s.ev === "GOAL" ? "G" : s.ev === "SHOT" ? "S" : "M", s.type, s.p, s.t, games.length - 1]);
   }
@@ -86,6 +87,8 @@ export default async function Player({ params }: Props) {
   function seasonBlock(s: number) {
     const cur = lines.find(l => l.season === s);
     const rows = log.filter(g => g.season === s);
+    const logRows = rows.map(r => ({ ...r, line: trim(r.line, goalie) }));
+    const trendRows = logRows.filter(r => r.type === (cur?.phase === "playoff" ? 3 : 2));
     const { games: shotGames, shots } = !goalie && cur ? seasonShots(id, rows) : { games: [], shots: [] };
     const wowy = !goalie && cur ? wowyUnits(linesFile(cur.season)?.[cur.phase][cur.sk?.team ?? team], id) : null;
     const rel = cur?.sk ? relXg(cur.sk) : null;
@@ -126,7 +129,6 @@ export default async function Player({ params }: Props) {
             {shots.length > 0 && (
               <Section title={`Shots, ${seasonLabel(cur.season)}`}>
                 <PlayerShotMap shots={shots} games={shotGames} />
-                <Note className="mt-2 text-xs">{shots.length} unblocked shots, {f1(shots.reduce((a, s) => a + s[2], 0))} xG, {shots.filter(s => s[3] === "G").length} goals. Attacking to the right; hover a dot for the shot.</Note>
               </Section>
             )}
             {wowy && (
@@ -138,8 +140,14 @@ export default async function Player({ params }: Props) {
           </div>
         )}
 
+        {trendRows.length >= 3 && (
+          <Section title={`Game by game${cur?.phase === "playoff" ? ", playoffs" : ""}`} className="mb-8">
+            <PlayerTrend goalie={goalie} rows={trendRows} />
+          </Section>
+        )}
+
         <Section title={`${seasonLabel(s)} game log`}>
-          <PlayerLog goalie={goalie} rows={rows.map(r => ({ ...r, line: trim(r.line, goalie) }))} />
+          <PlayerLog goalie={goalie} rows={logRows} />
         </Section>
       </>
     );
@@ -148,7 +156,9 @@ export default async function Player({ params }: Props) {
 
   return (
     <>
-      <PageHead title={name} sub={<span className="inline-flex items-center gap-2">{team && <TeamLogo team={team} size={28} />}{posLabel(pos)}, <Link href={`/team/${log[log.length - 1]?.season}/${team}`} className="hover:underline">{teamName(team)}</Link></span>} />
+      <PageHead title={name} sub={<span className="inline-flex items-center gap-2">{team && <TeamLogo team={team} size={28} />}{posLabel(pos)}, <Link href={`/team/${log[log.length - 1]?.season}/${team}`} className="hover:underline">{teamName(team)}</Link></span>}>
+        <Link href={`/compare?p=${id}`} className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Compare</Link>
+      </PageHead>
 
       <PlayerSeasons blocks={blocks} />
     </>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { linesFile, seasonIndex, sheet, teamSeasons, teamsFile } from "@/lib/data";
+import { linesFile, seasonGames, sheet, teamSeasons, teamsFile } from "@/lib/data";
 import { ordinal, seasonLabel } from "@/lib/format";
 import { standings, teamGames } from "@/lib/season";
 import { TEAMS, teamName } from "@/lib/teams";
@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function Team({ params }: Props) {
   const { season: s, abbrev: ab } = await params;
   const season = +s;
-  const games = seasonIndex(season).games, T = teamsFile(season);
+  const games = seasonGames(season), T = teamsFile(season);
   const std = standings(T.regular, games, "regular");
   const me = std.find(x => x.team === ab);
   const meta = TEAMS[ab];

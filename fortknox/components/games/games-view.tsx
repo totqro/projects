@@ -11,6 +11,8 @@ import { SelectField } from "@/components/site/field";
 import { Note } from "@/components/site/section";
 import { TeamLogo } from "@/components/site/team-logo";
 import { gameColors } from "@/lib/team-colors";
+import { nickname, teamName } from "@/lib/teams";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const isUpset = (x: GameSummary) => x.hs !== x.as && (x.hxg >= x.axg) !== (x.hs > x.as);
 
@@ -18,16 +20,19 @@ export const isUpset = (x: GameSummary) => x.hs !== x.as && (x.hxg >= x.axg) !==
 export function MiniBox({ x }: { x: GameSummary }) {
   const status = x.end === "REG" ? "Final" : "F/" + x.end;
   const flags = [x.type === 3 ? "Playoffs" : "", isUpset(x) ? "−xG win" : ""].filter(Boolean);
-  const line = (ab: string, s: number, xg: number, sog: number, won: boolean) => (
+  const colors = gameColors(x.away, x.home);
+  // The xG numbers take the team colours the bar below uses, so the bar
+  // reads without a legend.
+  const line = (ab: string, s: number, xg: number, sog: number, won: boolean, xgCol: string) => (
     <tr className={cn(won ? "font-semibold text-foreground" : "text-secondary-foreground")}>
       <td className="py-1 text-left"><span className="inline-flex items-center gap-2"><TeamLogo team={ab} size={26} />{ab}</span></td>
       <td className={cn("py-1 text-right", won && "brand-text")}>{s}</td>
-      <td className="py-1 text-right text-muted-foreground">{f2(xg)}</td>
+      <td className={cn("py-1 text-right", xgCol)}>{f2(xg)}</td>
       <td className="py-1 text-right text-muted-foreground">{sog}</td>
     </tr>
   );
   return (
-    <Link href={`/game/${x.id}`} aria-label={`${x.away} ${x.as}, ${x.home} ${x.hs}, ${fmtDate(x.date)}`} style={gameColors(x.away, x.home)}
+    <Link href={`/game/${x.id}`} aria-label={`${x.away} ${x.as}, ${x.home} ${x.hs}, ${fmtDate(x.date)}`} style={colors}
       className="block rounded-[0.75rem] bg-card px-3.5 pb-3 pt-2.5 [box-shadow:var(--shadow-md)] transition-[background-color,box-shadow] hover:bg-accent/60 hover:[box-shadow:var(--shadow-lg)]">
       <table className="tabular w-full text-[13px]">
         <thead>
@@ -39,16 +44,28 @@ export function MiniBox({ x }: { x: GameSummary }) {
           </tr>
         </thead>
         <tbody>
-          {line(x.away, x.as, x.axg, x.asog, x.as > x.hs)}
-          {line(x.home, x.hs, x.hxg, x.hsog, x.hs > x.as)}
+          {line(x.away, x.as, x.axg, x.asog, x.as > x.hs, "text-away")}
+          {line(x.home, x.hs, x.hxg, x.hsog, x.hs > x.as, "text-home")}
         </tbody>
       </table>
       <div className="mt-2 flex min-h-5 items-center justify-between gap-2">
         <span className="flex gap-1">{flags.map(f => <Badge key={f} variant={f === "Playoffs" ? "default" : "warning"}>{f}</Badge>)}</span>
-        <span className="flex h-1.5 w-20 gap-px overflow-hidden rounded-full [box-shadow:var(--shadow-inset)]" title={`xG ${f2(x.axg)}–${f2(x.hxg)}`}>
-          <i className="block bg-away" style={{ flex: x.axg }} />
-          <i className="block bg-home" style={{ flex: x.hxg }} />
-        </span>
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
+            {/* padded so the hover target is bigger than the 6px bar */}
+            <span className="-my-2 py-2" aria-label={`Expected goals: ${teamName(x.away)} ${f2(x.axg)}, ${teamName(x.home)} ${f2(x.hxg)}`}>
+              <span className="flex h-1.5 w-20 gap-px overflow-hidden rounded-full [box-shadow:var(--shadow-inset)]">
+                <i className="block bg-away" style={{ flex: x.axg }} />
+                <i className="block bg-home" style={{ flex: x.hxg }} />
+              </span>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent style={colors} className="tabular">
+            <div className="mb-0.5 text-muted-foreground">Expected goals</div>
+            <div><b className="font-semibold text-away">{nickname(teamName(x.away))} {f2(x.axg)}</b></div>
+            <div><b className="font-semibold text-home">{nickname(teamName(x.home))} {f2(x.hxg)}</b></div>
+          </TooltipContent>
+        </Tooltip>
       </div>
     </Link>
   );

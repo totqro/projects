@@ -3,6 +3,7 @@
 // the shootout winner's +1, as the league's standings do; gf_x / ga_x leave
 // it out for comparisons with xG. Ported from xgcalc/web/sheets.html.
 import { pct, share } from "./format";
+import { xgPoints, xgResult, type XgResult } from "./deserve";
 import { TEAMS } from "./teams";
 import type { GameSummary, Phase, SkaterSeason, TeamSeason } from "./types";
 
@@ -26,6 +27,12 @@ export interface TeamGame {
   atta: number;
   sog: number;
   soga: number;
+  /** Expected goals for and against with empty-net shots left out, and the
+   *  result they give (lib/deserve.ts); null when the games were loaded
+   *  without them (lib/data.ts seasonGames). */
+  dxgf: number | null;
+  dxga: number | null;
+  xres: XgResult | null;
 }
 
 export const phaseType = (p: Phase) => (p === "playoff" ? 3 : 2);
@@ -36,12 +43,14 @@ export function teamGames(games: GameSummary[], ab: string, phase: Phase): TeamG
     .slice().sort((a, b) => (a.date + a.id).localeCompare(b.date + b.id))
     .map(x => {
       const home = x.home === ab, gf = home ? x.hs : x.as, ga = home ? x.as : x.hs, won = gf > ga;
-      const so = x.end === "SO";
+      const so = x.end === "SO", dv = x.dv;
       return {
         id: x.id, date: x.date, home, opp: home ? x.away : x.home, gf, ga, won, end: x.end,
         res: won ? "W" : x.end === "REG" ? "L" : "OTL",
         gf_x: gf - (so && won ? 1 : 0), ga_x: ga - (so && !won ? 1 : 0),
         xgf: home ? x.hxg : x.axg, xga: home ? x.axg : x.hxg, xgf5: home ? x.hxg5 : x.axg5, xga5: home ? x.axg5 : x.hxg5,
+        dxgf: dv ? (home ? dv.hxg : dv.axg) : null, dxga: dv ? (home ? dv.axg : dv.hxg) : null,
+        xres: dv ? (home ? xgResult(dv.hxg, dv.axg) : xgResult(dv.axg, dv.hxg)) : null,
         att: home ? x.hatt : x.aatt, atta: home ? x.aatt : x.hatt, sog: home ? x.hsog : x.asog, soga: home ? x.asog : x.hsog,
       };
     });
@@ -51,6 +60,10 @@ export interface Summary {
   gp: number; w: number; l: number; otl: number; rw: number; row: number;
   gf: number; ga: number; gf_x: number; ga_x: number; xgf: number; xga: number; xgf5: number; xga5: number;
   pts: number; ppct: number | null; diff: number; gax: number; gsax: number;
+  /** xG standings: games won on xG (xw), lost by more than the close
+   *  margin (xl) or within it (xotl), and the points that gives. Null
+   *  without shot data. */
+  xw: number | null; xl: number | null; xotl: number | null; xpts: number | null; xppct: number | null;
 }
 
 export function summarize(games: TeamGame[]): Summary {
@@ -63,7 +76,14 @@ export function summarize(games: TeamGame[]): Summary {
     t.xgf += g.xgf; t.xga += g.xga; t.xgf5 += g.xgf5; t.xga5 += g.xga5;
   }
   const pts = 2 * t.w + t.otl;
-  return { ...t, pts, ppct: t.gp ? pts / (2 * t.gp) : null, diff: t.gf - t.ga, gax: t.gf_x - t.xgf, gsax: t.xga - t.ga_x };
+  const dv = games.length > 0 && games.every(g => g.xres != null);
+  let xw = 0, xl = 0, xotl = 0, xpts = 0;
+  if (dv) for (const g of games) {
+    xpts += xgPoints(g.xres!);
+    if (g.xres === "W") xw++; else if (g.xres === "L") xl++; else xotl++;
+  }
+  const x = dv ? { xw, xl, xotl, xpts, xppct: xpts / (2 * t.gp) } : { xw: null, xl: null, xotl: null, xpts: null, xppct: null };
+  return { ...t, ...x, pts, ppct: t.gp ? pts / (2 * t.gp) : null, diff: t.gf - t.ga, gax: t.gf_x - t.xgf, gsax: t.xga - t.ga_x };
 }
 
 export type StandingRow = TeamSeason & Summary & { lg: number };
@@ -75,6 +95,15 @@ const byPoints = (a: Summary, b: Summary) =>
 export function standings(teams: TeamSeason[], games: GameSummary[], phase: Phase): StandingRow[] {
   return teams.map(m => ({ ...m, ...summarize(teamGames(games, m.team, phase)), team: m.team }))
     .sort(byPoints).map((t, i) => ({ ...t, lg: i + 1 }));
+}
+
+/** The same teams ranked by xG points (then xG points %, xG wins and xG
+ *  share), as the real table ranks by points. `lg` becomes the xG rank; `ptsRank` keeps the real one. */
+export function xgStandings(rows: StandingRow[]): (StandingRow & { ptsRank: number })[] {
+  const xs = (t: StandingRow) => share(t.xgf, t.xga) ?? 0;
+  return rows.map(t => ({ ...t, ptsRank: t.lg }))
+    .sort((a, b) => (b.xpts ?? 0) - (a.xpts ?? 0) || (b.xppct ?? 0) - (a.xppct ?? 0) || (b.xw ?? 0) - (a.xw ?? 0) || xs(b) - xs(a))
+    .map((t, i) => ({ ...t, lg: i + 1 }));
 }
 
 export type Grouping = "league" | "conference" | "division" | "wildcard";
@@ -179,6 +208,22 @@ export const LENSES: Record<string, Lens> = {
       hl: ["−xGA", "−GSAx", "Goalie letting them down"], ll: ["+xGA", "−GSAx", "Struggling in their end"] },
   },
 };
+/** Which quadrant each team falls in on a lens, split the way the chart
+ *  splits it (components/charts/lens.tsx). */
+export function lensQuads(rows: StandingRow[], key: string): Map<string, Quad> {
+  const L = LENSES[key];
+  const pts = rows.map(t => ({ t, x: L.x(t), y: L.y(t) }))
+    .filter((p): p is { t: StandingRow; x: number; y: number } => p.x != null && p.y != null && isFinite(p.x) && isFinite(p.y));
+  const out = new Map<string, Quad>();
+  if (!pts.length) return out;
+  const avg = (a: number[]) => a.reduce((s, v) => s + v, 0) / a.length;
+  const mx = L.mx ?? avg(pts.map(p => p.x)), my = L.my ?? avg(pts.map(p => p.y));
+  for (const p of pts) {
+    const hx = L.flipX ? p.x < mx : p.x >= mx, hy = L.flipY ? p.y < my : p.y >= my;
+    out.set(p.t.team, `${hx ? "h" : "l"}${hy ? "h" : "l"}` as Quad);
+  }
+  return out;
+}
 export const QCOL: Record<Quad, string> = { hh: "var(--good)", lh: "var(--warn)", hl: "var(--home)", ll: "var(--bad)" };
 
 /** On-ice 5v5 xG share minus his team's with him on the bench (a fraction;

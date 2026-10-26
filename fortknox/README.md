@@ -25,10 +25,13 @@ pre-rendered page:
 | `/teams/<season>` | Standings (league, conference, division, wild card) and team lenses |
 | `/team/<season>/<abbrev>` | A team over the season or its last 20, 10 or 5 games |
 | `/players/<season>` | Skater and goalie tables |
-| `/player/<id>` | A player's season and game log |
+| `/player/<id>` | A player's season: shot map (season or last 20, 10, 5 games), WOWY, game-by-game trend, game log |
+| `/compare?p=<id>,<id>` | Up to four skaters or goalies side by side, with league percentiles; loads `/data/<season>/players.json` |
+| `/regression/<season>` | Teams, shooters, on-ice results and goalies furthest ahead of or behind their xG |
 | `/model` | How the xG model works, with live accuracy and calibration |
 | `/about` | What the site is, glossary, credits |
 | `/data/<season>/games.json` | Every game of a season; the games pages load it on demand |
+| `/data/<season>/players.json` | A season's skater and goalie tables, for the compare page |
 | `/data/<season>/game/<id>.json` | An older season's game sheet, loaded by `/game/archive` |
 
 ## Develop

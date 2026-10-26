@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { seasonIndex, seasons, teamsFile } from "@/lib/data";
+import { seasonGames, seasons, teamsFile } from "@/lib/data";
 import { seasonLabel } from "@/lib/format";
 import { standings } from "@/lib/season";
 import { TeamsView } from "@/components/teams/teams-view";
@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function Teams({ params }: Props) {
   const season = +(await params).season;
-  const games = seasonIndex(season).games, T = teamsFile(season);
+  const games = seasonGames(season), T = teamsFile(season);
   return (
     <>
       <h1 className="sr-only">{seasonLabel(season)} teams</h1>

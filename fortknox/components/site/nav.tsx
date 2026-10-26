@@ -9,7 +9,8 @@ import { Dropdown } from "@/components/site/dropdown";
 const SECTIONS = [
   { key: "games", label: "Games", match: (p: string) => p === "/" || p.startsWith("/game") },
   { key: "teams", label: "Teams", match: (p: string) => p.startsWith("/team") },
-  { key: "players", label: "Players", match: (p: string) => p.startsWith("/player") },
+  { key: "players", label: "Players", match: (p: string) => p.startsWith("/player") || p.startsWith("/compare") },
+  { key: "regression", label: "Vs. Expected", match: (p: string) => p.startsWith("/regression") },
   { key: "model", label: "Model", match: (p: string) => p.startsWith("/model") },
 ] as const;
 
@@ -17,7 +18,7 @@ const SECTIONS = [
  *  season's games). */
 function pathSeason(path: string, current: number) {
   if (path === "/") return current;
-  const m = path.match(/^\/(games|teams|players|team)\/(\d{4})/);
+  const m = path.match(/^\/(games|teams|players|team|regression)\/(\d{4})/);
   if (m) return +m[2];
   const g = path.match(/^\/game\/(\d{4})/);
   return g ? +g[1] : null;
@@ -85,6 +86,7 @@ export function SeasonSelect({ seasons, current }: { seasons: number[]; current:
     if (own == null) return setPicked(s);
     if (path.startsWith("/teams")) return router.push(`/teams/${s}`);
     if (path.startsWith("/players")) return router.push(`/players/${s}`);
+    if (path.startsWith("/regression")) return router.push(`/regression/${s}`);
     if (path.startsWith("/team/")) return router.push(path.replace(/^\/team\/\d{4}/, `/team/${s}`));
     router.push(s === current ? "/" : `/games/${s}`);
   };

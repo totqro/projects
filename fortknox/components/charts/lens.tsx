@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LENSES, QCOL, type Quad, type StandingRow } from "@/lib/season";
+import { LENSES, lensQuads, QCOL, type Quad, type StandingRow } from "@/lib/season";
 
 interface Pt { t: StandingRow; x: number; y: number; q: Quad }
 
@@ -82,8 +82,11 @@ function diagLabel(X: (v: number) => number, Y: (v: number) => number, v0: numbe
 
 
 /** Every team on one of the four lenses, split into quadrants: the chart and,
- *  separately, the list of teams in each quadrant. */
-export function useLensChart({ rows, lens, season }: { rows: StandingRow[]; lens: string; season: number }) {
+ *  separately, the list of teams in each quadrant. `focus` picks out some
+ *  teams (a division, say): the rest fade, and drop out of the lists, but the
+ *  quadrants still split at the league average. */
+export function useLensChart({ rows, lens, season, focus }: { rows: StandingRow[]; lens: string; season: number; focus?: Set<string> | null }) {
+  const lit = (team: string) => !focus || focus.has(team);
   const L = LENSES[lens];
   const router = useRouter();
   const [hover, setHover] = React.useState<{ p: Pt; x: number; y: number } | null>(null);
@@ -106,11 +109,8 @@ export function useLensChart({ rows, lens, season }: { rows: StandingRow[]; lens
   x0 = Math.min(x0, mx - px); x1 = Math.max(x1, mx + px); y0 = Math.min(y0, my - py); y1 = Math.max(y1, my + py);
   const X = (v: number) => { const f = (v - x0) / (x1 - x0); return PL + (L.flipX ? 1 - f : f) * (W - PL - PR); };
   const Y = (v: number) => { const f = (v - y0) / (y1 - y0); return PT + (L.flipY ? f : 1 - f) * (H - PT - PB); };
-  const side = (p: { x: number; y: number }): Quad => {
-    const hx = L.flipX ? p.x < mx : p.x >= mx, hy = L.flipY ? p.y < my : p.y >= my;
-    return `${hx ? "h" : "l"}${hy ? "h" : "l"}` as Quad;
-  };
-  const pts: Pt[] = base.map(p => ({ ...p, q: side(p) }));
+  const quads = lensQuads(rows, lens);
+  const pts: Pt[] = base.map(p => ({ ...p, q: quads.get(p.t.team)! }));
   const cx = X(mx), cy = Y(my);
   const box: Record<Quad, [number, number, number, number]> = {
     lh: [PL, PT, cx, cy], hh: [cx, PT, W - PR, cy], ll: [PL, cy, cx, H - PB], hl: [cx, cy, W - PR, H - PB],
@@ -161,10 +161,11 @@ export function useLensChart({ rows, lens, season }: { rows: StandingRow[]; lens
         {diag && <text x={diag.x} y={diag.y} fontSize={10.5} fill="var(--muted-foreground)">G% = xG%</text>}
         <text x={(PL + W - PR) / 2} y={H - PB + 32} textAnchor="middle" fontSize={11} fill="var(--muted-foreground)">{L.xl}</text>
         <text x={14} y={(PT + H - PB) / 2} transform={`rotate(-90 14 ${(PT + H - PB) / 2})`} textAnchor="middle" fontSize={11} fill="var(--muted-foreground)">{L.yl}</text>
-        {pts.map(p => {
+        {/* faded teams first, so the picked ones draw on top */}
+        {[...pts].sort((a, b) => +lit(a.t.team) - +lit(b.t.team)).map(p => {
           const lb = labels.get(p.t.team)!;
           return (
-            <g key={p.t.team} className="cursor-pointer"
+            <g key={p.t.team} className="cursor-pointer" opacity={lit(p.t.team) ? 1 : 0.15}
               onMouseMove={e => setHover({ p, x: e.clientX, y: e.clientY })} onMouseLeave={() => setHover(null)}
               onClick={() => router.push(`/team/${season}/${p.t.team}`)}>
               {lb.leader && <line x1={X(p.x)} y1={Y(p.y)} x2={lb.lx} y2={lb.ly} stroke="var(--muted-foreground)" strokeWidth={0.6} opacity={0.6} />}
@@ -189,7 +190,7 @@ export function useLensChart({ rows, lens, season }: { rows: StandingRow[]; lens
   // Each quadrant's teams, furthest from the split first.
   const sx = x1 - x0, sy = y1 - y0;
   const dist = (p: Pt) => Math.hypot((p.x - mx) / sx, (p.y - my) / sy);
-  const teamLinks = (list: Pt[]) => list.map(p => (
+  const teamLinks = (all: Pt[]) => all.filter(p => lit(p.t.team)).map(p => (
     <Link key={p.t.team} href={`/team/${season}/${p.t.team}`} className="font-medium underline decoration-border underline-offset-4 hover:decoration-foreground">{p.t.team}</Link>
   ));
   const callout = (key: string, color: string, title: string, sub: React.ReactNode, body: React.ReactNode) => (
@@ -205,14 +206,15 @@ export function useLensChart({ rows, lens, season }: { rows: StandingRow[]; lens
     const list = (xs: typeof gap) => xs.map(({ p, g }) => (
       <span key={p.t.team}>{teamLinks([p])} <span className="text-muted-foreground">{g > 0 ? "+" : ""}{(g * 100).toFixed(1)}%</span></span>
     ));
-    extra.push(callout("unlucky", "var(--home)", "G% furthest below xG%", null, list(gap.slice(0, 4))));
-    extra.push(callout("lucky", "var(--warn)", "G% furthest above xG%", null, list(gap.slice(-4).reverse())));
+    const shown = gap.filter(({ p }) => lit(p.t.team));
+    extra.push(callout("unlucky", "var(--home)", "G% furthest below xG%", null, list(shown.slice(0, 4))));
+    extra.push(callout("lucky", "var(--warn)", "G% furthest above xG%", null, list(shown.slice(-4).reverse())));
   }
   const callouts = (
     <div className="grid gap-2">
       {extra}
       {(["hh", "hl", "lh", "ll"] as Quad[]).map(k => {
-        const g = pts.filter(p => p.q === k).sort((a, b) => dist(b) - dist(a));
+        const g = pts.filter(p => p.q === k && lit(p.t.team)).sort((a, b) => dist(b) - dist(a));
         return callout(k, QCOL[k], `${L.q[k][0]} ${L.q[k][1]}`, L.q[k][2], g.length ? teamLinks(g) : "–");
       })}
     </div>
