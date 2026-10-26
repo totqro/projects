@@ -22,6 +22,11 @@ on:
         description: 'Run the weekly training-set rebuild + model refit regardless of day (manual catch-up / testing)'
         type: boolean
         default: false
+      slot:
+        description: 'Which daily run this is (set by the cron-job.org schedule; leave as manual by hand)'
+        type: choice
+        options: [manual, morning, midday, pregame]
+        default: manual
 
 # Queue, don't overlap: a delayed midday run and the pre-game run would both
 # commit and push the same data files.
@@ -99,11 +104,15 @@ jobs:
           fi
 
       # Weekly steps (refit, backtest) run once on Sunday: on the morning
-      # scheduled run or a manual run, not again on the later refreshes.
+      # run or a manual run, not again on the later refreshes. The daily runs
+      # are started by cron-job.org with a slot (see .github/SCHEDULES.md);
+      # the schedule check covers GitHub's own cron while it is still on.
       - name: Check day of week
         id: check-day
         run: |
-          if [ "$(date +%u)" == "7" ] && { [ "${{ github.event_name }}" != "schedule" ] || [ "${{ github.event.schedule }}" == "37 10 * * *" ]; }; then
+          SLOT="${{ inputs.slot }}"
+          if [ "$(date +%u)" == "7" ] && [ "$SLOT" != "midday" ] && [ "$SLOT" != "pregame" ] \
+             && { [ "${{ github.event_name }}" != "schedule" ] || [ "${{ github.event.schedule }}" == "37 10 * * *" ]; }; then
             echo "is_sunday=true" >> $GITHUB_OUTPUT
           else
             echo "is_sunday=false" >> $GITHUB_OUTPUT
