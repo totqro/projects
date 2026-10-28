@@ -3,7 +3,7 @@
 // the shootout winner's +1, as the league's standings do; gf_x / ga_x leave
 // it out for comparisons with xG. Ported from xgcalc/web/sheets.html.
 import { pct, share } from "./format";
-import { xgPoints, xgResult, type XgResult } from "./deserve";
+import { deservedPoints } from "./deserve";
 import { TEAMS } from "./teams";
 import type { GameSummary, Phase, SkaterSeason, TeamSeason } from "./types";
 
@@ -27,12 +27,13 @@ export interface TeamGame {
   atta: number;
   sog: number;
   soga: number;
-  /** Expected goals for and against with empty-net shots left out, and the
-   *  result they give (lib/deserve.ts); null when the games were loaded
-   *  without them (lib/data.ts seasonGames). */
+  /** Expected goals for and against with empty-net shots left out, the
+   *  team's deserve-to-win and the deserved points it gives (lib/deserve.ts);
+   *  null when the games were loaded without them (lib/data.ts seasonGames). */
   dxgf: number | null;
   dxga: number | null;
-  xres: XgResult | null;
+  dwin: number | null;
+  xpts: number | null;
 }
 
 export const phaseType = (p: Phase) => (p === "playoff" ? 3 : 2);
@@ -50,7 +51,8 @@ export function teamGames(games: GameSummary[], ab: string, phase: Phase): TeamG
         gf_x: gf - (so && won ? 1 : 0), ga_x: ga - (so && !won ? 1 : 0),
         xgf: home ? x.hxg : x.axg, xga: home ? x.axg : x.hxg, xgf5: home ? x.hxg5 : x.axg5, xga5: home ? x.axg5 : x.hxg5,
         dxgf: dv ? (home ? dv.hxg : dv.axg) : null, dxga: dv ? (home ? dv.axg : dv.hxg) : null,
-        xres: dv ? (home ? xgResult(dv.hxg, dv.axg) : xgResult(dv.axg, dv.hxg)) : null,
+        dwin: dv ? (home ? dv.hwin : 1 - dv.hwin) : null,
+        xpts: dv ? deservedPoints(home ? dv.hwin : 1 - dv.hwin, dv.tie) : null,
         att: home ? x.hatt : x.aatt, atta: home ? x.aatt : x.hatt, sog: home ? x.hsog : x.asog, soga: home ? x.asog : x.hsog,
       };
     });
@@ -60,10 +62,10 @@ export interface Summary {
   gp: number; w: number; l: number; otl: number; rw: number; row: number;
   gf: number; ga: number; gf_x: number; ga_x: number; xgf: number; xga: number; xgf5: number; xga5: number;
   pts: number; ppct: number | null; diff: number; gax: number; gsax: number;
-  /** xG standings: games won on xG (xw), lost by more than the close
-   *  margin (xl) or within it (xotl), and the points that gives. Null
-   *  without shot data. */
-  xw: number | null; xl: number | null; xotl: number | null; xpts: number | null; xppct: number | null;
+  /** xG standings: expected wins (xw, the sum of deserve-to-win), deserved
+   *  points (xpts) and their share of the points available. Null without
+   *  shot data. */
+  xw: number | null; xpts: number | null; xppct: number | null;
 }
 
 export function summarize(games: TeamGame[]): Summary {
@@ -76,13 +78,10 @@ export function summarize(games: TeamGame[]): Summary {
     t.xgf += g.xgf; t.xga += g.xga; t.xgf5 += g.xgf5; t.xga5 += g.xga5;
   }
   const pts = 2 * t.w + t.otl;
-  const dv = games.length > 0 && games.every(g => g.xres != null);
-  let xw = 0, xl = 0, xotl = 0, xpts = 0;
-  if (dv) for (const g of games) {
-    xpts += xgPoints(g.xres!);
-    if (g.xres === "W") xw++; else if (g.xres === "L") xl++; else xotl++;
-  }
-  const x = dv ? { xw, xl, xotl, xpts, xppct: xpts / (2 * t.gp) } : { xw: null, xl: null, xotl: null, xpts: null, xppct: null };
+  const dv = games.length > 0 && games.every(g => g.xpts != null);
+  let xw = 0, xpts = 0;
+  if (dv) for (const g of games) { xw += g.dwin!; xpts += g.xpts!; }
+  const x = dv ? { xw, xpts, xppct: xpts / (2 * t.gp) } : { xw: null, xpts: null, xppct: null };
   return { ...t, ...x, pts, ppct: t.gp ? pts / (2 * t.gp) : null, diff: t.gf - t.ga, gax: t.gf_x - t.xgf, gsax: t.xga - t.ga_x };
 }
 
@@ -97,8 +96,8 @@ export function standings(teams: TeamSeason[], games: GameSummary[], phase: Phas
     .sort(byPoints).map((t, i) => ({ ...t, lg: i + 1 }));
 }
 
-/** The same teams ranked by xG points (then xG points %, xG wins and xG
- *  share), as the real table ranks by points. `lg` becomes the xG rank; `ptsRank` keeps the real one. */
+/** The same teams ranked by deserved points (then their %, expected wins and
+ *  xG share), as the real table ranks by points. `lg` becomes the xG rank; `ptsRank` keeps the real one. */
 export function xgStandings(rows: StandingRow[]): (StandingRow & { ptsRank: number })[] {
   const xs = (t: StandingRow) => share(t.xgf, t.xga) ?? 0;
   return rows.map(t => ({ ...t, ptsRank: t.lg }))

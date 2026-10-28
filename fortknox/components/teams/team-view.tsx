@@ -167,7 +167,6 @@ function GameBars({ games, team }: { games: TeamGame[]; team: string }) {
   );
 }
 
-const XRES = { W: "Win, 2 pts", OTL: "Close loss, 1 pt", L: "Loss, 0 pts" } as const;
 
 function GameCard({ g, team, x, y }: { g: TeamGame; team: string; x: number; y: number }) {
   return (
@@ -181,9 +180,10 @@ function GameCard({ g, team, x, y }: { g: TeamGame; team: string; x: number; y: 
       <div className="mt-1 text-muted-foreground">Expected goals</div>
       <div><b className="font-semibold text-home">{nickname(teamName(team))} {f2(g.xgf)}</b></div>
       <div><b className="font-semibold text-away">{nickname(teamName(g.opp))} {f2(g.xga)}</b></div>
-      {g.xres && (
+      {g.dwin != null && g.xpts != null && (
         <div className="mt-1 text-muted-foreground">
-          xG result: <b className={cn("font-semibold", g.xres === "W" ? "text-good" : g.xres === "L" ? "text-bad" : "text-foreground")}>{XRES[g.xres]}</b>
+          Deserve to win: <b className={cn("font-semibold", g.dwin >= 0.5 ? "text-good" : "text-bad")}>{Math.round(g.dwin * 100)}%</b>,{" "}
+          {g.xpts.toFixed(2)} deserved pts
         </div>
       )}
     </div>

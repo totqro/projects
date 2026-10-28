@@ -2,15 +2,9 @@
 // out: they pad the leading team's xG once the game is settled.
 //
 // Deserve to win is each team's chance of winning had the game's shots been
-// taken again, each going in with its xG as the probability.
-//
-// The xG standings use a plainer call: the side with more xG gets the xG win
-// (2 points); the other side gets a point back, like an overtime loss, when
-// it finished within CLOSE of the winner.
+// taken again, each going in with its xG as the probability. Deserved points
+// are what that's worth in the standings, which the xG standings add up.
 import type { Shot } from "./types";
-
-/** An xG margin this small or smaller counts as a close game. */
-export const CLOSE = 0.25;
 
 export interface Deserved {
   /** Expected goals with empty-net shots left out. */
@@ -20,9 +14,9 @@ export interface Deserved {
    *  those shots gone in with its xG as the probability. A game level on
    *  goals counts half, as a shootout coin flip. */
   hwin: number;
+  /** The chance the shots leave it level, which goes to overtime. */
+  tie: number;
 }
-
-export type XgResult = "W" | "L" | "OTL";
 
 /** The chance of scoring exactly 0, 1, 2… goals on shots worth these xG
  *  each, every shot going in or not on its own. Computed exactly, shot by
@@ -67,18 +61,15 @@ export function margins(h: number[], a: number[], m = 5) {
 export function deserved(shots: Shot[], home: string): Deserved {
   const { h, a } = sides(shots, home);
   const sum = (v: number[]) => v.reduce((t, x) => t + x, 0);
-  return { hxg: sum(h), axg: sum(a), hwin: margins(h, a, 0).hwin };
+  const m = margins(h, a, 0);
+  return { hxg: sum(h), axg: sum(a), hwin: m.hwin, tie: m.tie };
 }
 
 /** The winner's deserve-to-win, from the home team's; null without one. */
 export const winnerChance = (hs: number, as: number, hwin: number | null | undefined) =>
   hwin == null || hs === as ? null : hs > as ? hwin : 1 - hwin;
 
-/** One team's xG result. A dead-even game (it happens about never) is a
- *  close loss for both: a point each. */
-export function xgResult(xgf: number, xga: number): XgResult {
-  if (xgf > xga) return "W";
-  return xga - xgf <= CLOSE ? "OTL" : "L";
-}
-
-export const xgPoints = (r: XgResult) => (r === "W" ? 2 : r === "OTL" ? 1 : 0);
+/** One team's deserved points from a game, from its deserve-to-win (ties
+ *  counted half) and the chance of a tie: 2 for winning outright, 1.5 for a
+ *  tie (overtime: a point, and a coin flip for the second). */
+export const deservedPoints = (win: number, tie: number) => 2 * win + tie / 2;

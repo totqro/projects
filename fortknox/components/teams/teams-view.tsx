@@ -94,12 +94,11 @@ const xcols = (season: number, wildcard: boolean): Column<XRow>[] => [
   { k: "std", label: "#", get: t => t.lg, asc: true, cell: t => <span className="text-muted-foreground">{t.rk}</span>, tip: "xrank" },
   teamCol(season),
   { k: "gp", label: "GP", get: t => t.gp, tip: "gp" },
-  { k: "xw", label: "xW", get: t => t.xw, tip: "xw" },
-  { k: "xl", label: "xL", get: t => t.xl, asc: true, tip: "xl" },
-  { k: "xotl", label: "xOTL", get: t => t.xotl, tip: "xotl" },
-  { k: "xpts", label: "xPts", get: t => t.xpts, cell: t => <b className="font-semibold">{t.xpts}</b>, tip: "xpts" },
+  { k: "xw", label: "xW", get: t => t.xw, cell: t => f1(t.xw), tip: "xw" },
+  { k: "w", label: "W", get: t => t.w, tip: "w" },
+  { k: "xpts", label: "xPts", get: t => t.xpts, cell: t => <b className="font-semibold">{f1(t.xpts)}</b>, tip: "xpts" },
   { k: "pts", label: "PTS", get: t => t.pts, tip: "pts" },
-  { k: "dpts", label: "PTS − xPts", get: t => (t.xpts == null ? null : t.pts - t.xpts), cell: t => <Signed v={t.xpts == null ? null : t.pts - t.xpts} d={0} />, tip: "dpts" },
+  { k: "dpts", label: "PTS − xPts", get: t => (t.xpts == null ? null : t.pts - t.xpts), cell: t => <Signed v={t.xpts == null ? null : t.pts - t.xpts} d={1} />, tip: "dpts" },
   { k: "xppct", label: "xP%", get: t => t.xppct, cell: t => sv(t.xppct), tip: "xppct" },
   { k: "ppct", label: "P%", get: t => t.ppct, cell: t => sv(t.ppct), tip: "ppct" },
   wildcard
@@ -259,9 +258,10 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
       </div>
       {xg && (
         <Note className="mb-5 max-w-3xl text-[13px]">
-          The standings if every game went to the team with more expected goals (empty-net shots left out). An xG win
-          is worth 2 points. Losing on xG by 0.25 or less is a close loss (xOTL), worth 1 point like an overtime loss;
-          losing by more is worth nothing.
+          The standings on deserved points: each game&apos;s points shared out by its shots. Replay a game&apos;s shots, each one
+          going in with its xG as the chance (empty-net shots left out), and a team earns 2 points for every win and 1.5 for
+          every tie, since overtime gives both teams a point and a coin flip for the second. xW adds up each game&apos;s
+          deserve-to-win.
           {g === "wildcard" && " Green and red in “Now” mark teams the shots would move into or out of a playoff spot."}
         </Note>
       )}
