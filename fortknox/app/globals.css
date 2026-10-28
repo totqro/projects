@@ -456,9 +456,10 @@ html.light [style*="--away-c"] {
 .fk-table td.l { text-align: left; }
 /* Columns a phone leaves for the table's expand toggle. */
 @media (max-width: 639px) { .fk-table .fk-wide { display: none; } }
-/* Columns a computer-width screen always shows and a smaller one keeps for
-   the table's "Show all columns" (.fk-all on the table). */
+/* Columns a computer-width screen shows and a smaller one keeps for the
+   table's "Show all columns": .fk-all or .fk-few on the table overrides. */
 @media (max-width: 1023px) { .fk-table:not(.fk-all) .fk-more { display: none; } }
+@media (min-width: 1024px) { .fk-table.fk-few .fk-more { display: none; } }
 /* The identity column stays put while a wide table scrolls sideways; its
    background repeats the row's tint over the card so nothing shows through. */
 .fk-table .pin { position: sticky; left: 0; z-index: 1; background: var(--card); box-shadow: inset -1px 0 var(--border); }
@@ -495,9 +496,12 @@ div:has(> table.fk-table) {
 .hs-dd-btn {
   display: inline-flex; align-items: center; gap: 0.5rem; height: 2.25rem; padding: 0 0.5rem 0 0.625rem;
   border-radius: 0.5rem; font-size: 0.875rem; color: var(--foreground); white-space: nowrap; cursor: pointer;
+  /* A faint fill and edge at rest, so a dropdown reads as a control. */
+  background: color-mix(in oklch, var(--foreground) 5%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--foreground) 12%, transparent);
   transition: background-color 150ms var(--ease-out);
 }
-.hs-dd-btn:hover, .hs-dd[data-open] .hs-dd-btn { background: color-mix(in oklch, var(--foreground) 7%, transparent); }
+.hs-dd-btn:hover, .hs-dd[data-open] .hs-dd-btn { background: color-mix(in oklch, var(--foreground) 10%, transparent); }
 .hs-dd-chev { width: 0.875rem; height: 0.875rem; color: var(--muted-foreground); transition: transform 150ms var(--ease-out); flex: none; }
 .hs-dd[data-open] .hs-dd-chev { transform: rotate(180deg); }
 .hs-dd-dot { width: 0.625rem; height: 0.625rem; border-radius: 0.1875rem; background: var(--sw); flex: none; }
