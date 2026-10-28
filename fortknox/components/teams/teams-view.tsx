@@ -57,6 +57,9 @@ const cols = (season: number): Column<Row>[] => [
   { k: "gsax", label: "GSAx", get: t => t.gsax, cell: t => <Signed v={t.gsax} />, tip: "tgsax" },
 ];
 
+/** The standings columns shown until the table is expanded. */
+const CORE = new Set(["std", "team", "gp", "w", "l", "otl", "pts", "ppct", "xgs5"]);
+
 /** A one-of-several picker. `tabs` draws it like the masthead's sections:
  *  plain text with the current one underlined in cyan (.slot-tabs). */
 export function Segmented<T extends string>({ value, onChange, options, label, tabs }: {
@@ -164,6 +167,7 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
   const [group, setGroup] = React.useState<Grouping>("league");
   const [sumGroup, setSumGroup] = React.useState<Grouping>("league");
   const [table, setTable] = React.useState<"real" | "xg">("real");
+  const [expanded, setExpanded] = React.useState(false);
   const [lens, setLens] = React.useState("drive");
   const [focus, setFocus] = React.useState("all");
   const focused = React.useMemo(() => focusSet(focus), [focus]);
@@ -176,6 +180,7 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
   const groups = groupTeams(rows, g);
   const xGroups = React.useMemo(() => xgGroups(rows, g), [rows, g]);
   const columns = React.useMemo(() => cols(season), [season]);
+  const hidden = React.useMemo(() => (expanded ? undefined : new Set(columns.map(c => c.k).filter(k => !CORE.has(k)))), [columns, expanded]);
   const xColumns = React.useMemo(() => xcols(season, g === "wildcard"), [season, g]);
   const sumRows = React.useMemo(() => {
     const qs = Object.fromEntries(LENS_KEYS.map(k => [k, lensQuads(rows, k)]));
@@ -240,6 +245,12 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
               options={[["league", "League"], ["conference", "Conference"], ["division", "Division"], ["wildcard", "Wild card"]]} />
           </>
         )}
+        {!xg && (
+          <button type="button" aria-expanded={expanded} onClick={() => setExpanded(e => !e)}
+            className="ml-auto rounded px-1.5 py-0.5 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+            {expanded ? "Fewer columns" : `Expand: all ${columns.length} columns`}
+          </button>
+        )}
       </div>
       {xg && (
         <Note className="mb-5 max-w-3xl text-[13px]">
@@ -261,7 +272,7 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
           : groups.map((x, i) => (
             <Section key={x.title ?? i} title={x.title ?? "Standings"}>
               <SortTable rows={x.rows} cols={columns} initial={{ sort: "std", asc: true }} naturalKey="std"
-                csv={csvName("teams", x.title)}
+                csv={csvName("teams", x.title)} hide={hidden}
                 rowKey={t => t.team} rowProps={t => ({ className: cn(t.cut && "cut") })} />
             </Section>
           ))}
