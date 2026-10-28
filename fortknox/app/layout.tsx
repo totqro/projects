@@ -65,6 +65,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <Link href="/about" className="hover:text-foreground">About</Link>
               <Link href="/about#glossary" className="hover:text-foreground">Glossary</Link>
               <Link href="/model" className="hover:text-foreground">Model</Link>
+              <a href="mailto:highslotanalytics@gmail.com?subject=High%20Slot" className="hover:text-foreground">Contact</a>
             </nav>
           </footer>
         </TooltipProvider>
