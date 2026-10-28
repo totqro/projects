@@ -96,6 +96,10 @@ export interface SkaterSeason {
   sog: number;
   ixg: number;
   gax: number;
+  /** The GAx his own finishing history expects on this season's shots
+   *  (pipeline/fit_shooter_baseline.py). Missing from seasons built without
+   *  a baseline. */
+  gax_exp?: number;
   ixg5: number;
   g5: number;
   xgf5: number;

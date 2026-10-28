@@ -19,7 +19,7 @@ import { Segmented } from "@/components/teams/teams-view";
 // record that tends to fade.
 
 /** A skater's or goalie's season, trimmed to what this page reads. */
-export type RegSkater = Pick<SkaterSeason, "id" | "name" | "team" | "pos" | "gp" | "toi5" | "g" | "ixg" | "gax" | "att" | "sog" | "xgf5" | "xga5" | "gf5" | "ga5">;
+export type RegSkater = Pick<SkaterSeason, "id" | "name" | "team" | "pos" | "gp" | "toi5" | "g" | "ixg" | "gax" | "gax_exp" | "att" | "sog" | "xgf5" | "xga5" | "gf5" | "ga5">;
 export type RegGoalie = Pick<GoalieSeason, "id" | "name" | "team" | "gp" | "toi" | "sa" | "ga" | "xga" | "gsax" | "sv_pct" | "xsv_pct">;
 export type RegTeam = Pick<StandingRow, "team" | "gp" | "pts" | "xgf" | "xga" | "gf_x" | "ga_x" | "gax" | "gsax">;
 export interface RegPhase { teams: RegTeam[]; skaters: RegSkater[]; goalies: RegGoalie[] }
@@ -56,14 +56,25 @@ const teamCols = (season: number): Column<RegTeam>[] => [
   { k: "gsax", label: "Goalies GSAx", get: t => t.gsax, cell: t => <Signed v={t.gsax} />, tip: "tgsax" },
 ];
 
-const shooterCols = (season: number): Column<RegSkater>[] => [
+/** This season's GAx beyond what his own history expects; GAx itself for a
+ *  season built without baselines. */
+const vsNorm = (p: RegSkater) => p.gax - (p.gax_exp ?? 0);
+/** One decimal with its sign, and no "-0.0". */
+const signed = (v: number) => (Math.abs(v) < 0.05 ? "0.0" : (v > 0 ? "+" : "") + v.toFixed(1));
+const shooterCols = (season: number, norm: boolean): Column<RegSkater>[] => [
   nameCol("Skater"), teamCol(season),
   { k: "pos", label: "Pos", l: true, get: p => posLabel(p.pos), asc: true, cell: p => posLabel(p.pos) },
   { k: "gp", label: "GP", get: p => p.gp, tip: "gp" },
   { k: "att", label: "Att", get: p => p.att, tip: "att" },
   { k: "g", label: "G", get: p => p.g, tip: "g" },
   { k: "ixg", label: "ixG", get: p => p.ixg, cell: p => f1(p.ixg), tip: "ixg" },
-  { k: "gax", label: "GAx", get: p => p.gax, cell: p => <Noisy v={p.gax} ci={gaxCi(p.ixg, p.att)} />, tip: "gax" },
+  ...(norm ? [
+    { k: "gax", label: "GAx", get: p => p.gax, cell: p => <Signed v={p.gax} />, tip: "gax" },
+    { k: "norm", label: "His norm", get: p => p.gax_exp ?? 0, cell: p => <span className="text-muted-foreground">{signed(p.gax_exp ?? 0)}</span>, tip: "gaxnorm" },
+    { k: "vsn", label: "Vs. norm", get: vsNorm, cell: p => <Noisy v={vsNorm(p)} ci={gaxCi(p.ixg, p.att)} />, tip: "vsnorm" },
+  ] as Column<RegSkater>[] : [
+    { k: "gax", label: "GAx", get: p => p.gax, cell: p => <Noisy v={p.gax} ci={gaxCi(p.ixg, p.att)} />, tip: "gax" },
+  ] as Column<RegSkater>[]),
   ciCol(p => gaxCi(p.ixg, p.att)),
   { k: "shp", label: "Sh%", get: p => (p.sog ? p.g / p.sog : null), cell: p => pct(p.sog ? p.g / p.sog : null), tip: "shp" },
   { k: "gpace", label: "Goal pace", get: p => pace(p.g, p.gp), cell: p => f1(pace(p.g, p.gp)), tip: "gpace" },
@@ -150,7 +161,9 @@ export function RegressionView({ season, data }: { season: number; data: Record<
   const onIce = React.useMemo(() => d.skaters.filter(p => p.xgf5 + p.xga5 > 0), [d]);
   const teams = React.useMemo(() => d.teams.filter(t => t.gp > 0), [d]);
   const tc = React.useMemo(() => teamCols(season), [season]);
-  const shc = React.useMemo(() => shooterCols(season), [season]);
+  // Measured against each shooter's own norm when the season was built with baselines.
+  const norm = shooters.some(p => p.gax_exp != null);
+  const shc = React.useMemo(() => shooterCols(season, norm), [season, norm]);
   const oic = React.useMemo(() => onIceCols(season), [season]);
   const gkc = React.useMemo(() => goalieCols(season), [season]);
   const csv = (k: string) => `regression-${k}-${season}-${phase}`;
@@ -167,8 +180,15 @@ export function RegressionView({ season, data }: { season: number; data: Record<
         <Ranked key={`Teams-${phase}`} title="Teams" floor={teamFloor} rows={teams} cols={tc} by="gap" labels={["Results ahead of play", "Results behind play"]} csv={csv("teams")} rowKey={t => t.team}>
           Gap is goal share minus xG share, in percentage points, all situations. A team well ahead of its chances is usually leaning on hot shooting or goaltending (the last two columns), and those are the parts that fade.
         </Ranked>
-        <Ranked key={`Shooters-${phase}`} title="Shooters" floor={shooterFloor} rows={shooters} cols={shc} by="gax" labels={["Running hot", "Due for goals"]} csv={csv("shooters")} rowKey={p => p.id}>
-          GAx is goals minus the expected goals of his own shots. The best finishers sit a little above zero year after year, but most big gaps shrink. Paces are per 82 games. ± is the 95% range chance alone produces on his shots; a muted GAx sits inside it.
+        <Ranked key={`Shooters-${phase}`} title="Shooters" floor={shooterFloor} rows={shooters} cols={shc} by={norm ? "vsn" : "gax"} labels={["Running hot", "Due for goals"]} csv={csv("shooters")} rowKey={p => p.id}>
+          {norm ? <>
+            GAx is goals minus the expected goals of his own shots. Some shooters beat their xG every year, so each is measured against his
+            own norm: the GAx his finishing in past seasons says to expect on this season&apos;s shots, trusted more the more shots he has
+            taken. Vs. norm is the part beyond that, the part likely to fade. ± is the 95% range chance alone produces on his shots; a
+            muted number sits inside it. Paces are per 82 games.
+          </> : <>
+            GAx is goals minus the expected goals of his own shots. The best finishers sit a little above zero year after year, but most big gaps shrink. Paces are per 82 games. ± is the 95% range chance alone produces on his shots; a muted GAx sits inside it.
+          </>}
         </Ranked>
         <Ranked key={`On-ice results-${phase}`} title="On-ice results, 5v5" floor={byMinutes} rows={onIce} cols={oic} by="gap" labels={["Ahead of play", "Behind play"]} csv={csv("on-ice")} rowKey={p => p.id}>
           Goal gap is his 5-on-5 on-ice goal differential minus his xG differential, in goals, so it grows with ice time the way a real edge does. A skater far ahead has usually had hot shooting or goaltending behind him; one far behind has usually had the opposite. ± is the 95% range bounces alone produce in that much play; a muted gap sits inside it.

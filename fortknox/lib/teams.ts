@@ -40,6 +40,8 @@ export const TIPS: Record<string, string> = {
   gp: "Games played.", toi: "Time on ice per game, all situations.", toitot: "Total time on ice, all situations.",
   toi5: "Time on ice at 5-on-5.", g: "Goals.", a: "Assists.", p: "Points: goals plus assists.",
   ixg: "Individual expected goals: the summed goal probability of the player's own unblocked shots.",
+  gaxnorm: "His norm: the GAx his finishing in earlier seasons says to expect on this season's shots. Shrunk toward zero, the more so the fewer shots he has taken, since one season of finishing is mostly luck.",
+  vsnorm: "Vs. norm: GAx minus his norm. Finishing beyond what he usually does, the part most likely to fade; an elite finisher at his usual pace sits near zero here.",
   gax: "Goals above expected (GAx): goals minus ixG. Positive means he finished better than an average shooter would on the same chances. Very noisy over small samples.",
   att: "Shot attempts, blocked and missed included.", sog: "Shots on goal.",
   xgf: "Expected goals for: the xG of every unblocked shot his team took while he was on the ice.",
