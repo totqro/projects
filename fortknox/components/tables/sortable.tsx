@@ -26,6 +26,8 @@ export interface Column<R> {
   unit?: string;
   /** Hidden on phone-width screens (.fk-wide in globals.css). */
   wide?: boolean;
+  /** Hidden below computer width until the table is expanded (.fk-more). */
+  more?: boolean;
   className?: string;
 }
 
@@ -124,7 +126,7 @@ export function SortTable<R>({ rows, cols: all, initial, rowKey, rowProps, natur
               <TipHead key={c.k} tip={c.tip}
                 aria-sort={on ? (st.asc ? "ascending" : "descending") : undefined}
                 onClick={() => click(c)}
-                className={cn(c.l && "text-left", c.pin && "pin", c.wide && "fk-wide", sortable && "cursor-pointer select-none hover:text-foreground", on && "text-foreground")}>
+                className={cn(c.l && "text-left", c.pin && "pin", c.wide && "fk-wide", c.more && "fk-more", sortable && "cursor-pointer select-none hover:text-foreground", on && "text-foreground")}>
                 {c.label}{on ? (st.asc ? " ▴" : " ▾") : ""}
               </TipHead>
             );
@@ -135,7 +137,7 @@ export function SortTable<R>({ rows, cols: all, initial, rowKey, rowProps, natur
         {shown.map((r, i) => (
           <tr key={rowKey(r)} {...rowProps?.(r)}>
             {cols.map(c => (
-              <td key={c.k} className={cn(c.l && "l", c.pin && "pin", c.wide && "fk-wide", c.className) || undefined}>
+              <td key={c.k} className={cn(c.l && "l", c.pin && "pin", c.wide && "fk-wide", c.more && "fk-more", c.className) || undefined}>
                 {c.cell ? c.cell(r, i) : String(c.get?.(r) ?? "\u2013")}
               </td>
             ))}

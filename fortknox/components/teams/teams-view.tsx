@@ -57,7 +57,8 @@ const cols = (season: number): Column<Row>[] => [
   { k: "gsax", label: "GSAx", get: t => t.gsax, cell: t => <Signed v={t.gsax} />, tip: "tgsax" },
 ];
 
-/** The standings columns shown until the table is expanded. */
+/** The standings columns a screen narrower than a computer's shows until the
+ *  table is expanded; a computer always shows them all. */
 const CORE = new Set(["std", "team", "gp", "w", "l", "otl", "pts", "ppct", "xgs5"]);
 /** Core columns that also wait for the expand on a phone, so 5v5 xG share fits. */
 const WIDE_ONLY = new Set(["w", "l", "otl"]);
@@ -182,8 +183,7 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
   const groups = groupTeams(rows, g);
   const xGroups = React.useMemo(() => xgGroups(rows, g), [rows, g]);
   const all = React.useMemo(() => cols(season), [season]);
-  const columns = React.useMemo(() => (expanded ? all : all.map(c => (WIDE_ONLY.has(c.k) ? { ...c, wide: true } : c))), [all, expanded]);
-  const hidden = React.useMemo(() => (expanded ? undefined : new Set(all.map(c => c.k).filter(k => !CORE.has(k)))), [all, expanded]);
+  const columns = React.useMemo(() => all.map(c => (!CORE.has(c.k) ? { ...c, more: true } : !expanded && WIDE_ONLY.has(c.k) ? { ...c, wide: true } : c)), [all, expanded]);
   const xColumns = React.useMemo(() => xcols(season, g === "wildcard"), [season, g]);
   const sumRows = React.useMemo(() => {
     const qs = Object.fromEntries(LENS_KEYS.map(k => [k, lensQuads(rows, k)]));
@@ -248,12 +248,6 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
               options={[["league", "League"], ["conference", "Conference"], ["division", "Division"], ["wildcard", "Wild card"]]} />
           </>
         )}
-        {!xg && (
-          <button type="button" aria-expanded={expanded} onClick={() => setExpanded(e => !e)}
-            className="ml-auto rounded px-1.5 py-0.5 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
-            {expanded ? "Fewer columns" : `Expand: all ${columns.length} columns`}
-          </button>
-        )}
       </div>
       {xg && (
         <Note className="mb-5 max-w-3xl text-[13px]">
@@ -273,9 +267,15 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
             </Section>
           ))
           : groups.map((x, i) => (
-            <Section key={x.title ?? i} title={x.title ?? "Standings"}>
+            <Section key={x.title ?? i} title={x.title ?? "Standings"} aside={i === 0 && (
+              // Only below computer width, where the table starts compact.
+              <button type="button" aria-expanded={expanded} onClick={() => setExpanded(e => !e)}
+                className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground lg:hidden">
+                {expanded ? "Fewer columns" : `Show all ${columns.length} columns`}
+              </button>
+            )}>
               <SortTable rows={x.rows} cols={columns} initial={{ sort: "std", asc: true }} naturalKey="std"
-                csv={csvName("teams", x.title)} hide={hidden}
+                csv={csvName("teams", x.title)} className={expanded ? "fk-all" : undefined}
                 rowKey={t => t.team} rowProps={t => ({ className: cn(t.cut && "cut") })} />
             </Section>
           ))}
