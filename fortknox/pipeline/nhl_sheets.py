@@ -136,7 +136,7 @@ def build(season, root, fetch, cache=None):
 
         h, a = side(home["abbrev"]), side(away["abbrev"])
         hs, as_ = home.get("score", 0), away.get("score", 0)
-        index.append({"id": gid, "date": pbp.get("gameDate"), "type": pbp.get("gameType"),
+        index.append({"id": gid, "date": pbp.get("gameDate"), "start": pbp.get("startTimeUTC"), "type": pbp.get("gameType"),
                       "home": home["abbrev"], "away": away["abbrev"], "hs": hs, "as": as_,
                       "end": last, "hxg": h["xg"], "axg": a["xg"], "hxg5": h["xg5"],
                       "axg5": a["xg5"], "hatt": h["att"], "aatt": a["att"],

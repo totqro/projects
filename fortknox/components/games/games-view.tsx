@@ -122,7 +122,8 @@ function byDate(games: GameSummary[]) {
 
 type Sort = "date" | "lopsided" | "total" | "stole";
 const SORTS: Record<Sort, (a: GameSummary, b: GameSummary) => number> = {
-  date: (a, b) => (b.date + b.id).localeCompare(a.date + a.id),
+  // Newest day first; within a day, in the order the games started.
+  date: (a, b) => b.date.localeCompare(a.date) || (a.start ?? "").localeCompare(b.start ?? "") || a.id - b.id,
   lopsided: (a, b) => Math.abs(b.hxg - b.axg) - Math.abs(a.hxg - a.axg),
   total: (a, b) => b.hxg + b.axg - (a.hxg + a.axg),
   stole: (a, b) => (won(a) ?? 1) - (won(b) ?? 1),
