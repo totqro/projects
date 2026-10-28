@@ -177,7 +177,12 @@ def backfill_season(year, workers, refresh_bios):
     for kind in ("skater", "goalie"):
         p = d / f"bios_{kind}.json.gz"
         if refresh_bios or not p.exists():
-            save(p, get(BIOS.format(kind, season_id(year))))
+            bios = get(BIOS.format(kind, season_id(year)))
+            # The API lists the same players in a different order each call;
+            # sorted, the file only changes when a bio does, so the sheets
+            # workflow doesn't take every run for new data.
+            bios["data"] = sorted(bios.get("data", []), key=lambda r: r["playerId"])
+            save(p, bios)
 
     games = final_games(year)
     todo = [g for g in games
