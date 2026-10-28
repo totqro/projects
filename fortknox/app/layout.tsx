@@ -11,6 +11,7 @@ import { currentSeason, seasons } from "@/lib/data";
 import { Wordmark } from "@/components/site/logo";
 import { SeasonSelect, SiteNav } from "@/components/site/nav";
 import { PaletteToggle, THEME_SCRIPT, ThemeToggle } from "@/components/site/theme";
+import { Trail } from "@/components/site/trail";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="min-h-dvh">
+        <Trail />
         <TooltipProvider delayDuration={150}>
           <header className="slot-mast">
             {/* Logo left, sections centred, season, palette and theme right. Under md the

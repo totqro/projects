@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { RawSheet } from "@/lib/types";
 import { unpack } from "@/lib/unpack";
 import { gameColors } from "@/lib/team-colors";
@@ -7,6 +6,7 @@ import { BestChances, Scoring, ShotMap, ShotProvider } from "@/components/game/s
 import { GameRoster } from "@/components/game/roster";
 import { Periods, Recap, ScoreCard, Stars } from "@/components/game/sections";
 import { Note, Panel, Section } from "@/components/site/section";
+import { BackLink } from "@/components/site/trail";
 
 /** A whole game page from its sheet. Rendered on the server for this season's
  *  pre-rendered games and in the browser for older ones (archived-game.tsx). */
@@ -20,7 +20,7 @@ export function GameView({ raw }: { raw: RawSheet }) {
     <ShotProvider raw={slim}>
       {/* Each team in its own colours: everything below reads --away / --home. */}
       <div style={gameColors(G.away.abbrev, G.home.abbrev)}>
-        <Link href={`/games/${season}`} className="mb-4 inline-block text-sm text-muted-foreground hover:text-foreground">&larr; All games</Link>
+        <BackLink key={G.id} href={`/games/${season}`} label="All games" className="mb-4 inline-block max-w-full truncate align-top text-sm text-muted-foreground hover:text-foreground" />
         <ScoreCard G={G} />
         <Recap G={G} />
         <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
