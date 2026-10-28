@@ -17,9 +17,14 @@ export interface LogRow {
 const n = (v?: number) => v ?? 0;
 const dateCol: Column<LogRow> = { k: "date", label: "Date", l: true, get: g => g.date + g.id,
   cell: g => <Link href={`/game/${g.id}`} className="hover:underline">{fmtDate(g.date)}{g.type === 3 ? " (playoffs)" : ""}</Link>, tip: "date" };
-const oppCol: Column<LogRow> = { k: "opp", label: "Opp", l: true, get: g => g.opp, asc: true, cell: g => `${g.home ? "vs" : "@"} ${g.opp}`, tip: "opp" };
+const oppCol: Column<LogRow> = { k: "opp", label: "Opp", l: true, get: g => g.opp, asc: true, tip: "opp",
+  cell: g => <Link href={`/game/${g.id}`} className="hover:underline">{g.home ? "vs" : "@"} {g.opp}</Link> };
 const resCol: Column<LogRow> = { k: "res", label: "Result", l: true, get: g => g.gf - g.ga, tip: "res",
-  cell: g => <><b className={cn("font-semibold", g.gf > g.ga ? "text-good" : "text-bad")}>{g.gf > g.ga ? "W" : g.end === "REG" ? "L" : "OTL"}</b> {g.gf}&ndash;{g.ga}</> };
+  cell: g => (
+    <Link href={`/game/${g.id}`} className="hover:underline">
+      <b className={cn("font-semibold", g.gf > g.ga ? "text-good" : "text-bad")}>{g.gf > g.ga ? "W" : g.end === "REG" ? "L" : "OTL"}</b> {g.gf}&ndash;{g.ga}
+    </Link>
+  ) };
 
 const SKATER: Column<LogRow>[] = [
   dateCol, oppCol, resCol,
