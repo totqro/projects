@@ -16,8 +16,8 @@ export function Intro() {
   return (
     <aside className="well relative mb-6 rounded-xl py-3.5 pl-4 pr-12 text-[14px] leading-relaxed text-secondary-foreground">
       <b className="font-semibold text-foreground">Every NHL game, scored shot by shot.</b>{" "}
-      Each shot gets an expected-goals (xG) value: the chance an average shooter scores from there. Add them up and you see who earned the result.
-      A <span className="whitespace-nowrap font-medium text-foreground">−xG win</span> is a win by the team with fewer chances.{" "}
+      Each shot gets an expected-goals (xG) value: the chance an average shooter scores from there. Add them up and you see who earned the result.{" "}
+      <span className="font-medium text-foreground">Deserve to win</span> is each team&apos;s chance of winning had those shots been taken again.{" "}
       <Link href="/about#glossary" className="text-foreground underline underline-offset-4">Glossary</Link>{" · "}
       <Link href="/model" className="text-foreground underline underline-offset-4">How the model works</Link>
       <button type="button" onClick={close} aria-label="Hide this introduction"

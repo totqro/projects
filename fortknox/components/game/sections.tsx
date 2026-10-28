@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { f2, fmtDate, ORD } from "@/lib/format";
-import { periods, recap, stars } from "@/lib/game";
+import { liveStatus, periods, recap, stars } from "@/lib/game";
 import type { Sheet } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -29,7 +29,8 @@ export function ScoreCard({ G }: { G: Sheet }) {
     ["Shot attempts", A.att, H.att],
     ["Shots on goal", A.sog, H.sog],
   ];
-  const aWon = A.score > H.score;
+  // Leader, while a game is on; level is neither.
+  const aWon = A.score > H.score, hWon = H.score > A.score;
   const team = (ab: string) => `/team/${String(G.id).slice(0, 4)}/${ab}`;
   return (
     <Card className="slot-plate mb-4">
@@ -46,10 +47,10 @@ export function ScoreCard({ G }: { G: Sheet }) {
             <div className="tabular font-[family-name:var(--font-display)] text-[clamp(32px,5vw,48px)] font-bold leading-none tracking-[-0.02em]">
               <span className={cn(aWon ? "brand-text" : "text-muted-foreground")}>{A.score}</span>
               <span className="mx-2 text-muted-foreground">&ndash;</span>
-              <span className={cn(!aWon ? "brand-text" : "text-muted-foreground")}>{H.score}</span>
+              <span className={cn(hWon ? "brand-text" : "text-muted-foreground")}>{H.score}</span>
             </div>
             <div className="mt-1.5 text-xs text-muted-foreground">
-              <span className="font-medium text-brand">{END[G.end] ?? G.end}</span>, {fmtDate(G.date)}{G.venue ? `, ${G.venue}` : ""}
+              <span className="font-medium text-brand">{G.live ? liveStatus(G.live, G.end) : END[G.end] ?? G.end}</span>, {fmtDate(G.date)}{G.venue ? `, ${G.venue}` : ""}
             </div>
           </div>
           <Link href={team(H.abbrev)} className="group flex items-center justify-end gap-3 justify-self-end rounded-lg text-right">

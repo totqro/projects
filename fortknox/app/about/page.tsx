@@ -14,7 +14,7 @@ const P = ({ children }: { children: React.ReactNode }) => <p className="mb-3 ma
 /** The terms a newcomer meets first, in the order they meet them. */
 const GLOSSARY: [string, React.ReactNode][] = [
   ["xG (expected goals)", "The chance an unblocked shot becomes a goal, from where and how it was taken and what happened just before. A 0.25 xG shot goes in about one time in four. Add up a team's shots and you get how many goals its chances were worth."],
-  ["−xG win", "A win by the team with fewer expected goals: it was out-chanced and won anyway, usually on finishing or goaltending."],
+  ["Deserve to win", "Each team's chance of winning had the game's shots been taken again, every one going in with its xG as the chance (empty-net shots left out; a game level on goals counts as a coin flip, like a shootout). It weighs the shots one by one, so ten 0.1 xG chances and one 1.0 chance are not the same game. \"Won at 31%\" on a box score marks a win the shots gave the winner only a 31% chance of."],
   ["xG share (xG%)", "xG for divided by xG for plus against. Above 50% means out-chancing the opponent. For a player it counts every shot while he was on the ice, his teammates' included; it measures the minutes he played, not his shots alone."],
   ["5v5", "Five skaters a side with both goalies in net. Most of a game, and the fairest place to compare teams and players, because power plays and penalty kills are stripped out."],
   ["ixG", "Individual expected goals: only the player's own shots."],
