@@ -7,8 +7,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-display: "Big Shoulders Display", "Barlow Condensed", system-ui, sans-serif;
+  --font-sans: var(--font-barlow), "Barlow", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-display: var(--font-big-shoulders), "Big Shoulders Display", "Barlow Condensed", system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   --color-home: var(--home);
   --color-away: var(--away);
@@ -244,22 +244,22 @@
  * html.dark / html.light (0,1,1) beat the DS's own :root and .dark (0,1,0).
  */
 html.dark {
-  --background: oklch(0.2 0.028 252);
-  --foreground: oklch(0.9 0.015 245);
-  --card: oklch(0.235 0.03 252);
+  --background: #111A2E;
+  --foreground: #EEF1F6;
+  --card: #182339;
   --card-foreground: var(--foreground);
-  --popover: oklch(0.27 0.033 252);
+  --popover: #1E2A42;
   --popover-foreground: var(--foreground);
-  --primary: oklch(0.31 0.035 252);
+  --primary: #2C3A55;
   --primary-foreground: var(--foreground);
-  --secondary: oklch(0.235 0.03 252);
-  --secondary-foreground: oklch(0.8 0.02 245);
-  --muted: oklch(0.235 0.03 252);
-  --muted-foreground: oklch(0.69 0.03 245);
-  --accent: oklch(0.3 0.035 252);
+  --secondary: #182339;
+  --secondary-foreground: #C9D0DD;
+  --muted: #1A2540;
+  --muted-foreground: #8E99AE;
+  --accent: #22304C;
   --accent-foreground: var(--foreground);
-  --input: oklch(0.21 0.028 252);
-  --border: oklch(1 0 0 / 0.075);
+  --input: #182339;
+  --border: rgb(238 241 246 / 0.12);
   --pill-gradient: linear-gradient(180deg, oklch(0.33 0.04 252) 0%, oklch(0.28 0.036 252) 100%);
   --pill-gradient-hover: linear-gradient(180deg, oklch(0.36 0.045 252) 0%, oklch(0.3 0.04 252) 100%);
 
@@ -274,44 +274,46 @@ html.dark {
   --alt: var(--home);
   --mixed: var(--warn);
   /* The accent: ice cyan, and the text that sits on it */
-  --brand: oklch(0.8 0.09 210);
-  --brand-dim: oklch(0.64 0.09 215);
-  --brand-gradient: linear-gradient(180deg, oklch(0.92 0.05 205) 0%, oklch(0.72 0.11 218) 100%);
-  --brand-ink: oklch(0.2 0.04 250);
+  --brand: #E0A82E;
+  --brand-dim: #A88A4A;
+  --brand-gradient: linear-gradient(#E0A82E, #E0A82E);
+  --brand-ink: #111A2E;
   /* A recessed well a shade below the card */
-  --well: oklch(0.21 0.028 252);
+  --well: #152036;
   /* The masthead, one flat step above the page */
-  --bar: oklch(0.225 0.03 252);
+  --bar: #0B1220;
   /* Drop shadows and scroll hints */
   --shade: oklch(0 0 0 / 0.5);
   /* The rink on dark ice */
-  --ice: oklch(0.26 0.032 248);
+  --ice: #1C2A44;
   --paint: oklch(1 0 0 / 0.16);
-  --rink-blue: oklch(0.62 0.12 250);
-  --rink-red: oklch(0.6 0.17 25);
+  --rink-blue: #3F5A86;
+  --rink-red: #7A3A44;
   --board: oklch(1 0 0 / 0.22);
   --ring-goal: oklch(1 0 0);
-  --grid: oklch(1 0 0 / 0.14);
+  --grid: rgb(238 241 246 / 0.14);
+  --thead: #0B1220;
+  --thead-fg: #EEF1F6;
   color-scheme: dark;
 }
 html.light {
-  --background: oklch(0.955 0.002 260);
-  --foreground: oklch(0.28 0.01 260);
-  --card: oklch(0.99 0 0);
+  --background: #FAFAF7;
+  --foreground: #14213D;
+  --card: #FFFFFF;
   --card-foreground: var(--foreground);
-  --popover: oklch(0.995 0 0);
+  --popover: #FFFFFF;
   --popover-foreground: var(--foreground);
-  --primary: oklch(0.88 0.006 260);
+  --primary: #E6E9EF;
   --primary-foreground: var(--foreground);
-  --secondary: oklch(0.99 0 0);
-  --secondary-foreground: oklch(0.4 0.01 260);
-  --muted: oklch(0.935 0.003 260);
-  --muted-foreground: oklch(0.5 0.01 260);
-  --accent: oklch(0.93 0.004 260);
+  --secondary: #FFFFFF;
+  --secondary-foreground: #33405A;
+  --muted: #F1F3F6;
+  --muted-foreground: #5B6577;
+  --accent: #EEF1F5;
   --accent-foreground: var(--foreground);
-  --input: oklch(0.935 0.003 260);
-  --border: oklch(0.25 0.01 260 / 0.11);
-  --ring: oklch(0.25 0.01 260 / 0.3);
+  --input: #FFFFFF;
+  --border: #E2E4E8;
+  --ring: rgb(20 33 61 / 0.4);
   --pill-gradient: oklch(1 0 0);
   --pill-gradient-hover: oklch(1 0 0);
   --text-shadow-pressed: none;
@@ -332,21 +334,24 @@ html.light {
   --warn: oklch(0.6 0.13 75);
   --alt: var(--home);
   --mixed: var(--warn);
-  --brand: oklch(0.55 0.1 215);
-  --brand-dim: oklch(0.62 0.08 215);
-  --brand-gradient: linear-gradient(oklch(0.55 0.1 215), oklch(0.55 0.1 215));
-  --brand-ink: oklch(1 0 0);
-  --well: oklch(0.935 0.003 260);
-  --bar: oklch(0.975 0.002 260);
-  --shade: oklch(0.25 0.01 260 / 0.16);
+  --brand: #8C6400;
+  --brand-dim: #A88A4A;
+  --brand-gradient: linear-gradient(#8C6400, #8C6400);
+  --brand-ink: #FFFFFF;
+  --well: #F1F3F6;
+  --bar: #14213D;
+  --shade: rgb(20 33 61 / 0.16);
   /* The rink on white ice */
-  --ice: oklch(0.975 0.004 240);
-  --paint: oklch(0.3 0.02 252 / 0.16);
-  --rink-blue: oklch(0.55 0.13 250);
-  --rink-red: oklch(0.56 0.18 25);
-  --board: oklch(0.3 0.02 252 / 0.32);
-  --ring-goal: oklch(0.25 0.02 252);
-  --grid: oklch(0.3 0.02 252 / 0.12);
+  --ice: #EAF1F6;
+  --paint: rgb(20 33 61 / 0.14);
+  --rink-blue: #9FB3D1;
+  --rink-red: #D9A3A6;
+  --board: rgb(20 33 61 / 0.55);
+  --ring-goal: #14213D;
+  --grid: rgb(20 33 61 / 0.14);
+  /* Table header rows: dark ink bands (globals: .fk-table, [data-slot=table-wrap]). */
+  --thead: #14213D;
+  --thead-fg: #FAFAF7;
   color-scheme: light;
 }
 /* A game's team colours (lib/team-colors.ts) are lifted to read on dark ice;
@@ -406,7 +411,8 @@ html.light [style*="--away-c"] {
 @layer utilities {
   .tabular { font-variant-numeric: tabular-nums lining-nums; }
   .text-pressed { text-shadow: var(--text-shadow-pressed); }
-  .well { background: var(--well); box-shadow: var(--shadow-inset); }
+  /* A recessed panel: the card colour with a hairline edge, square. */
+  .well { background: var(--card); box-shadow: inset 0 0 0 1px var(--border); border-radius: 2px !important; }
   .pill { background: var(--pill-gradient); box-shadow: var(--shadow-pill); }
   .brand-text { color: var(--brand); }
 }
@@ -424,7 +430,15 @@ html.light [style*="--away-c"] {
 
 /* The masthead: flat, one step above the page, a hairline underneath.
    Logo left, sections centred, season and theme right. */
-.slot-mast { background: var(--bar); box-shadow: inset 0 -1px 0 var(--border); }
+/* The masthead: dark ink in both themes, so it carries its own light-on-dark
+   tokens for everything inside it (nav, season dropdown, toggles, search). */
+.slot-mast {
+  background: var(--bar);
+  --foreground: #FAFAF7; --muted-foreground: #AEB6C6; --secondary-foreground: #D3D8E2;
+  --border: rgb(250 250 247 / 0.18); --card: #1C2B4D; --popover: #1C2B4D; --accent: #24365E;
+  --brand: #E0A82E; --ring: rgb(250 250 247 / 0.5);
+  color: var(--foreground);
+}
 /* Section tabs: plain text, the current one underlined in cyan. */
 .slot-nav a[aria-current="page"], .slot-tabs [data-state="on"] { color: var(--foreground); box-shadow: inset 0 -2px 0 var(--brand); }
 
@@ -443,6 +457,17 @@ html.light [style*="--away-c"] {
 /* Borders on the cells, not the rows (separate, not collapsed), so the pinned
    column's background can't cover a row's line or shift it half a pixel. */
 .fk-table { border-collapse: separate; border-spacing: 0; }
+/* Frameless pages (the game page): tables sit on the page, not in a box;
+   the header row keeps a rule under it. Sticky cells take the page colour. */
+/* Tables sit on the page, not in a box, under a dark ink header row; rows
+   are split by hairlines. Sticky cells take the page colour. */
+[data-slot="table-wrap"] { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+[data-slot="table-wrap"] thead { background: var(--thead); }
+[data-slot="table-wrap"] thead tr { border-color: var(--thead); }
+[data-slot="table-wrap"] thead th { color: var(--thead-fg); }
+[data-slot="table-wrap"] thead th[aria-sort] { color: var(--thead-fg); box-shadow: inset 0 -2px 0 var(--brand-dim); }
+[data-slot="table-wrap"] thead th .decoration-border { text-decoration-color: rgb(250 250 247 / 0.35); }
+.fk-table thead .pin { background: var(--thead); }
 .fk-table thead tr { border-bottom: 0; }
 .fk-table thead th, .fk-table tbody tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
 .fk-table tbody tr { transition: background-color 150ms var(--ease-out); }
@@ -462,11 +487,11 @@ html.light [style*="--away-c"] {
 @media (min-width: 1024px) { .fk-table.fk-few .fk-more { display: none; } }
 /* The identity column stays put while a wide table scrolls sideways; its
    background repeats the row's tint over the card so nothing shows through. */
-.fk-table .pin { position: sticky; left: 0; z-index: 1; background: var(--card); box-shadow: inset -1px 0 var(--border); }
+.fk-table .pin { position: sticky; left: 0; z-index: 1; background: var(--background); box-shadow: inset -1px 0 var(--border); }
 /* The row's stripe laid over the card, so the pinned cell composites exactly like the cells beside it. */
 .fk-table tbody tr:nth-child(even) td.pin { background: linear-gradient(color-mix(in oklch, var(--foreground) 3.5%, transparent)), var(--card); }
-.fk-table tbody tr:hover td.pin { background: color-mix(in oklch, var(--accent) 30%, var(--card)); }
-.fk-table tbody tr[data-state="selected"] td.pin { background: color-mix(in oklch, var(--accent) 60%, var(--card)); }
+.fk-table tbody tr:hover td.pin { background: color-mix(in oklch, var(--accent) 30%, var(--background)); }
+.fk-table tbody tr[data-state="selected"] td.pin { background: color-mix(in oklch, var(--accent) 60%, var(--background)); }
 /* A shadow on the right edge while there are more columns to scroll to. */
 div:has(> table.fk-table) {
   background:
@@ -480,7 +505,7 @@ div:has(> table.fk-table) {
 .shot { cursor: pointer; transition: opacity 150ms; fill-opacity: 0.4; stroke-width: 0.5; }
 .shot.a { fill: var(--away); stroke: var(--away); }
 .shot.h { fill: var(--home); stroke: var(--home); }
-.shot.g { fill-opacity: 0.95; stroke: var(--ring-goal); stroke-width: 1.2; }
+.shot.g { fill-opacity: 1; stroke: var(--ring-goal); stroke-width: 0.8; }
 .shot.on { stroke: var(--foreground); stroke-width: 1.4; }
 .shot.dim { opacity: 0.12; }
 

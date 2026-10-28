@@ -78,12 +78,12 @@ function Card({ g, form, page }: { g: TonightGame; form: Record<string, Form>; p
       )}
     </>
   );
-  const cls = "block rounded-[0.75rem] bg-card px-3.5 pb-3 pt-2.5 [box-shadow:var(--shadow-md)]";
+  const cls = "block border border-border bg-card px-3.5 pb-3 pt-2.5";
   // The whole card opens the game, by way of a link stretched over it; the
   // team names sit above that link (a link can't hold links).
   return page && g.state !== "off" ? (
     <div style={gameColors(g.away.abbrev, g.home.abbrev)}
-      className={cn(cls, "relative transition-[background-color,box-shadow] hover:bg-accent/60 hover:[box-shadow:var(--shadow-lg)]")}>
+      className={cn(cls, "relative transition-[background-color,border-color] hover:border-foreground/40 hover:bg-accent/50")}>
       <Link href={`/game/${g.id}`} aria-label={`${g.away.abbrev} at ${g.home.abbrev}: preview`} className="absolute inset-0 z-[1] rounded-[inherit]" />
       {body}
     </div>

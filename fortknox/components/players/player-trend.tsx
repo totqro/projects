@@ -10,9 +10,38 @@ import type { LogRow } from "./player-log";
 // A player's season game by game: his own chances and goals, and how his
 // team did with him on the ice, as trailing averages over the last N games.
 
-const W = 900, L = 58, R = 40;
+const W = 900, L = 58, R = 92;
 const n = (v?: number) => v ?? 0;
 const label = (g: LogRow) => `${fmtDate(g.date)} ${g.home ? "vs" : "@"} ${g.opp}`;
+
+/** A chart's key: one sample per mark, drawn as the chart draws it. */
+type KeyItem = { label: string; kind: "line" | "dash" | "bar" | "dot"; color: string };
+function Key({ items }: { items: KeyItem[] }) {
+  return (
+    <ul className="mb-1 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
+      {items.map(i => (
+        <li key={i.label} className="inline-flex items-center gap-1.5">
+          <svg width="18" height="10" aria-hidden="true">
+            {i.kind === "bar" ? <rect x="5" y="1" width="8" height="9" fill={i.color} opacity={0.4} />
+              : i.kind === "dot" ? <circle cx="9" cy="5" r="3.5" fill={i.color} />
+              : <line x1="0" x2="18" y1="5" y2="5" stroke={i.color} strokeWidth={2} strokeDasharray={i.kind === "dash" ? "4 3" : undefined} />}
+          </svg>
+          {i.label}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** A line's name and latest value at its right end, so it needs no key. */
+function EndLabel({ x, y, value, name, color }: { x: number; y: number; value: string; name: string; color: string }) {
+  return (
+    <g fontSize={11}>
+      <text x={x + 6} y={y + 4} fontWeight={700} fill={color}>{value}</text>
+      <text x={x + 6} y={y + 16} fill="var(--muted-foreground)">{name}</text>
+    </g>
+  );
+}
 
 /** Trailing sums over the last `k` games (fewer at the start of the season). */
 function trailing(rows: LogRow[], k: number, f: (g: LogRow) => number) {
@@ -58,16 +87,25 @@ function Chances({ rows, k }: { rows: LogRow[]; k: number }) {
           <g key={g.id} className="cursor-pointer hover:opacity-70" onClick={() => router.push(`/game/${g.id}`)}>
             <title>{`${label(g)}: ${goals} G, ${v.toFixed(2)} ixG on ${n(g.line.att)} attempts`}</title>
             <rect x={x - bw / 2} y={top} width={bw} height={base - top} fill="transparent" />
-            {v > 0 && <rect x={x - bw / 2} y={Y(v)} width={bw} height={base - Y(v)} rx={1.5} fill="var(--home)" opacity={0.55} />}
+            {v > 0 && <rect x={x - bw / 2} y={Y(v)} width={bw} height={base - Y(v)} rx={1.5} fill="var(--home)" opacity={0.4} />}
             {Array.from({ length: goals }, (_, j) => (
-              <circle key={j} cx={x} cy={Y(v) - 6 - j * 9} r={3.5} fill="var(--brand)" />
+              <circle key={j} cx={x} cy={Y(v) - 6 - j * 9} r={3.5} fill="var(--foreground)" />
             ))}
           </g>
         );
       })}
       {rows.length > 2 && <>
-        <polyline fill="none" stroke="var(--foreground)" strokeWidth={1.5} opacity={0.75} points={pts(ixg, X, Y)} />
-        <polyline fill="none" stroke="var(--brand)" strokeWidth={1.5} strokeDasharray="5 4" points={pts(gls, X, Y)} />
+        <polyline fill="none" stroke="var(--home)" strokeWidth={2} points={pts(ixg, X, Y)} />
+        <polyline fill="none" stroke="var(--foreground)" strokeWidth={1.5} strokeDasharray="5 4" points={pts(gls, X, Y)} />
+        {(() => {
+          const i = rows.length - 1, a = Y(ixg[i]), b = Y(gls[i]);
+          // Keep the two labels apart when the lines end close together.
+          const [ya, yb] = Math.abs(a - b) < 28 ? (a <= b ? [a - 14, a + 16] : [b + 16, b - 14]) : [a, b];
+          return <>
+            <EndLabel x={X(i)} y={ya} value={ixg[i].toFixed(2)} name="ixG / game" color="var(--home)" />
+            <EndLabel x={X(i)} y={yb} value={gls[i].toFixed(2)} name="goals / game" color="var(--foreground)" />
+          </>;
+        })()}
       </>}
     </svg>
   );
@@ -98,7 +136,16 @@ function OnIce({ rows, k, five }: { rows: LogRow[]; k: number; five: boolean }) 
         </circle>
       ))}
       <polyline fill="none" stroke="var(--home)" strokeWidth={1.75} points={pts(xs, X, Y)} />
-      <polyline fill="none" stroke="var(--brand)" strokeWidth={1.5} strokeDasharray="5 4" points={pts(gs, X, Y)} />
+      <polyline fill="none" stroke="var(--foreground)" strokeWidth={1.5} strokeDasharray="5 4" points={pts(gs, X, Y)} />
+      {(() => {
+        const i = rows.length - 1, a = Y(xs[i] ?? 0.5), b = Y(gs[i] ?? 0.5);
+        const [ya, yb] = Math.abs(a - b) < 28 ? (a <= b ? [a - 14, a + 16] : [b + 16, b - 14]) : [a, b];
+        const p = (v: number | null) => (v == null ? "–" : `${Math.round(v * 100)}%`);
+        return <>
+          <EndLabel x={X(i)} y={ya} value={p(xs[i])} name="xG share" color="var(--home)" />
+          <EndLabel x={X(i)} y={yb} value={p(gs[i])} name="goal share" color="var(--foreground)" />
+        </>;
+      })()}
     </svg>
   );
 }
@@ -160,15 +207,24 @@ export function PlayerTrend({ rows, goalie }: { rows: LogRow[]; goalie: boolean 
           <span className="text-sm text-muted-foreground">rolling average</span>
         </div>
       )}
+      <Key items={[
+        { label: "ixG this game", kind: "bar", color: "var(--home)" },
+        { label: "Goal", kind: "dot", color: "var(--foreground)" },
+        { label: `ixG per game, last ${k}`, kind: "line", color: "var(--home)" },
+        { label: `Goals per game, last ${k}`, kind: "dash", color: "var(--foreground)" },
+      ]} />
       <Chances rows={rows} k={k} />
-      <Note className="mb-4 mt-1 text-xs">Bars are his ixG in each game, a dot per goal. The solid line is his ixG per game over the last {k}; the dashed line, his goals per game. Dashed above solid is finishing above his chances. Click a bar to open the game.</Note>
+      <Note className="mb-6 mt-1 text-xs">Dashed above solid is finishing above his chances. Click a bar to open the game.</Note>
       <div className="mb-2 flex justify-end">
         <Segmented label="On-ice situations" value={state} onChange={setState} options={STATES} />
       </div>
+      <Key items={[
+        { label: `xG share with him on, last ${k}`, kind: "line", color: "var(--home)" },
+        { label: `Goal share with him on, last ${k}`, kind: "dash", color: "var(--foreground)" },
+      ]} />
       <OnIce rows={rows} k={k} five={five} />
       <Note className="mt-1 text-xs">
-        His team&apos;s share of expected goals (solid) and of goals (dashed) with him on the ice, {five ? "at 5-on-5" : "all situations"}, over the last {k} games.
-        {!five && " Penalty killers read low here: switch to 5v5 to leave out the short-handed minutes."}
+        {five ? "At 5-on-5." : "All situations. Penalty killers read low here: switch to 5v5 to leave out the short-handed minutes."}
       </Note>
     </>
   );

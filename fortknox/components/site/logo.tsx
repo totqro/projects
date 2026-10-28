@@ -14,7 +14,7 @@ export function SlotMark({ className }: { className?: string }) {
 
 export function Wordmark({ className }: { className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-2", className)}>
+    <span className={cn("inline-flex items-center gap-2 whitespace-nowrap", className)}>
       <SlotMark className="size-8" />
       <span className="font-[family-name:var(--font-display)] text-2xl font-extrabold uppercase tracking-[0.03em]">
         High <span className="brand-text">Slot</span>

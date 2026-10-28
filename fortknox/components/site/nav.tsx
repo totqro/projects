@@ -67,7 +67,7 @@ export function SiteNav({ current }: { current: number }) {
         const on = s.match(path);
         return (
           <Link key={s.key} href={href(s.key)} aria-current={on ? "page" : undefined}
-            className="px-2.5 py-2 text-sm font-medium text-muted-foreground transition-[color,box-shadow] hover:text-foreground">
+            className="whitespace-nowrap px-2.5 py-2 text-sm font-medium text-muted-foreground transition-[color,box-shadow] hover:text-foreground">
             {s.label}
           </Link>
         );
@@ -92,7 +92,7 @@ export function SeasonSelect({ seasons, current }: { seasons: number[]; current:
   };
   const labelId = useId();
   return (
-    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+    <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
       <span id={labelId} className="sr-only sm:not-sr-only">Season</span>
       <Dropdown labelId={labelId} align="end" value={String(season)} onChange={v => go(+v)}
         options={seasons.map(s => ({ value: String(s), label: seasonLabel(s) }))} />

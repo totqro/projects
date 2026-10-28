@@ -50,8 +50,8 @@ export function MiniBox({ x, live }: { x: GameSummary; live?: string }) {
     // The whole card opens the game, by way of a link stretched over it; the
     // team names and the xG bar sit above that link (a link can't hold links).
     <div style={colors}
-      className="relative rounded-[0.75rem] bg-card px-3.5 pb-3 pt-2.5 [box-shadow:var(--shadow-md)] transition-[background-color,box-shadow] hover:bg-accent/60 hover:[box-shadow:var(--shadow-lg)]">
-      <Link href={`/game/${x.id}`} aria-label={`${x.away} ${x.as}, ${x.home} ${x.hs}, ${fmtDate(x.date)}`} className="absolute inset-0 z-[1] rounded-[inherit]" />
+      className="relative border border-border bg-card px-3.5 pb-3 pt-2.5 transition-[background-color,border-color] hover:border-foreground/40 hover:bg-accent/50">
+      <Link href={`/game/${x.id}`} aria-label={`${x.away} ${x.as}, ${x.home} ${x.hs}, ${fmtDate(x.date)}`} className="absolute inset-0 z-[1]" />
       <table className="tabular w-full text-[13px]">
         <thead>
           <tr className="border-b border-border text-xs text-muted-foreground">
@@ -76,7 +76,7 @@ export function MiniBox({ x, live }: { x: GameSummary; live?: string }) {
             <Tooltip key={f} delayDuration={0}>
               <TooltipTrigger asChild>
                 {/* above the card's stretched game link, so it can be hovered */}
-                <span className="relative z-[2] cursor-help"><Badge variant="warning">{f}</Badge></span>
+                <span className="relative z-[2] cursor-help text-[11px] font-bold uppercase tracking-[0.06em] text-foreground underline decoration-dotted decoration-muted-foreground underline-offset-[3px]">{f}</span>
               </TooltipTrigger>
               <TooltipContent className="max-w-60 text-pretty leading-relaxed">
                 Replay this game&apos;s shots, each one going in with its xG as the chance, and the {nickname(teamName(x.hs > x.as ? x.home : x.away))} win

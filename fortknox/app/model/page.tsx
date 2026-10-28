@@ -42,7 +42,7 @@ export default function Model() {
         <Tile label={`${seasonLabel(s)} xG vs goals`}>{m.xg.toFixed(0)} / {m.goals}</Tile>
       </div>
       <Card className="max-w-4xl">
-        <CardContent className="p-6">
+        <CardContent>
           <P>Each unblocked shot gets a probability of becoming a goal, from a gradient-boosted model trained on every NHL shot since 2015-16 and built from the league&apos;s own play-by-play and shift charts, the same feed it scores after each game. A team&apos;s or player&apos;s xG is the sum of those probabilities.</P>
           <H3>What it looks at</H3>
           <P>Mostly <b>the shot itself</b>, meaning its distance, angle, type, whether it came from behind the net, and the shooter&apos;s handedness and wing. It also looks at <b>the play before it</b>, such as what the previous event was, where and how long ago it happened, whether this is a rebound (and off a save, a miss or a block), and how fast the puck moved. On top of that it knows the <b>game state</b> (strength, including a pulled goalie and why, plus score, period and time) and <b>fatigue</b>, which is how long the shooter and both units had been on the ice.</P>

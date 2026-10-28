@@ -127,9 +127,19 @@ const byShots: Floor<RegGoalie> =
 
 /** One ranked list with an ahead/behind switch: the same rows, sorted from
  *  either end, with its own sample-size floor. */
-function Ranked<R>({ title, rows: allRows, cols, by, labels, csv, rowKey, floor, children }: {
+/** How to read a muted number, above the tables that use them. */
+function NoiseKey() {
+  return (
+    <div className="mb-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
+      <span><b className="font-semibold text-good">+4.6</b> <b className="font-semibold text-bad">−3.1</b> Coloured: outside the ± range, more than chance alone usually gives</span>
+      <span><span className="text-muted-foreground">+1.2</span> Grey: inside the ± range, too close to call</span>
+    </div>
+  );
+}
+
+function Ranked<R>({ title, rows: allRows, cols, by, labels, csv, rowKey, floor, noise, children }: {
   title: string; rows: R[]; cols: Column<R>[]; by: string; labels: [string, string]; csv: string; rowKey: (r: R) => string | number;
-  floor: Floor<R>; children: React.ReactNode;
+  floor: Floor<R>; noise?: boolean; children: React.ReactNode;
 }) {
   const [end, setEnd] = React.useState<"hi" | "lo">("hi");
   const [all, setAll] = React.useState(false);
@@ -144,6 +154,7 @@ function Ranked<R>({ title, rows: allRows, cols, by, labels, csv, rowKey, floor,
         <Segmented label={title} value={end} onChange={v => { setEnd(v); setAll(false); }} options={[["hi", labels[0]], ["lo", labels[1]]]} />
       </div>
     }>
+      {noise && <NoiseKey />}
       <SortTable key={end} rows={rows} cols={cols} initial={{ sort: by, asc: end === "lo" }} rowKey={rowKey} limit={all ? undefined : FIRST} csv={csv} />
       {!all && rows.length > FIRST && <Button variant="secondary" size="sm" className="mt-3" onClick={() => setAll(true)}>Show all {rows.length}</Button>}
       <Note className="mt-2 text-xs">{children}</Note>
@@ -180,7 +191,7 @@ export function RegressionView({ season, data }: { season: number; data: Record<
         <Ranked key={`Teams-${phase}`} title="Teams" floor={teamFloor} rows={teams} cols={tc} by="gap" labels={["Results ahead of play", "Results behind play"]} csv={csv("teams")} rowKey={t => t.team}>
           Gap is goal share minus xG share, in percentage points, all situations. A team well ahead of its chances is usually leaning on hot shooting or goaltending (the last two columns), and those are the parts that fade.
         </Ranked>
-        <Ranked key={`Shooters-${phase}`} title="Shooters" floor={shooterFloor} rows={shooters} cols={shc} by={norm ? "vsn" : "gax"} labels={["Running hot", "Due for goals"]} csv={csv("shooters")} rowKey={p => p.id}>
+        <Ranked key={`Shooters-${phase}`} title="Shooters" noise floor={shooterFloor} rows={shooters} cols={shc} by={norm ? "vsn" : "gax"} labels={["Running hot", "Due for goals"]} csv={csv("shooters")} rowKey={p => p.id}>
           {norm ? <>
             GAx is goals minus the expected goals of his own shots. Some shooters beat their xG every year, so each is measured against his
             own norm: the GAx his finishing in past seasons says to expect on this season&apos;s shots, trusted more the more shots he has
@@ -190,10 +201,10 @@ export function RegressionView({ season, data }: { season: number; data: Record<
             GAx is goals minus the expected goals of his own shots. The best finishers sit a little above zero year after year, but most big gaps shrink. Paces are per 82 games. ± is the 95% range chance alone produces on his shots; a muted GAx sits inside it.
           </>}
         </Ranked>
-        <Ranked key={`On-ice results-${phase}`} title="On-ice results, 5v5" floor={byMinutes} rows={onIce} cols={oic} by="gap" labels={["Ahead of play", "Behind play"]} csv={csv("on-ice")} rowKey={p => p.id}>
+        <Ranked key={`On-ice results-${phase}`} title="On-ice results, 5v5" noise floor={byMinutes} rows={onIce} cols={oic} by="gap" labels={["Ahead of play", "Behind play"]} csv={csv("on-ice")} rowKey={p => p.id}>
           Goal gap is his 5-on-5 on-ice goal differential minus his xG differential, in goals, so it grows with ice time the way a real edge does. A skater far ahead has usually had hot shooting or goaltending behind him; one far behind has usually had the opposite. ± is the 95% range bounces alone produce in that much play; a muted gap sits inside it.
         </Ranked>
-        <Ranked key={`Goalies-${phase}`} title="Goalies" floor={byShots} rows={d.goalies} cols={gkc} by="gsax" labels={["Stealing goals", "Leaking goals"]} csv={csv("goalies")} rowKey={p => p.id}>
+        <Ranked key={`Goalies-${phase}`} title="Goalies" noise floor={byShots} rows={d.goalies} cols={gkc} by="gsax" labels={["Stealing goals", "Leaking goals"]} csv={csv("goalies")} rowKey={p => p.id}>
           GSAx is how many goals he saved beyond an average goalie on the same shots. Goaltending is the noisiest thing in hockey over a few weeks: a season&apos;s worth of shots is needed before it says much. ± is the 95% range an average goalie&apos;s results span on the same shots; a muted GSAx sits inside it.
         </Ranked>
       </div>

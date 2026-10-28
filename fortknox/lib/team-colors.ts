@@ -78,3 +78,21 @@ export function gameColors(away: string, home: string): CSSProperties | undefine
 
 /** A team's first colour, for the swatches in the team pickers. */
 export const teamColor = (ab: string) => (TEAM[ab] ? css(TEAM[ab][0]) : undefined);
+
+/** Each team's scoreboard block on the game page: its own colours as worn,
+ *  not lifted for the ice: [background, text]. */
+const BLOCK: Record<string, [string, string]> = {
+  ANA: ["#F47A38", "#111111"], ARI: ["#8C2633", "#E2D6B5"], BOS: ["#111111", "#FFB81C"], BUF: ["#003087", "#FFB81C"],
+  CGY: ["#C8102E", "#F1BE48"], CAR: ["#CE1126", "#FFFFFF"], CHI: ["#CF0A2C", "#FFFFFF"], COL: ["#6F263D", "#FFFFFF"],
+  CBJ: ["#002654", "#FFFFFF"], DAL: ["#006847", "#FFFFFF"], DET: ["#CE1126", "#FFFFFF"], EDM: ["#041E42", "#FF4C00"],
+  FLA: ["#041E42", "#FFFFFF"], LAK: ["#111111", "#C9CDD1"], MIN: ["#154734", "#EAAA00"], MTL: ["#AF1E2D", "#FFFFFF"],
+  NSH: ["#FFB81C", "#041E42"], NJD: ["#CE1126", "#FFFFFF"], NYI: ["#00539B", "#FFFFFF"], NYR: ["#0038A8", "#FFFFFF"],
+  OTT: ["#111111", "#E4293F"], PHI: ["#F74902", "#111111"], PIT: ["#111111", "#FCB514"], SJS: ["#006D75", "#FFFFFF"],
+  SEA: ["#001628", "#99D9D9"], STL: ["#002F87", "#FCB514"], TBL: ["#002868", "#FFFFFF"], TOR: ["#00205B", "#FFFFFF"],
+  UTA: ["#090909", "#6CACE4"], VAN: ["#00205B", "#FFFFFF"], VGK: ["#B4975A", "#111111"], WSH: ["#C8102E", "#FFFFFF"],
+  WPG: ["#041E42", "#FFFFFF"],
+};
+export const teamBlock = (ab: string): { bg: string; fg: string } => {
+  const [bg, fg] = BLOCK[ab] ?? ["#14213D", "#FAFAF7"];
+  return { bg, fg };
+};

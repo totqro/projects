@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { GamePlayer, GameSummary, LinesFile, PlayersFile, RawSheet, SeasonIndex, Sheet, Shot, TeamsFile, Tonight } from "./types";
 import { unpack } from "./unpack";
+import type { GameRanks } from "@/components/game/detail";
 import { deserved } from "./deserve";
 
 // Build-time access to the published sheets in data/ (scripts/fetch-data.sh).
@@ -46,6 +47,44 @@ export const tonight = () => (fs.existsSync(path.join(ROOT, "tonight.json")) ? r
 export const seasonOfGame = (id: number | string) => +String(id).slice(0, 4);
 
 export const rawSheet = (id: number | string) => read<RawSheet>(`${seasonOfGame(id)}/games/${id}.json`);
+
+/** Every team-game of a season, sorted, for the game page's percentiles. */
+const dists = new Map<number, { xgs: number[]; xg: number[]; sog: number[] }>();
+function dist(s: number) {
+  if (!dists.has(s)) {
+    const d = { xgs: [] as number[], xg: [] as number[], sog: [] as number[] };
+    for (const g of seasonIndex(s).games)
+      for (const [xg, opp, sog] of [[g.hxg, g.axg, g.hsog], [g.axg, g.hxg, g.asog]]) {
+        d.xg.push(xg); d.sog.push(sog); d.xgs.push(xg + opp ? xg / (xg + opp) : 0.5);
+      }
+    for (const v of Object.values(d)) v.sort((a, b) => a - b);
+    dists.set(s, d);
+  }
+  return dists.get(s)!;
+}
+/** The share of sorted values below v, as a whole percentile. */
+function below(sorted: number[], v: number) {
+  let lo = 0, hi = sorted.length;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (sorted[m] < v) lo = m + 1; else hi = m; }
+  return Math.round((100 * lo) / sorted.length);
+}
+/** Where each team's xG share, xG and shots on goal in a game rank among the
+ *  season's team-games; null before a season has enough of them. */
+export function gameRanks(raw: RawSheet): GameRanks | null {
+  const s = seasonOfGame(raw.id);
+  if (!seasons().includes(s)) return null;
+  const d = dist(s);
+  if (d.xg.length < 40) return null;
+  const side = (me: RawSheet["home"], op: RawSheet["home"]) => {
+    const xgs = me.xg + op.xg ? me.xg / (me.xg + op.xg) : 0.5;
+    return {
+      xgs: { value: `${(xgs * 100).toFixed(1)}%`, pct: below(d.xgs, xgs) },
+      xg: { value: me.xg.toFixed(2), pct: below(d.xg, me.xg) },
+      sog: { value: String(me.sog), pct: below(d.sog, me.sog) },
+    };
+  };
+  return { away: side(raw.away, raw.home), home: side(raw.home, raw.away), teams: d.xg.length };
+}
 
 /** Tonight's games scored so far, ahead of their official sheets
  *  (pipeline/nhl_live.py); none when the deploy carried no live/ folder. */

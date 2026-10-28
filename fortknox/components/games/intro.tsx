@@ -14,14 +14,14 @@ export function Intro() {
   if (hidden) return null;
   const close = () => { closed = true; setHidden(true); };
   return (
-    <aside className="well relative mb-6 rounded-xl py-3.5 pl-4 pr-12 text-[14px] leading-relaxed text-secondary-foreground">
+    <aside className="relative mb-6 border-b border-border pb-4 pr-12 text-[15px] leading-relaxed text-secondary-foreground">
       <b className="font-semibold text-foreground">Every NHL game, scored shot by shot.</b>{" "}
       Each shot gets an expected-goals (xG) value: the chance an average shooter scores from there. Add them up and you see who earned the result.{" "}
       <span className="font-medium text-foreground">Deserve to win</span> is each team&apos;s chance of winning had those shots been taken again.{" "}
       <Link href="/about#glossary" className="text-foreground underline underline-offset-4">Glossary</Link>{" · "}
       <Link href="/model" className="text-foreground underline underline-offset-4">How the model works</Link>
       <button type="button" onClick={close} aria-label="Hide this introduction"
-        className="absolute right-2 top-2 grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground">
+        className="absolute -top-1 right-0 grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground">
         <X className="size-4" />
       </button>
     </aside>

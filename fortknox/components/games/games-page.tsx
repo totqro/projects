@@ -5,6 +5,7 @@ import { unpack } from "@/lib/unpack";
 import type { GameSummary, LiveInfo, RawSheet, TonightGame } from "@/lib/types";
 import { GamesView } from "./games-view";
 import { Intro } from "./intro";
+import { HomeLead } from "./lead";
 import { TonightStrip, type Box, type Form } from "./tonight";
 
 const FIRST = 36;
@@ -22,6 +23,7 @@ export function GamesPage({ season, home = false }: { season: number; home?: boo
     <>
       <h1 className="sr-only">{home ? "NHL games and expected goals" : `${seasonLabel(season)} games`}</h1>
       {home && <Intro />}
+      {home && <HomeLead season={season} skip={slate?.date} />}
       <GamesView season={season} recent={recent} total={games.length} dates={dates}
         hasPlayoffs={games.some(g => g.type === 3)} teams={teams} updated={`Updated ${updated} ET`}
         slate={slate?.games.length ? slate.date : undefined}

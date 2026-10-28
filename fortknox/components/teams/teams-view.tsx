@@ -9,7 +9,7 @@ import { f1, f2, pct, per60, share, sv } from "@/lib/format";
 import { groupTeams, LENSES, lensQuads, QCOL, xgStandings, type Grouping, type Quad, type StandingRow } from "@/lib/season";
 import type { Phase } from "@/lib/types";
 import { useLensChart } from "@/components/charts/lens";
-import { Signed, SortTable, type Column } from "@/components/tables/sortable";
+import { Signed, SortTable, type Column, ShareTint } from "@/components/tables/sortable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -43,7 +43,7 @@ const cols = (season: number): Column<Row>[] => [
   { k: "ga", label: "GA", get: t => t.ga_x, asc: true, tip: "tga" },
   { k: "xgs", label: "xG share", get: t => share(t.xgf, t.xga), cell: t => pct(share(t.xgf, t.xga)), tip: "txgs" },
   { k: "gs", label: "G share", get: t => share(t.gf_x, t.ga_x), cell: t => pct(share(t.gf_x, t.ga_x)), tip: "tgs" },
-  { k: "xgs5", label: "5v5 xG share", get: t => t["5v5"].xgf_pct, cell: t => <b className="font-semibold">{pct(t["5v5"].xgf_pct)}</b>, tip: "txgs5" },
+  { k: "xgs5", label: "5v5 xG share", get: t => t["5v5"].xgf_pct, cell: t => <ShareTint v={t["5v5"].xgf_pct} bold />, tip: "txgs5" },
   { k: "gs5", label: "5v5 G share", get: t => share(t["5v5"].gf, t["5v5"].ga), cell: t => pct(share(t["5v5"].gf, t["5v5"].ga)), tip: "tgs5" },
   { k: "xgf60", label: "5v5 xGF/60", get: t => t["5v5"].xgf60, cell: t => f2(t["5v5"].xgf60), tip: "txgf60" },
   { k: "gf60", label: "5v5 GF/60", get: t => per60(t["5v5"].gf, t["5v5"].toi), cell: t => f2(per60(t["5v5"].gf, t["5v5"].toi)), tip: "tgf60" },

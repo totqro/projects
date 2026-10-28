@@ -9,9 +9,9 @@ import type { RawSheet, Sheet, Shot } from "@/lib/types";
 import { unpack } from "@/lib/unpack";
 import { RinkMarks, shotRadius } from "@/components/charts/rink";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Block } from "@/components/site/section";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Toggle } from "@/components/ui/toggle";
+import { Switch } from "@/components/ui/switch";
 
 // Picking a shot (from Best chances, Scoring or the rink itself) rings it on
 // the rink, fades the rest and writes it out under the map.
@@ -64,12 +64,11 @@ export function ShotMap() {
   };
   const selShot = sel != null ? G.shots[sel] : null;
   return (
-    <Card className="min-w-0">
-      <CardHeader className="flex-row items-center justify-between gap-3 pb-3">
-        <CardTitle>Shot map</CardTitle>
-        <Toggle size="sm" pressed={blocks} onPressedChange={setBlocks} aria-label="Show blocked shots">Blocks</Toggle>
-      </CardHeader>
-      <CardContent>
+    <Block title="Shot map" aside={
+      <label className="flex cursor-pointer items-center gap-2 text-[13px] text-muted-foreground">
+        <Switch checked={blocks} onCheckedChange={setBlocks} className="bg-muted [box-shadow:inset_0_0_0_1px_var(--border)] data-[state=checked]:bg-foreground data-[state=checked]:[box-shadow:none]" />Blocked shots
+      </label>
+    }>
         <svg ref={mapRef} viewBox="-102 -45 204 90" role="img" aria-label="Shot map" className="block h-auto w-full">
           <RinkMarks />
           {ordered.map(s => {
@@ -99,11 +98,11 @@ export function ShotMap() {
               className="pointer-events-none animate-[ring_1.2s_ease-out_2]" />;
           })()}
         </svg>
-        <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span><i className="mr-1.5 inline-block size-2.5 rounded-full bg-away align-[-1px]" />{G.away.abbrev} shoots ←</span>
-          <span><i className="mr-1.5 inline-block size-2.5 rounded-full bg-home align-[-1px]" />{H} shoots →</span>
-          <span><i className="mr-1.5 inline-block size-2.5 rounded-full border-[1.5px] border-foreground align-[-1px]" />goal</span>
-          <span>size = xG</span>
+        {/* Which end each side shoots at (their xG is in the strip above). */}
+        <div className="mt-2 flex items-baseline justify-between gap-3 text-[13px]">
+          <span className="font-semibold text-away">← {G.away.abbrev} shoots</span>
+          <span className="text-xs text-muted-foreground max-sm:hidden">size = xG · ringed = goal</span>
+          <span className="font-semibold text-home">{H} shoots →</span>
         </div>
         <div aria-live="polite">
           {selShot && (
@@ -119,8 +118,7 @@ export function ShotMap() {
             <ShotDetail G={G} s={hover.s} />
           </div>
         )}
-      </CardContent>
-    </Card>
+    </Block>
   );
 }
 

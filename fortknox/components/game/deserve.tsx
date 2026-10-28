@@ -1,14 +1,15 @@
 import { margins, sides } from "@/lib/deserve";
 import { nickname } from "@/lib/teams";
 import type { Sheet } from "@/lib/types";
-import { Note } from "@/components/site/section";
 
 // Deserve to win on the game page: each team's chance of winning had the
-// game's shots been taken again, and how often each final margin comes up.
+// game's shots been taken again, as a split meter against the 50% line, and
+// below it how often each final margin comes up.
 
 const M = 4;
-const W = 400, H = 150, top = 18, base = 112, L = 6, R = 6;
+const W = 440, base = 170, top = 30;
 const pct0 = (v: number) => `${Math.round(v * 100)}%`;
+const DISPLAY = "font-[family-name:var(--font-display)]";
 
 export function DeserveToWin({ G }: { G: Sheet }) {
   const { h, a } = sides(G.shots, G.home.abbrev);
@@ -18,49 +19,50 @@ export function DeserveToWin({ G }: { G: Sheet }) {
   const goals = (team: string) => G.shots.filter(s => s.team === team && s.ev === "GOAL" && s.sit !== "EN_AGAINST").length;
   const actual = Math.max(-M, Math.min(M, goals(G.home.abbrev) - goals(G.away.abbrev)));
   const max = Math.max(...m);
-  const slot = (W - L - R) / m.length, bw = slot - 6;
-  const x = (i: number) => L + i * slot + 3;
-  const label = (d: number) => (d === 0 ? "Tie" : `${d < 0 ? G.away.abbrev : G.home.abbrev} ${Math.abs(d)}${Math.abs(d) === M ? "+" : ""}`);
+  const slot = W / m.length, bw = slot - 10;
+  const x = (i: number) => i * slot + 5;
+  const label = (d: number) => (d === 0 ? "Tie" : `${d < 0 ? G.away.abbrev : G.home.abbrev} by ${Math.abs(d)}${Math.abs(d) === M ? "+" : ""}`);
+  const live = G.live?.state === "live";
   return (
     <div>
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <div className="tabular font-[family-name:var(--font-display)] text-[28px] font-bold leading-none text-away">{pct0(awin)}</div>
-          <div className="mt-1 text-xs text-muted-foreground">{nickname(G.away.name)}</div>
+      <p className="mb-2 text-[13px] text-muted-foreground">
+        {live ? "So far: replay" : "Replay"} the shots, each going in with its xG as the chance.
+      </p>
+      <div className="relative h-[34px]" aria-hidden="true">
+        <div className="absolute inset-x-0 top-[9px] flex h-4">
+          <i className="block bg-away" style={{ width: `${awin * 100}%` }} />
+          <i className="block bg-home" style={{ width: `${hwin * 100}%` }} />
         </div>
-        <div className="text-right">
-          <div className="tabular font-[family-name:var(--font-display)] text-[28px] font-bold leading-none text-home">{pct0(hwin)}</div>
-          <div className="mt-1 text-xs text-muted-foreground">{nickname(G.home.name)}</div>
-        </div>
+        <div className="absolute inset-y-0.5 left-1/2 w-0.5 -translate-x-px bg-foreground" />
       </div>
-      <div className="mt-2.5 flex h-2 gap-px overflow-hidden rounded-full [box-shadow:var(--shadow-inset)]" aria-hidden="true">
-        <i className="block bg-away" style={{ flex: awin }} />
-        <i className="block bg-home" style={{ flex: hwin }} />
+      <div className="flex items-baseline justify-between leading-tight">
+        <span><b className={`${DISPLAY} tabular text-[28px] font-black text-away`}>{pct0(awin)}</b> <span className="text-[12.5px] text-muted-foreground">{nickname(G.away.name)}</span></span>
+        <span className="text-[11.5px] text-muted-foreground">even</span>
+        <span><span className="text-[12.5px] text-muted-foreground">{nickname(G.home.name)}</span> <b className={`${DISPLAY} tabular text-[28px] font-black text-home`}>{pct0(hwin)}</b></span>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" className="mt-4 block h-auto w-full text-[11px]"
-        aria-label={`Chance of each final margin on these shots: ${m.map((v, i) => `${label(i - M)} ${pct0(v)}`).join(", ")}`}>
-        <line x1={L} x2={W - R} y1={base} y2={base} stroke="var(--grid)" />
+
+      <div className={`${DISPLAY} mt-4 text-base font-extrabold uppercase tracking-[0.03em]`}>Wins by how many</div>
+      <svg viewBox={`0 0 ${W} 210`} role="img" className="mt-1 block h-auto max-h-[180px] w-full text-[12.5px]"
+        aria-label={`Chance of each final margin on these shots: ${m.map((v, i) => `${label(i - M)} ${pct0(v)}`).join(", ")}. ${live ? "It stands" : "It finished"} ${label(actual)}.`}>
+        <line x1={0} x2={W} y1={base} y2={base} stroke="var(--foreground)" />
         {m.map((v, i) => {
-          const d = i - M, hgt = max ? (v / max) * (base - top) : 0;
+          const d = i - M, hgt = max ? (v / max) * (base - top) : 0, on = d === actual;
           const fill = d < 0 ? "var(--away)" : d > 0 ? "var(--home)" : "var(--muted-foreground)";
           return (
             <g key={d}>
               <title>{`${label(d)}: ${(v * 100).toFixed(1)}%`}</title>
-              <rect x={x(i)} y={base - hgt} width={bw} height={hgt} rx={2} fill={fill} opacity={d === actual ? 0.95 : 0.5} />
-              {d === actual && <rect x={x(i) - 1.5} y={base - hgt - 1.5} width={bw + 3} height={hgt + 1.5} rx={3} fill="none" stroke="var(--foreground)" strokeWidth={1.25} />}
-              <text x={x(i) + bw / 2} y={base - hgt - 5} textAnchor="middle" fill="var(--muted-foreground)">{v >= 0.005 ? pct0(v) : ""}</text>
-              <text x={x(i) + bw / 2} y={base + 14} textAnchor="middle" fill={d === actual ? "var(--foreground)" : "var(--muted-foreground)"}>{d === 0 ? "Tie" : `${Math.abs(d)}${Math.abs(d) === M ? "+" : ""}`}</text>
+              <rect x={x(i)} y={base - hgt} width={bw} height={hgt} fill={fill} opacity={on || d === 0 ? 1 : 0.78} />
+              {on && <rect x={x(i) - 2} y={base - hgt - 2} width={bw + 4} height={hgt + 2} fill="none" stroke="var(--foreground)" strokeWidth={2} />}
+              <text x={x(i) + bw / 2} y={base - hgt - 7} textAnchor="middle" fontWeight={600} fill="var(--foreground)">{v >= 0.005 ? pct0(v) : ""}</text>
+              <text x={x(i) + bw / 2} y={base + 17} textAnchor="middle" fontWeight={on ? 700 : 400} fill={on ? "var(--foreground)" : "var(--muted-foreground)"}>
+                {d === 0 ? "Tie" : `${Math.abs(d)}${Math.abs(d) === M ? "+" : ""}`}{on ? " ◂" : ""}
+              </text>
             </g>
           );
         })}
-        <text x={L} y={H - 4} fill="var(--away)">← {G.away.abbrev} wins by</text>
-        <text x={W - R} y={H - 4} textAnchor="end" fill="var(--home)">{G.home.abbrev} wins by →</text>
+        <text x={0} y={206} fontSize={12} fontWeight={600} fill="var(--away)">← {G.away.abbrev} WINS BY</text>
+        <text x={W} y={206} fontSize={12} fontWeight={600} fill="var(--home)" textAnchor="end">{G.home.abbrev} WINS BY →</text>
       </svg>
-      <Note className="mt-2 text-xs">
-        Each team&apos;s chance of winning had these shots been taken again, every one going in with its xG as the chance. Empty-net shots
-        are left out, and a tie counts as a coin flip, like a shootout. The bars are how often each final margin comes up; the outlined one is
-        how {G.live?.state === "live" ? "it stands" : "it finished"}, empty-net goals aside.
-      </Note>
     </div>
   );
 }

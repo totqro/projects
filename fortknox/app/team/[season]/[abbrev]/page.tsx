@@ -4,6 +4,7 @@ import { ordinal, seasonLabel } from "@/lib/format";
 import { standings, teamGames } from "@/lib/season";
 import { TEAMS, teamName } from "@/lib/teams";
 import { PageHead } from "@/components/site/page-head";
+import { StatStrip } from "@/components/site/section";
 import { BackLink } from "@/components/site/trail";
 import { TeamLogo } from "@/components/site/team-logo";
 import { TeamView, type LogGame, type TeamData } from "@/components/teams/team-view";
@@ -28,8 +29,8 @@ export default async function Team({ params }: Props) {
   const me = std.find(x => x.team === ab);
   const meta = TEAMS[ab];
   const rankIn = (k: 1 | 2) => std.filter(x => TEAMS[x.team]?.[k] === meta?.[k]).findIndex(x => x.team === ab) + 1;
-  const standingLine = me && meta
-    ? `${me.w}-${me.l}-${me.otl}, ${me.pts} points. ${ordinal(rankIn(2))} in the ${meta[2]}, ${ordinal(rankIn(1))} in the ${meta[1]}, ${ordinal(me.lg)} in the league.`
+  const standing: [string, string][] | null = me && meta
+    ? [["Points", String(me.pts)], [meta[2], ordinal(rankIn(2))], [meta[1], ordinal(rankIn(1))], ["League", ordinal(me.lg)]]
     : null;
   // The index has no 5v5 goals per game, so count them from each sheet's shots.
   const with5 = (g: TeamGame): LogGame => {
@@ -52,11 +53,12 @@ export default async function Team({ params }: Props) {
   });
   const L = linesFile(season);
   const units = { regular: L?.regular[ab] ?? null, playoff: L?.playoff[ab] ?? null };
-  const d: TeamData = { season, team: ab, name: teamName(ab), standingLine, games: tg, lines: packLines(lines), units };
+  const d: TeamData = { season, team: ab, name: teamName(ab), games: tg, lines: packLines(lines), units };
   return (
     <>
       <BackLink key={`${season}-${ab}`} href={`/teams/${season}`} label="All teams" className="mb-4 inline-block max-w-full truncate align-top text-sm text-muted-foreground hover:text-foreground" />
-      <PageHead title={<span className="inline-flex items-center gap-3"><TeamLogo team={ab} size={56} />{teamName(ab)}</span>} sub={standingLine ?? seasonLabel(season)} />
+      <PageHead title={<span className="inline-flex items-center gap-3"><TeamLogo team={ab} size={56} />{teamName(ab)}</span>} sub={seasonLabel(season)} />
+      {standing && <StatStrip items={standing} className="mb-8" />}
       <TeamView d={d} />
     </>
   );

@@ -1,11 +1,11 @@
 import type { LiveInfo, RawSheet } from "@/lib/types";
 import { unpack } from "@/lib/unpack";
 import { gameColors } from "@/lib/team-colors";
-import { FlowChart } from "@/components/charts/flow";
 import { BestChances, Scoring, ShotMap, ShotProvider } from "@/components/game/shots";
 import { GameRoster } from "@/components/game/roster";
-import { Periods, Recap, ScoreCard, Stars } from "@/components/game/sections";
-import { Note, Panel, Section } from "@/components/site/section";
+import { Recap, ScoreCard, Stars } from "@/components/game/sections";
+import { ChancesByPeriod, GamePercentiles, type GameRanks } from "@/components/game/detail";
+import { Block } from "@/components/site/section";
 import { BackLink } from "@/components/site/trail";
 import { DeserveToWin } from "@/components/game/deserve";
 
@@ -33,7 +33,7 @@ function LiveBanner({ live }: { live: LiveInfo }) {
 
 /** A whole game page from its sheet. Rendered on the server for this season's
  *  pre-rendered games and in the browser for older ones (archived-game.tsx). */
-export function GameView({ raw }: { raw: RawSheet }) {
+export function GameView({ raw, ranks }: { raw: RawSheet; ranks?: GameRanks | null }) {
   const G = unpack(raw);
   const season = +String(G.id).slice(0, 4);
   // The shot map only needs names; the rosters below get the full lines.
@@ -47,31 +47,31 @@ export function GameView({ raw }: { raw: RawSheet }) {
         {G.live && <LiveBanner live={G.live} />}
         <ScoreCard G={G} />
         <Recap G={G} />
-        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
-          <div className="min-w-0 space-y-4">
-            <ShotMap />
-            <Section title="By period"><Periods G={G} /></Section>
-          </div>
-          <div className="min-w-0 space-y-4">
-            <Panel title={G.live?.state === "live" ? "Deserve to win, so far" : "Deserve to win"}><DeserveToWin G={G} /></Panel>
-            <Panel title="xG over the game">
-              <FlowChart shots={G.shots} home={G.home.abbrev} away={G.away.abbrev} />
-              <Note className="mt-2 text-xs">Running total of expected goals. Dots are goals.</Note>
-            </Panel>
-            <Panel title={G.live?.state === "live" ? "Stars so far" : "Three stars"}><Stars G={G} /></Panel>
-          </div>
+        {/* Who earned it, at a glance: the shots and what they were worth. */}
+        <div className="grid items-start gap-x-10 gap-y-10 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
+          <ShotMap />
+          <Block title={G.live?.state === "live" ? "Deserve to win, so far" : "Deserve to win"}><DeserveToWin G={G} /></Block>
         </div>
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <Section title="Best chances"><BestChances n={6} /></Section>
-          <Section title="Scoring"><Scoring /></Section>
+
+        <Block title={G.live?.state === "live" ? "Stars so far" : "Three stars"} className="mt-10"><Stars G={G} /></Block>
+
+        {/* Then the numbers behind it, a step down. */}
+        <div className="mt-10 border-t-[3px] border-foreground pt-2">
+          <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">In detail</h2>
         </div>
-        <div className="mt-8 grid gap-6 xl:grid-cols-2">
-          <Section title={<span className="text-away">{G.away.name}</span>}>
+        <div className="mt-6 grid items-start gap-x-12 gap-y-10 lg:grid-cols-2">
+          {ranks && <Block title="Game percentiles"><GamePercentiles G={G} ranks={ranks} /></Block>}
+          <Block title="Chances by period"><ChancesByPeriod G={G} /></Block>
+          <Block title="Goals"><Scoring /></Block>
+          <Block title="Best chances"><BestChances n={5} /></Block>
+        </div>
+        <div className="mt-12 grid gap-x-12 gap-y-10 xl:grid-cols-2">
+          <Block title={<span className="text-away">{G.away.name}</span>}>
             <GameRoster players={G.players.filter(p => p.team === G.away.abbrev)} />
-          </Section>
-          <Section title={<span className="text-home">{G.home.name}</span>}>
+          </Block>
+          <Block title={<span className="text-home">{G.home.name}</span>}>
             <GameRoster players={G.players.filter(p => p.team === G.home.abbrev)} />
-          </Section>
+          </Block>
         </div>
       </div>
     </ShotProvider>

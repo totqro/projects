@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { currentSeason, gameIds, liveIds, liveSheet, rawSheet, tonight } from "@/lib/data";
+import { currentSeason, gameIds, gameRanks, liveIds, liveSheet, rawSheet, tonight } from "@/lib/data";
 import { unpack } from "@/lib/unpack";
 import { fmtDate } from "@/lib/format";
 import { liveStatus, recap } from "@/lib/game";
@@ -52,5 +52,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function GamePage({ params }: Props) {
   const p = page(+(await params).id);
-  return p.game ? <GamePreview g={p.game} date={p.date} /> : <GameView raw={p.raw} />;
+  return p.game ? <GamePreview g={p.game} date={p.date} /> : <GameView raw={p.raw} ranks={gameRanks(p.raw)} />;
 }

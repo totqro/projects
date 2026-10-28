@@ -8,7 +8,7 @@ import { f1, f2, fmtDate, pct, per60, share, sv, toi, toiMin } from "@/lib/forma
 import { summarize, type TeamGame } from "@/lib/season";
 import { nickname, posLabel, teamName, TIPS } from "@/lib/teams";
 import type { Phase, TeamUnits } from "@/lib/types";
-import { Signed, SortTable, type Column } from "@/components/tables/sortable";
+import { Signed, SortTable, type Column, ShareTint } from "@/components/tables/sortable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SelectField } from "@/components/site/field";
@@ -84,9 +84,9 @@ const LOG_COLS: Column<LogGame>[] = [
   { k: "gf", label: "GF", get: g => g.gf_x, tip: "tgf" },
   { k: "xga", label: "xGA", get: g => g.xga, cell: g => f2(g.xga), asc: true, tip: "txga" },
   { k: "ga", label: "GA", get: g => g.ga_x, asc: true, tip: "tga" },
-  { k: "xgs", label: "xG share", get: g => share(g.xgf, g.xga), cell: g => pct(share(g.xgf, g.xga)), tip: "txgs" },
+  { k: "xgs", label: "xG share", get: g => share(g.xgf, g.xga), cell: g => <ShareTint v={share(g.xgf, g.xga)} />, tip: "txgs" },
   { k: "gs", label: "G share", get: g => share(g.gf_x, g.ga_x), cell: g => pct(share(g.gf_x, g.ga_x)), tip: "tgs" },
-  { k: "xgs5", label: "5v5 xG share", get: g => share(g.xgf5, g.xga5), cell: g => pct(share(g.xgf5, g.xga5)), tip: "txgs5" },
+  { k: "xgs5", label: "5v5 xG share", get: g => share(g.xgf5, g.xga5), cell: g => <ShareTint v={share(g.xgf5, g.xga5)} />, tip: "txgs5" },
   { k: "gs5", label: "5v5 G share", get: g => share(g.gf5, g.ga5), cell: g => pct(share(g.gf5, g.ga5)), tip: "tgs5" },
   { k: "att", label: "Att", get: g => g.att, cell: g => `${g.att}–${g.atta}`, tip: "att" },
   { k: "sog", label: "SOG", get: g => g.sog, cell: g => `${g.sog}–${g.soga}`, tip: "sog" },
@@ -109,7 +109,7 @@ function GameBars({ games, team }: { games: TeamGame[]; team: string }) {
     addEventListener("pointerdown", off);
     return () => { removeEventListener("scroll", off, { capture: true }); removeEventListener("pointerdown", off); };
   }, [hover]);
-  const W = 900, H = 220, L = 58, R = 40, mid = H / 2;
+  const W = 900, H = 220, L = 58, R = 104, mid = H / 2;
   const bw = Math.max(3, Math.min(18, (W - L - R) / games.length - 2));
   const max = Math.ceil(Math.max(3, ...games.map(g => Math.max(g.xgf, g.xga))));
   const step = max > 6 ? 2 : 1, marks: number[] = [];
@@ -135,9 +135,6 @@ function GameBars({ games, team }: { games: TeamGame[]; team: string }) {
       )))}
       <text x={12} y={mid - Y(max) / 2} transform={`rotate(-90 12 ${mid - Y(max) / 2})`} textAnchor="middle" fill="var(--home)">xG for</text>
       <text x={12} y={mid + Y(max) / 2} transform={`rotate(-90 12 ${mid + Y(max) / 2})`} textAnchor="middle" fill="var(--away)">xG against</text>
-      {[0.25, 0.5, 0.75].map(v => (
-        <text key={v} x={W - R + 6} y={shareY(v) + 4} fill="var(--foreground)" opacity={0.7}>{v * 100}%</text>
-      ))}
       {games.map((g, i) => {
         const x = X(i), slot = (W - L - R) / games.length;
         return (
@@ -153,14 +150,19 @@ function GameBars({ games, team }: { games: TeamGame[]; team: string }) {
             <rect x={x - slot / 2} y={0} width={slot} height={H} fill="transparent" />
             <rect x={x - bw / 2} y={mid - Y(g.xgf)} width={bw} height={Y(g.xgf)} rx={1.5} fill="var(--home)" />
             <rect x={x - bw / 2} y={mid} width={bw} height={Y(g.xga)} rx={1.5} fill="var(--away)" opacity={0.75} />
-            <rect x={x - 3} y={H - 9} width={6} height={6} rx={1} fill={g.won ? "var(--brand)" : "none"} stroke={g.won ? "var(--brand)" : "var(--muted-foreground)"} />
+            <text x={x} y={H - 2} textAnchor="middle" fontSize={10} fontWeight={700}
+              fill={g.res === "W" ? "var(--good)" : g.res === "L" ? "var(--bad)" : "var(--muted-foreground)"}>{g.res === "OTL" ? "OT" : g.res}</text>
           </g>
         );
       })}
-      {games.length > 2 && (
-        <polyline fill="none" stroke="var(--foreground)" strokeWidth={1.5} opacity={0.7}
+      {games.length > 2 && <>
+        <polyline fill="none" stroke="var(--foreground)" strokeWidth={1.75}
           points={roll.map((v, i) => `${X(i).toFixed(1)},${shareY(v).toFixed(1)}`).join(" ")} />
-      )}
+        {/* The line names itself at its end: no second scale to read. */}
+        <text x={W - R + 10} y={shareY(roll[roll.length - 1]) - 2} fontSize={13} fontWeight={700} fill="var(--foreground)">{Math.round(roll[roll.length - 1] * 100)}%</text>
+        <text x={W - R + 10} y={shareY(roll[roll.length - 1]) + 11} fontSize={10} fill="var(--muted-foreground)">xG share,</text>
+        <text x={W - R + 10} y={shareY(roll[roll.length - 1]) + 23} fontSize={10} fill="var(--muted-foreground)">last 5</text>
+      </>}
     </svg>
     {hover && games[hover.i] && <GameCard g={games[hover.i]} team={team} x={hover.x} y={hover.y} />}
     </div>
@@ -194,7 +196,6 @@ export interface TeamData {
   season: number;
   team: string;
   name: string;
-  standingLine: string | null;
   games: Record<Phase, LogGame[]>;
   lines: PackedLines;
   /** 5v5 lines, pairs and WOWY; null before lines.json existed. */
@@ -249,7 +250,7 @@ export function TeamView({ d }: { d: TeamData }) {
         <CardHeader className="pb-2"><CardTitle>Game by game</CardTitle></CardHeader>
         <CardContent>
           <GameBars games={games} team={d.team} />
-          <Note className="mt-2 text-xs">Expected goals for (up) and against (down), one bar per game. Filled squares are wins. The white line is xG% over the last five games, on the right-hand scale. Click a bar to open the game.</Note>
+          <Note className="mt-2 text-xs">Expected goals for (up) and against (down), one bar per game, with the result under each. The line is the team&apos;s xG share over its last five games. Click a bar to open the game.</Note>
         </CardContent>
       </Card>
 

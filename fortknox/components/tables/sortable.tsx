@@ -165,3 +165,17 @@ export function Signed({ v, d = 1 }: { v: number | null | undefined; d?: number 
   if (v == null) return <>{"–"}</>;
   return <span className={cn(v > 0 && "text-good", v < 0 && "text-bad")}>{(v > 0 ? "+" : "") + v.toFixed(d)}</span>;
 }
+
+/** An xG share on a tint: the good colour above 50%, the bad one below,
+ *  deeper the further from even (full at 20 points either way), none within
+ *  a point of it. Colour-blind mode swaps the colours with everything else. */
+export function ShareTint({ v, bold }: { v: number | null | undefined; bold?: boolean }) {
+  if (v == null) return <>{"–"}</>;
+  const off = v - 0.5, depth = Math.abs(off) < 0.01 ? 0 : Math.round(10 + Math.min(1, Math.abs(off) / 0.2) * 34);
+  const bg = depth ? `color-mix(in oklch, var(${off > 0 ? "--good" : "--bad"}) ${depth}%, transparent)` : undefined;
+  return (
+    <span className={cn("tabular -my-0.5 inline-block min-w-[3.6rem] rounded-[2px] px-1.5 py-0.5 text-right", bold && "font-semibold")} style={{ background: bg }}>
+      {(v * 100).toFixed(1)}%
+    </span>
+  );
+}

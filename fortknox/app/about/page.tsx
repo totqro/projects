@@ -30,7 +30,7 @@ export default function About() {
     <>
       <PageHead title="About High Slot" sub="Every NHL game, scored shot by shot." />
       <Card className="max-w-4xl">
-        <CardContent className="p-6">
+        <CardContent>
           <H2>What this is</H2>
           <P>High Slot puts an expected-goals number on every shot of every NHL game, then adds them up into game sheets, standings, team and player tables, lines and goalie numbers. The question it answers is <b>who created the better chances</b>, which says more about how a team is playing than the score does over a handful of games.</P>
           <P>It&apos;s an independent project, free, with no ads and no account. Pages update through the day as games finish.</P>
