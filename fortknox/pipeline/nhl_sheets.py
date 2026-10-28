@@ -68,11 +68,13 @@ def r1(v):
     return round(float(v), 3)
 
 
-def build(season, root, fetch):
+def build(season, root, fetch, cache=None):
+    """`cache` replaces the raw-feed cache (nhl_live.py points it at tonight's
+    games in progress)."""
     out = root / str(season)
     if fetch:
         nhl_backfill.backfill_season(season, workers=6, refresh_bios=True)
-    d = CACHE / str(season)
+    d = (cache or CACHE) / str(season)
     bios = load_bios(d)
     model = joblib.load(MODEL_PATH)
 

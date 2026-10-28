@@ -30,6 +30,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 ```bash
 .venv/bin/python nhl_sheets.py                    # game sheets + team/player/lines tables -> ../data/
+.venv/bin/python nhl_live.py --sheets ../data     # tonight's games so far -> ../data/live/
 ```
 
 **Lines.** `src/data/nhl_units.py` rebuilds which five skaters each team had
@@ -77,4 +78,7 @@ games it has never seen at AUC 0.776 and 851 xG for 849 goals (139 games).
 minutes from noon to 4am ET, fetches newly final games (the raw cache rides
 in the Actions cache), rebuilds the season with `nhl_sheets.py`, force-pushes
 the output as one commit to the orphan branch `xg-sheets-data`, and
-dispatches `fortknox-deploy.yml`, which builds the site from it.
+dispatches `fortknox-deploy.yml`, which builds the site from it. While games
+are on, each run also scores them so far with `nhl_live.py` into `live/` on
+the same branch (games still waiting on their official sheet included), and
+the site shows those as live or provisional game pages.
