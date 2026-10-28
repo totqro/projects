@@ -23,8 +23,9 @@ const listeners = new Set<() => void>();
 
 const path = (url: string | URL) => { const u = new URL(url, location.href); return u.pathname + u.search; };
 const here = () => path(location.href);
-/** The page's title without the site name; the home page has only that. */
-const siteTitle = () => (location.pathname === "/" ? "home" : document.title.replace(/ · High Slot$/, ""));
+/** The page's title without the site name. The home page, which has only
+ *  that, is the Games section's. */
+const siteTitle = () => (location.pathname === "/" ? "games" : document.title.replace(/ · High Slot$/, ""));
 type Stamp = [string, number];
 const stampOf = (state: unknown): Stamp | null => {
   const hs = (state as { hs?: unknown } | null)?.hs;
