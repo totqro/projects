@@ -48,6 +48,16 @@ season's page falls back to plain GAx.
 .venv/bin/python fit_shooter_baseline.py          # -> data/shooter_baseline.json
 ```
 
+**Predictive check.** `fit_validation.py` asks, for every season since 2015-16,
+how well each team number over the first N games (points %, goal share, xG
+share, 5v5 xG share, deserved points %) predicts points % over the rest of
+the season, and writes `../app/model/validation.json` for the Model page's
+chart. Rerun it after a refit.
+
+```bash
+.venv/bin/python fit_validation.py                # -> ../app/model/validation.json
+```
+
 **Lines.** `src/data/nhl_units.py` rebuilds which five skaters each team had
 on the ice for every 5v5 second, and `nhl_sheets.py` adds up time, xG, goals
 and attempts for every forward trio, defence pair and pair of teammates

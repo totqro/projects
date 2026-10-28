@@ -7,6 +7,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PageHead } from "@/components/site/page-head";
 import { Tile } from "@/components/site/section";
 import { CalibrationChart } from "@/components/charts/calibration";
+import { ValidationChart, type Validation } from "@/components/charts/validation";
+import validationFile from "./validation.json";
+
+// pipeline/fit_validation.py; rerun it after a refit.
+const validation = validationFile as Validation;
+/** The first game where points % catches 5v5 xG share, past the opening noise. */
+const validationCross = validation.n.find((n, i) => n > 10 && validation.r.pts[i]! >= validation.r.xgs5[i]!);
 
 export const metadata: Metadata = { title: "How the xG model works" };
 
@@ -92,6 +99,11 @@ export default function Model() {
               </TableBody>
             </Table>
           </details>
+          <H3>Does xG predict anything?</H3>
+          <P>The test that matters for a team: take each number over its first games and see how well it predicts the team&apos;s <b>points % over the rest of the season</b>. Every regular season from {seasonLabel(validation.seasons[0])} to {seasonLabel(validation.seasons[validation.seasons.length - 1])}, every team, with at least {validation.min_rest} games still to play; the line is the correlation across teams, averaged over the seasons (1.0 would be a perfect forecast).</P>
+          <ValidationChart data={validation} />
+          <P><b>Early on, trust xG over the standings.</b> After 10 games a team&apos;s 5v5 xG share predicts its rest of the season better than its points % does, and it stays ahead for roughly the first {validationCross} games, the stretch where a record is mostly bounces and hot goaltending. Later the standings catch up and edge ahead: by then a record also carries real finishing and goaltending, which xG leaves out on purpose. Deserved points % (each game&apos;s expected points from its deserve-to-win) tracks xG share, since it comes from the same shots.</P>
+          <P>The served model was trained on {seasonLabel(validation.seasons[0])} to 2024-25 and calibrated on 2025-26, so these seasons aren&apos;t out of sample for it. It never sees which team took a shot, so that shouldn&apos;t flatter xG much; switch to {seasonLabel(validation.last.season)} alone for the most recent season by itself, though one season of teams is a small, noisy sample.</P>
           <H3>Caveats</H3>
           <P><b>The league&apos;s logging drifts.</b> A shot within three seconds of another was 4% of non-goals in 2015 and 10% in 2025. The model weights recent seasons more and is recalibrated on the latest complete season, but it still slips a few percent a year, so it gets refit each summer.</P>
           <P><b>2025-26 game pages are partly in-sample.</b> The served model was calibrated on that season, so the site&apos;s 2025-26 xG totals match goals by construction. The 1.062 in the table is the evaluation model, which never saw 2025-26. This season&apos;s games are fully out of sample.</P>
