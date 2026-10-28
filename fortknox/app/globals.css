@@ -14,6 +14,7 @@
   --color-away: var(--away);
   --color-good: var(--good);
   --color-bad: var(--bad);
+  --color-alt: var(--alt);
   --color-warn: var(--warn);
   --color-brand: var(--brand);
   --color-brand-dim: var(--brand-dim);
@@ -262,12 +263,16 @@ html.dark {
   --pill-gradient: linear-gradient(180deg, oklch(0.33 0.04 252) 0%, oklch(0.28 0.036 252) 100%);
   --pill-gradient-hover: linear-gradient(180deg, oklch(0.36 0.045 252) 0%, oklch(0.3 0.04 252) 100%);
 
-  /* Data: the away team is red, the home team periwinkle. */
+  /* Data: the away team is red, the home team periwinkle. Good/bad are
+     blue/orange, not green/red, so they hold up under colour blindness;
+     warn is pushed to yellow and alt (the fourth quadrant) is a neutral
+     slate so all four stay apart under deutan, protan and tritan vision. */
   --home: oklch(0.8 0.09 265);
   --away: oklch(0.72 0.17 30);
-  --good: oklch(0.78 0.15 145);
-  --bad: oklch(0.66 0.19 25);
-  --warn: oklch(0.8 0.13 80);
+  --good: oklch(0.74 0.13 245);
+  --bad: oklch(0.74 0.16 52);
+  --warn: oklch(0.89 0.15 100);
+  --alt: oklch(0.68 0.015 250);
   /* The accent: ice cyan, and the text that sits on it */
   --brand: oklch(0.8 0.09 210);
   --brand-dim: oklch(0.64 0.09 215);
@@ -322,9 +327,10 @@ html.light {
 
   --home: oklch(0.5 0.13 265);
   --away: oklch(0.56 0.18 30);
-  --good: oklch(0.52 0.14 150);
-  --bad: oklch(0.55 0.19 25);
-  --warn: oklch(0.6 0.13 75);
+  --good: oklch(0.52 0.15 250);
+  --bad: oklch(0.55 0.16 45);
+  --warn: oklch(0.66 0.14 95);
+  --alt: oklch(0.6 0.01 260);
   --brand: oklch(0.55 0.1 215);
   --brand-dim: oklch(0.62 0.08 215);
   --brand-gradient: linear-gradient(oklch(0.55 0.1 215), oklch(0.55 0.1 215));
