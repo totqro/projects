@@ -430,6 +430,8 @@ html.light [style*="--away-c"] {
 .fk-table tbody tr[data-state="selected"] { background: color-mix(in oklch, var(--accent) 60%, transparent); }
 .fk-table td { padding: 0.5rem 0.625rem; white-space: nowrap; text-align: right; vertical-align: middle; }
 .fk-table td.l { text-align: left; }
+/* Columns a phone leaves for the table's expand toggle. */
+@media (max-width: 639px) { .fk-table .fk-wide { display: none; } }
 /* The identity column stays put while a wide table scrolls sideways; its
    background repeats the row's tint over the card so nothing shows through. */
 .fk-table .pin { position: sticky; left: 0; z-index: 1; background: var(--card); box-shadow: inset -1px 0 var(--border); }

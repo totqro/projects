@@ -59,6 +59,8 @@ const cols = (season: number): Column<Row>[] => [
 
 /** The standings columns shown until the table is expanded. */
 const CORE = new Set(["std", "team", "gp", "w", "l", "otl", "pts", "ppct", "xgs5"]);
+/** Core columns that also wait for the expand on a phone, so 5v5 xG share fits. */
+const WIDE_ONLY = new Set(["w", "l", "otl"]);
 
 /** A one-of-several picker. `tabs` draws it like the masthead's sections:
  *  plain text with the current one underlined in cyan (.slot-tabs). */
@@ -179,8 +181,9 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
   const g = phase === "playoff" ? "league" : group;
   const groups = groupTeams(rows, g);
   const xGroups = React.useMemo(() => xgGroups(rows, g), [rows, g]);
-  const columns = React.useMemo(() => cols(season), [season]);
-  const hidden = React.useMemo(() => (expanded ? undefined : new Set(columns.map(c => c.k).filter(k => !CORE.has(k)))), [columns, expanded]);
+  const all = React.useMemo(() => cols(season), [season]);
+  const columns = React.useMemo(() => (expanded ? all : all.map(c => (WIDE_ONLY.has(c.k) ? { ...c, wide: true } : c))), [all, expanded]);
+  const hidden = React.useMemo(() => (expanded ? undefined : new Set(all.map(c => c.k).filter(k => !CORE.has(k)))), [all, expanded]);
   const xColumns = React.useMemo(() => xcols(season, g === "wildcard"), [season, g]);
   const sumRows = React.useMemo(() => {
     const qs = Object.fromEntries(LENS_KEYS.map(k => [k, lensQuads(rows, k)]));
