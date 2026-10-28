@@ -15,6 +15,10 @@ QB_ELO_SCALE = 800.0       # Elo points per 1.0 EPA/dropback of shrunk QB rating
 QB_N0 = 200.0              # pseudo-dropbacks of prior
 QB_DECAY = 0.8             # per-season weight on earlier seasons' dropbacks
 
+# Completed games whose schedule-listed QB threw no pass get the QB who did
+# (src/data/team_games.correct_listed_starters; gate result in README).
+FIX_LISTED_STARTERS = False
+
 # Stage 2 — week-1 prior: lives in the win model as early-decayed features
 # (experiments/stage2_*.py); EARLY_GAMES is in src/features/engine.py.
 

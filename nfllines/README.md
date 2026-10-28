@@ -219,11 +219,31 @@ outputs summarised in `data/processed/*.json`).
 
 ## Caveats and known limitations
 
-* **Starting QB.** nflverse's schedule records the *actual* starter. Backtests
-  therefore know the starter for every game, including the handful per season
-  announced after the market closed. This favours the model slightly in the
+* **Starting QB.** nflverse's schedule is meant to record the *actual* starter,
+  and it usually does: backtests know the starter for nearly every game,
+  including the handful per season announced after the market closed. It is
+  not always right, though. In 52 completed team-games the listed QB threw no
+  pass: 4 in 2022, 33 in 2024 (e.g. WAS listed Mariota for six games Daniels
+  started), 7 in 2025, 8 so far in 2026 (e.g. SEA listed Drew Lock in weeks 3–6
+  while Sam Darnold started). None were found 2014–2021, 2023 has none, and
+  2015–2023 training has only those 4. `correct_listed_starters`
+  (`src/data/team_games.py`, switched by `FIX_LISTED_STARTERS` in
+  `src/config.py`) swaps in the QB with the most dropbacks. Gated 2026-10-28 on
+  LOSO 2015–2023 with the shipped spec, it **failed**: log loss 0.62233 →
+  0.62249 and Brier 0.21671 → 0.21678, all from 2022, where 3 of the 4
+  corrected games went against the real starter's team. Four games are noise
+  either way. Turned on, it moves the 2026 week-8 predictions by at most 1
+  point. The switch stays off and the test set was not re-scored. With 33
+  wrong rows in 2024, the test's "starter QB changed" segment is less exact
+  than the table above implies. This favours the model slightly in the
   QB-change segment. At serving time the same columns hold nflverse's expected
-  starter; re-run `predict.py` close to kickoff.
+  starter; re-run `predict.py` close to kickoff. That column is not always
+  updated when the starter is hurt (2026: ATL wk 2, WAS wk 3, and PHI wks 7–8
+  listed Jalen Hurts while he was on IR; week 7 was served at 59.8% instead of
+  52.5%). Since 2026-10-28, `predict.py` replaces a listed QB who is ruled out
+  (IR/PUP/inactive roster status, or Out/Doubtful on the final report) with
+  the team's last available starter (`src/starters.py`). It prints a warning
+  and records the QB ids in each log row. Training rows never hit this guard.
 * **Contracts.** A player's contract for season S is the latest signed in or
   before S, so an in-season extension is visible a few weeks early. Labour-market
   data, not betting data; small.

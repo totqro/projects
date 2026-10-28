@@ -21,6 +21,10 @@ loudly.
 Starting QBs come from the nflverse schedule's home_qb_id/away_qb_id; for an
 upcoming game those columns are nflverse's expected starter and are
 updated as news breaks, so re-running closer to kickoff picks up changes.
+That column is not always updated when the starter is hurt, so a listed QB
+who is ruled out (IR/PUP/inactive, or Out/Doubtful on the final report) is
+replaced by the team's last available starter (src/starters.py), with a
+warning. Each logged row records the QB ids it was served with.
 Output is coherent by construction (src/models/coherent.py): margin comes from
 the win probability, only the total from the points model, so the shipped
 probability and shipped points always name the same favourite.
@@ -42,6 +46,7 @@ from src.models.points_model import ServedPointsModel
 from src.models.prediction_log import final_logged, log_predictions
 from src.models.win_model import ServedWinModel, WIN_MODEL_PATH, POINTS_MODEL_PATH
 from src.readiness import ET, backup_allowed, game_readiness, season_complete_before
+from src.starters import serving_starter
 
 
 def main():
@@ -72,6 +77,7 @@ def main():
     target = games[(games.season == args.season) & (games.week == args.week)]
     if target.empty:
         raise SystemExit("no games for that season/week in the schedule")
+    target = check_starters(target, args.season, args.week, inputs)
 
     eng = make_engine(inputs)
     eng.run(games, inputs["team_games"], inputs["qb_games"], context=inputs["context"],
@@ -117,6 +123,8 @@ def main():
         from src.readiness import kickoff_et
         out.append({"game_id": r.game_id, "season": int(r.season), "week": int(r.week),
                     "home_team": r.home_team, "away_team": r.away_team, "kickoff_et": kickoff_et(g).isoformat(),
+                    "home_qb_id": g["home_qb_id"] if isinstance(g["home_qb_id"], str) else None,
+                    "away_qb_id": g["away_qb_id"] if isinstance(g["away_qb_id"], str) else None,
                     "home_win_prob": float(p[i]), "expected_margin": float(pts["margin"][i]),
                     "expected_home_points": float(pts["home"][i]),
                     "expected_away_points": float(pts["away"][i]),
@@ -125,6 +133,25 @@ def main():
     if not args.no_log:
         n = log_predictions(out)
         print(f"logged {n} new prediction rows")
+
+
+def check_starters(target: pd.DataFrame, season: int, week: int, inputs: dict) -> pd.DataFrame:
+    """Swap out listed starters who are ruled out; warn on every change."""
+    ctx, players = inputs["context"], inputs["players"]
+    qb_ids = set(players.loc[players.position == "QB", "gsis_id"].dropna())
+    names = players.dropna(subset=["gsis_id"]).set_index("gsis_id").display_name
+    warn = "::warning::" if os.environ.get("GITHUB_ACTIONS") else "WARNING: "
+    target = target.copy()
+    for idx, g in target.iterrows():
+        for side in ("home", "away"):
+            listed = g[f"{side}_qb_id"]
+            qb, note = serving_starter(listed, g[f"{side}_team"], season, week, inputs["qb_games"],
+                                       ctx["rosters"], ctx["injuries"], qb_ids)
+            if note is None:
+                continue
+            print(f"{warn}{g.game_id} {g[f'{side}_team']}: {names.get(listed, listed)} -> {names.get(qb, qb)}: {note}")
+            target.at[idx, f"{side}_qb_id"] = qb
+    return target
 
 
 if __name__ == "__main__":

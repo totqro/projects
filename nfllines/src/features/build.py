@@ -7,7 +7,7 @@ import pandas as pd
 from src import config as C
 from src.data import nflverse as nv
 from src.data.injury_context import build_context
-from src.data.team_games import normalize_games, build_team_games, build_qb_games
+from src.data.team_games import normalize_games, build_team_games, build_qb_games, correct_listed_starters
 from src.features.efficiency import EWMATracker
 from src.features.engine import FeatureEngine
 from src.features.injuries import InjuryTracker
@@ -18,13 +18,15 @@ ID_COLUMNS = ["game_id", "season", "week", "game_type", "home_team", "away_team"
 TARGET_COLUMNS = ["home_score", "away_score", "home_win", "margin", "total", "tie"]
 
 
-def load_inputs(seasons):
+def load_inputs(seasons, fix_starters: bool = C.FIX_LISTED_STARTERS):
     """Everything the engine walks over, with market columns already gone."""
     games_all = nv.load_games(seasons)
     market = games_all[["game_id"] + [c for c in nv.MARKET_COLUMNS if c in games_all.columns]].copy()
     games = normalize_games(nv.feature_frame(games_all))
     tg = build_team_games(games[games.home_score.notna()])
     qbg = build_qb_games(games[games.home_score.notna()])
+    if fix_starters:
+        games, _ = correct_listed_starters(games, qbg)
     players = nv.load_players()
     snaps = nv.cached_seasons("snaps", nv.load_snap_counts, seasons)
     rosters = nv.cached_seasons("rosters_weekly", nv.load_rosters_weekly, seasons)

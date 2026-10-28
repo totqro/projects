@@ -132,6 +132,30 @@ def build_qb_games(games: pd.DataFrame, pbp: pd.DataFrame | None = None) -> pd.D
         ["season", "week", "game_id", "team", "qb_id"], kind="mergesort").reset_index(drop=True)
 
 
+
+def correct_listed_starters(games: pd.DataFrame, qb_games: pd.DataFrame) -> tuple[pd.DataFrame, int]:
+    """Completed games only: where the schedule's home/away_qb_id threw no
+    pass for that team, replace it with the QB who had the most dropbacks.
+
+    The schedule column is meant to be the actual starter, but it is not
+    always (52 team-games 2022-2026, 33 of them in 2024: e.g. WAS listed
+    Mariota for weeks Daniels started). A listed QB who started and was
+    hurt mid-game still threw a pass and is kept: he was the starter.
+    Upcoming games are untouched (serving uses src/starters.py)."""
+    g = games.copy()
+    main = (qb_games.sort_values(["dropbacks", "qb_id"], ascending=[False, True], kind="mergesort")
+            .drop_duplicates(["game_id", "team"]).set_index(["game_id", "team"]).qb_id)
+    played = set(zip(qb_games.game_id, qb_games.team, qb_games.qb_id))
+    n = 0
+    for side in ("home", "away"):
+        keys = list(zip(g.game_id, g[f"{side}_team"]))
+        actual = pd.Series([main.get(k) for k in keys], index=g.index)
+        wrong = g.home_score.notna() & actual.notna() & pd.Series(
+            [(gid, t, q) not in played for (gid, t), q in zip(keys, g[f"{side}_qb_id"])], index=g.index)
+        g.loc[wrong, f"{side}_qb_id"] = actual[wrong]
+        n += int(wrong.sum())
+    return g, n
+
 if __name__ == "__main__":
     g = nv.load_games(range(2014, 2026))
     tg = build_team_games(g)
