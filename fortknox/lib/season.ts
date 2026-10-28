@@ -224,7 +224,7 @@ export function lensQuads(rows: StandingRow[], key: string): Map<string, Quad> {
   }
   return out;
 }
-export const QCOL: Record<Quad, string> = { hh: "var(--good)", lh: "var(--warn)", hl: "var(--alt)", ll: "var(--bad)" };
+export const QCOL: Record<Quad, string> = { hh: "var(--good)", lh: "var(--mixed)", hl: "var(--alt)", ll: "var(--bad)" };
 
 /** On-ice 5v5 xG share minus his team's with him on the bench (a fraction;
  *  null for seasons published without off-ice numbers). */
