@@ -34,6 +34,7 @@ const SKATER: Column<LogRow>[] = [
   { k: "xga", label: "xGA", get: g => n(g.line.xga), cell: g => f2(n(g.line.xga)), asc: true, tip: "xga" },
   { k: "ga", label: "GA", get: g => n(g.line.ga), asc: true, tip: "gaOn" },
   { k: "xgs", label: "xG share", get: g => share(n(g.line.xgf), n(g.line.xga)), cell: g => pct(share(n(g.line.xgf), n(g.line.xga)), 0), tip: "xgs" },
+  { k: "xgs5", label: "5v5 xG share", get: g => share(n(g.line.xgf5), n(g.line.xga5)), cell: g => pct(share(n(g.line.xgf5), n(g.line.xga5)), 0), tip: "xgs5" },
   { k: "gs", label: "G share", get: g => share(n(g.line.gf), n(g.line.ga)), cell: g => pct(share(n(g.line.gf), n(g.line.ga)), 0), tip: "gs" },
 ];
 const GOALIE: Column<LogRow>[] = [

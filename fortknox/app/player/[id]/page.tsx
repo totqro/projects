@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 /** Only the keys the game log shows, so each page stays small (the name and
  *  team would repeat on every row). */
-const SK_KEYS = ["toi_all", "g", "a", "ixg", "att", "xgf", "xga", "gf", "ga"] as const;
+const SK_KEYS = ["toi_all", "g", "a", "ixg", "att", "xgf", "xga", "gf", "ga", "xgf5", "xga5", "gf5", "ga5"] as const;
 const GK_KEYS = ["toi_all", "sa", "ga_", "xga_"] as const;
 function trim(line: GamePlayer, goalie: boolean): GamePlayer {
   const out = {} as GamePlayer;
