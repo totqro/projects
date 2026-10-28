@@ -6,8 +6,10 @@
 // until morning. Never fails the build: on any error the file is removed
 // and the strip doesn't show.
 //
-// --sig prints a one-line summary of the slate (date and each game's state)
-// instead, for the workflow to compare against its last run.
+// --sig prints a one-line summary of the slate (date, and each game's state
+// and score) instead, for the workflow to compare against its last run: any
+// change, a goal included, redeploys, so the strip's scorebugs keep up even
+// when the live sheets don't (pipeline/nhl_live.py).
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -43,7 +45,7 @@ async function slate() {
 
 if (process.argv[1] === fileURLToPath(import.meta.url) && process.argv[2] === "--sig") {
   const { date, games } = await slate();
-  console.log([date, ...games.map(g => `${g.id}:${g.state}`)].join(" "));
+  console.log([date, ...games.map(g => `${g.id}:${g.state}:${g.away.score ?? ""}-${g.home.score ?? ""}`)].join(" "));
 } else if (process.argv[1] === fileURLToPath(import.meta.url)) {
   slate().then(({ date, games }) => {
     fs.writeFileSync(OUT, JSON.stringify({ date, fetched: new Date().toISOString(), games }));

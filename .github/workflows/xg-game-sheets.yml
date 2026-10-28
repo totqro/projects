@@ -145,7 +145,7 @@ jobs:
 
       # The home page's "Tonight" strip is fetched at deploy time
       # (fortknox/scripts/fetch-tonight.mjs), so redeploy when the slate
-      # changes even with no new sheets: a new day, a puck drop, a final. The
+      # changes even with no new sheets: a new day, a puck drop, a goal, a final. The
       # last slate seen is kept in the cache; an NHL API error changes nothing.
       - name: Restore last slate
         uses: actions/cache/restore@v4
