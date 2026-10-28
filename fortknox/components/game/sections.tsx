@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { f2, fmtDate, ORD } from "@/lib/format";
-import { periods, recap, stars } from "@/lib/game";
+import { liveStatus, periods, recap, stars } from "@/lib/game";
 import type { Sheet } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -28,35 +29,37 @@ export function ScoreCard({ G }: { G: Sheet }) {
     ["Shot attempts", A.att, H.att],
     ["Shots on goal", A.sog, H.sog],
   ];
-  const aWon = A.score > H.score;
+  // Leader, while a game is on; level is neither.
+  const aWon = A.score > H.score, hWon = H.score > A.score;
+  const team = (ab: string) => `/team/${String(G.id).slice(0, 4)}/${ab}`;
   return (
     <Card className="slot-plate mb-4">
       <CardContent className="p-5">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <div className="flex items-center gap-3">
+          <Link href={team(A.abbrev)} className="group flex items-center gap-3 justify-self-start rounded-lg">
             <TeamLogo team={A.abbrev} size={64} className="max-sm:hidden" />
             <div>
-              <div className="font-[family-name:var(--font-display)] text-[clamp(22px,3vw,30px)] font-bold tracking-[-0.02em] text-away">{A.abbrev}</div>
+              <div className="font-[family-name:var(--font-display)] text-[clamp(22px,3vw,30px)] font-bold tracking-[-0.02em] text-away underline-offset-4 group-hover:underline">{A.abbrev}</div>
               <div className="text-xs text-muted-foreground">{A.name}, away</div>
             </div>
-          </div>
+          </Link>
           <div className="text-center">
             <div className="tabular font-[family-name:var(--font-display)] text-[clamp(32px,5vw,48px)] font-bold leading-none tracking-[-0.02em]">
               <span className={cn(aWon ? "brand-text" : "text-muted-foreground")}>{A.score}</span>
               <span className="mx-2 text-muted-foreground">&ndash;</span>
-              <span className={cn(!aWon ? "brand-text" : "text-muted-foreground")}>{H.score}</span>
+              <span className={cn(hWon ? "brand-text" : "text-muted-foreground")}>{H.score}</span>
             </div>
             <div className="mt-1.5 text-xs text-muted-foreground">
-              <span className="font-medium text-brand">{END[G.end] ?? G.end}</span>, {fmtDate(G.date)}{G.venue ? `, ${G.venue}` : ""}
+              <span className="font-medium text-brand">{G.live ? liveStatus(G.live, G.end) : END[G.end] ?? G.end}</span>, {fmtDate(G.date)}{G.venue ? `, ${G.venue}` : ""}
             </div>
           </div>
-          <div className="flex items-center justify-end gap-3 text-right">
+          <Link href={team(H.abbrev)} className="group flex items-center justify-end gap-3 justify-self-end rounded-lg text-right">
             <div>
-              <div className="font-[family-name:var(--font-display)] text-[clamp(22px,3vw,30px)] font-bold tracking-[-0.02em] text-home">{H.abbrev}</div>
+              <div className="font-[family-name:var(--font-display)] text-[clamp(22px,3vw,30px)] font-bold tracking-[-0.02em] text-home underline-offset-4 group-hover:underline">{H.abbrev}</div>
               <div className="text-xs text-muted-foreground">{H.name}, home</div>
             </div>
             <TeamLogo team={H.abbrev} size={64} className="max-sm:hidden" />
-          </div>
+          </Link>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-4">
           {tiles.map(([k, a, h]) => (

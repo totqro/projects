@@ -73,13 +73,15 @@ function Chances({ rows, k }: { rows: LogRow[]; k: number }) {
   );
 }
 
-/** His on-ice xG share and goal share, all situations, over trailing windows. */
-function OnIce({ rows, k }: { rows: LogRow[]; k: number }) {
+/** His on-ice xG share and goal share over trailing windows, in all
+ *  situations or at 5v5 only (where a penalty killer isn't marked down for
+ *  the short-handed minutes his coach gives him). */
+function OnIce({ rows, k, five }: { rows: LogRow[]; k: number; five: boolean }) {
   const H = 150, top = 10, base = H - 14;
   const Y = (v: number) => base - v * (base - top);
   const X = xAt(rows.length);
-  const xf = trailing(rows, k, g => n(g.line.xgf)), xa = trailing(rows, k, g => n(g.line.xga));
-  const gf = trailing(rows, k, g => n(g.line.gf)), ga = trailing(rows, k, g => n(g.line.ga));
+  const xf = trailing(rows, k, g => n(five ? g.line.xgf5 : g.line.xgf)), xa = trailing(rows, k, g => n(five ? g.line.xga5 : g.line.xga));
+  const gf = trailing(rows, k, g => n(five ? g.line.gf5 : g.line.gf)), ga = trailing(rows, k, g => n(five ? g.line.ga5 : g.line.ga));
   const xs = xf.map((f, i) => share(f, xa[i])), gs = gf.map((f, i) => share(f, ga[i]));
   return (
     <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="On-ice expected goal share over recent games" className="block h-auto w-full text-[11px]">
@@ -92,7 +94,7 @@ function OnIce({ rows, k }: { rows: LogRow[]; k: number }) {
       <text x={12} y={(base + top) / 2} transform={`rotate(-90 12 ${(base + top) / 2})`} textAnchor="middle" fill="var(--muted-foreground)">On ice</text>
       {rows.map((g, i) => (
         <circle key={g.id} cx={X(i)} cy={Y(xs[i] ?? 0.5)} r={2.5} fill="var(--home)">
-          <title>{`Through ${label(g)}: xG share ${xs[i] == null ? "–" : (xs[i]! * 100).toFixed(0) + "%"}, goal share ${gs[i] == null ? "–" : (gs[i]! * 100).toFixed(0) + "%"} over the last ${Math.min(k, i + 1)} games`}</title>
+          <title>{`Through ${label(g)}: ${five ? "5v5 " : ""}xG share ${xs[i] == null ? "–" : (xs[i]! * 100).toFixed(0) + "%"}, goal share ${gs[i] == null ? "–" : (gs[i]! * 100).toFixed(0) + "%"} over the last ${Math.min(k, i + 1)} games`}</title>
         </circle>
       ))}
       <polyline fill="none" stroke="var(--home)" strokeWidth={1.75} points={pts(xs, X, Y)} />
@@ -137,9 +139,12 @@ function Saves({ rows }: { rows: LogRow[] }) {
 }
 
 const SPANS: [string, string][] = [["5", "5 games"], ["10", "10 games"]];
+const STATES: [string, string][] = [["all", "All situations"], ["5v5", "5v5"]];
 
 export function PlayerTrend({ rows, goalie }: { rows: LogRow[]; goalie: boolean }) {
   const [span, setSpan] = React.useState("5");
+  const [state, setState] = React.useState("all");
+  const five = state === "5v5";
   const k = +span;
   if (goalie) return (
     <>
@@ -157,8 +162,14 @@ export function PlayerTrend({ rows, goalie }: { rows: LogRow[]; goalie: boolean 
       )}
       <Chances rows={rows} k={k} />
       <Note className="mb-4 mt-1 text-xs">Bars are his ixG in each game, a dot per goal. The solid line is his ixG per game over the last {k}; the dashed line, his goals per game. Dashed above solid is finishing above his chances. Click a bar to open the game.</Note>
-      <OnIce rows={rows} k={k} />
-      <Note className="mt-1 text-xs">His team&apos;s share of expected goals (solid) and of goals (dashed) with him on the ice, all situations, over the last {k} games.</Note>
+      <div className="mb-2 flex justify-end">
+        <Segmented label="On-ice situations" value={state} onChange={setState} options={STATES} />
+      </div>
+      <OnIce rows={rows} k={k} five={five} />
+      <Note className="mt-1 text-xs">
+        His team&apos;s share of expected goals (solid) and of goals (dashed) with him on the ice, {five ? "at 5-on-5" : "all situations"}, over the last {k} games.
+        {!five && " Penalty killers read low here: switch to 5v5 to leave out the short-handed minutes."}
+      </Note>
     </>
   );
 }

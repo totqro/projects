@@ -28,6 +28,10 @@ export interface GameSummary {
   /** Who deserved to win, from the shots (lib/deserve.ts). Not in
    *  index.json: added at build time by seasonGames(). */
   dv?: import("./deserve").Deserved;
+  /** The home team's deserve-to-win (lib/deserve.ts), the one number of dv
+   *  the games lists send to the browser. Added at build time by
+   *  boxScores(). */
+  dw?: number;
 }
 
 export interface SeasonIndex {
@@ -92,6 +96,10 @@ export interface SkaterSeason {
   sog: number;
   ixg: number;
   gax: number;
+  /** The GAx his own finishing history expects on this season's shots
+   *  (pipeline/fit_shooter_baseline.py). Missing from seasons built without
+   *  a baseline. */
+  gax_exp?: number;
   ixg5: number;
   g5: number;
   xgf5: number;
@@ -238,6 +246,24 @@ export interface RawSheet {
   shot_keys: string[];
   shots: unknown[][];
   players: GamePlayer[];
+  /** Only on a game scored before its official sheet (pipeline/nhl_live.py). */
+  live?: LiveInfo;
+}
+
+/** Where a game scored so far stood when it was scored. */
+export interface LiveInfo {
+  /** final: over, with the official sheet still to come. */
+  state: "live" | "final";
+  period: number | null;
+  /** REG, OT or SO. */
+  period_type: string | null;
+  /** Time left in the period, "mm:ss". */
+  clock: string | null;
+  intermission: boolean;
+  /** When it was scored, ISO UTC. */
+  updated: string;
+  /** Whether the shift chart was in, so ice time and on-ice numbers are too. */
+  shifts: boolean;
 }
 
 /** A game sheet with its shots unpacked into objects. */

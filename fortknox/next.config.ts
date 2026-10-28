@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
   // next, so a deploy only uploads the games and pages that actually changed
   // (asset filenames are content-hashed already).
   generateBuildId: async () => "fortknox",
+  // The repo root has its own package-lock.json (the other projects'); the
+  // site's packages are here.
+  turbopack: { root: __dirname },
 };
 
 export default nextConfig;

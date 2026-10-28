@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { linesFile, seasonGames, sheet, teamSeasons, teamsFile } from "@/lib/data";
 import { ordinal, seasonLabel } from "@/lib/format";
 import { standings, teamGames } from "@/lib/season";
 import { TEAMS, teamName } from "@/lib/teams";
 import { PageHead } from "@/components/site/page-head";
+import { BackLink } from "@/components/site/trail";
 import { TeamLogo } from "@/components/site/team-logo";
 import { TeamView, type LogGame, type TeamData } from "@/components/teams/team-view";
 import { packLines, type Line } from "@/lib/pack";
@@ -55,7 +55,7 @@ export default async function Team({ params }: Props) {
   const d: TeamData = { season, team: ab, name: teamName(ab), standingLine, games: tg, lines: packLines(lines), units };
   return (
     <>
-      <Link href={`/teams/${season}`} className="mb-4 inline-block text-sm text-muted-foreground hover:text-foreground">&larr; All teams</Link>
+      <BackLink key={`${season}-${ab}`} href={`/teams/${season}`} label="All teams" className="mb-4 inline-block max-w-full truncate align-top text-sm text-muted-foreground hover:text-foreground" />
       <PageHead title={<span className="inline-flex items-center gap-3"><TeamLogo team={ab} size={56} />{teamName(ab)}</span>} sub={standingLine ?? seasonLabel(season)} />
       <TeamView d={d} />
     </>

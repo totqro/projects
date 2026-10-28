@@ -2,7 +2,8 @@ name: xG Game Sheets
 
 # After every NHL game: fetch newly final games, score every shot with the
 # full-data xG model, rebuild the season's game sheets and team/player tables,
-# and redeploy. Most runs find nothing new and stop after the fetch.
+# and redeploy. While games are on, it also scores them so far (live/), so
+# each run during a game redeploys. Quiet runs change nothing.
 #
 # The output is not committed to main (a season is ~1,400 files, rewritten
 # nightly). It is force-pushed as a single commit to the orphan branch
@@ -92,11 +93,9 @@ jobs:
           path: fortknox/pipeline/cache/nhl/${{ steps.season.outputs.season }}
           key: nhl-raw-${{ steps.season.outputs.season }}-${{ github.run_id }}
 
-      # Start from what's published so earlier seasons stay on the site; only
-      # this season's folder is rebuilt.
-      - name: Build game sheets
-        if: steps.fetch.outputs.changed == 'true'
-        working-directory: fortknox/pipeline
+      # Start from what's published so earlier seasons stay on the site (and
+      # tonight's live games can be checked against the sheets already out).
+      - name: Load published sheets
         run: |
           # A clone, not a fetch into the checkout: a quiet fetch that failed
           # here once dropped every earlier season from the site. If the branch
@@ -111,11 +110,28 @@ jobs:
             mkdir -p "$RUNNER_TEMP/sheets"
             echo "No xg-sheets-data branch yet; starting empty."
           fi
+
+      # Only this season's folder is rebuilt.
+      - name: Build game sheets
+        if: steps.fetch.outputs.changed == 'true'
+        working-directory: fortknox/pipeline
+        run: |
           rm -rf "$RUNNER_TEMP/sheets/${{ steps.season.outputs.season }}"
           python nhl_sheets.py --season ${{ steps.season.outputs.season }} --no-fetch --out "$RUNNER_TEMP/sheets"
 
+      # Tonight's games in progress, and finished ones still waiting on their
+      # official sheet, scored so far into live/ (nhl_live.py). After the
+      # build, so a game that just got its sheet leaves live/ in the same run.
+      # Never holds up the rest: on any error live/ is left as published.
+      - name: Score live games
+        id: live
+        if: github.event.inputs.season == ''
+        continue-on-error: true
+        working-directory: fortknox/pipeline
+        run: python nhl_live.py --sheets "$RUNNER_TEMP/sheets"
+
       - name: Publish to xg-sheets-data
-        if: steps.fetch.outputs.changed == 'true'
+        if: steps.fetch.outputs.changed == 'true' || steps.live.outputs.changed == 'true'
         run: |
           cd "$RUNNER_TEMP/sheets"
           test -s seasons.json
@@ -129,7 +145,7 @@ jobs:
 
       # The home page's "Tonight" strip is fetched at deploy time
       # (fortknox/scripts/fetch-tonight.mjs), so redeploy when the slate
-      # changes even with no new sheets: a new day, a puck drop, a final. The
+      # changes even with no new sheets: a new day, a puck drop, a goal, a final. The
       # last slate seen is kept in the cache; an NHL API error changes nothing.
       - name: Restore last slate
         uses: actions/cache/restore@v4
@@ -161,7 +177,7 @@ jobs:
       # A push made with GITHUB_TOKEN doesn't trigger other workflows, but a
       # workflow_dispatch does.
       - name: Redeploy High Slot
-        if: steps.fetch.outputs.changed == 'true' || steps.slate.outputs.changed == 'true'
+        if: steps.fetch.outputs.changed == 'true' || steps.slate.outputs.changed == 'true' || steps.live.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run fortknox-deploy.yml --ref main

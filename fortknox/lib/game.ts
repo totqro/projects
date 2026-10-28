@@ -2,7 +2,7 @@
 // lists the game page shows. Ported from xgcalc/web/sheets.html.
 import { f2, ORD, signed, toi } from "./format";
 import { nickname, shotNoun } from "./teams";
-import type { GamePlayer, Sheet, SheetSide, Shot } from "./types";
+import type { GamePlayer, LiveInfo, Sheet, SheetSide, Shot } from "./types";
 
 export const pname = (G: Sheet, id: number | null) => G.players.find(p => p.id === id)?.name ?? "Unknown";
 export const lastName = (G: Sheet, id: number | null) => {
@@ -48,7 +48,41 @@ export const bestChances = (G: Sheet, n: number) =>
   G.shots.filter(s => s.ev !== "BLOCK" && s.sit !== "EN_AGAINST")
     .sort((a, b) => xg2(b) - xg2(a) || +(b.ev === "GOAL") - +(a.ev === "GOAL") || b.xg - a.xg).slice(0, n);
 
+/** Where a game scored so far stands: "2nd period, 12:34 left", "2nd
+ *  intermission", "Final/OT". */
+export function liveStatus(L: LiveInfo, end: string) {
+  if (L.state === "final") return end === "REG" ? "Final" : `Final/${end}`;
+  if (L.period_type === "SO") return "Shootout";
+  const p = L.period ?? 1;
+  if (L.intermission) return `${ORD(p)} intermission`;
+  return `${p <= 3 ? `${ORD(p)} period` : ORD(p)}, ${L.clock ?? "–"} left`;
+}
+
+function bestChance(G: Sheet) {
+  const best = bestChances(G, 1)[0];
+  if (!best) return null;
+  const how = best.ev === "GOAL" ? ", and it went in" : best.ev === "SHOT" ? `, stopped by ${pname(G, best.goalie)}` : ", and it missed";
+  return `The best chance${G.live?.state === "live" ? " so far" : ""} was ${pname(G, best.shooter)}'s ${shotNoun(best.type)} (${best.xg.toFixed(2)} xG) at ${toi(best.t)} of the ${ORD(best.p)}${how}.`;
+}
+
+/** A game in progress: the score and the chances so far. */
+function liveRecap(G: Sheet) {
+  const H = G.home, A = G.away;
+  const [lead, trail] = H.score >= A.score ? [H, A] : [A, H];
+  const headline = lead.score === trail.score
+    ? `${nickname(A.name)} and ${nickname(H.name)} tied ${A.score}–${H.score}`
+    : `${nickname(lead.name)} lead ${nickname(trail.name)} ${lead.score}–${trail.score}`;
+  const [hi, lo] = H.xg >= A.xg ? [H, A] : [A, H];
+  const s = [Math.abs(hi.xg - lo.xg) < 0.35
+    ? `So far it's close to even on chances: ${f2(hi.xg)} to ${f2(lo.xg)} in expected goals.`
+    : `So far the ${nickname(hi.name)} have had the better of the chances, ${f2(hi.xg)} to ${f2(lo.xg)} in expected goals${fiveOnFive(hi, lo)}.`];
+  const best = bestChance(G);
+  if (best) s.push(best);
+  return { headline, text: s.join(" ") };
+}
+
 export function recap(G: Sheet) {
+  if (G.live?.state === "live") return liveRecap(G);
   const H = G.home, A = G.away, w = H.score > A.score ? H : A, l = w === H ? A : H;
   const margin = w.score - l.score;
   const verb = G.end === "SO" ? "win a shootout over" : G.end === "OT" ? "beat"
@@ -61,11 +95,8 @@ export function recap(G: Sheet) {
     s.push(`The ${nickname(w.name)} earned it, out-chancing the ${nickname(l.name)} ${f2(w.xg)} to ${f2(l.xg)} in expected goals${fiveOnFive(w, l)}.`);
   else
     s.push(`The ${nickname(w.name)} won despite being out-chanced ${f2(l.xg)} to ${f2(w.xg)} in expected goals${l.att > w.att ? `, and out-attempted ${l.att} to ${w.att}` : ""}.`);
-  const best = bestChances(G, 1)[0];
-  if (best) {
-    const how = best.ev === "GOAL" ? ", and it went in" : best.ev === "SHOT" ? `, stopped by ${pname(G, best.goalie)}` : ", and it missed";
-    s.push(`The best chance was ${pname(G, best.shooter)}'s ${shotNoun(best.type)} (${best.xg.toFixed(2)} xG) at ${toi(best.t)} of the ${ORD(best.p)}${how}.`);
-  }
+  const best = bestChance(G);
+  if (best) s.push(best);
   const gks = G.players.filter(p => p.pos === "G" && p.sa).map(p => ({ p, gsax: gsaxOf(p) })).sort((a, b) => b.gsax - a.gsax);
   if (gks[0] && gks[0].gsax > 0.75) {
     const sv = saves(G, gks[0].p.id);

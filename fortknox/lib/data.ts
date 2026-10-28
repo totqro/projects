@@ -29,6 +29,10 @@ export function seasonGames(s: number): GameSummary[] {
   if (!withDv.has(s)) withDv.set(s, seasonIndex(s).games.map(g => ({ ...g, dv: deserved(sheet(g.id).shots, g.home) })));
   return withDv.get(s)!;
 }
+/** The season's games as the box scores draw them (components/games/games-view.tsx
+ *  MiniBox): the index rows with each game's deserve-to-win. */
+export const boxScores = (s: number): GameSummary[] =>
+  seasonGames(s).map(({ dv, ...g }) => ({ ...g, dw: dv ? Math.round(dv.hwin * 1000) / 1000 : undefined }));
 export const teamsFile = (s: number) => read<TeamsFile>(`${s}/teams.json`);
 export const playersFile = (s: number) => read<PlayersFile>(`${s}/players.json`);
 /** Lines, pairs and WOWY; null for seasons published before lines.json existed. */
@@ -42,6 +46,12 @@ export const tonight = () => (fs.existsSync(path.join(ROOT, "tonight.json")) ? r
 export const seasonOfGame = (id: number | string) => +String(id).slice(0, 4);
 
 export const rawSheet = (id: number | string) => read<RawSheet>(`${seasonOfGame(id)}/games/${id}.json`);
+
+/** Tonight's games scored so far, ahead of their official sheets
+ *  (pipeline/nhl_live.py); none when the deploy carried no live/ folder. */
+export const liveIds = (): number[] =>
+  fs.existsSync(path.join(ROOT, "live")) ? fs.readdirSync(path.join(ROOT, "live")).filter(f => f.endsWith(".json")).map(f => +f.slice(0, -5)) : [];
+export const liveSheet = (id: number | string) => read<RawSheet>(`live/${id}.json`);
 export const sheet = (id: number | string): Sheet => unpack(rawSheet(id));
 
 /** Every game id published for a season. */

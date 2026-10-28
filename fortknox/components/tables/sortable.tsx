@@ -24,6 +24,10 @@ export interface Column<R> {
   pin?: boolean;
   /** Unit of the raw sort value, named in the CSV header ("sec"). */
   unit?: string;
+  /** Hidden on phone-width screens (.fk-wide in globals.css). */
+  wide?: boolean;
+  /** Hidden below computer width until the table is expanded (.fk-more). */
+  more?: boolean;
   className?: string;
 }
 
@@ -72,6 +76,8 @@ interface Props<R> {
   className?: string;
   /** File name (no extension) for a "Download CSV" link under the table. */
   csv?: string;
+  /** Column keys left out of the view; the CSV still has every column. */
+  hide?: ReadonlySet<string>;
 }
 
 /** The sorted rows as CSV: every column with a sort value, raw numbers. */
@@ -97,12 +103,13 @@ function download(name: string, text: string) {
  *  Body rows are plain <tr>/<td> styled once by .fk-table (globals.css): a
  *  season table has thousands of cells, and per-cell utility classes made
  *  each static page several times larger. */
-export function SortTable<R>({ rows, cols, initial, rowKey, rowProps, naturalKey, limit, className, csv }: Props<R>) {
+export function SortTable<R>({ rows, cols: all, initial, rowKey, rowProps, naturalKey, limit, className, csv, hide }: Props<R>) {
+  const cols = React.useMemo(() => (hide ? all.filter(c => !hide.has(c.k)) : all), [all, hide]);
   const [st, setSt] = React.useState(initial);
   const sorted = React.useMemo(() => {
     if (naturalKey && st.sort === naturalKey) return st.asc ? rows : rows.slice().reverse();
-    return sortRows(rows, cols, st);
-  }, [rows, cols, st, naturalKey]);
+    return sortRows(rows, all, st);
+  }, [rows, all, st, naturalKey]);
   const shown = limit ? sorted.slice(0, limit) : sorted;
   const click = (c: Column<R>) => {
     if (!c.get && c.k !== naturalKey) return;
@@ -119,7 +126,7 @@ export function SortTable<R>({ rows, cols, initial, rowKey, rowProps, naturalKey
               <TipHead key={c.k} tip={c.tip}
                 aria-sort={on ? (st.asc ? "ascending" : "descending") : undefined}
                 onClick={() => click(c)}
-                className={cn(c.l && "text-left", c.pin && "pin", sortable && "cursor-pointer select-none hover:text-foreground", on && "text-foreground")}>
+                className={cn(c.l && "text-left", c.pin && "pin", c.wide && "fk-wide", c.more && "fk-more", sortable && "cursor-pointer select-none hover:text-foreground", on && "text-foreground")}>
                 {c.label}{on ? (st.asc ? " ▴" : " ▾") : ""}
               </TipHead>
             );
@@ -130,7 +137,7 @@ export function SortTable<R>({ rows, cols, initial, rowKey, rowProps, naturalKey
         {shown.map((r, i) => (
           <tr key={rowKey(r)} {...rowProps?.(r)}>
             {cols.map(c => (
-              <td key={c.k} className={cn(c.l && "l", c.pin && "pin", c.className) || undefined}>
+              <td key={c.k} className={cn(c.l && "l", c.pin && "pin", c.wide && "fk-wide", c.more && "fk-more", c.className) || undefined}>
                 {c.cell ? c.cell(r, i) : String(c.get?.(r) ?? "\u2013")}
               </td>
             ))}
@@ -144,7 +151,7 @@ export function SortTable<R>({ rows, cols, initial, rowKey, rowProps, naturalKey
     <>
       {table}
       <div className="mt-1.5 flex justify-end">
-        <button type="button" onClick={() => download(csv, toCsv(sorted, cols))}
+        <button type="button" onClick={() => download(csv, toCsv(sorted, all))}
           className="rounded px-1.5 py-0.5 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
           Download CSV
         </button>

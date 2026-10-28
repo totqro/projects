@@ -42,6 +42,8 @@ from src.data.nhl_toi import STATES, game_toi  # noqa: E402
 from src.data.nhl_units import game_units  # noqa: E402
 
 MODEL_PATH = ROOT / "data" / "nhl_xg_model.joblib"
+# Each shooter's finishing baseline by season (fit_shooter_baseline.py).
+BASELINE_PATH = ROOT / "data" / "shooter_baseline.json"
 CACHE = nhl_backfill.CACHE
 OUT = ROOT.parent / "data"   # fortknox/data, where the site build reads the sheets
 
@@ -68,11 +70,22 @@ def r1(v):
     return round(float(v), 3)
 
 
-def build(season, root, fetch):
+def shooter_baseline(season):
+    """GAx per unblocked shot each shooter's history says to expect in
+    `season`, by player id; None for a season the file doesn't cover."""
+    if not BASELINE_PATH.exists():
+        return None
+    s = json.loads(BASELINE_PATH.read_text())["seasons"].get(str(season))
+    return {int(k): v for k, v in s["rate"].items()} if s else None
+
+
+def build(season, root, fetch, cache=None):
+    """`cache` replaces the raw-feed cache (nhl_live.py points it at tonight's
+    games in progress)."""
     out = root / str(season)
     if fetch:
         nhl_backfill.backfill_season(season, workers=6, refresh_bios=True)
-    d = CACHE / str(season)
+    d = (cache or CACHE) / str(season)
     bios = load_bios(d)
     model = joblib.load(MODEL_PATH)
 
@@ -89,6 +102,12 @@ def build(season, root, fetch):
     shots["xg"] = 0.0
     shots.loc[unblocked, "xg"] = model.predict(shots[unblocked])
     by_game = {g: part for g, part in shots.groupby("game_id")}
+    # The shots a finishing baseline counts (unblocked, not at an empty net),
+    # per shooter and phase, for each skater's expected GAx.
+    fin = shots[unblocked & (shots.situation != "EN_AGAINST") & shots.shooter_id.notna()]
+    fin_shots = {ph: fin[fin.is_playoff == (ph == "playoff")].groupby("shooter_id").size().to_dict()
+                 for ph in ("regular", "playoff")}
+    base = shooter_baseline(season)
 
     (out / "games").mkdir(parents=True, exist_ok=True)
     index = []
@@ -250,7 +269,10 @@ def build(season, root, fetch):
     write(out / "teams.json", {"season": season, "updated": stamp, **{
         ph: [team_row(k, v) for k, v in sorted(teams_by[ph].items())] for ph in teams_by}})
     write(out / "players.json", {"season": season, "updated": stamp, **{
-        ph: {"skaters": [skater_row(pid, info[pid], v) for pid, v in skaters_by[ph].items()],
+        ph: {"skaters": [{**skater_row(pid, info[pid], v),
+                          # The GAx his own history expects on this season's shots.
+                          **({"gax_exp": round(base.get(pid, 0.0) * fin_shots[ph].get(pid, 0), 2)} if base else {})}
+                         for pid, v in skaters_by[ph].items()],
              "goalies": [goalie_row(pid, info[pid], v) for pid, v in goalies_by[ph].items() if v["sa"]]}
         for ph in skaters_by}})
     write(out / "lines.json", {"season": season, "updated": stamp, **{

@@ -22,8 +22,8 @@ function phaseData(season: number, ph: Phase): RegPhase {
   return {
     teams: standings(teamsFile(season)[ph], seasonIndex(season).games, ph)
       .map(({ team, gp, pts, xgf, xga, gf_x, ga_x, gax, gsax }) => ({ team, gp, pts, xgf, xga, gf_x, ga_x, gax, gsax })),
-    skaters: P.skaters.map(({ id, name, team, pos, gp, toi5, g, ixg, gax, att, sog, xgf5, xga5, gf5, ga5 }) =>
-      ({ id, name, team, pos, gp, toi5, g, ixg, gax, att, sog, xgf5, xga5, gf5, ga5 })),
+    skaters: P.skaters.map(({ id, name, team, pos, gp, toi5, g, ixg, gax, gax_exp, att, sog, xgf5, xga5, gf5, ga5 }) =>
+      ({ id, name, team, pos, gp, toi5, g, ixg, gax, gax_exp, att, sog, xgf5, xga5, gf5, ga5 })),
     goalies: P.goalies.map(({ id, name, team, gp, toi, sa, ga, xga, gsax, sv_pct, xsv_pct }) =>
       ({ id, name, team, gp, toi, sa, ga, xga, gsax, sv_pct, xsv_pct })),
   };

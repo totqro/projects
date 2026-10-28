@@ -14,6 +14,7 @@
   --color-away: var(--away);
   --color-good: var(--good);
   --color-bad: var(--bad);
+  --color-alt: var(--alt);
   --color-warn: var(--warn);
   --color-brand: var(--brand);
   --color-brand-dim: var(--brand-dim);
@@ -262,12 +263,16 @@ html.dark {
   --pill-gradient: linear-gradient(180deg, oklch(0.33 0.04 252) 0%, oklch(0.28 0.036 252) 100%);
   --pill-gradient-hover: linear-gradient(180deg, oklch(0.36 0.045 252) 0%, oklch(0.3 0.04 252) 100%);
 
-  /* Data: the away team is red, the home team periwinkle. */
+  /* Data: the away team is red, the home team periwinkle, good/bad
+     green/red. The lens quadrants are good, warn (via mixed), home (via
+     alt) and bad. html.cvd swaps in a colour-blind-safe set below. */
   --home: oklch(0.8 0.09 265);
   --away: oklch(0.72 0.17 30);
   --good: oklch(0.78 0.15 145);
   --bad: oklch(0.66 0.19 25);
   --warn: oklch(0.8 0.13 80);
+  --alt: var(--home);
+  --mixed: var(--warn);
   /* The accent: ice cyan, and the text that sits on it */
   --brand: oklch(0.8 0.09 210);
   --brand-dim: oklch(0.64 0.09 215);
@@ -325,6 +330,8 @@ html.light {
   --good: oklch(0.52 0.14 150);
   --bad: oklch(0.55 0.19 25);
   --warn: oklch(0.6 0.13 75);
+  --alt: var(--home);
+  --mixed: var(--warn);
   --brand: oklch(0.55 0.1 215);
   --brand-dim: oklch(0.62 0.08 215);
   --brand-gradient: linear-gradient(oklch(0.55 0.1 215), oklch(0.55 0.1 215));
@@ -346,6 +353,29 @@ html.light {
    on white they are pulled down to a readable lightness. gameColors() sets
    --away-c/--home-c inline, so match on that. */
 [style*="--away-c"] { --away: var(--away-c); --home: var(--home-c); }
+/* Colour-blind mode (the masthead's eye toggle, components/site/theme.tsx).
+   Good/bad become blue/orange; the lens quadrants become blue, orange, a
+   neutral slate (alt) and mixed. Mixed is kept far from orange in lightness,
+   not just hue, because under deutan and protan vision yellow and orange
+   become the same hue: pale yellow in dark mode, deep plum in light mode,
+   where a yellow dark enough to read on white turns brown. Checked with a
+   Machado CVD simulation: every quadrant pair stays at least 10 OKLab
+   units apart. */
+html.dark.cvd {
+  --good: oklch(0.74 0.13 245);
+  --bad: oklch(0.74 0.16 52);
+  --warn: oklch(0.89 0.15 100);
+  --alt: oklch(0.68 0.015 250);
+  --mixed: oklch(0.93 0.11 100);
+}
+html.light.cvd {
+  --good: oklch(0.52 0.15 250);
+  --bad: oklch(0.55 0.16 45);
+  --warn: oklch(0.66 0.14 95);
+  --alt: oklch(0.6 0.01 260);
+  --mixed: oklch(0.36 0.12 345);
+}
+
 html.light [style*="--away-c"] {
   --away: oklch(from var(--away-c) min(l, 0.58) c h);
   --home: oklch(from var(--home-c) min(l, 0.58) c h);
@@ -424,6 +454,12 @@ html.light [style*="--away-c"] {
 .fk-table tbody tr[data-state="selected"] { background: color-mix(in oklch, var(--accent) 60%, transparent); }
 .fk-table td { padding: 0.5rem 0.625rem; white-space: nowrap; text-align: right; vertical-align: middle; }
 .fk-table td.l { text-align: left; }
+/* Columns a phone leaves for the table's expand toggle. */
+@media (max-width: 639px) { .fk-table .fk-wide { display: none; } }
+/* Columns a computer-width screen shows and a smaller one keeps for the
+   table's "Show all columns": .fk-all or .fk-few on the table overrides. */
+@media (max-width: 1023px) { .fk-table:not(.fk-all) .fk-more { display: none; } }
+@media (min-width: 1024px) { .fk-table.fk-few .fk-more { display: none; } }
 /* The identity column stays put while a wide table scrolls sideways; its
    background repeats the row's tint over the card so nothing shows through. */
 .fk-table .pin { position: sticky; left: 0; z-index: 1; background: var(--card); box-shadow: inset -1px 0 var(--border); }
@@ -460,9 +496,12 @@ div:has(> table.fk-table) {
 .hs-dd-btn {
   display: inline-flex; align-items: center; gap: 0.5rem; height: 2.25rem; padding: 0 0.5rem 0 0.625rem;
   border-radius: 0.5rem; font-size: 0.875rem; color: var(--foreground); white-space: nowrap; cursor: pointer;
+  /* A faint fill and edge at rest, so a dropdown reads as a control. */
+  background: color-mix(in oklch, var(--foreground) 5%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--foreground) 12%, transparent);
   transition: background-color 150ms var(--ease-out);
 }
-.hs-dd-btn:hover, .hs-dd[data-open] .hs-dd-btn { background: color-mix(in oklch, var(--foreground) 7%, transparent); }
+.hs-dd-btn:hover, .hs-dd[data-open] .hs-dd-btn { background: color-mix(in oklch, var(--foreground) 10%, transparent); }
 .hs-dd-chev { width: 0.875rem; height: 0.875rem; color: var(--muted-foreground); transition: transform 150ms var(--ease-out); flex: none; }
 .hs-dd[data-open] .hs-dd-chev { transform: rotate(180deg); }
 .hs-dd-dot { width: 0.625rem; height: 0.625rem; border-radius: 0.1875rem; background: var(--sw); flex: none; }

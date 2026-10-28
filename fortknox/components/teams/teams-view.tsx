@@ -57,6 +57,15 @@ const cols = (season: number): Column<Row>[] => [
   { k: "gsax", label: "GSAx", get: t => t.gsax, cell: t => <Signed v={t.gsax} />, tip: "tgsax" },
 ];
 
+/** The standings columns a screen narrower than a computer's shows until the
+ *  table is expanded; a computer always shows them all. */
+const CORE = new Set(["std", "team", "gp", "w", "l", "otl", "pts", "ppct", "xgs5"]);
+/** Computer width, where the standings open with every column (.fk-more). */
+const LARGE = "(min-width: 1024px)";
+const subscribeLarge = (f: () => void) => { const m = matchMedia(LARGE); m.addEventListener("change", f); return () => m.removeEventListener("change", f); };
+/** Core columns that also wait for the expand on a phone, so 5v5 xG share fits. */
+const WIDE_ONLY = new Set(["w", "l", "otl"]);
+
 /** A one-of-several picker. `tabs` draws it like the masthead's sections:
  *  plain text with the current one underlined in cyan (.slot-tabs). */
 export function Segmented<T extends string>({ value, onChange, options, label, tabs }: {
@@ -164,6 +173,11 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
   const [group, setGroup] = React.useState<Grouping>("league");
   const [sumGroup, setSumGroup] = React.useState<Grouping>("league");
   const [table, setTable] = React.useState<"real" | "xg">("real");
+  // Null until the reader picks: then the screen decides (every column on a
+  // computer, the core ones below), by CSS so the first paint is right.
+  const [picked, setPicked] = React.useState<boolean | null>(null);
+  const large = React.useSyncExternalStore(subscribeLarge, () => matchMedia(LARGE).matches, () => true);
+  const expanded = picked ?? large;
   const [lens, setLens] = React.useState("drive");
   const [focus, setFocus] = React.useState("all");
   const focused = React.useMemo(() => focusSet(focus), [focus]);
@@ -175,7 +189,9 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
   const g = phase === "playoff" ? "league" : group;
   const groups = groupTeams(rows, g);
   const xGroups = React.useMemo(() => xgGroups(rows, g), [rows, g]);
-  const columns = React.useMemo(() => cols(season), [season]);
+  const all = React.useMemo(() => cols(season), [season]);
+  const columns = React.useMemo(() => all.map(c => (!CORE.has(c.k) ? { ...c, more: true } : !expanded && WIDE_ONLY.has(c.k) ? { ...c, wide: true } : c)), [all, expanded]);
+  const tableClass = picked === true ? "fk-all" : picked === false ? "fk-few" : undefined;
   const xColumns = React.useMemo(() => xcols(season, g === "wildcard"), [season, g]);
   const sumRows = React.useMemo(() => {
     const qs = Object.fromEntries(LENS_KEYS.map(k => [k, lensQuads(rows, k)]));
@@ -195,10 +211,10 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
       <Card className="mb-8">
         <CardHeader className="gap-3 pb-3">
           <CardTitle>xG performance</CardTitle>
-          <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <Segmented tabs label="Chart" value={lens} onChange={setLens}
               options={[...LENS_KEYS.map(k => [k, LENSES[k].name] as [string, string]), [SUMMARY, "Summary"]]} />
-            {!summary && <SelectField label="Highlight" value={focus} onChange={setFocus} options={FOCUS} align="end" />}
+            {!summary && <SelectField inline label="Highlight" value={focus} onChange={setFocus} options={FOCUS} align="end" />}
           </div>
           <p className="max-w-3xl text-[13px] leading-relaxed text-muted-foreground">
             {summary
@@ -259,9 +275,14 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
             </Section>
           ))
           : groups.map((x, i) => (
-            <Section key={x.title ?? i} title={x.title ?? "Standings"}>
+            <Section key={x.title ?? i} title={x.title ?? "Standings"} aside={i === 0 && (
+              <button type="button" aria-expanded={expanded} onClick={() => setPicked(!expanded)}
+                className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
+                {expanded ? "Fewer columns" : `Show all ${columns.length} columns`}
+              </button>
+            )}>
               <SortTable rows={x.rows} cols={columns} initial={{ sort: "std", asc: true }} naturalKey="std"
-                csv={csvName("teams", x.title)}
+                csv={csvName("teams", x.title)} className={tableClass}
                 rowKey={t => t.team} rowProps={t => ({ className: cn(t.cut && "cut") })} />
             </Section>
           ))}
