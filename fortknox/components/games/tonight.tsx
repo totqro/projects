@@ -23,6 +23,7 @@ const signed = (v: number) => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).t
 
 function Card({ g, form, sheet }: { g: TonightGame; form: Record<string, Form>; sheet: boolean }) {
   const final = g.state === "final";
+  const season = String(g.id).slice(0, 4);
   const status =
     g.state === "pre" ? startTime(g.start)
     : g.state === "live" ? "In progress"
@@ -34,7 +35,9 @@ function Card({ g, form, sheet }: { g: TonightGame; form: Record<string, Form>; 
       <tr className={final && !won ? "text-secondary-foreground" : "text-foreground"}>
         <td className="whitespace-nowrap py-1 text-left">
           <span className="inline-flex items-center gap-2">
-            <TeamLogo team={t.abbrev} size={26} /><span className={cn(won && "font-semibold")}>{t.abbrev}</span>
+            <Link href={`/team/${season}/${t.abbrev}`} className="relative z-[2] inline-flex items-center gap-2 underline-offset-2 hover:underline">
+              <TeamLogo team={t.abbrev} size={26} /><span className={cn(won && "font-semibold")}>{t.abbrev}</span>
+            </Link>
             {t.record && <span className="text-xs font-normal text-muted-foreground">{t.record}</span>}
           </span>
         </td>
@@ -74,11 +77,14 @@ function Card({ g, form, sheet }: { g: TonightGame; form: Record<string, Form>; 
     </>
   );
   const cls = "block rounded-[0.75rem] bg-card px-3.5 pb-3 pt-2.5 [box-shadow:var(--shadow-md)]";
+  // With a sheet the whole card opens it, by way of a link stretched over it;
+  // the team names sit above that link (a link can't hold links).
   return sheet ? (
-    <Link href={`/game/${g.id}`} style={gameColors(g.away.abbrev, g.home.abbrev)} aria-label={`${g.away.abbrev} ${g.away.score}, ${g.home.abbrev} ${g.home.score}, game sheet`}
-      className={cn(cls, "transition-[background-color,box-shadow] hover:bg-accent/60 hover:[box-shadow:var(--shadow-lg)]")}>
+    <div style={gameColors(g.away.abbrev, g.home.abbrev)}
+      className={cn(cls, "relative transition-[background-color,box-shadow] hover:bg-accent/60 hover:[box-shadow:var(--shadow-lg)]")}>
+      <Link href={`/game/${g.id}`} aria-label={`${g.away.abbrev} ${g.away.score}, ${g.home.abbrev} ${g.home.score}, game sheet`} className="absolute inset-0 z-[1] rounded-[inherit]" />
       {body}
-    </Link>
+    </div>
   ) : <div className={cls}>{body}</div>;
 }
 

@@ -21,19 +21,27 @@ export function MiniBox({ x }: { x: GameSummary }) {
   const status = x.end === "REG" ? "Final" : "F/" + x.end;
   const flags = [x.type === 3 ? "Playoffs" : "", isUpset(x) ? "−xG win" : ""].filter(Boolean);
   const colors = gameColors(x.away, x.home);
+  const season = String(x.id).slice(0, 4);
   // The xG numbers take the team colours the bar below uses, so the bar
   // reads without a legend.
   const line = (ab: string, s: number, xg: number, sog: number, won: boolean, xgCol: string) => (
     <tr className={cn(won ? "font-semibold text-foreground" : "text-secondary-foreground")}>
-      <td className="py-1 text-left"><span className="inline-flex items-center gap-2"><TeamLogo team={ab} size={26} />{ab}</span></td>
+      <td className="py-1 text-left">
+        <Link href={`/team/${season}/${ab}`} className="relative z-[2] inline-flex items-center gap-2 underline-offset-2 hover:underline">
+          <TeamLogo team={ab} size={26} />{ab}
+        </Link>
+      </td>
       <td className={cn("py-1 text-right", won && "brand-text")}>{s}</td>
       <td className={cn("py-1 text-right", xgCol)}>{f2(xg)}</td>
       <td className="py-1 text-right text-muted-foreground">{sog}</td>
     </tr>
   );
   return (
-    <Link href={`/game/${x.id}`} aria-label={`${x.away} ${x.as}, ${x.home} ${x.hs}, ${fmtDate(x.date)}`} style={colors}
-      className="block rounded-[0.75rem] bg-card px-3.5 pb-3 pt-2.5 [box-shadow:var(--shadow-md)] transition-[background-color,box-shadow] hover:bg-accent/60 hover:[box-shadow:var(--shadow-lg)]">
+    // The whole card opens the game, by way of a link stretched over it; the
+    // team names and the xG bar sit above that link (a link can't hold links).
+    <div style={colors}
+      className="relative rounded-[0.75rem] bg-card px-3.5 pb-3 pt-2.5 [box-shadow:var(--shadow-md)] transition-[background-color,box-shadow] hover:bg-accent/60 hover:[box-shadow:var(--shadow-lg)]">
+      <Link href={`/game/${x.id}`} aria-label={`${x.away} ${x.as}, ${x.home} ${x.hs}, ${fmtDate(x.date)}`} className="absolute inset-0 z-[1] rounded-[inherit]" />
       <table className="tabular w-full text-[13px]">
         <thead>
           <tr className="border-b border-border text-xs text-muted-foreground">
@@ -53,7 +61,7 @@ export function MiniBox({ x }: { x: GameSummary }) {
         <Tooltip delayDuration={0}>
           <TooltipTrigger asChild>
             {/* padded so the hover target is bigger than the 6px bar */}
-            <span className="-my-2 py-2" aria-label={`Expected goals: ${teamName(x.away)} ${f2(x.axg)}, ${teamName(x.home)} ${f2(x.hxg)}`}>
+            <span className="relative z-[2] -my-2 py-2" aria-label={`Expected goals: ${teamName(x.away)} ${f2(x.axg)}, ${teamName(x.home)} ${f2(x.hxg)}`}>
               <span className="flex h-1.5 w-20 gap-px overflow-hidden rounded-full [box-shadow:var(--shadow-inset)]">
                 <i className="block bg-away" style={{ flex: x.axg }} />
                 <i className="block bg-home" style={{ flex: x.hxg }} />
@@ -67,7 +75,7 @@ export function MiniBox({ x }: { x: GameSummary }) {
           </TooltipContent>
         </Tooltip>
       </div>
-    </Link>
+    </div>
   );
 }
 
