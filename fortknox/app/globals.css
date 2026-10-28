@@ -263,21 +263,16 @@ html.dark {
   --pill-gradient: linear-gradient(180deg, oklch(0.33 0.04 252) 0%, oklch(0.28 0.036 252) 100%);
   --pill-gradient-hover: linear-gradient(180deg, oklch(0.36 0.045 252) 0%, oklch(0.3 0.04 252) 100%);
 
-  /* Data: the away team is red, the home team periwinkle. Good/bad are
-     blue/orange, not green/red, so they hold up under colour blindness.
-     The lens quadrants are good, bad, alt (a neutral slate) and mixed.
-     Mixed is kept far from bad in lightness, not just hue, because under
-     deutan and protan vision yellow and orange become the same hue; it is
-     a pale yellow here and a deep plum in light mode, where a yellow dark
-     enough to read on white turns brown. Checked with a Machado CVD
-     simulation: every quadrant pair stays at least 10 OKLab units apart. */
+  /* Data: the away team is red, the home team periwinkle, good/bad
+     green/red. The lens quadrants are good, warn (via mixed), home (via
+     alt) and bad. html.cvd swaps in a colour-blind-safe set below. */
   --home: oklch(0.8 0.09 265);
   --away: oklch(0.72 0.17 30);
-  --good: oklch(0.74 0.13 245);
-  --bad: oklch(0.74 0.16 52);
-  --warn: oklch(0.89 0.15 100);
-  --alt: oklch(0.68 0.015 250);
-  --mixed: oklch(0.93 0.11 100);
+  --good: oklch(0.78 0.15 145);
+  --bad: oklch(0.66 0.19 25);
+  --warn: oklch(0.8 0.13 80);
+  --alt: var(--home);
+  --mixed: var(--warn);
   /* The accent: ice cyan, and the text that sits on it */
   --brand: oklch(0.8 0.09 210);
   --brand-dim: oklch(0.64 0.09 215);
@@ -332,11 +327,11 @@ html.light {
 
   --home: oklch(0.5 0.13 265);
   --away: oklch(0.56 0.18 30);
-  --good: oklch(0.52 0.15 250);
-  --bad: oklch(0.55 0.16 45);
-  --warn: oklch(0.66 0.14 95);
-  --alt: oklch(0.6 0.01 260);
-  --mixed: oklch(0.36 0.12 345);
+  --good: oklch(0.52 0.14 150);
+  --bad: oklch(0.55 0.19 25);
+  --warn: oklch(0.6 0.13 75);
+  --alt: var(--home);
+  --mixed: var(--warn);
   --brand: oklch(0.55 0.1 215);
   --brand-dim: oklch(0.62 0.08 215);
   --brand-gradient: linear-gradient(oklch(0.55 0.1 215), oklch(0.55 0.1 215));
@@ -358,6 +353,29 @@ html.light {
    on white they are pulled down to a readable lightness. gameColors() sets
    --away-c/--home-c inline, so match on that. */
 [style*="--away-c"] { --away: var(--away-c); --home: var(--home-c); }
+/* Colour-blind mode (the masthead's eye toggle, components/site/theme.tsx).
+   Good/bad become blue/orange; the lens quadrants become blue, orange, a
+   neutral slate (alt) and mixed. Mixed is kept far from orange in lightness,
+   not just hue, because under deutan and protan vision yellow and orange
+   become the same hue: pale yellow in dark mode, deep plum in light mode,
+   where a yellow dark enough to read on white turns brown. Checked with a
+   Machado CVD simulation: every quadrant pair stays at least 10 OKLab
+   units apart. */
+html.dark.cvd {
+  --good: oklch(0.74 0.13 245);
+  --bad: oklch(0.74 0.16 52);
+  --warn: oklch(0.89 0.15 100);
+  --alt: oklch(0.68 0.015 250);
+  --mixed: oklch(0.93 0.11 100);
+}
+html.light.cvd {
+  --good: oklch(0.52 0.15 250);
+  --bad: oklch(0.55 0.16 45);
+  --warn: oklch(0.66 0.14 95);
+  --alt: oklch(0.6 0.01 260);
+  --mixed: oklch(0.36 0.12 345);
+}
+
 html.light [style*="--away-c"] {
   --away: oklch(from var(--away-c) min(l, 0.58) c h);
   --home: oklch(from var(--home-c) min(l, 0.58) c h);

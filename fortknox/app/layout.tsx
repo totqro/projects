@@ -10,7 +10,7 @@ import "./globals.css";
 import { currentSeason, seasons } from "@/lib/data";
 import { Wordmark } from "@/components/site/logo";
 import { SeasonSelect, SiteNav } from "@/components/site/nav";
-import { THEME_SCRIPT, ThemeToggle } from "@/components/site/theme";
+import { PaletteToggle, THEME_SCRIPT, ThemeToggle } from "@/components/site/theme";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
@@ -43,7 +43,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className="min-h-dvh">
         <TooltipProvider delayDuration={150}>
           <header className="slot-mast">
-            {/* Logo left, sections centred, season and theme right. Under md the
+            {/* Logo left, sections centred, season, palette and theme right. Under md the
                 sections drop to their own row. */}
             <div className="mx-auto grid max-w-[1180px] grid-cols-[1fr_auto] items-center gap-x-6 gap-y-2 px-4 py-3 md:grid-cols-[1fr_auto_1fr]">
               <Link href="/" aria-label="High Slot home" className="col-start-1 row-start-1 justify-self-start rounded-lg">
@@ -54,6 +54,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               </div>
               <div className="col-start-2 row-start-1 flex items-center gap-1 justify-self-end md:col-start-3">
                 <SeasonSelect seasons={seasons()} current={cur} />
+                <PaletteToggle />
                 <ThemeToggle />
               </div>
             </div>
