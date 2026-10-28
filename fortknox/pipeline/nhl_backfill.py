@@ -41,6 +41,7 @@ TOI_HTML = "https://www.nhl.com/scores/htmlreports/{}/{}{}.HTM"
 
 GAME_TYPES = {2: "regular", 3: "playoff"}
 FINAL = 7  # gameStateId once a game is official
+OVER = 6   # gameStateId once it's over, before it's official
 
 
 def get_text(url, tries=3):
@@ -126,9 +127,29 @@ def season_id(year):
 
 
 def final_games(year):
-    games = get(GAMES.format(season_id(year)))["data"]
-    return sorted(g["id"] for g in games
-                  if g["gameType"] in GAME_TYPES and g["gameStateId"] == FINAL)
+    """Official games. The stats API can leave a game at OVER for hours after
+    the play-by-play calls it official (OFF), so a game it has at OVER counts
+    once its play-by-play says OFF; that play-by-play is cached on the way,
+    and one that isn't OFF yet is never cached (a cached file is never
+    fetched again)."""
+    games = [g for g in get(GAMES.format(season_id(year)))["data"] if g["gameType"] in GAME_TYPES]
+    ids = {g["id"] for g in games if g["gameStateId"] == FINAL}
+    d = CACHE / str(year)
+    for g in games:
+        if g["gameStateId"] != OVER:
+            continue
+        p = d / f"{g['id']}.pbp.json.gz"
+        if p.exists():
+            ids.add(g["id"])
+            continue
+        try:
+            pbp = get(PBP.format(g["id"]))
+        except Exception:
+            continue   # the next run asks again
+        if pbp.get("gameState") == "OFF":
+            save(p, pbp)
+            ids.add(g["id"])
+    return sorted(ids)
 
 
 def fetch_game(year, gid):
