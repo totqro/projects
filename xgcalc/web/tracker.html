@@ -393,6 +393,11 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
       <input type="file" id="sFile" accept=".json,application/json" class="hidden">
     </div>
   </div>
+  <div class="panel">
+    <h2>Past games</h2>
+    <div class="note">Every game is kept here when you start a new one, open another, or import a backup (New game also downloads its backup file). They live in this browser only, so keep the backup files too.</div>
+    <div style="overflow:auto; margin-top:8px"><table id="pastList" class="shiftlist"></table></div>
+  </div>
 </main>
 
 <div class="help hidden" id="help"><div class="box" id="helpBox"></div></div>
@@ -406,7 +411,7 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[<>&"]/g, c => ({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c]));
-const KEY_GAME = "rinkside-tracker.game.v1", KEY_SETUP = "rinkside-tracker.setup.v1";
+const KEY_GAME = "rinkside-tracker.game.v1", KEY_SETUP = "rinkside-tracker.setup.v1", KEY_ARCHIVE = "rinkside-tracker.archive.v1";
 const LINE_KEYS = ["f1","f2","f3","f4","d1","d2","d3","p1","p2"];
 
 /* ================================================================
@@ -494,19 +499,45 @@ function blankSetup(){
   return {date:today(), us:"UofT", opp:"Opponent", venue:"home", periodMin:20, otMin:5, otFormat:"3v3", usRightP1:true, roster:[], lines};
 }
 function blankGame(setup){
-  return {clock:[{w:Date.now(), k:"set", p:1, s:setup.periodMin*60}], strength:"EV", shots:[], changes:[], flips:[], strOps:[], pens:[], enOps:[], poss:[], nextId:1};
+  return {gid:newGid(), clock:[{w:Date.now(), k:"set", p:1, s:setup.periodMin*60}], strength:"EV", shots:[], changes:[], flips:[], strOps:[], pens:[], enOps:[], poss:[], nextId:1};
+}
+const newGid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+/* Fill in fields older saves and backups don't have. */
+function normalizeGame(g){
+  if(!g.gid) g.gid = newGid();
+  if(!Array.isArray(g.flips)) g.flips = [];
+  ["strOps","pens","enOps","poss"].forEach(k => { if(!Array.isArray(g[k])) g[k] = []; });
+  g.shots.forEach(s => { if(s.type === "DEFL") s.type = "TIP"; });
+  return g;
 }
 let S = blankSetup(), G = null;
 try{ const r = localStorage.getItem(KEY_SETUP); if(r) S = Object.assign(blankSetup(), JSON.parse(r)); }catch(e){}
 try{ const r = localStorage.getItem(KEY_GAME); if(r) G = JSON.parse(r); }catch(e){}
 if(!G) G = blankGame(S);
-if(!Array.isArray(G.flips)) G.flips = [];
-G.shots.forEach(s => { if(s.type === "DEFL") s.type = "TIP"; });
-["strOps","pens","enOps","poss"].forEach(k => { if(!Array.isArray(G[k])) G[k] = []; });
+normalizeGame(G);
 
 let saveFailed = false;
 function saveGame(){ try{ localStorage.setItem(KEY_GAME, JSON.stringify(G)); saveFailed = false; }catch(e){ saveFailed = true; } }
 function saveSetup(){ try{ localStorage.setItem(KEY_SETUP, JSON.stringify(S)); }catch(e){ saveFailed = true; } }
+saveGame();  /* keeps the gid normalizeGame may have just given an older save */
+
+/* Past games: whole {setup, game} pairs, newest first, keyed by the game's
+   gid so reopening a game and leaving it again updates its one entry. If
+   the browser runs out of room, the oldest entries go first. */
+const hasData = g => !!(g.shots.length || g.changes.length);
+function loadArchive(){ try{ const a = JSON.parse(localStorage.getItem(KEY_ARCHIVE) || "[]"); return Array.isArray(a) ? a : []; }catch(e){ return []; } }
+function storeArchive(a){
+  while(true){
+    try{ localStorage.setItem(KEY_ARCHIVE, JSON.stringify(a)); return true; }
+    catch(e){ if(a.length <= 1) return false; a.pop(); }
+  }
+}
+function archiveCurrent(){
+  if(!hasData(G)) return true;
+  const a = loadArchive().filter(x => x.game.gid !== G.gid);
+  a.unshift({savedAt:Date.now(), setup:JSON.parse(JSON.stringify(S)), game:JSON.parse(JSON.stringify(G))});
+  return storeArchive(a);
+}
 
 const hist = [];
 const snapshot = () => JSON.stringify({shots:G.shots, changes:G.changes, flips:G.flips, strOps:G.strOps, pens:G.pens, enOps:G.enOps, poss:G.poss, nextId:G.nextId});
@@ -1247,6 +1278,7 @@ function renderSetup(){
   $("sPer").value = S.periodMin; $("sOt").value = S.otMin; $("sOtf").value = S.otFormat;
   $("sEnd").value = S.usRightP1 ? "R" : "L"; $("sVenue").value = S.venue === "away" ? "away" : "home";
   $("sRoster").value = S.roster.map(p => [p.num, p.name, p.pos].filter(Boolean).join(" ")).join("\n");
+  renderPast();
   $("sLines").innerHTML = LINE_KEYS.map(k => `<label><span class="lab" style="min-width:26px">${k.toUpperCase()}</span>`+
     `<input data-line="${k}" value="${esc((S.lines[k] || []).join(" "))}" placeholder="${k[0]==="f"?"9 14 7":k[0]==="d"?"22 4":"9 14 7 22 4"}"></label>`).join("");
 }
@@ -1936,17 +1968,49 @@ $("sSwap").onclick = () => {
   renderSetup();
 };
 $("sNew").onclick = () => {
-  if((G.shots.length || G.changes.length) && !confirm("Start a new game? This clears every shot and change. Export first if you need them.")) return;
+  if(hasData(G)){
+    if(!confirm("Start a new game? This one moves to Past games and its backup file downloads.")) return;
+    exportBackup();
+    if(!archiveCurrent() && !confirm("This browser is out of room, so the game couldn't go in Past games. The backup file just downloaded; check it's there. Start the new game anyway?")) return;
+  }
   G = blankGame(S); hist.length = 0; selId = null; saveGame(); setView("track");
+};
+function renderPast(){
+  const a = loadArchive();
+  if(!a.length){ $("pastList").innerHTML = `<tr><td class="note">No past games yet.</td></tr>`; return; }
+  $("pastList").innerHTML = `<tr><th>Date</th><th>Game</th><th>Score</th><th>Shots</th><th></th></tr>` + a.map((x, i) => {
+    const sh = x.game.shots, goals = t => sh.filter(s => s.team === t && s.result === "GOAL").length;
+    const cur = x.game.gid === G.gid;
+    return `<tr><td>${esc(x.setup.date || "")}</td><td>${esc(x.setup.us)} vs ${esc(x.setup.opp)}${cur ? " <b>(open now)</b>" : ""}</td>`+
+      `<td>${goals("us")}-${goals("them")}</td><td>${sh.length}</td>`+
+      `<td><button data-past-open="${i}"${cur ? " disabled" : ""}>Open</button> <button data-past-dl="${i}">Backup</button> <button data-past-del="${i}">Delete</button></td></tr>`;
+  }).join("");
+}
+$("pastList").onclick = e => {
+  const b = e.target.closest("button"); if(!b) return;
+  const a = loadArchive();
+  if(b.dataset.pastOpen !== undefined){
+    const x = a[+b.dataset.pastOpen]; if(!x) return;
+    if(!archiveCurrent() && !confirm("This browser is out of room, so the open game couldn't go in Past games. Export a backup first. Open the other game anyway?")) return;
+    S = Object.assign(blankSetup(), x.setup); G = normalizeGame(x.game); hist.length = 0; selId = null;
+    saveSetup(); saveGame(); renderSetup(); render();
+    $("setupNote").textContent = `Opened ${S.us} vs ${S.opp} (${S.date}).`;
+  }else if(b.dataset.pastDl !== undefined){
+    const x = a[+b.dataset.pastDl]; if(!x) return;
+    download(`${x.setup.date}_${slug(x.setup.us)}_vs_${slug(x.setup.opp)}_backup.json`, JSON.stringify({setup:x.setup, game:x.game}, null, 1), "application/json");
+  }else if(b.dataset.pastDel !== undefined){
+    const i = +b.dataset.pastDel, x = a[i]; if(!x) return;
+    if(!confirm(`Delete ${x.setup.us} vs ${x.setup.opp} (${x.setup.date}) from Past games? Download its backup first if you might need it.`)) return;
+    a.splice(i, 1); storeArchive(a); renderPast();
+  }
 };
 $("sImport").onclick = () => $("sFile").click();
 $("sFile").onchange = async e => {
   const f = e.target.files[0]; if(!f) return;
   try{ const d = JSON.parse(await f.text());
     if(!d.setup || !d.game || !Array.isArray(d.game.shots)) throw new Error("not a tracker backup");
-    S = Object.assign(blankSetup(), d.setup); G = d.game; if(!Array.isArray(G.flips)) G.flips = [];
-    ["strOps","pens","enOps","poss"].forEach(k => { if(!Array.isArray(G[k])) G[k] = []; });
-G.shots.forEach(s => { if(s.type === "DEFL") s.type = "TIP"; }); hist.length = 0; saveSetup(); saveGame(); renderSetup(); render();
+    archiveCurrent();
+    S = Object.assign(blankSetup(), d.setup); G = normalizeGame(d.game); hist.length = 0; selId = null; saveSetup(); saveGame(); renderSetup(); render();
     $("setupNote").textContent = `Loaded ${G.shots.length} shots and ${G.changes.length} changes.`;
   }catch(err){ $("setupNote").textContent = "Couldn't read that file: " + err.message; }
   e.target.value = "";

@@ -248,6 +248,13 @@ The shots export keeps the shot-plotter columns and adds `Clock`, `Rebound`,
 `score_tagged.py` read it unchanged and give the same xG. Players and shifts
 export as their own CSVs, and a JSON backup restores a whole game.
 
+**Past games** (Setup) keeps every game, so starting a new one never loses
+the last. New game downloads the finished game's JSON backup and moves it to
+the list; opening a past game or importing a backup files the current one
+there too. Each entry can be reopened, downloaded as a backup, or deleted.
+The list lives in this browser's storage only (oldest entries drop if it
+fills up), so keep the backup files as the real record.
+
 **Copy for TOI sheet** (Shifts view) fills the team's *TOI Live Stats*
 workbook: click A2 on its TOI TRACKER sheet and paste. That sheet is one row
 per second (P1 to P3 at 1,200 rows each, then a 7:00 OT block, 4,020 in all),
