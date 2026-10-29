@@ -142,9 +142,16 @@ jobs:
           fi
           echo "✅ xG model artifacts present — serving the gated model."
 
+      # Odds: the morning and midday runs read ESPN's keyless scoreboard (one
+      # book, free); only the pre-game run and manual runs spend Odds API
+      # credits on the multi-book line shop, falling back to ESPN if every key
+      # is spent. Three Odds API calls a day emptied all three free keys by
+      # 2026-10-28.
       - name: Run NHL analysis
         if: steps.check-games.outputs.has_games == 'true'
         working-directory: nhllines
+        env:
+          ODDS_SOURCE: ${{ (github.event_name == 'schedule' && github.event.schedule != '41 21 * * *') && 'espn' || 'auto' }}
         run: python main.py --stake 0.50 --conservative
 
       - name: Check and update game results (30-day lookback)
@@ -187,7 +194,7 @@ jobs:
           # every gameless day.
           for f in bet_results.json analysis_history.json latest_analysis.json \
                    model_feedback.json backtest_results.json predictions_log.jsonl \
-                   performance.json; do
+                   shadow_predictions_log.jsonl performance.json; do
             if [ -f "nhllines/data/$f" ]; then
               git add "nhllines/data/$f"
             fi

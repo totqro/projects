@@ -1,6 +1,7 @@
 """
 Odds Fetcher Module
-Fetches live NHL betting lines from The Odds API.
+Fetches live NHL betting lines from The Odds API, with ESPN's keyless
+scoreboard as the free fallback (see espn_odds.py and fetch_nhl_odds).
 Free tier: 500 requests/month — sign up at https://the-odds-api.com
 
 Supports moneyline (h2h), spreads (puck line), and totals (over/under).
@@ -13,6 +14,8 @@ import os
 from pathlib import Path
 from datetime import datetime
 import time
+
+from .espn_odds import fetch_espn_odds
 
 ODDS_API_BASE = "https://api.the-odds-api.com/v4"
 CACHE_DIR = Path(__file__).parent.parent.parent / "cache"
@@ -245,16 +248,46 @@ def fetch_upcoming_events(sport: str = "icehockey_nhl") -> list:
     return resp.json()
 
 
-def fetch_nhl_odds(markets: str = MARKETS, sport: str = "icehockey_nhl"):
+def fetch_nhl_odds(markets: str = MARKETS, sport: str = "icehockey_nhl", source: str = None):
     """
     Fetch current odds for all available games in `sport` (default: NHL).
-    Returns tuple of (games, quota_info).
-    Automatically rotates between multiple API keys.
+    Returns tuple of (games, quota_info); quota_info is None for ESPN.
+
+    `source` (default: the ODDS_SOURCE env var, else "auto"):
+      "odds_api" — The Odds API only: every Ontario book, costs credits.
+      "espn"     — ESPN's keyless scoreboard: one book (DraftKings), free.
+      "auto"     — The Odds API, falling back to ESPN when no key is set,
+                   every key is rejected, or the request fails.
+    The scheduled jobs pick per run, so the multi-book line shop spends
+    credits once a day instead of on every run.
 
     `sport` is exposed mainly so scripts/snapshot_market.py can smoke-test
     against a sport that's actually in season (e.g. "baseball_mlb") during
     the NHL off-season, without needing a second copy of this function.
     """
+    source = (source or os.environ.get("ODDS_SOURCE") or "auto").lower()
+    if source == "espn":
+        return _fetch_espn(sport), None
+    if source == "odds_api":
+        return _fetch_odds_api(markets, sport)
+    if source != "auto":
+        raise ValueError(f"Unknown odds source '{source}' (use auto, odds_api or espn)")
+
+    try:
+        return _fetch_odds_api(markets, sport)
+    except (AllKeysRejected, ValueError, requests.RequestException) as e:
+        print(f"  ⚠️  Odds API unavailable ({str(e)[:160]}); falling back to ESPN")
+        return _fetch_espn(sport), None
+
+
+def _fetch_espn(sport: str) -> list:
+    games = fetch_espn_odds(sport)
+    print(f"  ESPN: {len(games)} pre-game lines (DraftKings, no quota)")
+    return games
+
+
+def _fetch_odds_api(markets: str, sport: str):
+    """The Odds API /odds call, cached for 30 minutes, rotating keys."""
     cache_key = _cache_key(f"{sport}_{markets.replace(',', '_')}")
     cached_path = CACHE_DIR / f"{cache_key}.json"
 

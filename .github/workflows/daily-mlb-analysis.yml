@@ -73,9 +73,13 @@ jobs:
             echo "Skipping refit (runs weekly on Sundays)"
           fi
 
+      # Odds: The Odds API for the multi-book line shop, falling back to ESPN's
+      # keyless scoreboard (one book) when every key is out of credits.
       - name: Run MLB analysis
         if: steps.check-games.outputs.has_games == 'true'
         working-directory: mlblines
+        env:
+          ODDS_SOURCE: auto
         run: python main.py --stake 0.50
 
       - name: Check and update game results (21-day lookback)

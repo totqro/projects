@@ -8,15 +8,16 @@ MLB game, and scoring the model against it honestly requires the market's
 implied probabilities to be captured and archived *before* each game, not
 reconstructed after the fact.
 
-This script fetches current consensus odds via the existing odds fetcher,
-devigs them to implied probabilities (src.data.odds_fetcher.get_consensus_no_vig_odds),
+This script fetches current pre-game odds from ESPN's keyless scoreboard
+(src/data/espn_odds.py: one book, DraftKings, no quota), devigs them to
+implied probabilities (src.data.odds_fetcher.get_consensus_no_vig_odds),
 and writes one dated JSON file per run to mlbdata/market_snapshots/.
 
 Cron-friendly: no interactive input, clear stdout summary, and an explicit
 exit-code contract for the scheduled job — 0 on success (an empty board
-included, since off-season and dark days are normal), 2 when every API key
-was rejected (a credentials problem only a human can fix), 1 for anything
-else. An empty board costs no API credits: /events is billed at 0.
+included, since off-season and dark days are normal), 1 for anything else.
+Snapshots used to come from The Odds API; its free monthly credits ran out on
+2026-10-28 and took every snapshot with them, so they no longer spend any.
 
 Usage:
     python scripts/snapshot_market.py
@@ -37,11 +38,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.data.odds_fetcher import (
-    AllKeysRejected,
     fetch_mlb_odds,
-    fetch_upcoming_events,
     get_consensus_no_vig_odds,
-    get_quota_summary,
     parse_odds,
 )
 
@@ -55,22 +53,14 @@ def take_snapshot(skip_empty: bool = False) -> tuple:
     snapshot) — the scheduled job runs year-round, and off-season/no-game-day
     zero-game snapshots are noise in a record whose whole value is the games
     it actually captured."""
-    # Free preflight: the Odds API bills /events at 0 credits, so an empty
-    # board — the MLB off-season, or simply a dark day — is discovered
-    # without spending a request, and a rejected key is reported as a
-    # credentials problem rather than as a 401 midway through the paid call.
-    if fetch_upcoming_events("baseball_mlb"):
-        raw_games, quota = fetch_mlb_odds()
-        games = parse_odds(raw_games)
-    else:
-        games, quota = [], get_quota_summary()
+    games = parse_odds(fetch_mlb_odds(source="espn")[0])
 
     now = datetime.now(timezone.utc)
     snapshot = {
         "timestamp_utc": now.isoformat(),
         "sport": "baseball_mlb",
         "n_games": len(games),
-        "quota": quota,
+        "source": "espn",
         "games": [],
     }
 
@@ -110,11 +100,6 @@ def main():
 
     try:
         out_path, snapshot = take_snapshot(skip_empty=args.skip_empty)
-    except AllKeysRejected as e:
-        # Exit 2, not 1: the scheduled workflow reports a dead/exhausted key as
-        # the credentials problem it is, since only a human can rotate them.
-        print(f"Odds API credentials rejected: {e}", file=sys.stderr)
-        return 2
     except Exception as e:
         print(f"Market snapshot failed: {e}", file=sys.stderr)
         return 1

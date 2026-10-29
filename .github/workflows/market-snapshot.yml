@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
     inputs:
       sport:
-        description: 'Odds API sport key (use baseball_mlb to smoke-test in the NHL off-season)'
+        description: 'Sport key: icehockey_nhl, or baseball_mlb to smoke-test in the NHL off-season'
         type: string
         default: 'icehockey_nhl'
 
@@ -49,34 +49,13 @@ jobs:
       - name: Install dependencies
         run: pip install -r nhllines/requirements.txt
 
-      - name: Create config from secrets
-        working-directory: nhllines
-        run: |
-          cat > config.json << 'EOF'
-          {
-            "odds_api_key": "${{ secrets.ODDS_API_KEY }}",
-            "odds_api_key_two": "${{ secrets.ODDS_API_KEY_TWO }}",
-            "odds_api_key_three": "${{ secrets.ODDS_API_KEY_THREE }}"
-          }
-          EOF
-
       - name: Take market snapshot
         working-directory: nhllines
+        # Odds come from ESPN's keyless scoreboard (src/data/espn_odds.py), so
+        # this job needs no Odds API key and cannot run out of credits.
         # --skip-empty: the schedule runs year-round, so an off-season or dark
-        # day writes nothing rather than committing a zero-game file. The
-        # script preflights the board via /events, which the Odds API bills at
-        # 0 credits, so an empty slate is a clean no-op and not a failed run.
-        run: |
-          set +e
-          python scripts/snapshot_market.py --sport "${{ inputs.sport || 'icehockey_nhl' }}" --skip-empty
-          status=$?
-          set -e
-          # Exit 2 means every key was rejected — quota exhaustion or a stale
-          # secret. Name it, because the bare 401 does not say which.
-          if [ "$status" -eq 2 ]; then
-            echo "::error::Every Odds API key was rejected. Regenerate at https://the-odds-api.com and update the ODDS_API_KEY / ODDS_API_KEY_TWO / ODDS_API_KEY_THREE repository secrets."
-          fi
-          exit $status
+        # day writes nothing rather than committing a zero-game file.
+        run: python scripts/snapshot_market.py --sport "${{ inputs.sport || 'icehockey_nhl' }}" --skip-empty
 
       - name: Commit snapshot
         run: |
@@ -105,7 +84,7 @@ jobs:
 
       - name: Notify on failure
         # At most one mail per day, plus every manual run. The job fires 3x
-        # daily and the usual causes — a dead key, an API outage — persist
+        # daily and the usual causes — an outage, a changed feed — persist
         # across all three, so mailing per run is noise, not signal.
         if: failure() && (github.event_name != 'schedule' || github.event.schedule == '0 14 * * *')
         uses: dawidd6/action-send-mail@v3
@@ -125,6 +104,6 @@ jobs:
             Trigger: ${{ github.event_name }}
 
             An empty board is NOT a failure — it exits clean. This mail means
-            the fetch itself broke; if the log says every key was rejected,
-            the ODDS_API_KEY* repository secrets need regenerating.
+            the fetch from ESPN's public scoreboard itself broke (an outage,
+            or ESPN changed the feed's shape: see src/data/espn_odds.py).
         continue-on-error: true

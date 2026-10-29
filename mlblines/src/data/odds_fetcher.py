@@ -1,6 +1,7 @@
 """
 MLB Odds Fetcher
-Fetches live MLB betting lines from The Odds API.
+Fetches live MLB betting lines from The Odds API, with ESPN's keyless
+scoreboard as the free fallback (see espn_odds.py and fetch_mlb_odds).
 Supports moneyline (h2h), run lines (spreads), and totals (over/under).
 Multi-key rotation for quota management.
 """
@@ -11,6 +12,8 @@ import os
 import time
 from pathlib import Path
 from datetime import datetime
+
+from .espn_odds import fetch_espn_odds
 
 ODDS_API_BASE = "https://api.the-odds-api.com/v4"
 CACHE_DIR = Path(__file__).parent.parent.parent / "cache"
@@ -222,11 +225,40 @@ def fetch_upcoming_events(sport: str = "baseball_mlb") -> list:
     return resp.json()
 
 
-def fetch_mlb_odds(markets: str = MARKETS):
+def fetch_mlb_odds(markets: str = MARKETS, source: str = None):
     """
     Fetch current MLB odds for all available games.
-    Returns (games, quota_summary).
+    Returns (games, quota_summary); quota_summary is None for ESPN.
+
+    `source` (default: the ODDS_SOURCE env var, else "auto"):
+      "odds_api" — The Odds API only: every book, costs credits.
+      "espn"     — ESPN's keyless scoreboard: one book (DraftKings), free.
+      "auto"     — The Odds API, falling back to ESPN when no key is set,
+                   every key is rejected, or the request fails.
     """
+    source = (source or os.environ.get("ODDS_SOURCE") or "auto").lower()
+    if source == "espn":
+        return _fetch_espn(), None
+    if source == "odds_api":
+        return _fetch_odds_api(markets)
+    if source != "auto":
+        raise ValueError(f"Unknown odds source '{source}' (use auto, odds_api or espn)")
+
+    try:
+        return _fetch_odds_api(markets)
+    except (AllKeysRejected, ValueError, requests.RequestException) as e:
+        print(f"  ⚠️  Odds API unavailable ({str(e)[:160]}); falling back to ESPN")
+        return _fetch_espn(), None
+
+
+def _fetch_espn() -> list:
+    games = fetch_espn_odds("baseball_mlb")
+    print(f"  ESPN: {len(games)} pre-game lines (DraftKings, no quota)")
+    return games
+
+
+def _fetch_odds_api(markets: str):
+    """The Odds API /odds call, cached for 30 minutes, rotating keys."""
     cache_key = f"odds_mlb_{markets.replace(',','_')}_{datetime.now().strftime('%Y%m%d_%H')}"
     cached_path = CACHE_DIR / f"{cache_key}.json"
 
