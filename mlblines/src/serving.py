@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo
 
 from src.data.historical_dataset import (
     PLAYED_STATES, WIN_FEATURE_COLUMNS, TOTALS_FEATURE_COLUMNS,
-    build_rows, load_history, seasons_through_current,
+    build_rows, fetch_season_schedule, load_history, seasons_through_current,
 )
 from src.models import totals_model, win_model
 
@@ -39,7 +39,11 @@ def score_slate(date: str = None, verbose: bool = True) -> dict:
     schedules, index = load_history(seasons, verbose=verbose)
     _, replayer = build_rows(schedules, index, before_date=date)
 
-    slate = [g for g in schedules.get(season, [])
+    # The postseason is scored too, from the same replay of the regular
+    # season: the models are trained on regular-season games only, so a
+    # playoff game's features are each team's and starter's season to date.
+    postseason = fetch_season_schedule(season, game_types="F,D,L,W")
+    slate = [g for g in schedules.get(season, []) + postseason
              if g["date"] == date and g["state"] not in PLAYED_STATES
              and "Postponed" not in g["state"] and "Cancelled" not in g["state"]]
     slate.sort(key=lambda g: (g["game_datetime"], g["game_id"]))

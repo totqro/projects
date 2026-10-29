@@ -153,7 +153,9 @@ def fetch_season_games(days_back=90):
                 "sportId": 1,
                 "startDate": start_str,
                 "endDate": end_str,
-                "gameType": "R,S",  # Regular season + spring training
+                # Regular season, spring training, and the postseason (wild card,
+                # division series, LCS, World Series), so playoff picks get graded.
+                "gameType": "R,S,F,D,L,W",
                 "hydrate": "probablePitcher,linescore,decisions",
             },
         )
@@ -225,7 +227,7 @@ def fetch_todays_games():
         params={
             "sportId": 1,
             "date": today,
-            "gameType": "R,S",
+            "gameType": "R,S,F,D,L,W",  # postseason too: see fetch_season_games
             "hydrate": "probablePitcher,linescore",
         },
     )

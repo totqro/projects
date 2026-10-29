@@ -153,13 +153,16 @@ SCHEDULE_FIELDS = ("dates,date,games,gamePk,officialDate,gameDate,status,detaile
                    "linescore,currentInning,isTopInning,gameNumber,doubleHeader")
 
 
-def fetch_season_schedule(season: int) -> list:
-    """Every regular-season game in `season`, played or not, as flat dicts."""
+def fetch_season_schedule(season: int, game_types: str = "R") -> list:
+    """Every game of `game_types` in `season` (default: regular season),
+    played or not, as flat dicts. Training uses the regular season only;
+    serving also asks for the postseason ("F,D,L,W") to score playoff games."""
     data = _get_json(
         f"{STATS_API}/schedule",
-        {"sportId": 1, "season": season, "gameType": "R",
+        {"sportId": 1, "season": season, "gameType": game_types,
          "hydrate": "probablePitcher,linescore", "fields": SCHEDULE_FIELDS},
-        f"hist_schedule_{season}",
+        f"hist_schedule_{season}" if game_types == "R"
+        else f"hist_schedule_{season}_{game_types.replace(',', '')}",
         _season_ttl_hours(season),
     )
     games, seen = [], set()
