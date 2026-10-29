@@ -12,7 +12,12 @@ const FIRST = 36;
 
 export function GamesPage({ season, home = false }: { season: number; home?: boolean }) {
   const idx = seasonIndex(season), games = boxScores(season);
-  const updated = new Date(idx.updated).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Toronto" });
+  // The season files are only rewritten when a game goes final, so on a game
+  // night count the games scored so far too, or the stamp sits at the last
+  // final horn while the live scores keep redeploying.
+  const stamps = [idx.updated, ...(season === currentSeason() ? liveIds().map(id => liveSheet(id).live?.updated) : [])];
+  const latest = stamps.filter((s): s is string => !!s).sort().at(-1)!;
+  const updated = new Date(latest).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Toronto" });
   const teams = teamsFile(season).regular.map(t => t.team).sort();
   // Whole nights, at least FIRST games, are pre-rendered; the rest load on demand.
   const cut = games.findIndex((g, i) => i >= FIRST && g.date !== games[i - 1].date);
