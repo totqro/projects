@@ -24,11 +24,17 @@ Three rules make the comparison honest:
 Mixed model versions are reported, never silently pooled: rows carry the win
 model that served them, and a scorecard spanning a fallback period says so.
 
+Shadow models are scored alongside, never pooled in: main.py logs Elo's
+prediction for every game to `data/shadow_predictions_log.jsonl` (README
+item 12). When that file exists, a SHADOW section scores the served model,
+shadow Elo and the market on the games all three have, under the same rules.
+
 Usage:
     python scorecard.py                          # current season to date
     python scorecard.py --season 20262027
     python scorecard.py --model-version xg-dropgoalie-platt-v1
     python scorecard.py --json data/scorecard.json
+    python scorecard.py --log data/shadow_predictions_log.jsonl   # shadow Elo alone
 """
 
 import argparse
@@ -53,6 +59,7 @@ from model_gate import _poisson_nll as poisson_nll
 
 BASE = Path(__file__).resolve().parent
 PREDICTIONS_LOG = BASE / "data" / "predictions_log.jsonl"
+SHADOW_LOG = BASE / "data" / "shadow_predictions_log.jsonl"
 SNAPSHOT_DIR = BASE / "data" / "market_snapshots"
 
 # main.py stamps a game's date by converting the UTC commence time at this
@@ -307,6 +314,45 @@ def compute_scorecard(scored: list, n_bins: int = 10) -> dict:
     }
 
 
+def shadow_comparison(scored: list, shadow: dict, n_bins: int = 10) -> dict:
+    """Served model vs a shadow model vs the market, on the scored games that
+    also have a pre-game shadow row and a market price (rule 3, three ways).
+    `shadow` is load_predictions() output for the shadow log."""
+    rows = [(r, shadow[_game_key(r["date"], r["home_team"], r["away_team"])])
+            for r in scored
+            if r["market_home_win_prob"] is not None
+            and _game_key(r["date"], r["home_team"], r["away_team"]) in shadow]
+    y = [r["home_win"] for r, _ in rows]
+    return {
+        "n": len(rows),
+        "shadow_versions": dict(Counter(s.get("model_version") for _, s in rows)),
+        "served_versions": dict(Counter(r["model_version"] for r, _ in rows)),
+        "served": win_metrics([r["model_home_win_prob"] for r, _ in rows], y, n_bins),
+        "shadow": win_metrics([float(s["home_win_prob"]) for _, s in rows], y, n_bins),
+        "market": win_metrics([r["market_home_win_prob"] for r, _ in rows], y, n_bins),
+    }
+
+
+def print_shadow(cmp: dict) -> None:
+    print("  SHADOW — served model vs shadow model, same games, never pooled")
+    if not cmp["n"]:
+        print("  No scored game has both a shadow row and a market price yet.")
+        return
+    shadow_name = " / ".join(sorted(cmp["shadow_versions"]))
+    print(f"  Shadow: {shadow_name}")
+    print(f"  Served on these games: " + ", ".join(
+        f"{n} {v}" for v, n in sorted(cmp["served_versions"].items(), key=lambda kv: -kv[1])))
+    print(f"{'Source':<34}{'n':>7}{'Accuracy':>10}{'Log loss':>11}{'Brier':>9}{'ECE':>8}")
+    for label, key in (("Served model", "served"), ("Shadow model", "shadow"),
+                       ("Market closing consensus", "market")):
+        m = cmp[key]
+        print(f"{label:<34}{m['n']:>7}{_fmt(m['accuracy'], '.3f'):>10}"
+              f"{_fmt(m['log_loss']):>11}{_fmt(m['brier']):>9}{_fmt(m['ece']):>8}")
+    if cmp["n"] < MEANINGFUL_SAMPLE:
+        print(f"  ⚠️  {cmp['n']} games is too few to separate two forecasters. "
+              f"Provisional, not a result.")
+
+
 # --------------------------------------------------------------------------- #
 # Report                                                                       #
 # --------------------------------------------------------------------------- #
@@ -425,15 +471,19 @@ def main():
                         help="Calibration bin count (default: 10)")
     parser.add_argument("--json", dest="json_path", default=None,
                         help="Also write the scorecard as JSON to this path")
+    parser.add_argument("--log", type=Path, default=PREDICTIONS_LOG,
+                        help="Prediction log to score (default: the served log; "
+                             "pass data/shadow_predictions_log.jsonl for shadow Elo)")
     args = parser.parse_args()
 
     season = None if args.all_seasons else (args.season or current_season())
-    predictions = load_predictions(season=season, model_version=args.model_version)
+    log_path = args.log.resolve()
+    predictions = load_predictions(log_path, season=season, model_version=args.model_version)
 
     if not predictions:
         where = "all seasons" if args.all_seasons else f"season {season}"
         print(f"No pre-game predictions logged for {where} yet "
-              f"({PREDICTIONS_LOG.relative_to(BASE)}).")
+              f"({log_path.relative_to(BASE) if log_path.is_relative_to(BASE) else log_path}).")
         print("Nothing to score — this is the expected state until the daily "
               "job starts logging games.")
         return 0
@@ -450,6 +500,13 @@ def main():
 
     card = compute_scorecard(scored, args.bins)
     print_report(card, len(pending), "all" if args.all_seasons else season, failed_dates)
+
+    # The shadow section only belongs on the served log's scorecard.
+    if log_path == PREDICTIONS_LOG.resolve() and SHADOW_LOG.exists():
+        card["shadow"] = shadow_comparison(scored, load_predictions(SHADOW_LOG, season=season),
+                                           args.bins)
+        print_shadow(card["shadow"])
+        print("-" * 78)
 
     if args.json_path:
         out = Path(args.json_path)

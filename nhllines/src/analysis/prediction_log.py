@@ -22,6 +22,10 @@ from src.data.nhl_data import slate_date
 from pathlib import Path
 
 LOG_PATH = Path(__file__).resolve().parents[2] / "data" / "predictions_log.jsonl"
+# Shadow predictions: models scored alongside the served one but never shown.
+# A separate file because the dedup key above ignores model_version, so a
+# shadow row in LOG_PATH would be dropped or would block the served row.
+SHADOW_LOG_PATH = LOG_PATH.with_name("shadow_predictions_log.jsonl")
 
 # Bump these whenever the win or totals model changes in a way that would
 # make old log rows non-comparable to new ones. main.py passes the version of

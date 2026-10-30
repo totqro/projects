@@ -15,6 +15,8 @@ This module aggregates shots to per-game, per-team totals:
   filter used across hockey analytics sites to strip out score-effect bias).
   The raw shots file has no pre-computed score/venue-adjusted xG column, so
   this is the honest stand-in rather than a fabricated multiplier table.
+- xgf5 / xga5: 5v5 xG at any score. Not a production feature; highslot_gate.py
+  uses it to compare definitions (any score scored slightly better than close).
 - hd_xgf / hd_xga: high-danger expected goals for/against — shots with
   xGoal >= HIGH_DANGER_XG_THRESHOLD (roughly the shot-quality top quartile;
   the raw file has no MoneyPuck shot-danger tier either, so this is a
@@ -162,6 +164,7 @@ def _new_team_totals(is_home: bool) -> dict:
         "is_home": is_home,
         "xgf": 0.0, "xga": 0.0,
         "xgf_adj": 0.0, "xga_adj": 0.0,
+        "xgf5": 0.0, "xga5": 0.0,
         "hd_xgf": 0.0, "hd_xga": 0.0,
     }
 
@@ -196,9 +199,10 @@ def aggregate_season_game_team_xg(year: int) -> dict:
             defending_team = away_team if is_home_shot else home_team
 
             xg = float(row["xGoal"] or 0.0)
+            is_5v5 = (row.get("homeSkatersOnIce") == "5"
+                      and row.get("awaySkatersOnIce") == "5")
             is_close_5v5 = (
-                row.get("homeSkatersOnIce") == "5"
-                and row.get("awaySkatersOnIce") == "5"
+                is_5v5
                 and abs(int(float(row.get("homeTeamGoals") or 0))
                         - int(float(row.get("awayTeamGoals") or 0))) <= 1
             )
@@ -213,6 +217,9 @@ def aggregate_season_game_team_xg(year: int) -> dict:
             if is_close_5v5:
                 shooter["xgf_adj"] += xg
                 defender["xga_adj"] += xg
+            if is_5v5:
+                shooter["xgf5"] += xg
+                defender["xga5"] += xg
             if is_high_danger:
                 shooter["hd_xgf"] += xg
                 defender["hd_xga"] += xg

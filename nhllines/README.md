@@ -149,6 +149,37 @@ admission.
     excluded, metrics matched against sklearn) and against the real
     snapshots already archived.
 
+12. ✅ **High Slot xG tested as a replacement source, not shipped**
+    (`highslot_gate.py`, Oct 2026). High Slot (`../fortknox`) scores every
+    shot with its own xG model; `fortknox/pipeline/export_team_game_xg.py`
+    writes its per-game team totals with each season scored walk-forward
+    (by a model that never saw that season). Every candidate below uses the
+    same rows, rebuilt from 2018-19, and the shipped drop-goalie logistic.
+    Leave-one-season-out log loss, pooled over the six normal seasons:
+
+    | Candidate | Log loss | Brier |
+    |---|---|---|
+    | MoneyPuck, 5v5 close + high danger (ships) | 0.6685 | 0.2380 |
+    | High Slot, same definition | 0.6688 | 0.2381 |
+    | MoneyPuck, 5v5 any score, no high danger | 0.6677 | 0.2376 |
+    | High Slot, 5v5 any score, no high danger | 0.6677 | 0.2376 |
+    | Elo + home ice | **0.6671** | **0.2374** |
+
+    - **Source: a wash.** With the same definition, High Slot ties
+      MoneyPuck. The only gain is the definition, 5v5 at any score instead
+      of score-close (better in 6 of 6 seasons, but by under 0.001), and
+      MoneyPuck supplies that too.
+    - **Early season: Elo stays.** On games where a team has under 5 GP,
+      last season's High Slot 5v5 xG share loses to Elo (0.6767 vs 0.6664
+      over 519 games). Adding it on top of Elo ties (0.6664).
+    - **Open issue: Elo beats the shipped xG model in 7 of 8 held-out
+      seasons.** The single exception is 2025-26, the season the model was
+      gated on (item 8). Nothing changes mid-season. Instead, from
+      Oct 28, 2026 `main.py` logs Elo's prediction for every game to
+      `data/shadow_predictions_log.jsonl` (never served), and
+      `scorecard.py` prints a SHADOW section comparing served model, Elo and
+      market on the same games, so the live season settles it.
+
 The leaky XGBoost path stays quarantined. The similarity model still supplies
 **expected total goals** — the totals gate found nothing that beats a constant
 league-average Poisson mean, so there's nothing better to wire in yet. The

@@ -68,6 +68,7 @@ from src.analysis import (
     get_team_advanced_stats,
     get_team_splits,
     log_predictions,
+    SHADOW_LOG_PATH,
     WIN_MODEL_VERSIONS,
     TOTALS_MODEL_VERSION,
 )
@@ -314,6 +315,23 @@ def run_analysis(
     def _model_version(key: str) -> str:
         return f"{WIN_MODEL_VERSIONS[key]}+{TOTALS_MODEL_VERSION}"
 
+    # Shadow Elo: Elo's prediction for EVERY game, logged to its own file
+    # and never served. Leave-one-season-out, Elo beat the shipped xG model
+    # in 7 of 8 seasons (README item 12), so the live season scores the two
+    # on the same games. Identical to the served row when Elo served it.
+    shadow_to_log = []
+
+    def _log_shadow_elo(served_row: dict, home_rest_days: float, away_rest_days: float,
+                        home_b2b: bool, away_b2b: bool):
+        if elo_coefs is None:
+            return
+        shadow_to_log.append({
+            **served_row,
+            "home_win_prob": _elo_win_prob(served_row["home_team"], served_row["away_team"],
+                                           home_rest_days, away_rest_days, home_b2b, away_b2b),
+            "model_version": _model_version("elo"),
+        })
+
     # Step 4: Fetch odds (if enabled)
     odds_games = []
     quota_info = None
@@ -532,11 +550,11 @@ def run_analysis(
             # missing). Overrides the similarity model's home_win_prob; the
             # similarity model's expected_total/over/under/cover outputs are
             # kept as-is since neither shipped model predicts totals or spreads.
-            elo_home_win_prob, served_by = _win_prob(
-                home, away,
+            rest_args = (
                 player_data.get('home_rest_days', 1), player_data.get('away_rest_days', 1),
                 player_data.get('home_back_to_back', False), player_data.get('away_back_to_back', False),
             )
+            elo_home_win_prob, served_by = _win_prob(home, away, *rest_args)
             model_probs["home_win_prob"] = elo_home_win_prob
             model_probs["away_win_prob"] = 1 - elo_home_win_prob
             model_probs["ml_data_weight"] = moneyline_data_weight(
@@ -552,6 +570,7 @@ def run_analysis(
                 "expected_total": model_probs["expected_total"],
                 "model_version": _model_version(served_by),
             })
+            _log_shadow_elo(predictions_to_log[-1], *rest_args)
 
             # Player/context indicators for display only (not fed into a
             # model — the Elo model only uses elo_diff/rest_diff/b2b).
@@ -910,11 +929,11 @@ def run_analysis(
             # winner), same as the with-odds path. Similarity model keeps
             # supplying expected_total (neither shipped model predicts totals).
             player_data = get_player_data_nhl_api_only(home, away, game.get("date", ""))
-            elo_home_win_prob, served_by = _win_prob(
-                home, away,
+            rest_args = (
                 player_data.get('home_rest_days', 1), player_data.get('away_rest_days', 1),
                 player_data.get('home_back_to_back', False), player_data.get('away_back_to_back', False),
             )
+            elo_home_win_prob, served_by = _win_prob(home, away, *rest_args)
             model_probs["home_win_prob"] = elo_home_win_prob
             model_probs["away_win_prob"] = 1 - elo_home_win_prob
             model_probs["ml_data_weight"] = moneyline_data_weight(
@@ -930,6 +949,7 @@ def run_analysis(
                 "expected_total": model_probs["expected_total"],
                 "model_version": _model_version(served_by),
             })
+            _log_shadow_elo(predictions_to_log[-1], *rest_args)
 
             print(f"    Model{ml_labels[served_by]}: {home} {model_probs['home_win_prob']:.1%} / "
                   f"{away} {model_probs['away_win_prob']:.1%}")
@@ -1013,6 +1033,9 @@ def run_analysis(
         versions = sorted({g["model_version"] for g in predictions_to_log})
         print(f"Logged {n_logged} new prediction(s) ({', '.join(versions)}) "
               f"to data/predictions_log.jsonl")
+    if shadow_to_log:
+        n_shadow = log_predictions(shadow_to_log, path=SHADOW_LOG_PATH)
+        print(f"Logged {n_shadow} shadow Elo prediction(s) to data/{SHADOW_LOG_PATH.name}")
 
     # Score logged predictions whose games are now final (Performance
     # History tab). all_games is the completed-games window fetched above.
