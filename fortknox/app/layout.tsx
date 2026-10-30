@@ -74,10 +74,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <footer className="mx-auto flex max-w-[1180px] flex-wrap justify-between gap-x-6 gap-y-2 px-4 pb-10 text-xs text-muted-foreground">
             <span>Data from the NHL&apos;s public play-by-play and shift charts, scored after every game. Not affiliated with the NHL.</span>
             <span className="flex gap-1 sm:hidden"><PaletteToggle /><ThemeToggle /></span>
-            <nav aria-label="Site" className="flex gap-4">
+            <nav aria-label="Site" className="flex flex-wrap gap-x-4 gap-y-1">
               <Link href="/about" className="hover:text-foreground">About</Link>
               <Link href="/about#glossary" className="hover:text-foreground">Glossary</Link>
               <Link href="/model" className="hover:text-foreground">Model</Link>
+              <Link href="/privacy" className="hover:text-foreground">Privacy</Link>
               <a href="mailto:highslotanalytics@gmail.com?subject=High%20Slot" className="hover:text-foreground">Contact</a>
             </nav>
           </footer>
