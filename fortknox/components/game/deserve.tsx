@@ -23,6 +23,9 @@ export function DeserveToWin({ G }: { G: Sheet }) {
   const x = (i: number) => i * slot + 5;
   const label = (d: number) => (d === 0 ? "Tie" : `${d < 0 ? G.away.abbrev : G.home.abbrev} by ${Math.abs(d)}${Math.abs(d) === M ? "+" : ""}`);
   const live = G.live?.state === "live";
+  // Teams that shot at an empty net: those shots count in the xG at the top
+  // but not here, which can flip who looks better.
+  const en = [G.away, G.home].filter(t => G.shots.some(s => s.team === t.abbrev && s.sit === "EN_AGAINST" && s.ev !== "BLOCK" && s.xg > 0));
   return (
     <div>
       <p className="mb-2 text-[13px] text-muted-foreground">
@@ -40,6 +43,11 @@ export function DeserveToWin({ G }: { G: Sheet }) {
         <span className="text-[11.5px] text-muted-foreground">even</span>
         <span><span className="text-[12.5px] text-muted-foreground">{nickname(G.home.name)}</span> <b className={`${DISPLAY} tabular text-[28px] font-black text-home`}>{pct0(hwin)}</b></span>
       </div>
+      {en.length > 0 && (
+        <p className="mt-1.5 text-[12px] text-muted-foreground">
+          Leaves out the {en.map(t => nickname(t.name)).join(" and ")}{/s$/.test(nickname(en[en.length - 1].name)) ? "’" : "’s"} shots at an empty net, which the expected goals above count.
+        </p>
+      )}
 
       <div className={`${DISPLAY} mt-4 text-base font-extrabold uppercase tracking-[0.03em]`}>Wins by how many</div>
       <svg viewBox={`0 0 ${W} 210`} role="img" className="mt-1 block h-auto max-h-[180px] w-full text-[12.5px]"
