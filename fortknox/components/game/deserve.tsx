@@ -1,3 +1,5 @@
+import { Info } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { margins, sides } from "@/lib/deserve";
 import { nickname } from "@/lib/teams";
 import type { Sheet } from "@/lib/types";
@@ -24,12 +26,26 @@ export function DeserveToWin({ G }: { G: Sheet }) {
   const label = (d: number) => (d === 0 ? "Tie" : `${d < 0 ? G.away.abbrev : G.home.abbrev} by ${Math.abs(d)}${Math.abs(d) === M ? "+" : ""}`);
   const live = G.live?.state === "live";
   // Teams that shot at an empty net: those shots count in the xG at the top
-  // but not here, which can flip who looks better.
+  // but not here, which can flip who looks better. Named in the (i).
   const en = [G.away, G.home].filter(t => G.shots.some(s => s.team === t.abbrev && s.sit === "EN_AGAINST" && s.ev !== "BLOCK" && s.xg > 0));
+  const enNames = en.map(t => nickname(t.name)).join(" and ");
+  const enPoss = en.length && /s$/.test(nickname(en[en.length - 1].name)) ? "’" : "’s";
   return (
     <div>
       <p className="mb-2 text-[13px] text-muted-foreground">
-        {live ? "So far: replay" : "Replay"} the shots, each going in with its xG as the chance.
+        {live ? "So far: replay" : "Replay"} the shots, each going in with its xG as the chance.{" "}
+        <Popover>
+          <PopoverTrigger aria-label="How deserve to win works"
+            className="inline-flex size-[18px] translate-y-[3px] items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring">
+            <Info className="size-[15px]" aria-hidden="true" />
+          </PopoverTrigger>
+          <PopoverContent className="w-80 space-y-2 text-[13px] leading-snug">
+            <p>Every unblocked shot gets another try, going in with its xG as the chance: a 0.20 xG shot scores one time in five.</p>
+            <p>Played out over every combination, that gives how often each final margin comes up (the bars below). Deserve to win is how often each team comes out ahead, with ties split evenly, as an overtime coin flip.</p>
+            <p>It isn’t just the xG totals: how the xG is spread across shots matters too, so in a close game the team with a little more xG can still come out under 50%.</p>
+            <p>Shots at an empty net are left out, since they pad the leading team’s xG once the game is settled.{en.length > 0 && <> Here that’s the {enNames}{enPoss} shots, which the expected goals at the top still count.</>}</p>
+          </PopoverContent>
+        </Popover>
       </p>
       <div className="relative h-[34px]" aria-hidden="true">
         <div className="absolute inset-x-0 top-[9px] flex h-4">
@@ -43,11 +59,6 @@ export function DeserveToWin({ G }: { G: Sheet }) {
         <span className="text-[11.5px] text-muted-foreground">even</span>
         <span><span className="text-[12.5px] text-muted-foreground">{nickname(G.home.name)}</span> <b className={`${DISPLAY} tabular text-[28px] font-black text-home`}>{pct0(hwin)}</b></span>
       </div>
-      {en.length > 0 && (
-        <p className="mt-1.5 text-[12px] text-muted-foreground">
-          Leaves out the {en.map(t => nickname(t.name)).join(" and ")}{/s$/.test(nickname(en[en.length - 1].name)) ? "’" : "’s"} shots at an empty net, which the expected goals above count.
-        </p>
-      )}
 
       <div className={`${DISPLAY} mt-4 text-base font-extrabold uppercase tracking-[0.03em]`}>Wins by how many</div>
       <svg viewBox={`0 0 ${W} 210`} role="img" className="mt-1 block h-auto max-h-[180px] w-full text-[12.5px]"
