@@ -686,10 +686,14 @@ function manpower(){
   const en = G.enOps.map(o => ({p:o.p, e:elapsed(o.p, secOf(o)), on:o.on})).sort((a,b) => a.e - b.e);
   return {
     pens,
-    at(e){
-      const p = periodOfE(e), act = activeAt(e);
+    /* shot: the strength a shot at e was taken at. A minor that a
+       power-play goal ends stops at that goal's own moment, so for the
+       goal itself it still counts: it is a power-play goal. */
+    at(e, shot){
+      const scoredOn = x => shot && x.by === e && x.e1 === e;
+      const p = periodOfE(e), act = pens.filter(x => x.e0 <= e && (e < x.e1 || scoredOn(x)));
       let bound = -1;
-      for(const x of pens){ if(x.e0 <= e) bound = Math.max(bound, x.e0); if(x.e1 <= e) bound = Math.max(bound, x.e1); }
+      for(const x of pens){ if(x.e0 <= e) bound = Math.max(bound, x.e0); if(x.e1 <= e && !scoredOn(x)) bound = Math.max(bound, x.e1); }
       let m = null; for(const o of manual) if(o.e <= e) m = o;
       if(m && m.e >= bound){ const c = STR_COUNTS(m.code, otAt(p)); return {us:c[0], them:c[1], manual:true}; }
       const c = countsFor(act, p); return {us:c[0], them:c[1], manual:false};
@@ -793,7 +797,7 @@ function derive(extraChange){
     I.autoReb = auto;
     I.rebound = s.reb === null || s.reb === undefined ? auto : !!s.reb;
     const e = elapsed(s.p, I.sec), known = I.onIce.length > 0;
-    const cnt = s.str ? STR_COUNTS(s.str, otAt(s.p)) : null, mp = MP.at(e);
+    const cnt = s.str ? STR_COUNTS(s.str, otAt(s.p)) : null, mp = MP.at(e, true);
     I.us = cnt ? cnt[0] : mp.us; I.them = cnt ? cnt[1] : mp.them; I.oppEN = MP.en(e);
     I.situation = situationFrom(s.team, I.us, I.them, known && !I.goalie, I.oppEN);
     const right = attacksRight(s.team, s.p), X = right ? s.x : -s.x, Y = right ? s.y : -s.y;
