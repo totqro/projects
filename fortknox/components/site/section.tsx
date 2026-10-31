@@ -65,9 +65,9 @@ export function Block({ title, aside, children, className }: {
 /** A figure: a small label over the number, under a rule (the stat strip's look). */
 export function Tile({ label, children, className }: { label: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("border-t border-foreground/70 pb-1 pr-3 pt-2", className)}>
+    <div className={cn("flex flex-col border-t border-foreground/70 pb-1 pr-3 pt-2", className)}>
       <div className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
-      <div className="tabular mt-1 font-[family-name:var(--font-display)] text-[26px] font-extrabold leading-none">{children}</div>
+      <div className="tabular mt-auto pt-1 font-[family-name:var(--font-display)] text-[26px] font-extrabold leading-none">{children}</div>
     </div>
   );
 }

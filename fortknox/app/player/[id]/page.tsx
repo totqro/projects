@@ -7,6 +7,7 @@ import type { GamePlayer, TeamUnits } from "@/lib/types";
 import { PageHead } from "@/components/site/page-head";
 import { TeamLogo } from "@/components/site/team-logo";
 import { Note, Section, Tile } from "@/components/site/section";
+import { InfoTip } from "@/components/site/info-tip";
 import { PlayerLog } from "@/components/players/player-log";
 import { PlayerTrend } from "@/components/players/player-trend";
 import { Signed } from "@/components/tables/sortable";
@@ -114,8 +115,8 @@ export default async function Player({ params }: Props) {
               {cur.gk && <>
                 <Tile label="Games">{cur.gk.gp}</Tile>
                 <Tile label="GSAx"><Signed v={cur.gk.gsax} /></Tile>
-                <Tile label="Save %">{sv(cur.gk.sv_pct)}</Tile>
-                <Tile label="Expected save %">{sv(cur.gk.xsv_pct)}</Tile>
+                <Tile label={<>Save <span className="whitespace-nowrap">%<InfoTip tip="svp" label="save percentage" /></span></>}>{sv(cur.gk.sv_pct)}</Tile>
+                <Tile label={<>Expected save <span className="whitespace-nowrap">%<InfoTip tip="xsvp" label="expected save percentage" /></span></>}>{sv(cur.gk.xsv_pct)}</Tile>
                 <Tile label="GSAx per 60"><Signed v={cur.gk.gsax60} d={2} /></Tile>
                 <Tile label="xGA">{f2(cur.gk.xga)}</Tile>
                 <Tile label="Goals allowed">{cur.gk.ga}</Tile>
