@@ -55,3 +55,18 @@ def test_scorecard_prefers_full_data_rows():
     picked = pick_prediction(pre)
     assert picked.loc["A", "home_win_prob"] == .6                                 # full-data row beats later backups
     assert picked.loc["B", "home_win_prob"] == .7                                 # backup used when it is all there is
+
+
+def test_rerun_counts_only_without_a_live_row():
+    import pandas as pd
+    from scorecard import counted_rows, pick_prediction
+    ko = pd.Timestamp("2026-09-13 13:00", tz="America/New_York")
+    res = pd.DataFrame({"kickoff": [ko, ko]}, index=["g1", "g2"])
+    log = pd.DataFrame({"game_id": ["g1", "g1", "g2", "g2"],
+                        "ts": pd.to_datetime(["2026-09-12", "2026-11-02", "2026-09-12", "2026-11-02"], utc=True),
+                        "quality": ["final", "rerun", "backup", "final"], "home_win_prob": [.6, .9, .5, .8]})
+    picked = pick_prediction(counted_rows(log, res))
+    assert picked.loc["g1", "home_win_prob"] == .6          # live final beats a later rerun
+    assert picked.loc["g2", "home_win_prob"] == .5          # post-kickoff final row is dropped
+    only_rerun = log.iloc[[1]]
+    assert pick_prediction(counted_rows(only_rerun, res)).loc["g1", "quality"] == "rerun"

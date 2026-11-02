@@ -213,7 +213,16 @@ function displayPerformance(d) {
                 : 'So far the model and Vegas have picked the same number of winners. ';
     }
     if (s.n < d.min_games_for_verdict) verdict += `That is only ${s.n} games, so a couple of upsets either way can swing it. It takes about ${d.min_games_for_verdict} games (most of a season) before the comparison really means something.`;
-    if (s.backups) verdict += ` ${s.backups} of these game${s.backups > 1 ? 's were' : ' was'} predicted from a backup (incomplete injury data), marked "backup" below.`;
+    const backups = results.filter(r => r.backup);
+    if (backups.length) {
+        const names = backups.map(r => `${r.away} @ ${r.home} (week ${r.week})`).join(', ');
+        verdict += ` ${backups.length === 1 ? 'One game' : `${backups.length} games`}, ${names}, ${backups.length === 1 ? 'was' : 'were'} predicted from a backup (incomplete injury data) and ${backups.length === 1 ? 'is' : 'are'} tagged "backup" in the results list below.`;
+    }
+    const reruns = results.filter(r => r.rerun);
+    if (reruns.length) {
+        const wks = [...new Set(reruns.map(r => r.week))].sort((a, b) => a - b).join(', ');
+        verdict += ` Week ${wks} came before the model went live, so ${reruns.length === 1 ? 'that game was' : `those ${reruns.length} games were`} predicted afterwards using only data from before kickoff. ${reruns.length === 1 ? 'It counts' : 'They count'} in the record and ${reruns.length === 1 ? 'is' : 'are'} tagged "rerun".`;
+    }
     $('perf-verdict').textContent = verdict;
 
     // Confidence check, from every scored game.
@@ -243,7 +252,7 @@ function displayPerformance(d) {
     $('bench-table').innerHTML = h;
 
     $('weeks-table').innerHTML = tbl((d.weeks || []).slice().reverse().map(w => [
-        `Week ${w.week}`, `model ${rec(w.model.correct, w.n)}`,
+        `Week ${w.week}${w.reruns ? '<span class="gc-status gc-rerun" title="Predicted after the fact, before the model went live">rerun</span>' : ''}`, `model ${rec(w.model.correct, w.n)}`,
         w.market ? `Vegas ${rec(w.market.correct, w.market.n)}` : '']));
 
     renderTestSet(d.test_set);
@@ -260,7 +269,7 @@ function displayPerformance(d) {
         return `<div class="pred-result-row">
             <span class="pred-result-date">Wk ${r.week}</span>
             <span class="pred-result-matchup">${team(r.away, r.away_score, aw)} @ ${team(r.home, r.home_score, hw)}</span>
-            <span class="pred-result-winner">${icon} ${r.pick} ${(r.pick_prob*100).toFixed(0)}%${r.backup ? '<span class="score" title="Backup prediction from incomplete injury data"> backup</span>' : ''}</span>
+            <span class="pred-result-winner">${icon} ${r.pick} ${(r.pick_prob*100).toFixed(0)}%${r.backup ? '<span class="gc-status gc-backup" title="Backup prediction from incomplete injury data">backup</span>' : ''}${r.rerun ? '<span class="gc-status gc-rerun" title="Predicted after the game, before the model went live, using only data from before kickoff">rerun</span>' : ''}</span>
             <span class="pred-result-total"><span class="actual">Vegas ${r.market_pick ? `${mIcon} ${r.market_pick} ${(r.market_pick_prob*100).toFixed(0)}%` : '-'}</span></span>
         </div>`;
     }).join('');

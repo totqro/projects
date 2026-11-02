@@ -275,6 +275,15 @@ outputs summarised in `data/processed/*.json`).
   appeared only after kickoff. The workflow also retries `predict.py` up to
   three times, after a brief nflverse outage failed a run 30 minutes before
   that kickoff.
+* **Week 1 rerun (2026-11-02).** The model went live after week 1, so the
+  site's record started at week 2. Week 1 was then predicted after the fact
+  with `predict.py --season 2026 --week 1 --rerun`, which walks only the data
+  before each game (the same engine as live serving) and logs
+  `quality: "rerun"`. Rerun rows count in the season record only for games
+  with no live row; the scorecard and the website label them "rerun". Caveat:
+  the rerun used each game's actual starting QB, which the closing line could
+  only expect (in week 1 every starter was the expected one). Result: model
+  12/16, log loss 0.606; market 12/16, 0.621. Noise at n=16.
 * **Contract tie fix (2026-09-21).** When a player had two contracts signed
   in the same year, the one used for his value was whichever an unstable sort
   put last. That order differs between Apple Silicon and the x86 GitHub

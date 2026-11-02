@@ -8,6 +8,10 @@ Mirrors nhllines/scorecard.py. The rules that keep it honest:
    runs logged a game, the last pre-kickoff full-data row is the prediction;
    a backup row (quality="backup", logged from incomplete data, see
    src/readiness.py) counts only when the game has no full-data row.
+   The one exception is a rerun row (quality="rerun", written by
+   `predict.py --rerun` for a week that was never predicted live, i.e. 2026
+   week 1): it is logged after kickoff by definition, counts only for a game
+   with no live row, and is labelled "rerun" wherever it is shown.
 2. The market is nflverse's closing moneyline, de-vigged; the closing spread
    and total for points. Read here for scoring only, never as a feature.
 3. Win probability is the same number in v1 and v2 rows (only the points
@@ -62,11 +66,21 @@ def load_log() -> pd.DataFrame:
     return df
 
 
+QUALITY_RANK = {"final": 2, "backup": 1, "rerun": 0}
+
+
+def counted_rows(log: pd.DataFrame, res: pd.DataFrame) -> pd.DataFrame:
+    """Rows that may count: logged before kickoff, or a labelled rerun."""
+    log = log[log.game_id.isin(res.index)].copy()
+    log["kickoff"] = log.game_id.map(res.kickoff)
+    return log[(log.ts < pd.to_datetime(log.kickoff, utc=True)) | (log.quality == "rerun")]
+
+
 def pick_prediction(pre: pd.DataFrame) -> pd.DataFrame:
-    """One row per game from its pre-kickoff rows: the last full-data row,
-    or the last backup row when there is no full-data row."""
-    pre = pre.assign(_full=(pre.quality == "final").astype(int))
-    return pre.sort_values(["_full", "ts"]).groupby("game_id").tail(1).drop(columns="_full").set_index("game_id")
+    """One row per game from its counted rows: the last full-data row, else the
+    last backup row, else the rerun row (a game never predicted live)."""
+    pre = pre.assign(_rank=pre.quality.map(QUALITY_RANK).fillna(2))
+    return pre.sort_values(["_rank", "ts"]).groupby("game_id").tail(1).drop(columns="_rank").set_index("game_id")
 
 
 def main():
@@ -80,9 +94,8 @@ def main():
     log = log[log.season == args.season]
     if args.week:
         log = log[log.week == args.week]
-    log = log[log.game_id.isin(res.index)].copy()
-    log["kickoff"] = log.game_id.map(res.kickoff)
-    pre = log[log.ts < pd.to_datetime(log.kickoff, utc=True)]
+    log = log[log.game_id.isin(res.index)]
+    pre = counted_rows(log, res)
     dropped = len(log) - len(pre)
     last = pick_prediction(pre)
     done = last[res.loc[last.index, "home_score"].notna().to_numpy()].copy()
@@ -104,7 +117,7 @@ def main():
     for gid, row in done.sort_values("kickoff").iterrows():
         ours = "✓" if (row.home_win_prob > .5) == (row.margin > 0) else "✗"
         mkt = "✓" if (row.p_mkt > .5) == (row.margin > 0) else "✗"
-        ver = ("v2" if "coherent" in row.model_version else "v1") + (" backup" if row.quality == "backup" else "")
+        ver = ("v2" if "coherent" in row.model_version else "v1") + (f" {row.quality}" if row.quality != "final" else "")
         print(f"{gid:<18}{row.home_win_prob:>8.3f}{row.p_mkt:>7.3f}{int(row.hs):>4}-{int(row.as_):<4}{ours:>6}{mkt:>5}"
               f"{row.margin:>+8.0f}{row.expected_margin:>+7.1f}{row.total:>7.0f}{row.expected_total:>7.1f}  {ver}")
 

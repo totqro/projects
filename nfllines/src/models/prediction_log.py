@@ -5,9 +5,11 @@ Every predict.py run appends one JSON line per game to
 data/predictions_log.jsonl: UTC timestamp, run date, game id, teams, week,
 win probability, expected home/away points, margin, total, and the model
 version. Lines are never rewritten; a (game_id, run_date) pair is written
-once per quality ("final" or "backup", see src/readiness.py), so re-running
+once per quality ("final" or "backup", see src/readiness.py; "rerun" for a
+week never predicted live, see predict.py --rerun), so re-running
 on the same day doesn't duplicate but a final row can follow a backup. A prediction only
-counts if it was logged before kickoff — the scorecard drops the rest.
+counts if it was logged before kickoff (or is a labelled rerun) — the
+scorecard drops the rest.
 """
 from __future__ import annotations
 
@@ -33,6 +35,19 @@ def final_logged(path: Path = LOG_PATH) -> set:
             continue
         if r.get("quality", "final") == "final":
             out.add(r.get("game_id"))
+    return out
+
+
+def logged_game_ids(path: Path = LOG_PATH) -> set:
+    """Every game id with any row in the log."""
+    if not path.exists():
+        return set()
+    out = set()
+    for line in path.read_text().splitlines():
+        try:
+            out.add(json.loads(line).get("game_id"))
+        except json.JSONDecodeError:
+            continue
     return out
 
 

@@ -18,6 +18,13 @@ from whatever data there is; a later full-data row replaces it. Everything
 else is printed with the reason it was held back. --force logs regardless,
 loudly.
 
+--rerun is for a week that was never predicted live (2026 week 1, before the
+model shipped): it logs every game of an already-played week as
+quality="rerun". Those rows are written after kickoff, so the scorecard only
+counts them for games with no live row, and the site labels them "rerun".
+The rerun uses the schedule's actual starting QBs, which the market could
+only guess at; see the README's caveat on surprise starts.
+
 Starting QBs come from the nflverse schedule's home_qb_id/away_qb_id; for an
 upcoming game those columns are nflverse's expected starter and are
 updated as news breaks, so re-running closer to kickoff picks up changes.
@@ -43,7 +50,7 @@ from src.data import nflverse as nv
 from src.features.build import load_inputs, make_engine, attach_targets
 from src.models.coherent import coherent_points
 from src.models.points_model import ServedPointsModel
-from src.models.prediction_log import final_logged, log_predictions
+from src.models.prediction_log import final_logged, log_predictions, logged_game_ids
 from src.models.win_model import ServedWinModel, WIN_MODEL_PATH, POINTS_MODEL_PATH
 from src.readiness import ET, backup_allowed, game_readiness, season_complete_before
 from src.starters import serving_starter
@@ -55,6 +62,8 @@ def main():
     ap.add_argument("--week", type=int, help="default: the earliest week with an unplayed game")
     ap.add_argument("--no-log", action="store_true")
     ap.add_argument("--force", action="store_true", help="log games the readiness guard holds back")
+    ap.add_argument("--rerun", action="store_true",
+                    help="log an already-played week that was never predicted live, labelled quality=rerun")
     ap.add_argument("--features-out", help="write the exact feature rows served (CSV, full precision) for auditing")
     args = ap.parse_args()
 
@@ -77,6 +86,13 @@ def main():
     target = games[(games.season == args.season) & (games.week == args.week)]
     if target.empty:
         raise SystemExit("no games for that season/week in the schedule")
+    if args.rerun:
+        from src.readiness import kickoff_et
+        if not all(kickoff_et(g) <= now for _, g in target.iterrows()):
+            raise SystemExit("--rerun is only for a week whose games have all kicked off")
+        live = logged_game_ids()
+        if live & set(target.game_id):
+            raise SystemExit(f"--rerun refused: already logged {sorted(live & set(target.game_id))}")
     target = check_starters(target, args.season, args.week, inputs)
 
     eng = make_engine(inputs)
@@ -104,18 +120,22 @@ def main():
     for i, r in rows.iterrows():
         g = target[target.game_id == r.game_id].iloc[0]
         ready, why = game_readiness(g, inputs["context"]["injuries"], now)
+        if args.rerun:
+            ready, why = False, "rerun after the fact"
         if ready and missing:
             ready, why = False, "earlier results missing (see above)"
         # Not ready but out of time: log what we have rather than nothing.
-        backup = (not ready and backup_allowed(g, now) and r.game_id not in have_final)
-        forced = args.force and not ready and not backup and why != "kicked off"
-        log_it = ready or backup or forced
-        quality = "final" if ready else "backup"
+        backup = (not args.rerun and not ready and backup_allowed(g, now) and r.game_id not in have_final)
+        forced = args.force and not args.rerun and not ready and not backup and why != "kicked off"
+        log_it = ready or backup or forced or args.rerun
+        quality = "rerun" if args.rerun else "final" if ready else "backup"
         status = "logged" if (log_it and not args.no_log) else ("ready" if ready else f"held: {why}")
         if backup:
             status = f"BACKUP ({why})" + ("" if args.no_log else ", logged")
         elif forced:
             status = f"FORCED ({why})"
+        elif args.rerun:
+            status = "RERUN" + ("" if args.no_log else ", logged")
         print(f"{r.game_id:<20}{p[i]:>9.3f}{pts['margin'][i]:>8.1f}{pts['home'][i]:>7.1f}{pts['away'][i]:>7.1f}"
               f"{pts['total'][i]:>7.1f}  {status}")
         if not log_it:

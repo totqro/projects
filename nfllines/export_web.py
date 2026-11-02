@@ -8,7 +8,8 @@ Writes the two JSON files the dashboard reads:
   pre-kickoff prediction, not-yet-logged ones with when the prediction will
   post, finished ones with the score.
 * data/performance.json: the season scorecard, with the same rules as
-  scorecard.py (only pre-kickoff rows count, last pre-kickoff row wins),
+  scorecard.py (only pre-kickoff rows count, last pre-kickoff row wins;
+  a labelled rerun row counts for a game never predicted live),
   plus per-week numbers and the one-time 2024-2025 test from the README.
 
 The market numbers (de-vigged moneyline, spread, total) are read here for
@@ -26,7 +27,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from scorecard import load_log, load_results, pick_prediction, MIN_GAMES_FOR_VERDICT
+from scorecard import counted_rows, load_log, load_results, pick_prediction, MIN_GAMES_FOR_VERDICT
 from src.data.nflverse import current_season
 from src.models.metrics import log_loss, brier
 from src.readiness import report_due_et
@@ -55,10 +56,8 @@ def _f(x, nd=4):
 
 
 def last_pre_kickoff(log: pd.DataFrame, res: pd.DataFrame) -> pd.DataFrame:
-    log = log[log.game_id.isin(res.index)].copy()
-    log["kickoff"] = log.game_id.map(res.kickoff)
-    pre = log[log.ts < pd.to_datetime(log.kickoff, utc=True)]
-    return pick_prediction(pre)
+    """The prediction that counts per game (pre-kickoff, or a labelled rerun)."""
+    return pick_prediction(counted_rows(log, res))
 
 
 def win_block(y, p):
@@ -88,7 +87,8 @@ def summary(d: pd.DataFrame) -> dict:
            "coin_flip": win_block(y, np.full(len(w), 0.5)),
            "margin_mae": _f(np.mean(np.abs(d.margin - d.expected_margin)), 2),
            "total_mae": _f(np.mean(np.abs(d.total - d.expected_total)), 2),
-           "backups": int((d.quality == "backup").sum())}
+           "backups": int((d.quality == "backup").sum()),
+           "reruns": int((d.quality == "rerun").sum())}
     if has_mkt.any():
         out["market"] = win_block(y[has_mkt], w.p_mkt.to_numpy()[has_mkt])
         out["model_same_games"] = win_block(y[has_mkt], pm[has_mkt])
@@ -170,6 +170,7 @@ def main():
             "expected_margin": _f(r.expected_margin, 1), "margin": int(r.margin),
             "expected_total": _f(r.expected_total, 1), "total": int(r.total),
             "backup": r.quality == "backup",
+            "rerun": r.quality == "rerun",
         })
     perf = {"timestamp": now.isoformat(), "season": args.season,
             "min_games_for_verdict": MIN_GAMES_FOR_VERDICT,

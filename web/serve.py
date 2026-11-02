@@ -7,6 +7,7 @@ straight from the source folders so edits show up on reload:
   /               -> web/            (hub + shared stylesheets)
   /nhllines/...   -> nhllines/web/   (JSON falls back to nhllines/data/)
   /mlblines/...   -> mlblines/web/   (JSON falls back to mlblines/mlbdata/)
+  /nfllines/...   -> nfllines/web/   (JSON falls back to nfllines/data/)
   /swingai/...    -> swingai/
   /xgcalc/...     -> xgcalc/web/
   /retired-site/  -> retired-site/   (a separate Firebase site; here for preview)
@@ -20,6 +21,7 @@ PORT = int(os.environ.get("PORT", 8100))
 MOUNTS = [
     ("/nhllines", [os.path.join(ROOT, "nhllines", "web"), os.path.join(ROOT, "nhllines", "data")]),
     ("/mlblines", [os.path.join(ROOT, "mlblines", "web"), os.path.join(ROOT, "mlblines", "mlbdata")]),
+    ("/nfllines", [os.path.join(ROOT, "nfllines", "web"), os.path.join(ROOT, "nfllines", "data")]),
     ("/swingai", [os.path.join(ROOT, "swingai")]),
     ("/xgcalc", [os.path.join(ROOT, "xgcalc", "web")]),
     ("/retired-site", [os.path.join(ROOT, "retired-site")]),
