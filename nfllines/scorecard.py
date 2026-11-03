@@ -12,8 +12,12 @@ Mirrors nhllines/scorecard.py. The rules that keep it honest:
    `predict.py --rerun` for a week that was never predicted live, i.e. 2026
    week 1): it is logged after kickoff by definition, counts only for a game
    with no live row, and is labelled "rerun" wherever it is shown.
-2. The market is nflverse's closing moneyline, de-vigged; the closing spread
-   and total for points. Read here for scoring only, never as a feature.
+2. The market is the de-vigged moneyline (and spread / total for points)
+   frozen at kickoff: the last line nflverse gave us before the game started,
+   kept in data/market_frozen.json by export_web.py. A line nflverse revises
+   after kickoff never changes a finished game. Games with no frozen line
+   (before the snapshots began in week 4) fall back to nflverse's closing
+   line. Read here for scoring only, never as a feature.
 3. Win probability is the same number in v1 and v2 rows (only the points
    output changed), so win metrics use the last pre-kickoff row regardless of
    version. Points metrics are reported per model version, never pooled.
@@ -25,6 +29,7 @@ Mirrors nhllines/scorecard.py. The rules that keep it honest:
 import argparse
 import json
 from datetime import datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import numpy as np
@@ -39,6 +44,8 @@ from src.models.prediction_log import LOG_PATH
 
 ET = ZoneInfo("America/New_York")
 MIN_GAMES_FOR_VERDICT = 200
+FROZEN_PATH = Path(__file__).resolve().parent / "data" / "market_frozen.json"
+FROZEN_FIELDS = {"home_prob": "p_market", "spread": "spread_line", "total": "total_line"}
 
 
 def american_to_prob(ml):
@@ -56,6 +63,37 @@ def load_results(season: int) -> pd.DataFrame:
     for c in ("home_team", "away_team"):
         g[c] = g[c].replace(TEAM_RENAME)
     return g.set_index("game_id")
+
+
+def load_frozen() -> dict:
+    return json.loads(FROZEN_PATH.read_text()) if FROZEN_PATH.exists() else {}
+
+
+def freeze_market(res: pd.DataFrame, now: datetime) -> dict:
+    """Save the current line for every game not yet started. After kickoff a
+    game's entry is never touched again, so it keeps its last pre-kickoff line."""
+    frozen = load_frozen()
+    for gid, g in res.iterrows():
+        if now < g.kickoff and pd.notna(g.p_market):
+            frozen[gid] = {"home_prob": round(float(g.p_market), 4),
+                           "spread": None if pd.isna(g.spread_line) else float(g.spread_line),
+                           "total": None if pd.isna(g.total_line) else float(g.total_line),
+                           "fetched_at": now.isoformat(timespec="seconds")}
+    FROZEN_PATH.write_text(json.dumps(dict(sorted(frozen.items())), indent=1) + "\n")
+    return frozen
+
+
+def apply_frozen_market(res: pd.DataFrame, now: datetime, frozen: dict | None = None) -> pd.DataFrame:
+    """Swap in the frozen line for games that have kicked off. Fields the
+    snapshot lacks (spread / total in the backfilled weeks) stay as nflverse has them."""
+    frozen = load_frozen() if frozen is None else frozen
+    res = res.copy()
+    for gid, f in frozen.items():
+        if gid in res.index and now >= res.at[gid, "kickoff"]:
+            for k, col in FROZEN_FIELDS.items():
+                if f.get(k) is not None:
+                    res.at[gid, col] = f[k]
+    return res
 
 
 def load_log() -> pd.DataFrame:
@@ -89,7 +127,7 @@ def main():
     ap.add_argument("--week", type=int)
     args = ap.parse_args()
 
-    res = load_results(args.season)
+    res = apply_frozen_market(load_results(args.season), datetime.now(ET))
     log = load_log()
     log = log[log.season == args.season]
     if args.week:
@@ -131,7 +169,7 @@ def main():
     if len(w) < MIN_GAMES_FOR_VERDICT:
         print(f"(n={len(w)} < {MIN_GAMES_FOR_VERDICT}: any model-vs-market gap here is noise, not evidence)")
 
-    print("\nPOINTS (per model version; market = closing spread / total)")
+    print("\nPOINTS (per model version; market = spread / total at kickoff)")
     print(f"{'':<14}{'n':>4}{'margin MAE':>12}{'mkt':>7}{'total MAE':>11}{'mkt':>7}")
     for ver, d in done.groupby("model_version"):
         print(f"{ver:<14.14}{len(d):>4}{np.mean(np.abs(d.margin - d.expected_margin)):>12.2f}"

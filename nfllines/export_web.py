@@ -14,6 +14,9 @@ Writes the two JSON files the dashboard reads:
 
 The market numbers (de-vigged moneyline, spread, total) are read here for
 display and scoring only, never as a feature, exactly as in scorecard.py.
+Each run also saves the line of every game not yet started to
+data/market_frozen.json; once a game kicks off, the site shows that frozen
+line, so a later nflverse revision never flips a finished game's favourite.
 
     python export_web.py                 # current season
     python export_web.py --season 2026
@@ -27,7 +30,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from scorecard import counted_rows, load_log, load_results, pick_prediction, MIN_GAMES_FOR_VERDICT
+from scorecard import (apply_frozen_market, counted_rows, freeze_market, load_log, load_results,
+                       pick_prediction, MIN_GAMES_FOR_VERDICT)
 from src.data.nflverse import current_season
 from src.models.metrics import log_loss, brier
 from src.readiness import report_due_et
@@ -132,6 +136,7 @@ def main():
 
     now = datetime.now(timezone.utc)
     res = load_results(args.season)
+    res = apply_frozen_market(res, now, freeze_market(res, now))
     log = load_log()
     log = log[log.season == args.season]
     last = last_pre_kickoff(log, res)
