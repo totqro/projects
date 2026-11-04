@@ -49,7 +49,7 @@ from src.models import (
     blend_model_and_market,
     StreamlinedNHLMLModel,
 )
-from src.models import elo_production, xg_production
+from src.models import core4_shadow, elo_production, xg_production
 from src.data.nhl_data import slate_date, game_slate
 from src.analysis import (
     evaluate_all_bets,
@@ -69,6 +69,7 @@ from src.analysis import (
     get_team_splits,
     log_predictions,
     SHADOW_LOG_PATH,
+    CORE4_SHADOW_LOG_PATH,
     WIN_MODEL_VERSIONS,
     TOTALS_MODEL_VERSION,
 )
@@ -332,6 +333,39 @@ def run_analysis(
             "model_version": _model_version("elo"),
         })
 
+    # Shadow core4: the 4-variable model the Nov 2026 feature search picked
+    # (feature_search/README.md), logged for every game where both teams have
+    # min_gp games (it was fit only on those), never served. It reads live
+    # Elo and the live xG state, so it needs both to have loaded this run.
+    core4_model = core4_shadow.load_model() if core4_shadow.model_exists() else None
+    core4_to_log = []
+    if core4_model is None:
+        print("  core4 shadow: no ml_models/core4_coefficients.json, not logging it")
+
+    def _log_shadow_core4(served_row: dict, home_rest_days: float, away_rest_days: float,
+                          home_b2b: bool, away_b2b: bool):
+        if core4_model is None or not use_xg or not elo_ratings:
+            return
+        home, away = served_row["home_team"], served_row["away_team"]
+        if home not in elo_ratings or away not in elo_ratings:
+            return
+        # Same "+1, capped at 7" rest conversion the served models use; core4
+        # only reads the xG differential and the b2b flags from it.
+        features = xg_production.compute_serving_features(
+            xg_state, home, away, min(home_rest_days + 1, 7), min(away_rest_days + 1, 7),
+            home_b2b, away_b2b)
+        if min(features["home_gp"], features["away_gp"]) < core4_model["min_gp"]:
+            return
+        core4_to_log.append({
+            **served_row,
+            "home_win_prob": core4_shadow.predict(
+                core4_model,
+                elo_diff=elo_ratings[home] - elo_ratings[away],
+                xg_diff_rate_diff=features["xg_diff_rate_diff"],
+                home_b2b=home_b2b, away_b2b=away_b2b),
+            "model_version": f"{core4_model['model_version']}+{TOTALS_MODEL_VERSION}",
+        })
+
     # Step 4: Fetch odds (if enabled)
     odds_games = []
     quota_info = None
@@ -571,6 +605,7 @@ def run_analysis(
                 "model_version": _model_version(served_by),
             })
             _log_shadow_elo(predictions_to_log[-1], *rest_args)
+            _log_shadow_core4(predictions_to_log[-1], *rest_args)
 
             # Player/context indicators for display only (not fed into a
             # model — the Elo model only uses elo_diff/rest_diff/b2b).
@@ -950,6 +985,7 @@ def run_analysis(
                 "model_version": _model_version(served_by),
             })
             _log_shadow_elo(predictions_to_log[-1], *rest_args)
+            _log_shadow_core4(predictions_to_log[-1], *rest_args)
 
             print(f"    Model{ml_labels[served_by]}: {home} {model_probs['home_win_prob']:.1%} / "
                   f"{away} {model_probs['away_win_prob']:.1%}")
@@ -1036,6 +1072,9 @@ def run_analysis(
     if shadow_to_log:
         n_shadow = log_predictions(shadow_to_log, path=SHADOW_LOG_PATH)
         print(f"Logged {n_shadow} shadow Elo prediction(s) to data/{SHADOW_LOG_PATH.name}")
+    if core4_to_log:
+        n_core4 = log_predictions(core4_to_log, path=CORE4_SHADOW_LOG_PATH)
+        print(f"Logged {n_core4} shadow core4 prediction(s) to data/{CORE4_SHADOW_LOG_PATH.name}")
 
     # Score logged predictions whose games are now final (Performance
     # History tab). all_games is the completed-games window fetched above.

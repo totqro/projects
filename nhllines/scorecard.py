@@ -26,8 +26,10 @@ model that served them, and a scorecard spanning a fallback period says so.
 
 Shadow models are scored alongside, never pooled in: main.py logs Elo's
 prediction for every game to `data/shadow_predictions_log.jsonl` (README
-item 12). When that file exists, a SHADOW section scores the served model,
-shadow Elo and the market on the games all three have, under the same rules.
+item 12), and the 4-variable core4 model's to `data/shadow_core4_log.jsonl`
+(feature_search/README.md). For each file that exists, a SHADOW section scores
+the served model, that shadow and the market on the games all three have,
+under the same rules.
 
 Usage:
     python scorecard.py                          # current season to date
@@ -35,6 +37,7 @@ Usage:
     python scorecard.py --model-version xg-dropgoalie-platt-v1
     python scorecard.py --json data/scorecard.json
     python scorecard.py --log data/shadow_predictions_log.jsonl   # shadow Elo alone
+    python scorecard.py --log data/shadow_core4_log.jsonl         # shadow core4 alone
 """
 
 import argparse
@@ -60,6 +63,10 @@ from model_gate import _poisson_nll as poisson_nll
 BASE = Path(__file__).resolve().parent
 PREDICTIONS_LOG = BASE / "data" / "predictions_log.jsonl"
 SHADOW_LOG = BASE / "data" / "shadow_predictions_log.jsonl"
+CORE4_SHADOW_LOG = BASE / "data" / "shadow_core4_log.jsonl"
+# Each shadow log gets its own section and JSON key ("shadow" stays shadow Elo).
+SHADOW_LOGS = (("shadow", "shadow Elo", SHADOW_LOG),
+               ("shadow_core4", "shadow core4", CORE4_SHADOW_LOG))
 SNAPSHOT_DIR = BASE / "data" / "market_snapshots"
 
 # main.py stamps a game's date by converting the UTC commence time at this
@@ -333,8 +340,8 @@ def shadow_comparison(scored: list, shadow: dict, n_bins: int = 10) -> dict:
     }
 
 
-def print_shadow(cmp: dict) -> None:
-    print("  SHADOW — served model vs shadow model, same games, never pooled")
+def print_shadow(cmp: dict, label: str = "shadow Elo") -> None:
+    print(f"  SHADOW ({label}) — served model vs shadow model, same games, never pooled")
     if not cmp["n"]:
         print("  No scored game has both a shadow row and a market price yet.")
         return
@@ -501,12 +508,14 @@ def main():
     card = compute_scorecard(scored, args.bins)
     print_report(card, len(pending), "all" if args.all_seasons else season, failed_dates)
 
-    # The shadow section only belongs on the served log's scorecard.
-    if log_path == PREDICTIONS_LOG.resolve() and SHADOW_LOG.exists():
-        card["shadow"] = shadow_comparison(scored, load_predictions(SHADOW_LOG, season=season),
-                                           args.bins)
-        print_shadow(card["shadow"])
-        print("-" * 78)
+    # The shadow sections only belong on the served log's scorecard.
+    if log_path == PREDICTIONS_LOG.resolve():
+        for key, label, path in SHADOW_LOGS:
+            if path.exists():
+                card[key] = shadow_comparison(scored, load_predictions(path, season=season),
+                                              args.bins)
+                print_shadow(card[key], label)
+                print("-" * 78)
 
     if args.json_path:
         out = Path(args.json_path)

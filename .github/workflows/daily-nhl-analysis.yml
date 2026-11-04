@@ -215,7 +215,7 @@ jobs:
           # every gameless day.
           for f in bet_results.json analysis_history.json latest_analysis.json \
                    model_feedback.json backtest_results.json predictions_log.jsonl \
-                   shadow_predictions_log.jsonl performance.json; do
+                   shadow_predictions_log.jsonl shadow_core4_log.jsonl performance.json; do
             if [ -f "nhllines/data/$f" ]; then
               git add "nhllines/data/$f"
             fi

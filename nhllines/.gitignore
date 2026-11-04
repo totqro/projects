@@ -40,6 +40,15 @@ ml_models/*
 # run's artifacts), so a fresh runner had no model at all. The .pkl files above
 # stay ignored — they belong to the quarantined leaky path.
 !ml_models/*.json
+
+# Feature search (feature_search/README.md): the results are kept, the rebuilt
+# 2015-2026 datasets (20 MB, rebuilt by build_dataset.py) are not.
+!feature_search/finalists.json
+!feature_search/results/*.json
+!feature_search/results_nogoalie/*.json
+feature_search/data/
+# core4 shadow predictions: same perishable record as the Elo shadow log.
+!data/shadow_core4_log.jsonl
 !mlblines_data/bet_results.json
 !mlblines_data/analysis_history.json
 !mlblines_data/latest_analysis.json

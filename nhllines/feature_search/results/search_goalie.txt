@@ -1,0 +1,443 @@
+=== baselines ===
+elo                0.66686 acc 0.5922
+shipped44          0.67016 acc 0.5845
+shipped+goalie     0.67036 acc 0.5866
+all                0.66693 acc 0.5912
+elo_only_diff      0.66865 acc 0.5909
+saved results/baselines.json
+baselines done in 0s
+=== blocks ===
+16383 block subsets
+0.66448 k=19 elo+form+rest+xg_rates+high_danger
+0.66455 k=21 elo+form+rest+gp+xg_rates+high_danger
+0.66456 k=16 elo+rest+xg_rates+high_danger
+0.66457 k=30 elo+record+goals_pg+form+rest+xg_rates+high_danger
+0.66457 k=16 elo+form+rest+xg_rates
+0.66459 k=13 elo+rest+xg_rates
+0.66460 k=27 elo+record+goals_pg+rest+xg_rates+high_danger
+0.66462 k=21 elo+form+rest+xg_rates+high_danger+h2h
+0.66462 k=22 elo+venue_record+form+rest+xg_rates+high_danger
+0.66462 k=32 elo+record+goals_pg+form+rest+gp+xg_rates+high_danger
+0.66463 k=25 elo+record+form+rest+xg_rates+high_danger
+0.66463 k=18 elo+rest+gp+xg_rates+high_danger
+0.66463 k=18 elo+form+rest+gp+xg_rates
+0.66466 k=29 elo+record+goals_pg+rest+gp+xg_rates+high_danger
+0.66466 k=15 elo+rest+gp+xg_rates
+saved results/blocks.json
+blocks done in 161s
+=== diffblocks ===
+8191 block subsets
+0.66390 k=10 elo+record+goals_pg+streak_trend+rest+xg_rates+high_danger
+0.66390 k=11 elo+record+venue_record+goals_pg+streak_trend+rest+xg_rates+high_danger
+0.66392 k= 9 elo+venue_record+streak_trend+rest+xg_rates+high_danger
+0.66392 k=10 elo+venue_record+goals_pg+streak_trend+rest+xg_rates+high_danger
+0.66393 k=11 elo+record+venue_record+goals_pg+form+rest+xg_rates+high_danger
+0.66394 k=10 elo+record+goals_pg+form+rest+xg_rates+high_danger
+0.66394 k=10 elo+venue_record+streak_trend+rest+xg_rates+high_danger+xg_luck
+0.66394 k= 8 elo+streak_trend+rest+xg_rates+high_danger
+0.66395 k= 9 elo+venue_record+form+rest+xg_rates+high_danger
+0.66396 k=10 elo+venue_record+goals_pg+form+rest+xg_rates+high_danger
+0.66396 k=12 elo+record+goals_pg+streak_trend+rest+xg_rates+high_danger+goalie
+0.66396 k=13 elo+record+venue_record+goals_pg+streak_trend+rest+xg_rates+high_danger+goalie
+0.66397 k=12 elo+record+venue_record+goals_pg+form+streak_trend+rest+xg_rates+high_danger
+0.66397 k=11 elo+record+venue_record+streak_trend+rest+xg_rates+high_danger+xg_luck
+0.66397 k=10 elo+record+streak_trend+rest+xg_rates+high_danger+xg_luck
+saved results/diffblocks.json
+diffblocks done in 23s
+=== forward ===
+ 1 +elo_diff                     0.66865
+ 2 +xg_diff_rate_diff            0.66597
+ 3 +home_b2b                     0.66501
+ 4 +away_b2b                     0.66406
+ 5 +streak_diff                  0.66389
+ 6 +hd_share_diff                0.66378
+ 7 +home_goalie_sv_pct           0.66371
+ 8 +home_rest_days               0.66364
+ 9 +home_xg_luck_against         0.66359
+10 +venue_win_pct_diff           0.66355
+11 +away_form_gf                 0.66356
+12 +h2h_meetings                 0.66356
+13 +goalie_experience_diff       0.66357
+14 +home_ga_pg                   0.66360
+15 +home_goalie_starts           0.66363
+16 +away_ga_pg                   0.66367
+17 +away_win_pct                 0.66368
+18 +away_xga_per60               0.66372
+19 +home_goalie_gaa              0.66378
+20 +form_diff                    0.66384
+21 +away_gf_pg                   0.66390
+22 +away_points_pct              0.66386
+23 +away_xg_luck_for             0.66391
+24 +home_gp                      0.66397
+25 +away_gp                      0.66396
+26 +goalie_gaa_diff              0.66403
+27 +away_goalie_gaa              0.66403
+28 +goalie_recent_sv_pct_diff    0.66411
+29 +home_form_ga                 0.66417
+30 +away_high_danger_xg_share    0.66426
+31 +home_high_danger_xg_share    0.66426
+32 +home_form_win_pct            0.66435
+33 +away_form_win_pct            0.66435
+34 +xg_luck_net_diff             0.66443
+35 +home_points_pct              0.66449
+36 +points_pct_diff              0.66449
+37 +home_xg_luck_for             0.66458
+38 +away_xg_luck_against         0.66458
+39 +goalie_sv_pct_diff           0.66467
+40 +away_goalie_sv_pct           0.66468
+41 +h2h_home_win_rate            0.66477
+42 +xga_diff                     0.66487
+43 +home_xga_per60               0.66487
+44 +xgf_diff                     0.66487
+45 +win_pct_diff                 0.66499
+46 +home_win_pct                 0.66502
+47 +away_trend                   0.66514
+48 +away_streak                  0.66516
+49 +home_streak                  0.66518
+50 +away_form_ga                 0.66530
+51 +rest_diff                    0.66543
+52 +away_rest_days               0.66543
+53 +goal_diff_rate_diff          0.66558
+54 +home_gf_pg                   0.66560
+55 +away_goalie_starts           0.66577
+56 +away_xgf_per60               0.66595
+57 +home_xgf_per60               0.66595
+58 +home_trend                   0.66616
+59 +form_goal_diff               0.66638
+60 +home_form_gf                 0.66643
+61 +away_goalie_recent_sv_pct    0.66666
+62 +home_goalie_recent_sv_pct    0.66666
+63 +home_home_win_pct            0.66692
+64 +away_road_win_pct            0.66693
+saved results/forward.json
+forward done in 17s
+=== forward_elo ===
+ 5 +xg_diff_rate_diff            0.66414
+ 6 +streak_diff                  0.66397
+ 7 +hd_share_diff                0.66386
+ 8 +home_goalie_sv_pct           0.66378
+ 9 +home_xg_luck_against         0.66374
+10 +venue_win_pct_diff           0.66370
+11 +away_rest_days               0.66369
+12 +home_rest_days               0.66369
+13 +away_form_gf                 0.66370
+14 +h2h_meetings                 0.66369
+15 +goalie_experience_diff       0.66370
+16 +home_ga_pg                   0.66373
+17 +away_ga_pg                   0.66376
+18 +home_goalie_starts           0.66380
+19 +away_win_pct                 0.66381
+20 +away_xga_per60               0.66386
+21 +home_goalie_gaa              0.66391
+22 +form_diff                    0.66397
+23 +home_gp                      0.66404
+24 +away_gp                      0.66403
+25 +xg_luck_net_diff             0.66409
+26 +home_goalie_recent_sv_pct    0.66416
+27 +away_points_pct              0.66424
+28 +away_gf_pg                   0.66421
+29 +goalie_gaa_diff              0.66427
+30 +away_goalie_gaa              0.66427
+31 +away_xg_luck_for             0.66436
+32 +away_high_danger_xg_share    0.66442
+33 +home_high_danger_xg_share    0.66442
+34 +home_form_ga                 0.66451
+35 +home_form_win_pct            0.66458
+36 +away_form_win_pct            0.66458
+37 +home_points_pct              0.66464
+38 +points_pct_diff              0.66464
+39 +home_xg_luck_for             0.66473
+40 +away_xg_luck_against         0.66473
+41 +xga_diff                     0.66482
+42 +home_xga_per60               0.66483
+43 +xgf_diff                     0.66483
+44 +h2h_home_win_rate            0.66492
+45 +win_pct_diff                 0.66503
+46 +home_win_pct                 0.66507
+47 +away_trend                   0.66518
+48 +away_streak                  0.66520
+49 +home_streak                  0.66522
+50 +goalie_sv_pct_diff           0.66535
+51 +away_goalie_sv_pct           0.66536
+52 +away_form_ga                 0.66550
+53 +goal_diff_rate_diff          0.66565
+54 +home_gf_pg                   0.66566
+55 +goalie_recent_sv_pct_diff    0.66582
+56 +away_goalie_recent_sv_pct    0.66582
+57 +away_goalie_starts           0.66600
+58 +away_xgf_per60               0.66618
+59 +home_xgf_per60               0.66618
+60 +home_trend                   0.66639
+61 +form_goal_diff               0.66661
+62 +home_form_gf                 0.66666
+63 +home_home_win_pct            0.66692
+64 +away_road_win_pct            0.66693
+saved results/forward_elo.json
+forward_elo done in 17s
+=== backward ===
+63 -home_trend                   0.66673
+62 -away_goalie_starts           0.66655
+61 -h2h_home_win_rate            0.66645
+60 -home_form_gf                 0.66640
+59 -away_form_gf                 0.66615
+58 -form_goal_diff               0.66604
+57 -away_form_ga                 0.66594
+56 -home_form_ga                 0.66590
+55 -home_goalie_starts           0.66586
+54 -h2h_meetings                 0.66581
+53 -home_win_pct                 0.66579
+52 -win_pct_diff                 0.66570
+51 -home_streak                  0.66568
+50 -streak_diff                  0.66563
+49 -away_win_pct                 0.66561
+48 -away_road_win_pct            0.66559
+47 -home_home_win_pct            0.66530
+46 -venue_win_pct_diff           0.66517
+45 -away_streak                  0.66515
+44 -away_trend                   0.66508
+43 -home_gf_pg                   0.66506
+42 -goal_diff_rate_diff          0.66496
+41 -home_ga_pg                   0.66493
+40 -away_goalie_sv_pct           0.66492
+39 -goalie_sv_pct_diff           0.66480
+38 -home_goalie_sv_pct           0.66477
+37 -home_xgf_per60               0.66477
+36 -away_xgf_per60               0.66456
+35 -away_xg_luck_against         0.66456
+34 -home_xg_luck_against         0.66446
+33 -away_xg_luck_for             0.66443
+32 -xg_luck_net_diff             0.66439
+31 -home_xg_luck_for             0.66436
+30 -home_goalie_recent_sv_pct    0.66436
+29 -away_goalie_recent_sv_pct    0.66422
+28 -goalie_recent_sv_pct_diff    0.66419
+27 -goalie_experience_diff       0.66416
+26 -away_form_win_pct            0.66416
+25 -form_diff                    0.66407
+24 -home_rest_days               0.66407
+23 -home_high_danger_xg_share    0.66407
+22 -away_high_danger_xg_share    0.66400
+21 -away_goalie_gaa              0.66400
+20 -home_goalie_gaa              0.66394
+19 -xgf_diff                     0.66394
+18 -home_xga_per60               0.66394
+17 -xga_diff                     0.66384
+16 -away_xga_per60               0.66380
+15 -points_pct_diff              0.66380
+14 -home_points_pct              0.66371
+13 -home_gp                      0.66372
+12 -away_gp                      0.66366
+11 -rest_diff                    0.66368
+10 -away_rest_days               0.66360
+ 9 -goalie_gaa_diff              0.66364
+ 8 -hd_share_diff                0.66373
+ 7 -home_form_win_pct            0.66379
+ 6 -away_ga_pg                   0.66404
+ 5 -away_gf_pg                   0.66405
+ 4 -away_points_pct              0.66406
+ 3 -away_b2b                     0.66501
+ 2 -home_b2b                     0.66597
+ 1 -xg_diff_rate_diff            0.66865
+saved results/backward.json
+backward done in 34s
+=== floating ===
+k=1 0.66865 elo_diff
+k=2 0.66597 xg_diff_rate_diff
+k=3 0.66501 home_b2b
+k=4 0.66406 away_b2b
+k=5 0.66389 streak_diff
+k=6 0.66378 hd_share_diff
+k=7 0.66371 home_goalie_sv_pct
+k=8 0.66364 home_rest_days
+k=9 0.66359 home_xg_luck_against
+k=10 0.66355 venue_win_pct_diff
+k=11 0.66356 away_form_gf
+k=12 0.66356 h2h_meetings
+k=13 0.66357 goalie_experience_diff
+k=14 0.66360 home_ga_pg
+k=15 0.66363 home_goalie_starts
+k=16 0.66367 away_ga_pg
+   drop -> k=16 0.66355
+   drop -> k=15 0.66356
+   drop -> k=14 0.66358
+k=14 0.66368 away_win_pct
+k=15 0.66356 home_goalie_sv_pct
+k=16 0.66355 home_ga_pg
+k=17 0.66360 away_xga_per60
+k=18 0.66365 away_gf_pg
+   drop -> k=18 0.66355
+   drop -> k=17 0.66350
+   drop -> k=16 0.66351
+   drop -> k=15 0.66353
+   drop -> k=14 0.66351
+   drop -> k=13 0.66350
+   drop -> k=12 0.66353
+   drop -> k=11 0.66355
+k=11 0.66361 away_points_pct
+   drop -> k=11 0.66354
+k=11 0.66351 goalie_gaa_diff
+k=12 0.66351 home_xg_luck_against
+k=13 0.66349 home_ga_pg
+k=14 0.66349 away_form_gf
+k=15 0.66350 h2h_meetings
+k=16 0.66354 away_xg_luck_for
+k=17 0.66359 home_goalie_sv_pct
+k=18 0.66363 goalie_experience_diff
+   drop -> k=18 0.66354
+k=18 0.66360 home_goalie_starts
+k=19 0.66359 away_xga_per60
+k=20 0.66364 home_goalie_gaa
+k=21 0.66370 away_win_pct
+k=22 0.66377 away_high_danger_xg_share
+   drop -> k=22 0.66371
+   drop -> k=21 0.66366
+   drop -> k=20 0.66361
+   drop -> k=19 0.66357
+k=19 0.66377 home_high_danger_xg_share
+k=20 0.66361 away_xgf_per60
+k=21 0.66366 goalie_gaa_diff
+k=22 0.66371 away_win_pct
+k=23 0.66377 away_goalie_gaa
+   drop -> k=23 0.66372
+   drop -> k=22 0.66369
+k=22 0.66377 home_goalie_gaa
+k=23 0.66372 away_xgf_per60
+k=24 0.66377 away_win_pct
+k=25 0.66383 form_diff
+k=26 0.66390 away_xg_luck_for
+k=27 0.66398 goalie_recent_sv_pct_diff
+   drop -> k=27 0.66397
+k=27 0.66404 home_form_ga
+k=28 0.66404 form_diff
+k=29 0.66413 away_gp
+   drop -> k=29 0.66405
+   drop -> k=28 0.66398
+   drop -> k=27 0.66391
+   drop -> k=26 0.66384
+   drop -> k=25 0.66379
+   drop -> k=24 0.66375
+k=24 0.66412 home_gp
+k=25 0.66379 away_xgf_per60
+k=26 0.66384 away_win_pct
+k=27 0.66391 form_diff
+k=28 0.66398 away_xg_luck_for
+k=29 0.66406 goalie_recent_sv_pct_diff
+k=30 0.66412 home_form_ga
+k=31 0.66421 goalie_sv_pct_diff
+   drop -> k=31 0.66414
+   drop -> k=30 0.66407
+   drop -> k=29 0.66401
+   drop -> k=28 0.66396
+k=28 0.66422 away_goalie_sv_pct
+k=29 0.66401 away_win_pct
+k=30 0.66407 home_form_ga
+k=31 0.66414 form_diff
+k=32 0.66422 away_xg_luck_for
+k=33 0.66431 away_form_win_pct
+   drop -> k=33 0.66423
+   drop -> k=32 0.66415
+   drop -> k=31 0.66410
+   drop -> k=30 0.66406
+k=30 0.66432 home_form_win_pct
+k=31 0.66410 away_xga_per60
+k=32 0.66414 away_xg_luck_for
+k=33 0.66420 home_form_ga
+k=34 0.66427 away_form_ga
+k=35 0.66436 away_xg_luck_against
+saved results/floating.json
+floating done in 36s
+=== lasso ===
+C=0.0005 0.69315 k=0
+C=0.0007 0.69315 k=0
+C=0.0008 0.69315 k=0
+C=0.0011 0.69275 k=1
+C=0.0014 0.68528 k=1
+C=0.0019 0.67991 k=2
+C=0.0024 0.67575 k=2
+C=0.0031 0.67289 k=2
+C=0.0041 0.67022 k=2
+C=0.0053 0.66855 k=3
+C=0.0069 0.66735 k=5
+C=0.0089 0.66633 k=7
+C=0.0116 0.66570 k=9
+C=0.0151 0.66536 k=12
+C=0.0196 0.66516 k=15
+C=0.0255 0.66497 k=17
+C=0.0332 0.66492 k=22
+C=0.0431 0.66509 k=23
+C=0.0560 0.66537 k=27
+C=0.0728 0.66567 k=33
+C=0.0946 0.66590 k=36
+C=0.1229 0.66605 k=39
+C=0.1598 0.66619 k=40
+C=0.2076 0.66635 k=42
+C=0.2698 0.66650 k=41
+C=0.3506 0.66663 k=44
+C=0.4556 0.66676 k=46
+C=0.5921 0.66687 k=46
+C=0.7695 0.66693 k=46
+C=1.0000 0.66695 k=46
+saved results/lasso.json
+lasso done in 17s
+=== anneal ===
+0.66352 k=15 seed=32
+0.66354 k=15 seed=69
+0.66355 k=12 seed=86
+0.66355 k=13 seed=65
+0.66357 k=13 seed=44
+0.66358 k=12 seed=51
+0.66358 k=12 seed=95
+0.66359 k=14 seed=68
+0.66359 k=11 seed=71
+0.66360 k=9 seed=49
+saved results/anneal.json
+anneal done in 3489s
+=== genetic ===
+gen 0 best 0.66508 k=28
+gen 10 best 0.66416 k=21
+gen 20 best 0.66373 k=19
+gen 30 best 0.66352 k=16
+gen 40 best 0.66346 k=13
+gen 50 best 0.66346 k=13
+gen 60 best 0.66346 k=13
+gen 70 best 0.66346 k=13
+gen 80 best 0.66346 k=13
+gen 90 best 0.66346 k=13
+gen 100 best 0.66346 k=13
+gen 110 best 0.66346 k=13
+gen 120 best 0.66346 k=13
+gen 130 best 0.66346 k=13
+gen 140 best 0.66346 k=13
+gen 150 best 0.66346 k=13
+gen 160 best 0.66346 k=13
+gen 170 best 0.66346 k=13
+gen 180 best 0.66346 k=13
+gen 190 best 0.66346 k=13
+gen 200 best 0.66346 k=13
+gen 210 best 0.66346 k=13
+gen 220 best 0.66346 k=13
+gen 230 best 0.66346 k=13
+gen 240 best 0.66346 k=13
+gen 249 best 0.66346 k=13
+saved results/genetic.json
+genetic done in 386s
+=== ctune ===
+elo        best C=0.1 0.66686 (C=0.1: 0.66686)
+shipped44  best C=0.003 0.66961 (C=0.1: 0.67016)
+all        best C=0.003 0.66627 (C=0.1: 0.66693)
+floating   best C=0.3 0.66348 (C=0.1: 0.66349)
+anneal     best C=10 0.66351 (C=0.1: 0.66352)
+genetic    best C=10 0.66345 (C=0.1: 0.66346)
+saved results/ctune.json
+ctune done in 1s
+=== exhaustive ===
+k=1 64 subsets in 0s, best 0.66865 ('elo_diff',)
+saved results/exhaustive.json
+k=2 2016 subsets in 3s, best 0.66597 ('xg_diff_rate_diff', 'elo_diff')
+saved results/exhaustive.json
+k=3 41664 subsets in 74s, best 0.66501 ('home_b2b', 'xg_diff_rate_diff', 'elo_diff')
+saved results/exhaustive.json
+k=4 635376 subsets in 1250s, best 0.66406 ('home_b2b', 'away_b2b', 'xg_diff_rate_diff', 'elo_diff')
+saved results/exhaustive.json
+exhaustive done in 1327s
+ALL DONE

@@ -26,6 +26,9 @@ LOG_PATH = Path(__file__).resolve().parents[2] / "data" / "predictions_log.jsonl
 # A separate file because the dedup key above ignores model_version, so a
 # shadow row in LOG_PATH would be dropped or would block the served row.
 SHADOW_LOG_PATH = LOG_PATH.with_name("shadow_predictions_log.jsonl")
+# The core4 shadow (src/models/core4_shadow.py) gets its own file for the same
+# reason: in SHADOW_LOG_PATH it would collide with shadow Elo's rows.
+CORE4_SHADOW_LOG_PATH = LOG_PATH.with_name("shadow_core4_log.jsonl")
 
 # Bump these whenever the win or totals model changes in a way that would
 # make old log rows non-comparable to new ones. main.py passes the version of

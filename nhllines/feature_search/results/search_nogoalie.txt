@@ -1,0 +1,474 @@
+=== baselines ===
+elo                0.66686 acc 0.5922
+shipped44          0.67016 acc 0.5845
+all                0.66626 acc 0.5964
+elo_only_diff      0.66865 acc 0.5909
+saved results/baselines.json
+baselines done in 0s
+=== blocks ===
+8191 block subsets
+0.66448 k=19 elo+form+rest+xg_rates+high_danger
+0.66455 k=21 elo+form+rest+gp+xg_rates+high_danger
+0.66456 k=16 elo+rest+xg_rates+high_danger
+0.66457 k=30 elo+record+goals_pg+form+rest+xg_rates+high_danger
+0.66457 k=16 elo+form+rest+xg_rates
+0.66459 k=13 elo+rest+xg_rates
+0.66460 k=27 elo+record+goals_pg+rest+xg_rates+high_danger
+0.66462 k=21 elo+form+rest+xg_rates+high_danger+h2h
+0.66462 k=22 elo+venue_record+form+rest+xg_rates+high_danger
+0.66462 k=32 elo+record+goals_pg+form+rest+gp+xg_rates+high_danger
+0.66463 k=25 elo+record+form+rest+xg_rates+high_danger
+0.66463 k=18 elo+rest+gp+xg_rates+high_danger
+0.66463 k=18 elo+form+rest+gp+xg_rates
+0.66466 k=29 elo+record+goals_pg+rest+gp+xg_rates+high_danger
+0.66466 k=15 elo+rest+gp+xg_rates
+saved results/blocks.json
+blocks done in 27s
+=== diffblocks ===
+4095 block subsets
+0.66390 k=10 elo+record+goals_pg+streak_trend+rest+xg_rates+high_danger
+0.66390 k=11 elo+record+venue_record+goals_pg+streak_trend+rest+xg_rates+high_danger
+0.66392 k= 9 elo+venue_record+streak_trend+rest+xg_rates+high_danger
+0.66392 k=10 elo+venue_record+goals_pg+streak_trend+rest+xg_rates+high_danger
+0.66393 k=11 elo+record+venue_record+goals_pg+form+rest+xg_rates+high_danger
+0.66394 k=10 elo+record+goals_pg+form+rest+xg_rates+high_danger
+0.66394 k=10 elo+venue_record+streak_trend+rest+xg_rates+high_danger+xg_luck
+0.66394 k= 8 elo+streak_trend+rest+xg_rates+high_danger
+0.66395 k= 9 elo+venue_record+form+rest+xg_rates+high_danger
+0.66396 k=10 elo+venue_record+goals_pg+form+rest+xg_rates+high_danger
+0.66397 k=12 elo+record+venue_record+goals_pg+form+streak_trend+rest+xg_rates+high_danger
+0.66397 k=11 elo+record+venue_record+streak_trend+rest+xg_rates+high_danger+xg_luck
+0.66397 k=10 elo+record+streak_trend+rest+xg_rates+high_danger+xg_luck
+0.66397 k=11 elo+record+goals_pg+form+streak_trend+rest+xg_rates+high_danger
+0.66397 k= 9 elo+record+streak_trend+rest+xg_rates+high_danger
+saved results/diffblocks.json
+diffblocks done in 4s
+=== forward ===
+ 1 +elo_diff                     0.66865
+ 2 +xg_diff_rate_diff            0.66597
+ 3 +home_b2b                     0.66501
+ 4 +away_b2b                     0.66406
+ 5 +streak_diff                  0.66389
+ 6 +hd_share_diff                0.66378
+ 7 +home_xg_luck_against         0.66371
+ 8 +home_rest_days               0.66364
+ 9 +venue_win_pct_diff           0.66360
+10 +away_form_gf                 0.66360
+11 +h2h_meetings                 0.66361
+12 +home_ga_pg                   0.66364
+13 +points_pct_diff              0.66367
+14 +goal_diff_rate_diff          0.66364
+15 +win_pct_diff                 0.66370
+16 +away_xga_per60               0.66376
+17 +home_gp                      0.66382
+18 +away_gp                      0.66381
+19 +form_diff                    0.66389
+20 +away_ga_pg                   0.66397
+21 +away_high_danger_xg_share    0.66406
+22 +home_high_danger_xg_share    0.66406
+23 +away_xg_luck_against         0.66416
+24 +h2h_home_win_rate            0.66426
+25 +home_form_ga                 0.66436
+26 +xg_luck_net_diff             0.66447
+27 +xga_diff                     0.66457
+28 +xgf_diff                     0.66457
+29 +home_xga_per60               0.66457
+30 +away_trend                   0.66469
+31 +rest_diff                    0.66482
+32 +away_rest_days               0.66482
+33 +form_goal_diff               0.66495
+34 +home_form_win_pct            0.66509
+35 +away_streak                  0.66510
+36 +away_form_win_pct            0.66510
+37 +home_streak                  0.66511
+38 +away_points_pct              0.66523
+39 +home_gf_pg                   0.66513
+40 +home_points_pct              0.66512
+41 +away_gf_pg                   0.66514
+42 +away_xg_luck_for             0.66518
+43 +home_xg_luck_for             0.66518
+44 +away_win_pct                 0.66529
+45 +home_win_pct                 0.66532
+46 +away_xgf_per60               0.66551
+47 +home_xgf_per60               0.66552
+48 +home_trend                   0.66574
+49 +away_form_ga                 0.66596
+50 +home_form_gf                 0.66601
+51 +home_home_win_pct            0.66624
+52 +away_road_win_pct            0.66626
+saved results/forward.json
+forward done in 4s
+=== forward_elo ===
+ 5 +xg_diff_rate_diff            0.66414
+ 6 +streak_diff                  0.66397
+ 7 +hd_share_diff                0.66386
+ 8 +home_xg_luck_against         0.66379
+ 9 +venue_win_pct_diff           0.66375
+10 +away_rest_days               0.66374
+11 +away_form_gf                 0.66373
+12 +home_rest_days               0.66373
+13 +h2h_meetings                 0.66375
+14 +home_ga_pg                   0.66377
+15 +points_pct_diff              0.66380
+16 +goal_diff_rate_diff          0.66378
+17 +win_pct_diff                 0.66384
+18 +away_xga_per60               0.66390
+19 +home_gp                      0.66395
+20 +away_gp                      0.66394
+21 +form_diff                    0.66402
+22 +away_ga_pg                   0.66410
+23 +away_high_danger_xg_share    0.66419
+24 +home_high_danger_xg_share    0.66419
+25 +away_xg_luck_against         0.66429
+26 +home_form_ga                 0.66439
+27 +h2h_home_win_rate            0.66449
+28 +xg_luck_net_diff             0.66460
+29 +xga_diff                     0.66470
+30 +xgf_diff                     0.66470
+31 +home_xga_per60               0.66470
+32 +away_trend                   0.66482
+33 +form_goal_diff               0.66495
+34 +home_form_win_pct            0.66509
+35 +away_streak                  0.66510
+36 +away_form_win_pct            0.66510
+37 +home_streak                  0.66511
+38 +away_points_pct              0.66523
+39 +home_gf_pg                   0.66513
+40 +home_points_pct              0.66512
+41 +away_gf_pg                   0.66514
+42 +away_xg_luck_for             0.66518
+43 +home_xg_luck_for             0.66518
+44 +away_win_pct                 0.66529
+45 +home_win_pct                 0.66532
+46 +away_xgf_per60               0.66551
+47 +home_xgf_per60               0.66552
+48 +home_trend                   0.66574
+49 +away_form_ga                 0.66596
+50 +home_form_gf                 0.66601
+51 +home_home_win_pct            0.66624
+52 +away_road_win_pct            0.66626
+saved results/forward_elo.json
+forward_elo done in 4s
+=== backward ===
+51 -home_trend                   0.66604
+50 -h2h_home_win_rate            0.66594
+49 -home_form_gf                 0.66589
+48 -away_form_gf                 0.66564
+47 -form_goal_diff               0.66552
+46 -away_form_ga                 0.66543
+45 -h2h_meetings                 0.66540
+44 -home_win_pct                 0.66538
+43 -win_pct_diff                 0.66530
+42 -home_form_ga                 0.66527
+41 -home_streak                  0.66525
+40 -streak_diff                  0.66518
+39 -away_road_win_pct            0.66517
+38 -home_home_win_pct            0.66489
+37 -venue_win_pct_diff           0.66478
+36 -away_win_pct                 0.66477
+35 -away_streak                  0.66475
+34 -away_trend                   0.66467
+33 -home_gf_pg                   0.66466
+32 -goal_diff_rate_diff          0.66456
+31 -home_ga_pg                   0.66450
+30 -away_xg_luck_against         0.66449
+29 -away_xg_luck_for             0.66440
+28 -xg_luck_net_diff             0.66433
+27 -home_xg_luck_for             0.66431
+26 -home_xgf_per60               0.66430
+25 -away_xgf_per60               0.66411
+24 -away_form_win_pct            0.66410
+23 -form_diff                    0.66402
+22 -home_rest_days               0.66402
+21 -home_high_danger_xg_share    0.66402
+20 -away_high_danger_xg_share    0.66395
+19 -xgf_diff                     0.66395
+18 -home_xga_per60               0.66394
+17 -xga_diff                     0.66383
+16 -away_xga_per60               0.66380
+15 -home_points_pct              0.66380
+14 -points_pct_diff              0.66371
+13 -home_gp                      0.66372
+12 -away_gp                      0.66365
+11 -rest_diff                    0.66367
+10 -away_rest_days               0.66359
+ 9 -home_xg_luck_against         0.66364
+ 8 -hd_share_diff                0.66373
+ 7 -home_form_win_pct            0.66379
+ 6 -away_ga_pg                   0.66404
+ 5 -away_gf_pg                   0.66405
+ 4 -away_points_pct              0.66406
+ 3 -away_b2b                     0.66501
+ 2 -home_b2b                     0.66597
+ 1 -xg_diff_rate_diff            0.66865
+saved results/backward.json
+backward done in 8s
+=== floating ===
+k=1 0.66865 elo_diff
+k=2 0.66597 xg_diff_rate_diff
+k=3 0.66501 home_b2b
+k=4 0.66406 away_b2b
+k=5 0.66389 streak_diff
+k=6 0.66378 hd_share_diff
+k=7 0.66371 home_xg_luck_against
+k=8 0.66364 home_rest_days
+k=9 0.66360 venue_win_pct_diff
+k=10 0.66360 away_form_gf
+k=11 0.66361 h2h_meetings
+k=12 0.66364 home_ga_pg
+   drop -> k=12 0.66362
+k=12 0.66367 points_pct_diff
+   drop -> k=12 0.66359
+   drop -> k=11 0.66357
+   drop -> k=10 0.66358
+k=10 0.66361 goal_diff_rate_diff
+k=11 0.66357 away_form_gf
+k=12 0.66359 h2h_meetings
+k=13 0.66361 home_ga_pg
+k=14 0.66364 venue_win_pct_diff
+k=15 0.66370 win_pct_diff
+k=16 0.66376 away_xga_per60
+k=17 0.66382 home_gp
+   drop -> k=17 0.66375
+   drop -> k=16 0.66370
+   drop -> k=15 0.66366
+   drop -> k=14 0.66364
+k=14 0.66381 away_gp
+k=15 0.66366 home_ga_pg
+k=16 0.66370 venue_win_pct_diff
+k=17 0.66375 win_pct_diff
+k=18 0.66381 away_xga_per60
+k=19 0.66389 form_diff
+k=20 0.66397 away_ga_pg
+k=21 0.66406 away_high_danger_xg_share
+   drop -> k=21 0.66398
+   drop -> k=20 0.66390
+   drop -> k=19 0.66384
+   drop -> k=18 0.66377
+   drop -> k=17 0.66373
+k=17 0.66406 home_high_danger_xg_share
+k=18 0.66377 win_pct_diff
+k=19 0.66383 away_xgf_per60
+k=20 0.66390 form_diff
+k=21 0.66398 venue_win_pct_diff
+k=22 0.66408 away_ga_pg
+k=23 0.66418 h2h_home_win_rate
+k=24 0.66429 home_form_ga
+k=25 0.66440 xg_luck_net_diff
+k=26 0.66451 away_trend
+k=27 0.66464 rest_diff
+   drop -> k=27 0.66452
+   drop -> k=26 0.66442
+   drop -> k=25 0.66431
+   drop -> k=24 0.66421
+   drop -> k=23 0.66411
+   drop -> k=22 0.66403
+   drop -> k=21 0.66396
+k=21 0.66464 away_rest_days
+k=22 0.66403 form_diff
+k=23 0.66411 venue_win_pct_diff
+k=24 0.66421 away_ga_pg
+k=25 0.66431 h2h_home_win_rate
+k=26 0.66442 home_form_ga
+k=27 0.66452 xg_luck_net_diff
+k=28 0.66464 away_trend
+k=29 0.66477 home_xga_per60
+k=30 0.66490 form_goal_diff
+k=31 0.66504 home_form_win_pct
+   drop -> k=31 0.66491
+   drop -> k=30 0.66478
+   drop -> k=29 0.66467
+   drop -> k=28 0.66456
+   drop -> k=27 0.66446
+   drop -> k=26 0.66437
+   drop -> k=25 0.66428
+k=25 0.66504 away_streak
+   drop -> k=25 0.66422
+   drop -> k=24 0.66417
+k=24 0.66428 away_form_win_pct
+k=25 0.66422 streak_diff
+   drop -> k=25 0.66420
+k=25 0.66424 home_streak
+k=26 0.66423 away_win_pct
+   drop -> k=26 0.66410
+   drop -> k=25 0.66404
+   drop -> k=24 0.66401
+   drop -> k=23 0.66399
+   drop -> k=22 0.66393
+   drop -> k=21 0.66392
+   drop -> k=20 0.66384
+k=20 0.66417 home_gf_pg
+   drop -> k=20 0.66377
+   drop -> k=19 0.66377
+   drop -> k=18 0.66369
+   drop -> k=17 0.66369
+   drop -> k=16 0.66368
+   drop -> k=15 0.66362
+   drop -> k=14 0.66363
+   drop -> k=13 0.66357
+k=13 0.66379 away_points_pct
+k=14 0.66357 home_rest_days
+k=15 0.66359 h2h_meetings
+k=16 0.66362 away_form_gf
+k=17 0.66365 away_win_pct
+k=18 0.66371 away_xgf_per60
+k=19 0.66375 away_high_danger_xg_share
+   drop -> k=19 0.66372
+   drop -> k=18 0.66369
+k=18 0.66375 home_high_danger_xg_share
+k=19 0.66372 away_win_pct
+k=20 0.66375 away_xgf_per60
+k=21 0.66381 home_form_ga
+k=22 0.66387 away_gp
+   drop -> k=22 0.66381
+   drop -> k=21 0.66377
+   drop -> k=20 0.66374
+   drop -> k=19 0.66371
+k=19 0.66386 home_gp
+k=20 0.66374 h2h_meetings
+k=21 0.66377 away_win_pct
+k=22 0.66381 away_xgf_per60
+k=23 0.66386 home_form_ga
+k=24 0.66393 streak_diff
+k=25 0.66401 form_diff
+   drop -> k=25 0.66395
+   drop -> k=24 0.66389
+   drop -> k=23 0.66385
+k=23 0.66401 away_form_win_pct
+k=24 0.66389 away_xgf_per60
+k=25 0.66395 home_form_ga
+k=26 0.66401 away_form_gf
+k=27 0.66411 venue_win_pct_diff
+k=28 0.66418 home_points_pct
+   drop -> k=28 0.66412
+   drop -> k=27 0.66407
+k=27 0.66418 points_pct_diff
+k=28 0.66412 away_xgf_per60
+k=29 0.66418 away_form_gf
+k=30 0.66428 h2h_home_win_rate
+k=31 0.66439 xg_luck_net_diff
+   drop -> k=31 0.66438
+k=31 0.66448 home_xg_luck_for
+   drop -> k=31 0.66437
+k=31 0.66445 away_xga_per60
+k=32 0.66445 away_xgf_per60
+k=33 0.66455 h2h_home_win_rate
+k=34 0.66466 away_trend
+   drop -> k=34 0.66457
+   drop -> k=33 0.66450
+   drop -> k=32 0.66441
+   drop -> k=31 0.66431
+   drop -> k=30 0.66425
+k=30 0.66467 away_streak
+k=31 0.66431 streak_diff
+   drop -> k=31 0.66427
+   drop -> k=30 0.66421
+   drop -> k=29 0.66416
+k=29 0.66433 home_streak
+k=30 0.66421 home_form_ga
+k=31 0.66426 away_xgf_per60
+k=32 0.66432 away_form_gf
+k=33 0.66442 xg_luck_net_diff
+k=34 0.66452 home_xg_luck_for
+   drop -> k=34 0.66451
+k=34 0.66459 away_xga_per60
+k=35 0.66459 away_xgf_per60
+saved results/floating.json
+floating done in 24s
+=== lasso ===
+C=0.0005 0.69315 k=0
+C=0.0007 0.69315 k=0
+C=0.0008 0.69315 k=0
+C=0.0011 0.69275 k=1
+C=0.0014 0.68528 k=1
+C=0.0019 0.67991 k=2
+C=0.0024 0.67575 k=2
+C=0.0031 0.67289 k=2
+C=0.0041 0.67022 k=2
+C=0.0053 0.66855 k=3
+C=0.0069 0.66732 k=4
+C=0.0089 0.66620 k=5
+C=0.0116 0.66551 k=6
+C=0.0151 0.66518 k=8
+C=0.0196 0.66502 k=11
+C=0.0255 0.66480 k=14
+C=0.0332 0.66474 k=17
+C=0.0431 0.66483 k=17
+C=0.0560 0.66503 k=20
+C=0.0728 0.66525 k=24
+C=0.0946 0.66539 k=28
+C=0.1229 0.66550 k=30
+C=0.1598 0.66560 k=31
+C=0.2076 0.66575 k=32
+C=0.2698 0.66589 k=32
+C=0.3506 0.66601 k=35
+C=0.4556 0.66613 k=37
+C=0.5921 0.66623 k=37
+C=0.7695 0.66629 k=38
+C=1.0000 0.66631 k=38
+saved results/lasso.json
+lasso done in 13s
+=== anneal ===
+0.66356 k=13 seed=54
+0.66357 k=13 seed=84
+0.66358 k=13 seed=45
+0.66358 k=11 seed=87
+0.66358 k=13 seed=1
+0.66359 k=10 seed=52
+0.66360 k=9 seed=58
+0.66361 k=13 seed=66
+0.66361 k=13 seed=6
+0.66362 k=12 seed=48
+saved results/anneal.json
+anneal done in 2426s
+=== genetic ===
+gen 0 best 0.66482 k=20
+gen 10 best 0.66402 k=18
+gen 20 best 0.66363 k=14
+gen 30 best 0.66354 k=14
+gen 40 best 0.66349 k=14
+gen 50 best 0.66343 k=13
+gen 60 best 0.66343 k=13
+gen 70 best 0.66341 k=12
+gen 80 best 0.66341 k=12
+gen 90 best 0.66341 k=12
+gen 100 best 0.66341 k=12
+gen 110 best 0.66341 k=12
+gen 120 best 0.66341 k=12
+gen 130 best 0.66341 k=12
+gen 140 best 0.66341 k=12
+gen 150 best 0.66341 k=12
+gen 160 best 0.66341 k=12
+gen 170 best 0.66341 k=12
+gen 180 best 0.66341 k=12
+gen 190 best 0.66341 k=12
+gen 200 best 0.66341 k=12
+gen 210 best 0.66341 k=12
+gen 220 best 0.66341 k=12
+gen 230 best 0.66341 k=12
+gen 240 best 0.66341 k=12
+gen 249 best 0.66341 k=12
+saved results/genetic.json
+genetic done in 408s
+=== ctune ===
+elo        best C=0.1 0.66686 (C=0.1: 0.66686)
+shipped44  best C=0.003 0.66961 (C=0.1: 0.67016)
+all        best C=0.01 0.66586 (C=0.1: 0.66626)
+floating   best C=10 0.66356 (C=0.1: 0.66357)
+anneal     best C=10 0.66355 (C=0.1: 0.66356)
+genetic    best C=10 0.66339 (C=0.1: 0.66341)
+saved results/ctune.json
+ctune done in 0s
+=== exhaustive ===
+k=1 52 subsets in 0s, best 0.66865 ('elo_diff',)
+saved results/exhaustive.json
+k=2 1326 subsets in 3s, best 0.66597 ('xg_diff_rate_diff', 'elo_diff')
+saved results/exhaustive.json
+k=3 22100 subsets in 48s, best 0.66501 ('home_b2b', 'xg_diff_rate_diff', 'elo_diff')
+saved results/exhaustive.json
+k=4 270725 subsets in 611s, best 0.66406 ('home_b2b', 'away_b2b', 'xg_diff_rate_diff', 'elo_diff')
+saved results/exhaustive.json
+k=5 2598960 subsets in 16593s, best 0.66389 ('home_b2b', 'away_b2b', 'xg_diff_rate_diff', 'elo_diff', 'streak_diff')
+saved results/exhaustive.json
+exhaustive done in 17255s
+ALL DONE

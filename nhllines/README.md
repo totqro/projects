@@ -180,6 +180,20 @@ admission.
       `scorecard.py` prints a SHADOW section comparing served model, Elo and
       market on the same games, so the live season settles it.
 
+13. ✅ **Feature search; 4-variable core4 added as a second shadow**
+    (`feature_search/`, Nov 2026). On 2015-16..2025-26 data, every
+    search method we tried (exhaustive up to 5 variables, stepwise, lasso,
+    annealing, genetic, gradient boosting; about 8.6M variable sets, chosen
+    leave-one-season-out on 2015-24) converges on the same four: `elo_diff`,
+    `xg_diff_rate_diff`, `home_b2b`, `away_b2b`. On the locked 2024-25 and
+    2025-26 seasons it beats Elo (0.6756 vs 0.6793 log loss, bootstrap
+    P = 1.00) and ties the shipped 44 (0.6752). The bigger sets the search
+    liked best did worse on the locked seasons. Not served. From Nov 3,
+    2026, `main.py` logs it to `data/shadow_core4_log.jsonl` (games where
+    both teams have 5 GP; frozen coefficients in
+    `ml_models/core4_coefficients.json`), and `scorecard.py` prints a second
+    SHADOW section. Full write-up: `feature_search/README.md`.
+
 The leaky XGBoost path stays quarantined. The similarity model still supplies
 **expected total goals** — the totals gate found nothing that beats a constant
 league-average Poisson mean, so there's nothing better to wire in yet. The

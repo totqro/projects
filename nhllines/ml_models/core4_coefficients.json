@@ -1,0 +1,33 @@
+{
+  "model_version": "core4-v1",
+  "feature_columns": [
+    "elo_diff",
+    "xg_diff_rate_diff",
+    "home_b2b",
+    "away_b2b"
+  ],
+  "coefficients": {
+    "elo_diff": 0.005479614115556658,
+    "xg_diff_rate_diff": 0.549097646075398,
+    "home_b2b": -0.3137019585420846,
+    "away_b2b": 0.25133687323187864,
+    "intercept": 0.14590025902406806
+  },
+  "trained_on_seasons": [
+    "20152016",
+    "20162017",
+    "20172018",
+    "20182019",
+    "20192020",
+    "20202021",
+    "20212022",
+    "20222023",
+    "20232024",
+    "20242025",
+    "20252026"
+  ],
+  "min_gp": 5,
+  "C": 0.1,
+  "n_games": 12586,
+  "note": "Shadow model (never served). Frozen for 2026-27; see feature_search/README.md."
+}
