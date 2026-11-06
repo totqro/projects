@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-06T17:38:53.449467-04:00",
+  "timestamp": "2026-11-06T18:43:45.933908-04:00",
   "stake": 0.5,
   "days_back": 90,
   "min_edge": 0.04,
@@ -9,7 +9,7 @@
       "game": "CBJ @ BUF",
       "home": "BUF",
       "away": "CBJ",
-      "start_time": "2026-11-07T00:00:00Z",
+      "start_time": "2026-11-07T00:10:00Z",
       "model_probs": {
         "home_win_prob": 0.5177007063568855,
         "away_win_prob": 0.4822992936431145,
@@ -42,24 +42,24 @@
         "ml_data_weight": 0.77
       },
       "market_probs": {
-        "home_win_prob": 0.6037569709421778,
-        "away_win_prob": 0.3962430290578221,
-        "over_prob": 0.4826358742837298,
-        "under_prob": 0.5173641257162702,
-        "spread_home_cover_prob": 0.3962430290578221,
+        "home_win_prob": 0.6086660626181867,
+        "away_win_prob": 0.39133393738181327,
+        "over_prob": 0.47743468342471723,
+        "under_prob": 0.5225653165752828,
+        "spread_home_cover_prob": 0.39929120916068384,
         "total_line": 6.5,
         "spread_line": -1.5,
-        "n_books_ml": 1,
-        "n_books_total": 1,
-        "n_books_spread": 1
+        "n_books_ml": 16,
+        "n_books_total": 15,
+        "n_books_spread": 15
       },
       "blended_probs": {
-        "home_win_prob": 0.5598332812255657,
-        "away_win_prob": 0.44016671877443425,
-        "over_prob": 0.4487869854551858,
-        "under_prob": 0.5512130145448142,
-        "home_cover_prob": 0.4022658124788914,
-        "away_cover_prob": 0.44016671877443425,
+        "home_win_prob": 0.5621522718996342,
+        "away_win_prob": 0.43784772810036576,
+        "over_prob": 0.44341997365824726,
+        "under_prob": 0.5565800263417527,
+        "home_cover_prob": 0.4047401312535378,
+        "away_cover_prob": 0.43784772810036576,
         "expected_total": 5.874965884273878,
         "model_confidence": 0.3,
         "ml_data_weight": 0.77,
@@ -177,10 +177,172 @@
       }
     },
     {
+      "game": "ANA @ CGY",
+      "home": "CGY",
+      "away": "ANA",
+      "start_time": "2026-11-07T01:10:00Z",
+      "model_probs": {
+        "home_win_prob": 0.6304841238657944,
+        "away_win_prob": 0.36951587613420556,
+        "expected_total": 6.1909085368481005,
+        "over_prob": 0.449393447243154,
+        "under_prob": 0.550606552756846,
+        "home_cover_prob": 0.5117682386507652,
+        "away_cover_prob": 0.48823176134923485,
+        "total_line": 6.5,
+        "spread_line": -1.5,
+        "n_games": 50,
+        "avg_similarity": 0.712452437918119,
+        "confidence": 0.3,
+        "raw_confidence": 0.2523202913607874,
+        "raw_home_win_prob": 0.5180791678092521,
+        "raw_over_prob": 0.4222547751885277,
+        "goal_distribution": {
+          "2": 0.04,
+          "3": 0.08,
+          "4": 0.02,
+          "5": 0.34,
+          "6": 0.1,
+          "7": 0.12,
+          "8": 0.12,
+          "9": 0.14,
+          "11": 0.04
+        },
+        "ml_data_weight": 0.83
+      },
+      "market_probs": {
+        "home_win_prob": 0.5669110416215207,
+        "away_win_prob": 0.4330889583784793,
+        "over_prob": 0.5011076667316906,
+        "under_prob": 0.4988923332683094,
+        "spread_home_cover_prob": 0.3572678607574104,
+        "total_line": 6.5,
+        "spread_line": -1.5,
+        "n_books_ml": 16,
+        "n_books_total": 15,
+        "n_books_spread": 15
+      },
+      "blended_probs": {
+        "home_win_prob": 0.5849738819747805,
+        "away_win_prob": 0.4150261180252195,
+        "over_prob": 0.48144836316986533,
+        "under_prob": 0.5185516368301346,
+        "home_cover_prob": 0.3677402448773386,
+        "away_cover_prob": 0.4150261180252195,
+        "expected_total": 6.1909085368481005,
+        "model_confidence": 0.3,
+        "ml_data_weight": 0.83,
+        "effective_model_weight": 0.27386127875258304,
+        "ml_model_weight": 0.45552167895721496
+      },
+      "n_similar": 50,
+      "n_bets": 0,
+      "context_indicators": {
+        "fatigue": [],
+        "goalie": [
+          {
+            "team": "CGY",
+            "type": "cold",
+            "value": 0.87,
+            "severity": "negative"
+          },
+          {
+            "team": "ANA",
+            "type": "cold",
+            "value": 0.872,
+            "severity": "negative"
+          }
+        ],
+        "injuries": [],
+        "splits": [],
+        "advanced": []
+      },
+      "goalie_matchup": {
+        "home": {
+          "name": "Dustin Wolf",
+          "quality_score": 27.0,
+          "recent_save_pct": 0.87,
+          "recent_gaa": 3.71,
+          "recent_quality_starts": 4
+        },
+        "away": {
+          "name": "Lukas Dostal",
+          "quality_score": 29.4,
+          "recent_save_pct": 0.872,
+          "recent_gaa": 3.56,
+          "recent_quality_starts": 3
+        }
+      },
+      "team_splits": {
+        "home": {
+          "games": 10,
+          "wins": 6,
+          "losses": 4,
+          "ot_losses": 0,
+          "win_pct": 0.6,
+          "goals_for": 31,
+          "goals_against": 30,
+          "gf_pg": 3.1,
+          "ga_pg": 3.0,
+          "goal_diff": 0.1
+        },
+        "away": {
+          "games": 10,
+          "wins": 6,
+          "losses": 4,
+          "ot_losses": 0,
+          "win_pct": 0.6,
+          "goals_for": 35,
+          "goals_against": 36,
+          "gf_pg": 3.5,
+          "ga_pg": 3.6,
+          "goal_diff": -0.1
+        }
+      },
+      "injuries": {
+        "home": {
+          "impact_score": 0,
+          "key_injuries": [],
+          "total_injuries": 0,
+          "positions_affected": {},
+          "injury_details": []
+        },
+        "away": {
+          "impact_score": 0,
+          "key_injuries": [],
+          "total_injuries": 0,
+          "positions_affected": {},
+          "injury_details": []
+        }
+      },
+      "advanced_stats": {
+        "home": {
+          "xGF_per_60": 0.0,
+          "xGA_per_60": 0.0,
+          "xGF_pct": 82.15384615384616,
+          "corsi_pct": 50.0,
+          "fenwick_pct": 50.0,
+          "shooting_pct": 0.0,
+          "save_pct": 0.9,
+          "pdo": 100.0
+        },
+        "away": {
+          "xGF_per_60": 0.0,
+          "xGA_per_60": 0.0,
+          "xGF_pct": 93.3768656716418,
+          "corsi_pct": 50.0,
+          "fenwick_pct": 50.0,
+          "shooting_pct": 0.0,
+          "save_pct": 0.9,
+          "pdo": 100.0
+        }
+      }
+    },
+    {
       "game": "SJS @ MIN",
       "home": "MIN",
       "away": "SJS",
-      "start_time": "2026-11-07T01:00:00Z",
+      "start_time": "2026-11-07T01:10:00Z",
       "model_probs": {
         "home_win_prob": 0.8070439974242946,
         "away_win_prob": 0.19295600257570544,
@@ -210,24 +372,24 @@
         "ml_data_weight": 0.86
       },
       "market_probs": {
-        "home_win_prob": 0.7095435684647302,
-        "away_win_prob": 0.2904564315352697,
-        "over_prob": 0.5,
-        "under_prob": 0.5,
-        "spread_home_cover_prob": 0.5108342361863488,
+        "home_win_prob": 0.7077630512160262,
+        "away_win_prob": 0.29223694878397377,
+        "over_prob": 0.4974249400769562,
+        "under_prob": 0.5025750599230439,
+        "spread_home_cover_prob": 0.5058852070731229,
         "total_line": 6.5,
         "spread_line": -1.5,
-        "n_books_ml": 1,
-        "n_books_total": 1,
-        "n_books_spread": 1
+        "n_books_ml": 16,
+        "n_books_total": 15,
+        "n_books_spread": 15
       },
       "blended_probs": {
-        "home_win_prob": 0.7126473943727445,
-        "away_win_prob": 0.2873526056272555,
-        "over_prob": 0.5107317102772116,
-        "under_prob": 0.48926828972278835,
-        "home_cover_prob": 0.527261444152312,
-        "away_cover_prob": 0.2873526056272555,
+        "home_win_prob": 0.711692469008497,
+        "away_win_prob": 0.28830753099150297,
+        "over_prob": 0.5089977353765187,
+        "under_prob": 0.4910022646234813,
+        "home_cover_prob": 0.523677531576605,
+        "away_cover_prob": 0.28830753099150297,
         "expected_total": 6.823747914943779,
         "model_confidence": 0.3,
         "ml_data_weight": 0.86,
@@ -343,172 +505,34 @@
           "pdo": 100.0
         }
       }
-    },
-    {
-      "game": "ANA @ CGY",
-      "home": "CGY",
-      "away": "ANA",
-      "start_time": "2026-11-07T01:00:00Z",
-      "model_probs": {
-        "home_win_prob": 0.6304841238657944,
-        "away_win_prob": 0.36951587613420556,
-        "expected_total": 6.1909085368481005,
-        "over_prob": 0.449393447243154,
-        "under_prob": 0.550606552756846,
-        "home_cover_prob": 0.5117682386507652,
-        "away_cover_prob": 0.48823176134923485,
-        "total_line": 6.5,
-        "spread_line": -1.5,
-        "n_games": 50,
-        "avg_similarity": 0.712452437918119,
-        "confidence": 0.3,
-        "raw_confidence": 0.2523202913607874,
-        "raw_home_win_prob": 0.5180791678092521,
-        "raw_over_prob": 0.4222547751885277,
-        "goal_distribution": {
-          "2": 0.04,
-          "3": 0.08,
-          "4": 0.02,
-          "5": 0.34,
-          "6": 0.1,
-          "7": 0.12,
-          "8": 0.12,
-          "9": 0.14,
-          "11": 0.04
-        },
-        "ml_data_weight": 0.83
-      },
-      "market_probs": {
-        "home_win_prob": 0.5720596355604638,
-        "away_win_prob": 0.42794036443953615,
-        "over_prob": 0.4891657638136511,
-        "under_prob": 0.5108342361863489,
-        "spread_home_cover_prob": 0.3630958183058778,
-        "total_line": 6.5,
-        "spread_line": -1.5,
-        "n_books_ml": 1,
-        "n_books_total": 1,
-        "n_books_spread": 1
-      },
-      "blended_probs": {
-        "home_win_prob": 0.5873333242759828,
-        "away_win_prob": 0.41266667572401716,
-        "over_prob": 0.46912573637605054,
-        "under_prob": 0.5308742636239494,
-        "home_cover_prob": 0.3724710102171151,
-        "away_cover_prob": 0.41266667572401716,
-        "expected_total": 6.1909085368481005,
-        "model_confidence": 0.3,
-        "ml_data_weight": 0.83,
-        "effective_model_weight": 0.27386127875258304,
-        "ml_model_weight": 0.45552167895721496
-      },
-      "n_similar": 50,
-      "n_bets": 0,
-      "context_indicators": {
-        "fatigue": [],
-        "goalie": [
-          {
-            "team": "CGY",
-            "type": "cold",
-            "value": 0.87,
-            "severity": "negative"
-          },
-          {
-            "team": "ANA",
-            "type": "cold",
-            "value": 0.872,
-            "severity": "negative"
-          }
-        ],
-        "injuries": [],
-        "splits": [],
-        "advanced": []
-      },
-      "goalie_matchup": {
-        "home": {
-          "name": "Dustin Wolf",
-          "quality_score": 27.0,
-          "recent_save_pct": 0.87,
-          "recent_gaa": 3.71,
-          "recent_quality_starts": 4
-        },
-        "away": {
-          "name": "Lukas Dostal",
-          "quality_score": 29.4,
-          "recent_save_pct": 0.872,
-          "recent_gaa": 3.56,
-          "recent_quality_starts": 3
-        }
-      },
-      "team_splits": {
-        "home": {
-          "games": 10,
-          "wins": 6,
-          "losses": 4,
-          "ot_losses": 0,
-          "win_pct": 0.6,
-          "goals_for": 31,
-          "goals_against": 30,
-          "gf_pg": 3.1,
-          "ga_pg": 3.0,
-          "goal_diff": 0.1
-        },
-        "away": {
-          "games": 10,
-          "wins": 6,
-          "losses": 4,
-          "ot_losses": 0,
-          "win_pct": 0.6,
-          "goals_for": 35,
-          "goals_against": 36,
-          "gf_pg": 3.5,
-          "ga_pg": 3.6,
-          "goal_diff": -0.1
-        }
-      },
-      "injuries": {
-        "home": {
-          "impact_score": 0,
-          "key_injuries": [],
-          "total_injuries": 0,
-          "positions_affected": {},
-          "injury_details": []
-        },
-        "away": {
-          "impact_score": 0,
-          "key_injuries": [],
-          "total_injuries": 0,
-          "positions_affected": {},
-          "injury_details": []
-        }
-      },
-      "advanced_stats": {
-        "home": {
-          "xGF_per_60": 0.0,
-          "xGA_per_60": 0.0,
-          "xGF_pct": 82.15384615384616,
-          "corsi_pct": 50.0,
-          "fenwick_pct": 50.0,
-          "shooting_pct": 0.0,
-          "save_pct": 0.9,
-          "pdo": 100.0
-        },
-        "away": {
-          "xGF_per_60": 0.0,
-          "xGA_per_60": 0.0,
-          "xGF_pct": 93.3768656716418,
-          "corsi_pct": 50.0,
-          "fenwick_pct": 50.0,
-          "shooting_pct": 0.0,
-          "save_pct": 0.9,
-          "pdo": 100.0
-        }
-      }
     }
   ],
   "recommendations": [],
   "parlays": [],
-  "quota_info": null,
+  "quota_info": {
+    "total_keys": 3,
+    "total_remaining": 1428,
+    "total_used": 72,
+    "keys": [
+      {
+        "index": 0,
+        "used": 72,
+        "remaining": 428,
+        "last_updated": "2026-11-06T22:43:43.939720"
+      },
+      {
+        "index": 1,
+        "used": 0,
+        "remaining": 500,
+        "last_updated": "Never"
+      },
+      {
+        "index": 2,
+        "used": 0,
+        "remaining": 500,
+        "last_updated": "Never"
+      }
+    ]
+  },
   "slate_date": "2026-11-06"
 }
