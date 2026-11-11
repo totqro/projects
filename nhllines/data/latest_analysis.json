@@ -1,10 +1,180 @@
 {
-  "timestamp": "2026-11-10T18:43:58.419437-04:00",
+  "timestamp": "2026-11-10T21:31:15.898387-04:00",
   "stake": 0.5,
   "days_back": 90,
   "min_edge": 0.04,
   "n_historical_games": 350,
   "games_analyzed": [
+    {
+      "game": "NSH @ LAK",
+      "home": "LAK",
+      "away": "NSH",
+      "start_time": "2026-11-11T03:10:00Z",
+      "model_probs": {
+        "home_win_prob": 0.5750161184542133,
+        "away_win_prob": 0.4249838815457867,
+        "expected_total": 6.05742642250545,
+        "over_prob": 0.43241664309681743,
+        "under_prob": 0.5675833569031825,
+        "home_cover_prob": 0.49802438633799895,
+        "away_cover_prob": 0.501975613662001,
+        "total_line": 6.5,
+        "spread_line": -1.5,
+        "n_games": 50,
+        "avg_similarity": 0.7585224273424049,
+        "confidence": 0.3,
+        "raw_confidence": 0.34016662254285884,
+        "raw_home_win_prob": 0.49712037647533025,
+        "raw_over_prob": 0.4014915577079833,
+        "goal_distribution": {
+          "2": 0.02,
+          "3": 0.12,
+          "4": 0.14,
+          "5": 0.18,
+          "6": 0.14,
+          "7": 0.16,
+          "8": 0.06,
+          "9": 0.12,
+          "11": 0.04,
+          "13": 0.02
+        },
+        "ml_data_weight": 0.7999999999999999
+      },
+      "market_probs": {
+        "home_win_prob": 0.5342911660641397,
+        "away_win_prob": 0.4657088339358603,
+        "over_prob": 0.4845106832589014,
+        "under_prob": 0.5154893167410985,
+        "spread_home_cover_prob": 0.3267711275872207,
+        "total_line": 6.5,
+        "spread_line": -1.5,
+        "n_books_ml": 15,
+        "n_books_total": 15,
+        "n_books_spread": 15
+      },
+      "blended_probs": {
+        "home_win_prob": 0.5408864934831761,
+        "away_win_prob": 0.4591135065168239,
+        "over_prob": 0.45775590783747844,
+        "under_prob": 0.5422440921625216,
+        "home_cover_prob": 0.3397769472085532,
+        "away_cover_prob": 0.4591135065168239,
+        "expected_total": 6.05742642250545,
+        "model_confidence": 0.3,
+        "ml_data_weight": 0.7999999999999999,
+        "effective_model_weight": 0.27331355619507786,
+        "ml_model_weight": 0.446319168308958
+      },
+      "n_similar": 50,
+      "n_bets": 0,
+      "context_indicators": {
+        "fatigue": [],
+        "goalie": [
+          {
+            "team": "LAK",
+            "type": "cold",
+            "value": 0.878,
+            "severity": "negative"
+          },
+          {
+            "team": "NSH",
+            "type": "advantage",
+            "value": 23.5,
+            "severity": "positive"
+          }
+        ],
+        "injuries": [],
+        "splits": [
+          {
+            "team": "NSH",
+            "type": "weak_road",
+            "value": 0.25,
+            "severity": "negative"
+          }
+        ],
+        "advanced": []
+      },
+      "goalie_matchup": {
+        "home": {
+          "name": "Darcy Kuemper",
+          "quality_score": 34.1,
+          "recent_save_pct": 0.878,
+          "recent_gaa": 3.53,
+          "recent_quality_starts": 5
+        },
+        "away": {
+          "name": "Juuse Saros",
+          "quality_score": 57.6,
+          "recent_save_pct": 0.907,
+          "recent_gaa": 2.74,
+          "recent_quality_starts": 6
+        }
+      },
+      "team_splits": {
+        "home": {
+          "games": 10,
+          "wins": 3,
+          "losses": 7,
+          "ot_losses": 0,
+          "win_pct": 0.3,
+          "goals_for": 31,
+          "goals_against": 37,
+          "gf_pg": 3.1,
+          "ga_pg": 3.7,
+          "goal_diff": -0.6
+        },
+        "away": {
+          "games": 8,
+          "wins": 2,
+          "losses": 4,
+          "ot_losses": 2,
+          "win_pct": 0.25,
+          "goals_for": 22,
+          "goals_against": 29,
+          "gf_pg": 2.75,
+          "ga_pg": 3.625,
+          "goal_diff": -0.875
+        }
+      },
+      "injuries": {
+        "home": {
+          "impact_score": 0,
+          "key_injuries": [],
+          "total_injuries": 0,
+          "positions_affected": {},
+          "injury_details": []
+        },
+        "away": {
+          "impact_score": 0,
+          "key_injuries": [],
+          "total_injuries": 0,
+          "positions_affected": {},
+          "injury_details": []
+        }
+      },
+      "advanced_stats": {
+        "home": {
+          "xGF_per_60": 0.0,
+          "xGA_per_60": 0.0,
+          "xGF_pct": 94.55040871934605,
+          "corsi_pct": 50.0,
+          "fenwick_pct": 50.0,
+          "shooting_pct": 0.0,
+          "save_pct": 0.9,
+          "pdo": 100.0
+        },
+        "away": {
+          "xGF_per_60": 0.0,
+          "xGA_per_60": 0.0,
+          "xGF_pct": 88.82978723404254,
+          "corsi_pct": 50.0,
+          "fenwick_pct": 50.0,
+          "shooting_pct": 0.0,
+          "save_pct": 0.9,
+          "pdo": 100.0
+        }
+      }
+    },
     {
       "game": "COL @ TOR",
       "home": "TOR",
@@ -165,7 +335,8 @@
           "save_pct": 0.9,
           "pdo": 100.0
         }
-      }
+      },
+      "started": true
     },
     {
       "game": "MIN @ MTL",
@@ -321,7 +492,8 @@
           "save_pct": 0.9,
           "pdo": 100.0
         }
-      }
+      },
+      "started": true
     },
     {
       "game": "NJD @ WPG",
@@ -483,7 +655,8 @@
           "save_pct": 0.9,
           "pdo": 100.0
         }
-      }
+      },
+      "started": true
     },
     {
       "game": "WSH @ OTT",
@@ -639,7 +812,8 @@
           "save_pct": 0.9,
           "pdo": 100.0
         }
-      }
+      },
+      "started": true
     },
     {
       "game": "FLA @ CBJ",
@@ -803,7 +977,8 @@
           "save_pct": 0.9,
           "pdo": 100.0
         }
-      }
+      },
+      "started": true
     },
     {
       "game": "DET @ STL",
@@ -967,191 +1142,22 @@
           "save_pct": 0.9,
           "pdo": 100.0
         }
-      }
-    },
-    {
-      "game": "NSH @ LAK",
-      "home": "LAK",
-      "away": "NSH",
-      "start_time": "2026-11-11T03:10:00Z",
-      "model_probs": {
-        "home_win_prob": 0.5750161184542133,
-        "away_win_prob": 0.4249838815457867,
-        "expected_total": 6.113760116805129,
-        "over_prob": 0.44017735749633097,
-        "under_prob": 0.559822642503669,
-        "home_cover_prob": 0.5110115389250303,
-        "away_cover_prob": 0.48898846107496974,
-        "total_line": 6.5,
-        "spread_line": -1.5,
-        "n_games": 50,
-        "avg_similarity": 0.7605766268331743,
-        "confidence": 0.3,
-        "raw_confidence": 0.3531062213304198,
-        "raw_home_win_prob": 0.5159300666664935,
-        "raw_over_prob": 0.41345635794075597,
-        "goal_distribution": {
-          "2": 0.02,
-          "3": 0.12,
-          "4": 0.14,
-          "5": 0.16,
-          "6": 0.14,
-          "7": 0.16,
-          "8": 0.08,
-          "9": 0.12,
-          "11": 0.04,
-          "13": 0.02
-        },
-        "ml_data_weight": 0.7999999999999999
       },
-      "market_probs": {
-        "home_win_prob": 0.5466485684813653,
-        "away_win_prob": 0.4533514315186347,
-        "over_prob": 0.4848119435295177,
-        "under_prob": 0.5151880564704823,
-        "spread_home_cover_prob": 0.3362114582170529,
-        "total_line": 6.5,
-        "spread_line": -1.5,
-        "n_books_ml": 16,
-        "n_books_total": 15,
-        "n_books_spread": 15
-      },
-      "blended_probs": {
-        "home_win_prob": 0.5477330125420741,
-        "away_win_prob": 0.45226698745792593,
-        "over_prob": 0.46108121391948903,
-        "under_prob": 0.5389187860805109,
-        "home_cover_prob": 0.3503960505449601,
-        "away_cover_prob": 0.45226698745792593,
-        "expected_total": 6.113760116805129,
-        "model_confidence": 0.3,
-        "ml_data_weight": 0.7999999999999999,
-        "effective_model_weight": 0.27331355619507786,
-        "ml_model_weight": 0.446319168308958
-      },
-      "n_similar": 50,
-      "n_bets": 0,
-      "context_indicators": {
-        "fatigue": [],
-        "goalie": [
-          {
-            "team": "LAK",
-            "type": "cold",
-            "value": 0.878,
-            "severity": "negative"
-          },
-          {
-            "team": "NSH",
-            "type": "advantage",
-            "value": 23.5,
-            "severity": "positive"
-          }
-        ],
-        "injuries": [],
-        "splits": [
-          {
-            "team": "NSH",
-            "type": "weak_road",
-            "value": 0.25,
-            "severity": "negative"
-          }
-        ],
-        "advanced": []
-      },
-      "goalie_matchup": {
-        "home": {
-          "name": "Darcy Kuemper",
-          "quality_score": 34.1,
-          "recent_save_pct": 0.878,
-          "recent_gaa": 3.53,
-          "recent_quality_starts": 5
-        },
-        "away": {
-          "name": "Juuse Saros",
-          "quality_score": 57.6,
-          "recent_save_pct": 0.907,
-          "recent_gaa": 2.74,
-          "recent_quality_starts": 6
-        }
-      },
-      "team_splits": {
-        "home": {
-          "games": 10,
-          "wins": 3,
-          "losses": 7,
-          "ot_losses": 0,
-          "win_pct": 0.3,
-          "goals_for": 31,
-          "goals_against": 37,
-          "gf_pg": 3.1,
-          "ga_pg": 3.7,
-          "goal_diff": -0.6
-        },
-        "away": {
-          "games": 8,
-          "wins": 2,
-          "losses": 4,
-          "ot_losses": 2,
-          "win_pct": 0.25,
-          "goals_for": 22,
-          "goals_against": 29,
-          "gf_pg": 2.75,
-          "ga_pg": 3.625,
-          "goal_diff": -0.875
-        }
-      },
-      "injuries": {
-        "home": {
-          "impact_score": 0,
-          "key_injuries": [],
-          "total_injuries": 0,
-          "positions_affected": {},
-          "injury_details": []
-        },
-        "away": {
-          "impact_score": 0,
-          "key_injuries": [],
-          "total_injuries": 0,
-          "positions_affected": {},
-          "injury_details": []
-        }
-      },
-      "advanced_stats": {
-        "home": {
-          "xGF_per_60": 0.0,
-          "xGA_per_60": 0.0,
-          "xGF_pct": 94.55040871934605,
-          "corsi_pct": 50.0,
-          "fenwick_pct": 50.0,
-          "shooting_pct": 0.0,
-          "save_pct": 0.9,
-          "pdo": 100.0
-        },
-        "away": {
-          "xGF_per_60": 0.0,
-          "xGA_per_60": 0.0,
-          "xGF_pct": 88.82978723404254,
-          "corsi_pct": 50.0,
-          "fenwick_pct": 50.0,
-          "shooting_pct": 0.0,
-          "save_pct": 0.9,
-          "pdo": 100.0
-        }
-      }
+      "started": true
     }
   ],
   "recommendations": [],
   "parlays": [],
   "quota_info": {
     "total_keys": 3,
-    "total_remaining": 1380,
-    "total_used": 120,
+    "total_remaining": 1374,
+    "total_used": 126,
     "keys": [
       {
         "index": 0,
-        "used": 120,
-        "remaining": 380,
-        "last_updated": "2026-11-10T22:43:53.526589"
+        "used": 126,
+        "remaining": 374,
+        "last_updated": "2026-11-11T01:31:14.941967"
       },
       {
         "index": 1,
