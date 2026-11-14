@@ -694,8 +694,8 @@ function drawRink(){
   return p.join("");
 }
 
-/* Radius carries xG, colour carries the tier — the same three tiers the
-   live tagger uses, so a chart here reads like the tagger's legend. */
+/* Radius carries xG, colour carries the tier — the coaches' three danger
+   tiers the tracker shows too, so a chart here reads like its legend. */
 function radius(xg){ return 1.15+Math.sqrt(Math.max(xg,0))*5.2; }
 
 /* Rink y is the NHL's: positive is the top of the broadcast view. SVG y
@@ -1579,7 +1579,9 @@ function buildScopeSelect(){
   document.getElementById("pdfScope").innerHTML=
     `<option value="__all__">Full game</option>`+
     periods.map(p=>`<option value="${esc(p)}">${esc(periodLabel(p))}</option>`).join("");
-  document.getElementById("pdfScope").value=periods.length?periods[periods.length-1]:"__all__";
+  /* The latest period played; a shootout alone isn't a report. */
+  const played=periods.filter(p=>!isShootout(p));
+  document.getElementById("pdfScope").value=played.length?played[played.length-1]:"__all__";
   const teams=teamsOf(), sel=document.getElementById("pdfHome");
   sel.innerHTML=teams.map(t=>`<option value="${esc(t)}">Home: ${esc(t)}</option>`).join("");
   sel.value=guessHome(teams);
