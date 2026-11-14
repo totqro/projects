@@ -33,7 +33,7 @@ from xg_model import CATEGORICAL, FEATURES, MODEL_PATH, NUMERIC, SHOT_TYPE_MERGE
 from zone_tagging import GOAL_X, ZONE16_NAMES
 
 OUT = ROOT / "web" / "xg_model.json"
-# Same model as a script, for web/tracker.html: it runs from file:// at the
+# Same model as a script, for web/index.html (the tracker): it runs from file:// at the
 # rink with no network, where fetch() of a local JSON file is refused.
 OUT_JS = ROOT / "web" / "xg_model.js"
 

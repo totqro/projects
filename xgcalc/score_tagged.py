@@ -81,7 +81,13 @@ def load_tagged(path: Path) -> pd.DataFrame:
     if missing:
         sys.exit(f"{path.name}: missing column(s) {sorted(missing)}")
 
+    # A shootout attempt is a penalty shot from a standing start, not game
+    # play: no defenders, no rebounds. Like the NHL builder, drop and count.
+    so = df["period"].astype(str).str.strip().str.lower().isin({"so", "s/o", "shootout"})
+    df = df[~so].reset_index(drop=True)
+
     out = pd.DataFrame(index=df.index)
+    out.attrs["shootout"] = int(so.sum())
     out["period"] = df["period"]
     out["team"] = df["team"].astype(str).str.strip()
     out["player"] = df.get("player", pd.Series("", index=df.index)).fillna("")
@@ -154,6 +160,8 @@ def main():
     label = f"{args.csv.name}: {len(df)} tagged events, {len(scored)} scored"
     if blocked:
         label += f" ({blocked} blocked, at reduced xG)"
+    if df.attrs.get("shootout"):
+        label += f", {df.attrs['shootout']} shootout attempts left out"
     if len(unrecognised):
         kinds = ", ".join(sorted(set(unrecognised.event.replace("", "(blank)"))))
         label += f", {len(unrecognised)} unrecognised type ({kinds}, dropped)"

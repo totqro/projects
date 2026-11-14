@@ -147,13 +147,12 @@ src/data/shots.py      locating, downloading and reading raw season files
 score_tagged.py        CLI: score a hand-tagged x/y shot chart with the saved model
 export_model_web.py    flatten the fitted pipeline to web/xg_model.json (+ .js), with a parity check
 zone_tagging.py        the 10- and 16-zone maps for shots you can only eyeball
-web/index.html         the live 16-zone tagger (tier rates, no coordinates needed)
 tag_features.py        the tagged layer (rush, cross-ice, blocks) shared by every scorer
 tag_adjustments.json   its coefficients: priors, refit by fit_tagged.py
 fit_tagged.py          refit rush/cross-ice on tagged games, shrunk toward the prior
 web/scatter.html       the shot chart — CSV in, the real model on a rink, in the browser
-web/tracker.html       live tracker: shots with x/y, scoreboard clock, shifts, rush/cross-ice tags; TOI, xGF, xGA
-web/xg_model.js        the model as a script, so tracker.html runs from file:// offline
+web/index.html         live tracker: shots with x/y, scoreboard clock, shifts, rush/cross-ice tags; TOI, xGF, xGA
+web/xg_model.js        the model as a script, so the tracker runs from file:// offline
 web/serve.py           static server for previewing the pages locally
 data/                  built dataset + saved model (gitignored — regenerable)
 ```
@@ -173,16 +172,9 @@ shots["xg"] = predict_xg(model, shots)     # 0.205
 
 ## The web pages
 
-Three ways in, one model behind them.
+Two ways in, one model behind them.
 
-**`web/index.html` — the live tagger.** Tap one of 16 rink zones from your
-seat. No coordinates, because nobody can eyeball `x=71.3, y=-8.6` during a
-live game. It prices each shot off the empirical rate for that zone (three
-danger tiers, with multipliers for strength and rebounds), which is the
-honest resolution for tapped-by-eye input.
-
-**`web/tracker.html`: the rinkside tracker.** The one to use when shifts
-matter. Built for a laptop at the rink: click the rink where a shot came from,
+**`web/index.html`: the rinkside tracker.** The page at `/xgcalc`. Built for a laptop at the rink: click the rink where a shot came from,
 and the page stamps it with the scoreboard clock and whoever is on the ice for
 our team. From that it works out every player's TOI, on-ice xGF and xGA, and
 xGF%. It runs from `file://` with no network, so open it straight from the
@@ -204,6 +196,7 @@ line presets (F1-F4, D1-D3, PP1-PP2). During it, the keyboard does the work:
 | `↑` `↓` | possession over (neutral zone, stoppage) |
 | `Shift+↑ ↓` `Esc` | walk the shot log, back to latest |
 | `` ` `` `?` | Shifts view, full key sheet |
+| `]` | end the period; a 3v3 OT that ends tied goes to the shootout |
 
 If the ends are wrong, drag either label above the rink ("UofT shooting
 right") toward the other end: halfway across, the ends swap and both labels
@@ -229,6 +222,18 @@ when it's over. The arrows name an end, not a team, so a later end swap
 re-teams possession the same way it re-teams shots. The **OZ** tag in the
 top bar and the glowing end label show who has it now; each period starts
 with nobody. The report adds o-zone time and share to the totals.
+
+**Shootout.** When a 3v3 overtime ends tied, `]` (or End per) offers the
+shootout. Click the rink where each attempt came from: the teams alternate
+from whoever went first (the end of the first click picks it, `x` fixes a
+team), `g` `o` `m` mark scored, saved, missed, and the panel takes the
+shooter's number. It runs three rounds, then sudden death, and is called the
+moment one side can't catch up. The attempts are kept apart from the shots,
+so they never touch TOI, strength, rebounds or xG; the winner just gets the
+one deciding goal on the final score, the report header says Final ·
+Shootout, and the shots CSV writes them as period `SO` rows, which Shot
+Chart and `score_tagged.py` leave out of every number. Back to OT leaves
+the shootout and keeps its attempts.
 
 Only raw events are stored: clock operations, shots, shift changes,
 penalties, empty-net toggles and possession changes. Clock
@@ -371,7 +376,7 @@ so on screen rather than quietly rendering a confident-looking dot.
 
 ## Tagged features: rush, cross-ice, blocks
 
-The rinkside tracker (`web/tracker.html`) tags three things the NHL data
+The rinkside tracker (`web/index.html`) tags three things the NHL data
 cannot supply, and every scorer (tracker, shot chart, `score_tagged.py`)
 applies them the same way, through `tag_features.py`:
 
@@ -429,8 +434,7 @@ plus the band `|y| <= 22` out to the circle tops (`x = 54`); everything else,
 behind the net included, is low. Then, in order: an odd-man rush moves a
 shot up one tier, a counted cross-ice feed makes it high, and a blocked
 attempt drops it one tier (never below low). Tier and xG can disagree on purpose:
-one is a coaching category, the other a probability. `web/index.html` still
-prices shots off its own 16-zone tiers and is unchanged.
+one is a coaching category, the other a probability.
 
 ## Evaluation protocol
 

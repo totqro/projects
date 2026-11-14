@@ -57,7 +57,9 @@ jobs:
           cp xgcalc/web/index.html build/xgcalc/
           cp xgcalc/web/scatter.html build/xgcalc/
           cp xgcalc/web/xg_model.json build/xgcalc/
-          cp xgcalc/web/tracker.html xgcalc/web/xg_model.js xgcalc/web/uoft-logo.png build/xgcalc/
+          cp xgcalc/web/xg_model.js xgcalc/web/uoft-logo.png build/xgcalc/
+          # The tracker used to be tracker.html; that page now only redirects.
+          cp xgcalc/web/tracker.html build/xgcalc/
           # The game sheets moved to High Slot (fortknox-deploy.yml); the old
           # page stays only to redirect links to it.
           cp xgcalc/web/sheets.html build/xgcalc/
