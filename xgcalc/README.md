@@ -194,9 +194,10 @@ line presets (F1-F4, D1-D3, PP1-PP2). During it, the keyboard does the work:
 | `r` `x` `,` `.` | rebound override, wrong end, time -1 s / +1 s |
 | `←` `→` | o-zone possession for the team attacking that end |
 | `↑` `↓` | possession over (neutral zone, stoppage) |
-| `Shift+↑ ↓` `Esc` | walk the shot log, back to latest |
+| `Shift+↑ ↓` `Esc` | walk the shot log, back to latest (and the live period) |
+| `Shift+← →` | previous / next period's shot map |
 | `` ` `` `?` | Shifts view, full key sheet |
-| `]` | end the period; a 3v3 OT that ends tied goes to the shootout |
+| `]` | end the period, or the game: see below |
 
 If the ends are wrong, drag either label above the rink ("UofT shooting
 right") toward the other end: halfway across, the ends swap and both labels
@@ -223,7 +224,26 @@ re-teams possession the same way it re-teams shots. The **OZ** tag in the
 top bar and the glowing end label show who has it now; each period starts
 with nobody. The report adds o-zone time and share to the totals.
 
-**Shootout.** When a 3v3 overtime ends tied, `]` (or End per) offers the
+**Going back to an earlier period.** The P1 / P2 / P3 / OT buttons above
+the rink (or `Shift+←` `→`) show that period's shot map, with its ends the
+right way round, so its shots can be dragged, retagged or deleted; picking a
+shot in the log, or walking it with `Shift+↑` `↓`, brings up its period too.
+A click on an earlier period's map logs a shot you forgot into that period
+at 0:00: type its real time into the clock box in the shot panel (any shot's
+time can be fixed there). Swap ends applies from the period on screen.
+`Esc` or the live period's button goes back to following the clock; the
+clock, changes and penalties always stay live. **All** shows every period.
+
+**Ending periods and the game.** `]` does what the scoreboard calls for,
+and its button says which: tied after P3 it starts OT; once a team leads
+after regulation (an OT goal included) it ends the game; a 3v3 OT that ends
+tied goes to the shootout, and in the shootout it ends the game. **End
+game** ends it at any point, tied or early. The clock stops at 0:00 of that
+period, the top bar reads FINAL, the report says Final (or Final ·
+Overtime / Shootout), and the rink stops taking new shots; edits still work.
+Resume reopens it.
+
+**Shootout.** When a 3v3 overtime ends tied, `]` offers the
 shootout. Click the rink where each attempt came from: the teams alternate
 from whoever went first (the end of the first click picks it, `x` fixes a
 team), `g` `o` `m` mark scored, saved, missed, and the panel takes the

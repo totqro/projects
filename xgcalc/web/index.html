@@ -90,6 +90,11 @@ kbd{font-family:var(--body); font-size:11px; border:1px solid var(--line-2); bor
 .rinkhead .end.dragging{cursor:grabbing; border-style:solid; border-color:var(--warn); box-shadow:0 0 12px rgba(255,176,0,.35)}
 .rinkhead .end,.rinkhead button{white-space:nowrap}
 .rinkhead .mid{display:flex; gap:6px; align-items:center; min-width:0}
+.perpick{display:flex; gap:3px}
+.perpick button{padding:3px 7px; font-size:11px}
+.perpick button.live{border-style:dashed}
+.perpick button[aria-pressed="true"],#bAll[aria-pressed="true"]{border-color:var(--warn); color:var(--warn); background:rgba(255,176,0,.12)}
+.viewnote{margin:-2px 0 6px; font-size:11.5px; color:var(--warn)}
 #dirNote{font-size:11.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--warn)}
 svg.rink{display:block; width:min(100%, calc((100vh - var(--hdr, 150px) - 240px) * 202 / 87)); height:auto; aspect-ratio:202/87; margin:0 auto; cursor:crosshair; user-select:none; touch-action:none}
 .rink .boards{fill:var(--ice); stroke:var(--line-2); stroke-width:.6}
@@ -269,6 +274,7 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
     <button id="bRun" title="Tab">Start <kbd>Tab</kbd></button>
     <button id="bSet" title="=">Set <kbd>=</kbd></button>
     <button id="bNext" title="]">End per <kbd>]</kbd></button>
+    <button id="bEnd" title="End the game here, even tied">End game</button>
     <select id="strSel" title="e cycles EV / PP / PK" aria-label="Strength">
       <option value="EV">EV</option><option value="PP">PP 5v4</option><option value="PP2">PP 5v3</option>
       <option value="PK">PK 4v5</option><option value="PK2">PK 3v5</option>
@@ -304,10 +310,11 @@ tr.row.sel td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
       <span class="end" id="endL"></span>
       <span>
         <span class="mid"><button id="bSwap" title="Swap which end each team attacks, from this period on">&#8644; Swap ends</button>
-        <button id="bAll" aria-pressed="false">All periods</button><span id="dirNote" class="note"></span></span>
+        <span class="perpick" id="perPick" title="Shot map for one period: Shift+Left / Right"></span><button id="bAll" aria-pressed="false">All</button><span id="dirNote" class="note"></span></span>
       </span>
       <span class="end" id="endR"></span>
     </div>
+    <div class="viewnote hidden" id="viewNote"></div>
     <svg class="rink" id="rink" viewBox="-101 -43.5 202 87" aria-label="Rink: click where the shot came from"></svg>
   </div>
   <div class="panel logwrap" id="logwrap"><table id="log"></table></div>
@@ -499,7 +506,7 @@ function blankSetup(){
   return {date:today(), us:"UofT", opp:"Opponent", venue:"home", periodMin:20, otMin:5, otFormat:"3v3", usRightP1:true, roster:[], lines};
 }
 function blankGame(setup){
-  return {gid:newGid(), clock:[{w:Date.now(), k:"set", p:1, s:setup.periodMin*60}], strength:"EV", shots:[], changes:[], flips:[], strOps:[], pens:[], enOps:[], poss:[], so:[], soOn:false, nextId:1};
+  return {gid:newGid(), clock:[{w:Date.now(), k:"set", p:1, s:setup.periodMin*60}], strength:"EV", shots:[], changes:[], flips:[], strOps:[], pens:[], enOps:[], poss:[], so:[], soOn:false, over:false, nextId:1};
 }
 const newGid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 /* Fill in fields older saves and backups don't have. */
@@ -540,7 +547,7 @@ function archiveCurrent(){
 }
 
 const hist = [];
-const snapshot = () => JSON.stringify({shots:G.shots, changes:G.changes, flips:G.flips, strOps:G.strOps, pens:G.pens, enOps:G.enOps, poss:G.poss, so:G.so, soOn:!!G.soOn, nextId:G.nextId});
+const snapshot = () => JSON.stringify({shots:G.shots, changes:G.changes, flips:G.flips, strOps:G.strOps, pens:G.pens, enOps:G.enOps, poss:G.poss, so:G.so, soOn:!!G.soOn, over:!!G.over, nextId:G.nextId});
 function mutate(fn){ hist.push(snapshot()); if(hist.length > 200) hist.shift(); fn(); saveGame(); render(); }
 function undo(){
   const s = hist.pop(); if(!s) return;
@@ -598,12 +605,14 @@ function toggleOppEN(sec){
   const c = now(), e = elapsed(c.p, sec !== null && sec !== undefined ? sec : c.v), on = !manpower().en(e);
   mutate(() => { const x = {w:Date.now(), p:c.p, on}; if(sec !== null && sec !== undefined) x.s = sec; G.enOps.push(x); });
 }
-function toggleClock(){ G.clock.push({w:Date.now(), k: now().run ? "pause" : "run"}); saveGame(); render(); }
+function toggleClock(){ if(G.over) return; G.clock.push({w:Date.now(), k: now().run ? "pause" : "run"}); saveGame(); render(); }
 function syncClock(sec){ const c = now(); G.clock.push({w:Date.now(), k:"set", p:c.p, s:sec, sync:true}); saveGame(); render(); }
 function nextPeriod(){
   const c = now(), w = Date.now();
   G.clock.push({w, k:"pause"}, {w:w+1, k:"set", p:c.p+1, s:periodLen(c.p+1)});
-  saveGame(); render();
+  viewP = null;
+  /* The new period starts 1 ms from now: draw again once it has. */
+  saveGame(); render(); setTimeout(render, 20);
 }
 /* ================================================================
    Shootout. Its attempts live in G.so, apart from G.shots, so nothing
@@ -642,10 +651,39 @@ function startShootout(){
 function leaveShootout(){ mutate(() => { G.soOn = false; selId = null; }); }
 /* ] and End per: a 3v3 overtime that ends tied goes to the shootout;
    anything else starts the next period. */
+/* End game: the clock stops at 0:00 of the period it ends in, so the
+   report reads Final and nothing counts past it. Resume undoes the flag,
+   not the clock. */
+function endGame(){
+  const c = now(), w = Date.now();
+  G.clock.push({w, k:"pause"}, {w:w+1, k:"set", p:c.p, s:0});
+  mutate(() => { G.over = true; G.soOn = false; selId = null; });
+  setTimeout(render, 20);
+}
+function resumeGame(){ mutate(() => { G.over = false; }); }
+const finalText = D => { const f = finalScore(D); return `${esc(S.us)} ${f.us}, ${esc(S.opp)} ${f.them}` + (f.so ? " (shootout)" : ""); };
+function confirmEndGame(){
+  const D = derive(), f = finalScore(D), so = G.soOn && G.so.length && !soState().winner;
+  const tied = f.us === f.them && !so;
+  if(confirm(so ? "The shootout isn't decided. End the game anyway?" : `End the game${tied ? " tied" : ""}? Final: ${finalText(D)}.`)) endGame();
+}
+/* What ] does now: in the shootout or with the score level after
+   regulation, it ends the game; a tie goes on to OT, and a 3v3 OT
+   that ends tied goes to the shootout. */
+function endAction(D){
+  if(G.over) return "resume";
+  if(G.soOn) return "end";
+  const c = now(), a = teamTotals(D, "us").g, b = teamTotals(D, "them").g;
+  if(c.p >= 3 && a !== b) return "end";
+  if(c.p >= 4 && S.otFormat === "3v3") return "so";
+  return "next";
+}
 function endPeriod(){
-  if(G.soOn) return;
-  const c = now(), D = derive(), a = teamTotals(D, "us").g, b = teamTotals(D, "them").g;
-  if(c.p >= 4 && a === b && S.otFormat === "3v3"){
+  const D = derive(), act = endAction(D), c = now();
+  if(act === "resume"){ if(confirm("Resume the game? The clock stays where it is.")) resumeGame(); return; }
+  if(act === "end"){ confirmEndGame(); return; }
+  const a = teamTotals(D, "us").g, b = teamTotals(D, "them").g;
+  if(act === "so"){
     if(confirm(`End ${perLabel(c.p)} tied ${a}-${b} and go to the shootout?`)) startShootout();
     return;
   }
@@ -680,7 +718,7 @@ const cmp = (a,b) => a.p - b.p || b.sec - a.sec || a.w - b.w;
    (G.flips) turns that period and every later one around. */
 const usAttacksRight = p => (S.usRightP1 === (p % 2 === 1)) !== (G.flips.filter(q => q <= p).length % 2 === 1);
 function swapEnds(){
-  const p = now().p, moved = G.shots.filter(s => s.p >= p).length;
+  const p = shownP(), moved = G.shots.filter(s => s.p >= p).length;
   mutate(() => {
     G.flips = G.flips.includes(p) ? G.flips.filter(q => q !== p) : G.flips.concat([p]);
     G.shots.forEach(s => { if(s.p >= p) s.team = s.team === "us" ? "them" : "us"; });
@@ -1031,14 +1069,27 @@ function barToggle(n){
    Shots
 ================================================================= */
 let selId = null, showAll = false, view = "track";
+/* The period the rink shows and new clicks go into: null follows the
+   clock. Picking an earlier one shows its shot map, and a shot clicked
+   there is logged in it at 0:00 (fix the time in the shot panel). */
+let viewP = null;
+const shownP = () => viewP !== null && viewP < now().p ? viewP : now().p;
+function setViewP(p){ viewP = p === null || p >= now().p ? null : p; showAll = false; render(); }
+/* Selecting a shot from the log or Shift+Up/Down brings up its period. */
+function focusShot(id){
+  selId = id;
+  const s = G.shots.find(x => x.id === id);
+  if(s && !G.soOn && !showAll) viewP = s.p >= now().p ? null : s.p;
+  render();
+}
 /* In the shootout, selection, keys and dragging work on its attempts. */
 const pool = () => G.soOn ? G.so : G.shots;
 const latest = () => { const a = pool(); return a.length ? a[a.length-1] : null; };
 const selected = () => (selId !== null && pool().find(s => s.id === selId)) || latest();
 
 function logShot(x, y){
-  const c = now();
-  const team = x >= 0 ? (usAttacksRight(c.p) ? "us" : "them") : (usAttacksRight(c.p) ? "them" : "us");
+  const c = now(), p = shownP(), past = p !== c.p;
+  const team = x >= 0 ? (usAttacksRight(p) ? "us" : "them") : (usAttacksRight(p) ? "them" : "us");
   /* Both teams shoot at the same net in a shootout, so the end can't say
      whose attempt it is: they alternate, and the end only picks who goes first. */
   if(G.soOn){
@@ -1047,8 +1098,10 @@ function logShot(x, y){
     return;
   }
   mutate(() => {
-    G.shots.push({id:G.nextId++, w:Date.now(), p:c.p, x:+x.toFixed(1), y:+y.toFixed(1), team,
-                  type:"UNKNOWN", result:"SAVE", reb:null, rush:false, xi:false, offd:false});
+    const s = {id:G.nextId++, w:Date.now(), p, x:+x.toFixed(1), y:+y.toFixed(1), team,
+                  type:"UNKNOWN", result:"SAVE", reb:null, rush:false, xi:false, offd:false};
+    if(past) s.s = 0;
+    G.shots.push(s);
     selId = null;
   });
 }
@@ -1068,7 +1121,7 @@ function stepSel(dir, D){
   if(!list.length) return;
   const cur = selected(), i = list.indexOf(cur);
   const j = Math.max(0, Math.min(list.length-1, (i < 0 ? list.length-1 : i) + dir));
-  selId = list[j].id; render();
+  if(G.soOn){ selId = list[j].id; render(); } else focusShot(list[j].id);
 }
 
 /* ================================================================
@@ -1095,8 +1148,15 @@ const RINK_BASE = drawRinkBase();
 const rad = xg => 1.1 + Math.sqrt(Math.max(xg || 0, 0)) * 5;
 
 function renderRink(D){
-  if(G.soOn){ renderSORink(); return; }
-  const cur = now().p, sel = selected();
+  $("perPick").classList.toggle("hidden", !!G.soOn);
+  if(G.soOn){ $("viewNote").classList.add("hidden"); renderSORink(); return; }
+  const live = now().p, cur = shownP(), sel = selected();
+  const tops = Math.max(live, ...G.shots.map(s => s.p));
+  $("perPick").innerHTML = Array.from({length:tops}, (_, i) => i + 1).map(p =>
+    `<button data-vp="${p}" aria-pressed="${!showAll && p === cur}"${p === live ? ` class="live" title="Live period"` : ""}>${esc(perLabel(p))}</button>`).join("");
+  const vn = $("viewNote"), past = !showAll && cur !== live;
+  vn.classList.toggle("hidden", !past);
+  if(past) vn.innerHTML = `Viewing ${esc(perLabel(cur))}: clicks log shots in ${esc(perLabel(cur))} at 0:00, set the time in the shot panel · <a href="#" id="backLive">back to ${esc(perLabel(live))}</a> <kbd>Esc</kbd>`;
   const dots = D.ordered.filter(s => showAll || s.p === cur).map(s => {
     const I = D.shotInfo[s.id];
     const cls = ["dot", s.team, s.result === "BLOCK" ? "block" : "", s.result === "MISS" ? "miss" : "",
@@ -1268,6 +1328,7 @@ function renderShotPanel(D){
     <div class="edits">
       <select data-f="type">${opt(TYPE_LABEL, s.type)}</select>
       <select data-f="result">${opt(RESULT_LABEL, s.result)}</select>
+      <input data-f="clock" value="${fmt(I.sec)}" aria-label="Clock" title="Scoreboard time for this shot, e.g. 12:40" class="mono" style="width:100%">
       <select data-f="str"><option value=""${s.str ? "" : " selected"}>Auto (${I.us}v${I.them}${I.oppEN ? ", opp EN" : ""})</option>${opt(STR_LABEL, s.str)}</select>
     </div>
     <div class="note">type <kbd>w</kbd><kbd>s</kbd><kbd>b</kbd><kbd>t</kbd><kbd>a</kbd><kbd>d</kbd><kbd>u</kbd> · result <kbd>o</kbd><kbd>g</kbd><kbd>m</kbd><kbd>k</kbd> · <kbd>r</kbd> rebound · <kbd>f</kbd> odd-man rush · <kbd>p</kbd> cross-ice · <kbd>h</kbd> goal off a defender · <kbd>x</kbd> other team · <kbd>,</kbd><kbd>.</kbd> time</div>
@@ -1276,6 +1337,11 @@ function renderShotPanel(D){
   $("shotDel").onclick = () => deleteShot(s.id);
   el.querySelectorAll("select").forEach(sel => sel.onchange = () => { const f = sel.dataset.f, v = sel.value;
     editSel(x => x[f] = v); sel.blur(); });
+  const ck = el.querySelector("[data-f=clock]");
+  ck.onchange = () => { const v = parseClock(ck.value);
+    if(v === null || v > periodLen(s.p)){ ck.value = fmt(I.sec); return; }
+    editSel(x => x.s = v); };
+  ck.onkeydown = e => { if(e.key === "Enter" || e.key === "Escape"){ e.preventDefault(); ck.blur(); } };
 }
 
 function renderLog(D){
@@ -1292,7 +1358,7 @@ function renderLog(D){
         <td class="tier-${I.tier}">${TIER_SHORT[I.tier]}</td><td>${esc(sitShow(I.situation))}</td>
         <td class="mono">${I.onIce.map(esc).join(" ")}</td><td class="num">${I.xg === null ? "" : I.xg.toFixed(3)}</td>
         <td><button class="del" data-del="${s.id}" tabindex="-1" title="Delete this ${s.result === "GOAL" ? "goal" : "shot"}" aria-label="Delete">&times;</button></td></tr>`; }).join("") + `</tbody>`;
-  tb.querySelectorAll("tr.row").forEach(tr => tr.onclick = () => { selId = +tr.dataset.id; render(); });
+  tb.querySelectorAll("tr.row").forEach(tr => tr.onclick = () => focusShot(+tr.dataset.id));
   tb.querySelectorAll("button.del").forEach(b => {
     b.addEventListener("mousedown", e => e.preventDefault());
     b.onclick = e => { e.stopPropagation(); deleteShot(+b.dataset.del); };
@@ -1307,12 +1373,17 @@ function renderLog(D){
 
 function renderTop(D){
   const c = now(), clk = $("clock");
-  $("per").textContent = G.soOn ? "SO" : perLabel(c.p);
+  $("per").textContent = G.over ? "FINAL" : G.soOn ? "SO" : perLabel(c.p);
   clk.textContent = fmt(c.v);
   clk.className = "mono " + (c.run ? "run" : "stop");
-  $("runTag").textContent = G.soOn ? "SHOOTOUT" : c.run ? "RUNNING" : "PAUSED";
+  $("runTag").textContent = G.over ? (G.so.length ? "SHOOTOUT" : c.p >= 4 ? "OVERTIME" : "") : G.soOn ? "SHOOTOUT" : c.run ? "RUNNING" : "PAUSED";
   $("bRun").innerHTML = (c.run ? "Pause" : "Start") + " <kbd>Tab</kbd>";
   if(!D) return;
+  const act = endAction(D);
+  $("bNext").innerHTML = act === "resume" ? "Resume" : act === "end" ? "End game <kbd>]</kbd>" : act === "so" ? "Shootout <kbd>]</kbd>" : "End per <kbd>]</kbd>";
+  $("bNext").title = act === "resume" ? "Reopen the game" : act === "end" ? "] ends the game" : act === "so" ? "] ends OT and starts the shootout" : "] ends the period";
+  $("bEnd").hidden = act === "end" || act === "resume";
+  $("bRun").disabled = !!G.over;
   const ns = nowState(D), code = codeFor(ns.us, ns.them, ns.p);
   const optNow = $("strNow");
   if(code){ $("strSel").value = code; optNow.hidden = true; }
@@ -1330,9 +1401,10 @@ function renderTop(D){
   const oz = D.poss(c.p, c.v - 0.01), pe = $("poss");
   pe.className = oz || "";
   pe.innerHTML = oz ? `OZ ${esc(oz === "us" ? S.us : S.opp)} ${(oz === "us") === usAttacksRight(c.p) ? "&rarr;" : "&larr;"}` : "OZ &mdash;";
-  const right = usAttacksRight(c.p);
-  $("endL").classList.toggle("oz-us", oz === "us" && !right); $("endL").classList.toggle("oz-them", oz === "them" && right);
-  $("endR").classList.toggle("oz-us", oz === "us" && right);  $("endR").classList.toggle("oz-them", oz === "them" && !right);
+  /* The ends glow for live possession only, not on an earlier period's map. */
+  const right = usAttacksRight(c.p), oz2 = shownP() === c.p ? oz : null;
+  $("endL").classList.toggle("oz-us", oz2 === "us" && !right); $("endL").classList.toggle("oz-them", oz2 === "them" && right);
+  $("endR").classList.toggle("oz-us", oz2 === "us" && right);  $("endR").classList.toggle("oz-them", oz2 === "them" && !right);
 }
 
 function renderStats(D){
@@ -1874,6 +1946,7 @@ function statusLine(scope){
   if(scope) return (scope <= 3 ? "Period " + scope : perLabel(scope)) + " only";
   if(G.so.length){ const so = soState(); if(so.winner) return "Final &middot; Shootout"; if(G.soOn) return "Shootout"; }
   const c = now();
+  if(G.over) return c.p >= 4 ? "Final &middot; Overtime" : "Final";
   if(c.v <= 0 && c.p >= 3) return c.p >= 4 ? "Final &middot; Overtime" : "Final";
   if(c.v <= 0) return "After " + perLabel(c.p);
   if(c.v >= periodLen(c.p)) return c.p > 1 ? "After " + perLabel(c.p - 1) : "Pregame";
@@ -2000,7 +2073,9 @@ $("rink").addEventListener("pointermove", e => {
 $("rink").addEventListener("pointerup", e => {
   if(drag){ if(drag.moved){ hist.push(drag.snap); saveGame(); } drag = null; render(); return; }
   if(e.button !== 0 || e.target.closest(".dot")) return;
-  const q = rinkPoint(e); logShot(q.x, q.y);
+  const q = rinkPoint(e);
+  if(G.over){ const n = $("dirNote"); n.textContent = "Game over · Resume to log more"; clearTimeout(swapEnds.t); swapEnds.t = setTimeout(() => n.textContent = "", 4000); return; }
+  logShot(q.x, q.y);
 });
 
 $("board").addEventListener("mousedown", e => e.preventDefault());
@@ -2031,8 +2106,12 @@ document.querySelectorAll(".top button").forEach(b => b.addEventListener("moused
 $("bRun").onclick = toggleClock;
 $("bSet").onclick = openSet;
 $("bNext").onclick = endPeriod;
+$("bEnd").onclick = () => { if(!G.over) confirmEndGame(); };
 $("strSel").onchange = e => { setStrength(e.target.value); e.target.blur(); };
 $("bAll").onclick = () => { showAll = !showAll; render(); };
+$("perPick").addEventListener("mousedown", e => e.preventDefault());
+$("perPick").onclick = e => { const b = e.target.closest("[data-vp]"); if(b) setViewP(+b.dataset.vp); };
+$("viewNote").onclick = e => { if(e.target.id === "backLive"){ e.preventDefault(); setViewP(null); } };
 $("bSwap").addEventListener("mousedown", e => e.preventDefault());
 $("bSwap").onclick = swapEnds;
 /* Drag either end label: once its centre crosses the middle of the rink the
@@ -2178,8 +2257,10 @@ document.addEventListener("keydown", e => {
   if(e.key === "c" || e.key === "Enter"){ e.preventDefault(); openBar(); return; }
   if(e.key === "ArrowUp" || e.key === "ArrowDown"){ e.preventDefault();
     if(e.shiftKey) stepSel(e.key === "ArrowUp" ? -1 : 1, D); else if(!G.soOn) setPoss(null); return; }
+  if((e.key === "ArrowLeft" || e.key === "ArrowRight") && e.shiftKey){ e.preventDefault();
+    if(!G.soOn) setViewP(Math.max(1, shownP() + (e.key === "ArrowLeft" ? -1 : 1))); return; }
   if(e.key === "ArrowLeft" || e.key === "ArrowRight"){ e.preventDefault(); if(!G.soOn) setPoss(e.key === "ArrowLeft" ? "L" : "R"); return; }
-  if(e.key === "Escape"){ selId = null; render(); return; }
+  if(e.key === "Escape"){ selId = null; viewP = null; render(); return; }
   if((e.key === "Backspace" || e.key === "Delete") && e.shiftKey){ e.preventDefault();
     const s = selected(); if(s) deleteShot(s.id); return; }
   const k = e.key;
@@ -2205,7 +2286,7 @@ const HELP = [
   ["Always"],
   ["Tab","Pause / resume the clock (works everywhere, even in the change bar)"],
   ["=","Type the scoreboard time (1240 or 12:40, Enter). Also fixes events since the last reading"],
-  ["]","End the period (a 3v3 OT that ends tied goes to the shootout)"],
+  ["]","End the period. Once a team leads after regulation (or in the shootout) it ends the game; tied after P3 it starts OT, and a tied 3v3 OT goes to the shootout. End game ends it at any point, even tied"],
   ["e","Set strength by hand: EV, PP, PK (overrides until the next penalty starts or ends)"],
   ["Cmd+Z","Undo the last shot, change or edit"],
   ["`","Switch Track / Shifts"],
@@ -2226,6 +2307,10 @@ const HELP = [
   ["O-zone possession"],
   ["Left / Right","The team attacking that end has the puck in its offensive zone"],
   ["Up / Down","Possession over: neutral zone, stoppage, change of control"],
+  ["Periods"],
+  ["P1 P2 P3 OT","Above the rink: show that period's shot map. Clicks then log shots in it at 0:00; set the time in the shot panel"],
+  ["Shift+Left / Right","Previous / next period's shot map"],
+  ["Esc","Back to the live period (and the latest shot)"],
   ["Shot log"],
   ["Shift+Up / Down","Select an earlier / later shot"],
   ["Esc","Back to the latest shot"],
