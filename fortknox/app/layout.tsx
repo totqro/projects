@@ -14,6 +14,7 @@ import { SeasonSelect, SiteNav } from "@/components/site/nav";
 import { PaletteToggle, THEME_SCRIPT, ThemeToggle } from "@/components/site/theme";
 import { SiteSearch } from "@/components/site/search";
 import { Trail } from "@/components/site/trail";
+import { Analytics } from "@/components/site/analytics";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 // The two faces, downloaded at build time and served from the site: Big
@@ -83,6 +84,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </nav>
           </footer>
         </TooltipProvider>
+        <Analytics />
       </body>
     </html>
   );
