@@ -11,6 +11,7 @@ const SECTIONS = [
   { key: "teams", label: "Teams", match: (p: string) => p.startsWith("/team") },
   { key: "players", label: "Players", match: (p: string) => p.startsWith("/player") || p.startsWith("/compare") },
   { key: "regression", label: "Vs. Expected", match: (p: string) => p.startsWith("/regression") },
+  { key: "articles", label: "Articles", match: (p: string) => p.startsWith("/articles") },
   { key: "model", label: "Model", match: (p: string) => p.startsWith("/model") },
 ] as const;
 
@@ -60,7 +61,7 @@ function useSeason(current: number) {
 export function SiteNav({ current }: { current: number }) {
   const { path, season } = useSeason(current);
   const href = (k: string) =>
-    k === "games" ? (season === current ? "/" : `/games/${season}`) : k === "model" ? "/model" : `/${k}/${season}`;
+    k === "games" ? (season === current ? "/" : `/games/${season}`) : k === "model" || k === "articles" ? `/${k}` : `/${k}/${season}`;
   return (
     <nav aria-label="Sections" className="slot-nav inline-flex gap-1">
       {SECTIONS.map(s => {
