@@ -107,3 +107,18 @@ dispatches `fortknox-deploy.yml`, which builds the site from it. While games
 are on, each run also scores them so far with `nhl_live.py` into `live/` on
 the same branch (games still waiting on their official sheet included), and
 the site shows those as live or provisional game pages.
+
+**Playoff odds.** `nhl_projections.py` plays out the rest of the regular
+season 10,000 times from the published index and the NHL schedule and writes
+`<season>/projections.json` (the nightly job runs it after the sheets). The
+win model is core4 (Elo, 5v5 xG differential per game, both back-to-backs)
+refit on High Slot's xG; `fit_projections.py` fits it, sets the
+season-to-season noise and back-tests the odds on 2017-18 to 2025-26 into
+`../app/playoffs/backtest.json`. Refit each summer, from the nhllines caches:
+
+```bash
+.venv/bin/python fit_projections.py --schedules ../../nhllines/cache \
+    --xg ../../nhllines/data/highslot_team_game_xg.json \
+    --core4-rows ../../nhllines/feature_search/data/rows_nogoalie.csv
+.venv/bin/python nhl_projections.py --sheets ../data
+```
