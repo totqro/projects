@@ -96,6 +96,24 @@ export function standings(teams: TeamSeason[], games: GameSummary[], phase: Phas
     .sort(byPoints).map((t, i) => ({ ...t, lg: i + 1 }));
 }
 
+/** Each team over its last `n` regular-season games, in the shape the lens
+ *  charts read. `toi5` is each game's 5v5 time in seconds, [home, away]; the
+ *  game index has no 5v5 time, so the page sums it from the game sheets.
+ *  Only the numbers the charts use are windowed: the rest of "5v5" (goals,
+ *  corsi) stays the season's. */
+export function windowRows(rows: StandingRow[], games: GameSummary[], n: number, toi5: Map<number, [number, number]>): StandingRow[] {
+  return rows.map(t => {
+    const g = teamGames(games, t.team, "regular").slice(-n);
+    const s = summarize(g);
+    const toi = g.reduce((a, x) => a + (toi5.get(x.id)?.[x.home ? 0 : 1] ?? 0), 0);
+    const p60 = (v: number) => (toi ? (v * 3600) / toi : 0);
+    return {
+      ...t, ...s,
+      "5v5": { ...t["5v5"], toi, xgf: s.xgf5, xga: s.xga5, xgf60: p60(s.xgf5), xga60: p60(s.xga5), xgf_pct: share(s.xgf5, s.xga5) ?? 0.5 },
+    };
+  });
+}
+
 /** The same teams ranked by deserved points (then their %, expected wins and
  *  xG share), as the real table ranks by points. `lg` becomes the xG rank; `ptsRank` keeps the real one. */
 export function xgStandings(rows: StandingRow[]): (StandingRow & { ptsRank: number })[] {
@@ -167,7 +185,7 @@ export interface Lens {
   q: Record<Quad, [x: string, y: string, verdict: string]>;
 }
 
-const sgn = (v: number) => (v > 0 ? "+" : "") + v.toFixed(1);
+const sgn2 = (v: number) => (v > 0 ? "+" : "") + v.toFixed(2);
 
 export const LENSES: Record<string, Lens> = {
   drive: {
@@ -191,18 +209,19 @@ export const LENSES: Record<string, Lens> = {
   finish: {
     name: "Finishing",
     desc: "Expected goals per game against goals scored above or below expected. Finishing runs hot and cold over a season.",
-    x: t => (t.gp ? t.xgf / t.gp : null), y: t => t.gax, my: 0, myl: "As expected", fx: v => v.toFixed(2), fy: sgn,
-    xl: "Expected goals for per game (xGF) →", yl: "Goals above expected, season (GAx) ↑",
-    xs: "xGF per game", ys: "GAx", tx: "num", ty: "signed",
+    // Per game, not the season total, so a last-10 window sits on the same scale.
+    x: t => (t.gp ? t.xgf / t.gp : null), y: t => (t.gp ? t.gax / t.gp : null), my: 0, myl: "As expected", fx: v => v.toFixed(2), fy: sgn2,
+    xl: "Expected goals for per game (xGF) →", yl: "Goals above expected per game (GAx) ↑",
+    xs: "xGF per game", ys: "GAx per game", tx: "num", ty: "signed",
     q: { hh: ["+xGF", "+GAx", "Finishing well"], lh: ["−xGF", "+GAx", "Few chances, but scoring"],
       hl: ["+xGF", "−GAx", "Missing their chances"], ll: ["−xGF", "−GAx", "Struggling to score"] },
   },
   save: {
     name: "Goaltending",
     desc: "Expected goals allowed per game against goals saved above expected. Right means fewer chances allowed; up means the goalies are stopping more than an average goalie would.",
-    x: t => (t.gp ? t.xga / t.gp : null), flipX: true, y: t => t.gsax, my: 0, myl: "As expected", fx: v => v.toFixed(2), fy: sgn,
-    xl: "Expected goals against per game (xGA, fewer →)", yl: "Goals saved above expected, season (GSAx) ↑",
-    xs: "xGA per game", ys: "GSAx", tx: "num", ty: "signed",
+    x: t => (t.gp ? t.xga / t.gp : null), flipX: true, y: t => (t.gp ? t.gsax / t.gp : null), my: 0, myl: "As expected", fx: v => v.toFixed(2), fy: sgn2,
+    xl: "Expected goals against per game (xGA, fewer →)", yl: "Goals saved above expected per game (GSAx) ↑",
+    xs: "xGA per game", ys: "GSAx per game", tx: "num", ty: "signed",
     q: { hh: ["−xGA", "+GSAx", "Performing well"], lh: ["+xGA", "+GSAx", "Goalie bailing them out"],
       hl: ["−xGA", "−GSAx", "Goalie letting them down"], ll: ["+xGA", "−GSAx", "Struggling in their end"] },
   },

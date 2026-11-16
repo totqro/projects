@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Note, Section } from "@/components/site/section";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { TeamLogo } from "@/components/site/team-logo";
 
 type Row = StandingRow & { rk: string; cut?: boolean };
@@ -135,24 +136,46 @@ const LENS_KEYS = Object.keys(LENSES);
 
 type SumRow = StandingRow & { rk: string; q: Record<string, Quad | undefined> };
 
-const sumCols = (season: number): Column<SumRow>[] => [
+/** `compact` is for the side-by-side division and conference boxes: half the
+ *  width leaves no room for the chart labels, so on a computer each chart
+ *  shows only its colored dot and the label moves into a hover card. Below
+ *  computer width the boxes stack one per row and the labels come back. */
+const sumCols = (season: number, compact: boolean): Column<SumRow>[] => [
   teamCol(season),
   { k: "rec", label: "Record", l: true, get: t => t.pts, cell: t => <span className="whitespace-nowrap">{t.w}-{t.l}-{t.otl}</span>, tip: "pts" },
-  { k: "xgs5", label: "5v5 xG share", get: t => t["5v5"].xgf_pct, cell: t => pct(t["5v5"].xgf_pct), tip: "txgs5" },
+  { k: "xgs5", label: compact ? "5v5 xG%" : "5v5 xG share", get: t => t["5v5"].xgf_pct, cell: t => pct(t["5v5"].xgf_pct), tip: "txgs5" },
   ...LENS_KEYS.map((k): Column<SumRow> => ({
-    k, label: LENSES[k].name, l: true, tip: "sumq",
+    k, label: compact && k === "save" ? "Goalie" : LENSES[k].name, l: true, tip: "sumq",
     get: t => (t.q[k] ? QRANK[t.q[k]!] : null),
     cell: t => {
       const q = t.q[k];
       if (!q) return "–";
+      const dot = <i className="mr-1.5 inline-block size-2 rounded-full align-[1px]" style={{ background: QCOL[q] }} />;
+      if (!compact) return <span className="whitespace-nowrap">{dot}{LENSES[k].q[q][2]}</span>;
       return (
-        <span className="whitespace-nowrap">
-          <i className="mr-1.5 inline-block size-2 rounded-full align-[1px]" style={{ background: QCOL[q] }} />{LENSES[k].q[q][2]}
-        </span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="whitespace-nowrap lg:cursor-help lg:px-1 lg:py-1">{dot}<span className="lg:sr-only">{LENSES[k].q[q][2]}</span></span>
+          </TooltipTrigger>
+          <TooltipContent className="hidden lg:block">{LENSES[k].name}: {LENSES[k].q[q][2]}</TooltipContent>
+        </Tooltip>
       );
     },
   })),
 ];
+
+/** What the dots mean in the compact boxes (computer width only). */
+function DotKey() {
+  const item = (q: Quad, l: string) => (
+    <span className="whitespace-nowrap"><i className="mr-1.5 inline-block size-2 rounded-full align-[1px]" style={{ background: QCOL[q] }} />{l}</span>
+  );
+  return (
+    <div className="hidden flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground lg:flex">
+      {item("hh", "Good on both axes")}{item("hl", "Good across only")}{item("lh", "Good up only")}{item("ll", "Poor on both")}
+      <span>Hover a dot for what it means on that chart.</span>
+    </div>
+  );
+}
 
 const SUMMARY = "summary";
 
@@ -167,10 +190,15 @@ const focusSet = (f: string) => {
   return new Set(Object.entries(TEAMS).filter(([, t]) => t[kind === "c" ? 1 : 2] === name).map(([ab]) => ab));
 };
 
-export function TeamsView({ season, regular, playoff }: { season: number; regular: StandingRow[]; playoff: StandingRow[] }) {
+export function TeamsView({ season, regular, playoff, windows }: {
+  season: number; regular: StandingRow[]; playoff: StandingRow[];
+  /** Each team over its last N regular-season games, keyed by N. */
+  windows: Record<string, StandingRow[]>;
+}) {
+  const [win, setWin] = React.useState("season");
   const [phase, setPhase] = React.useState<Phase>("regular");
   const [group, setGroup] = React.useState<Grouping>("league");
-  const [sumGroup, setSumGroup] = React.useState<Grouping>("league");
+  const [sumGroup, setSumGroup] = React.useState<Grouping>("division");
   const [table, setTable] = React.useState<"real" | "xg">("real");
   // Null until the reader picks: then the screen decides (every column on a
   // computer, the core ones below), by CSS so the first paint is right.
@@ -182,7 +210,11 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
   const focused = React.useMemo(() => focusSet(focus), [focus]);
   const rows = phase === "playoff" ? playoff : regular;
   const summary = lens === SUMMARY;
-  const chart = useLensChart({ rows, lens: summary ? "drive" : lens, season, focus: focused });
+  // Recent form is a regular-season view: the dots move to the last N games
+  // and the season stays behind as where the tails start.
+  const winRows = phase === "regular" && win !== "season" ? windows[win] : undefined;
+  const chart = useLensChart({ rows: winRows ?? rows, from: winRows ? rows : undefined, window: winRows ? +win : undefined, lens: summary ? "drive" : lens, season, focus: focused });
+  const winOptions: [string, string][] = [["season", "Season"], ...Object.keys(windows).sort((a, b) => +b - +a).map(n => [n, `Last ${n}`] as [string, string])];
   // Points only exist in the regular season, so the xG table does too.
   const xg = table === "xg" && phase === "regular" && rows.some(t => t.xpts != null);
   const g = phase === "playoff" ? "league" : group;
@@ -197,7 +229,10 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
     const withQ = rows.map(t => ({ ...t, q: Object.fromEntries(LENS_KEYS.map(k => [k, qs[k].get(t.team)])) }));
     return groupTeams(withQ as StandingRow[], phase === "playoff" ? "league" : sumGroup) as unknown as { title: string | null; rows: SumRow[] }[];
   }, [rows, sumGroup, phase]);
-  const sumColumns = React.useMemo(() => sumCols(season), [season]);
+  // Playoffs list every team in one table; the regular season can split
+  // into division or conference boxes, two to a row on a computer.
+  const sumBoxes = phase === "regular" && sumGroup !== "league";
+  const sumColumns = React.useMemo(() => sumCols(season, sumBoxes), [season, sumBoxes]);
   const csvName = (prefix: string, title: string | null) => `${prefix}-${season}${title ? "-" + title.toLowerCase().replace(/[^a-z]+/g, "-") : ""}`;
   return (
     <>
@@ -213,11 +248,16 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Segmented tabs label="Chart" value={lens} onChange={setLens}
               options={[...LENS_KEYS.map(k => [k, LENSES[k].name] as [string, string]), [SUMMARY, "Summary"]]} />
-            {!summary && <SelectField inline label="Highlight" value={focus} onChange={setFocus} options={FOCUS} align="end" />}
+            {!summary && (
+              <div className="flex flex-wrap items-center gap-3">
+                {phase === "regular" && winOptions.length > 1 && <Segmented label="Window" value={win} onChange={setWin} options={winOptions} />}
+                <SelectField inline label="Highlight" value={focus} onChange={setFocus} options={FOCUS} align="end" />
+              </div>
+            )}
           </div>
           <p className="max-w-3xl text-[13px] leading-relaxed text-muted-foreground">
             {summary
-              ? "Where every team lands on each of the four charts, in one table. Sort by any column, or narrow it to a division to compare rivals."
+              ? "Where every team lands on each of the four charts, by division. Sort any box by any column, or switch to conference or the whole league."
               : LENSES[lens].desc}
           </p>
         </CardHeader>
@@ -225,22 +265,26 @@ export function TeamsView({ season, regular, playoff }: { season: number; regula
           <CardContent className="space-y-6">
             {phase === "regular" && (
               <Segmented tabs label="Summary grouping" value={sumGroup} onChange={setSumGroup}
-                options={[["league", "All teams"], ["conference", "Conference"], ["division", "Division"]]} />
+                options={[["division", "Division"], ["conference", "Conference"], ["league", "All teams"]]} />
             )}
-            {sumRows.map((s, i) => (
-              <Section key={s.title ?? i} title={s.title ?? "All teams"}>
-                <SortTable rows={s.rows} cols={sumColumns} initial={{ sort: "team", asc: true }}
-                  csv={csvName("teams-summary", s.title)} rowKey={t => t.team} />
-              </Section>
-            ))}
+            {sumBoxes && <DotKey />}
+            <div className={sumBoxes ? "grid gap-x-6 gap-y-8 lg:grid-cols-2" : "space-y-6"}>
+              {sumRows.map((s, i) => (
+                <Section key={s.title ?? i} title={s.title ?? "All teams"}>
+                  <SortTable rows={s.rows} cols={sumColumns} initial={{ sort: "rec", asc: false }}
+                    csv={csvName("teams-summary", s.title)} rowKey={t => t.team} />
+                </Section>
+              ))}
+            </div>
           </CardContent>
         ) : (
-          <CardContent className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+          <CardContent className="grid gap-5">
             <div>{chart.svg}</div>
-            <div>
+            <div className="[&>div]:sm:grid-cols-2 [&>div]:lg:grid-cols-3">
               {chart.callouts}
               <Note className="mt-3 text-xs">
                 Top right is better. The dashed lines are the league average{lens === "luck" ? " (50%)" : ""}. + and − mean above or below it.
+                {winRows && ` Dots show the last ${win} games. Each tail fades in from where the team sat over the whole season, so it points the way the team has been moving. Ten or twenty games is a small sample, so expect some of the movement to be noise.`}
               </Note>
             </div>
           </CardContent>

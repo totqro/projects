@@ -81,15 +81,54 @@ function diagLabel(X: (v: number) => number, Y: (v: number) => number, v0: numbe
 }
 
 
+/** Computer width: the chart takes the card's full width, with team logos. */
+const LARGE = "(min-width: 1024px)";
+const subscribeLarge = (f: () => void) => { const m = matchMedia(LARGE); m.addEventListener("change", f); return () => m.removeEventListener("change", f); };
+
+/** Moves overlapping logos apart a little, so a cluster stays readable. Each
+ *  spot shifts only as far as it must; the frame holds them in. */
+function spreadOut(items: { key: string; x: number; y: number }[], min: number, frame: [number, number, number, number]) {
+  const out = items.map(p => ({ ...p }));
+  for (let it = 0; it < 60; it++) {
+    let moved = false;
+    for (let i = 0; i < out.length; i++) for (let j = i + 1; j < out.length; j++) {
+      const a = out[i], b = out[j];
+      let dx = b.x - a.x, dy = b.y - a.y;
+      const d = Math.hypot(dx, dy);
+      if (d >= min) continue;
+      if (d < 1e-6) { dx = 1; dy = 0; }
+      const k = (min - d) / 2 / (d || 1);
+      a.x -= dx * k; a.y -= dy * k; b.x += dx * k; b.y += dy * k;
+      moved = true;
+    }
+    for (const p of out) {
+      p.x = Math.min(Math.max(p.x, frame[0] + min / 2), frame[2] - min / 2);
+      p.y = Math.min(Math.max(p.y, frame[1] + min / 2), frame[3] - min / 2);
+    }
+    if (!moved) break;
+  }
+  return new Map(out.map(p => [p.key, { x: p.x, y: p.y }]));
+}
+
 /** Every team on one of the four lenses, split into quadrants: the chart and,
  *  separately, the list of teams in each quadrant. `focus` picks out some
- *  teams (a division, say): the rest fade, and drop out of the lists, but the
- *  quadrants still split at the league average. */
-export function useLensChart({ rows, lens, season, focus }: { rows: StandingRow[]; lens: string; season: number; focus?: Set<string> | null }) {
+ *  teams (a division, say): the rest fade to small dots, and drop out of the
+ *  lists, but the quadrants still split at the league average.
+ *
+ *  With `from` (the season rows) the chart shows recent form: each team sits
+ *  at its last-N-games spot, and a comet tail fades in from where it sat over
+ *  the season. On a computer the teams are logos; narrower, labeled dots. */
+export function useLensChart({ rows, lens, season, focus, from, window: n }: {
+  rows: StandingRow[]; lens: string; season: number; focus?: Set<string> | null;
+  /** With a recent-form window: the season rows, where each tail starts, and
+   *  the window's length in games. `rows` is then the window. */
+  from?: StandingRow[]; window?: number;
+}) {
   const lit = (team: string) => !focus || focus.has(team);
   const L = LENSES[lens];
   const router = useRouter();
   const [hover, setHover] = React.useState<{ p: Pt; x: number; y: number } | null>(null);
+  const logos = React.useSyncExternalStore(subscribeLarge, () => matchMedia(LARGE).matches, () => true);
 
   const base = rows.map(t => ({ t, x: L.x(t), y: L.y(t) }))
     .filter((p): p is { t: StandingRow; x: number; y: number } => p.x != null && p.y != null && isFinite(p.x) && isFinite(p.y));
@@ -97,11 +136,28 @@ export function useLensChart({ rows, lens, season, focus }: { rows: StandingRow[
 
   const avg = (a: number[]) => a.reduce((s, v) => s + v, 0) / a.length;
   const mx = L.mx ?? avg(base.map(p => p.x)), my = L.my ?? avg(base.map(p => p.y));
+  // Where each team sits over the season, for the tails. Movement is measured
+  // in units of the spread across teams, so both axes count alike.
+  const was = new Map<string, { x: number; y: number }>();
+  for (const t of from ?? []) {
+    const x = L.x(t), y = L.y(t);
+    if (x != null && y != null && isFinite(x) && isFinite(y)) was.set(t.team, { x, y });
+  }
+  const spread = (a: number[]) => Math.max(...a) - Math.min(...a) || 1;
+  const sxAll = spread(base.map(p => p.x)), syAll = spread(base.map(p => p.y));
+  const moved = (p: { t: StandingRow; x: number; y: number }) => {
+    const w = was.get(p.t.team);
+    return w ? Math.hypot((p.x - w.x) / sxAll, (p.y - w.y) / syAll) : 0;
+  };
+  const movers = base.filter(p => was.has(p.t.team)).sort((a, b) => moved(b) - moved(a));
+  const tailed = new Set(movers.filter(p => lit(p.t.team)).map(p => p.t.team));
+  const ends = [...base, ...[...tailed].map(k => was.get(k)!)];
   // The plot sits between two bands that hold the quadrant labels, so the
   // labels never sit on top of a team.
-  const W = 610, H = 520, PL = 76, PR = 14, PT = 52, PB = 78;
-  let x0 = Math.min(...base.map(p => p.x)), x1 = Math.max(...base.map(p => p.x));
-  let y0 = Math.min(...base.map(p => p.y)), y1 = Math.max(...base.map(p => p.y));
+  const [W, H] = logos ? [1000, 640] : [610, 520];
+  const PL = 76, PR = 14, PT = 52, PB = 78, LS = 24;
+  let x0 = Math.min(...ends.map(p => p.x)), x1 = Math.max(...ends.map(p => p.x));
+  let y0 = Math.min(...ends.map(p => p.y)), y1 = Math.max(...ends.map(p => p.y));
   if (L.diag) { x0 = y0 = Math.min(x0, y0); x1 = y1 = Math.max(x1, y1); }
   const px = (x1 - x0) * 0.08 || 0.1, py = (y1 - y0) * 0.1 || 0.1;
   x0 -= px; x1 += px; y0 -= py; y1 += py;
@@ -112,6 +168,8 @@ export function useLensChart({ rows, lens, season, focus }: { rows: StandingRow[
   const quads = lensQuads(rows, lens);
   const pts: Pt[] = base.map(p => ({ ...p, q: quads.get(p.t.team)! }));
   const cx = X(mx), cy = Y(my);
+  const quadOf = (v: { x: number; y: number }): Quad =>
+    `${(L.flipX ? v.x < mx : v.x >= mx) ? "h" : "l"}${(L.flipY ? v.y < my : v.y >= my) ? "h" : "l"}` as Quad;
   const box: Record<Quad, [number, number, number, number]> = {
     lh: [PL, PT, cx, cy], hh: [cx, PT, W - PR, cy], ll: [PL, cy, cx, H - PB], hl: [cx, cy, W - PR, H - PB],
   };
@@ -119,6 +177,56 @@ export function useLensChart({ rows, lens, season, focus }: { rows: StandingRow[
   const fmtX = tickFormat(L.tx, xt), fmtY = tickFormat(L.ty, yt);
   const labels = placeLabels(pts.map(p => ({ key: p.t.team, x: X(p.x), y: Y(p.y), text: p.t.team })), [PL, PT, W - PR, H - PB], R);
   const diag = L.diag ? diagLabel(X, Y, x0, x1, pts.map(p => [X(p.x), Y(p.y)]), labels) : null;
+  // Where each picked team's logo is drawn: its spot, nudged off its neighbours.
+  const at = logos
+    ? spreadOut(pts.filter(p => lit(p.t.team)).map(p => ({ key: p.t.team, x: X(p.x), y: Y(p.y) })), LS + 4, [PL, PT, W - PR, H - PB])
+    : new Map<string, { x: number; y: number }>();
+  const spot = (p: Pt) => at.get(p.t.team) ?? { x: X(p.x), y: Y(p.y) };
+
+  /** A comet from the season spot `w` to now: a point at the season end,
+   *  as wide as the marker at this end, fading in along the way. */
+  const tail = (p: Pt, w: { x: number; y: number }) => {
+    const a = { x: X(w.x), y: Y(w.y) }, b = spot(p);
+    const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
+    if (len < 2) return null;
+    const half = logos ? LS * 0.32 : R * 0.9, nx = (-dy / len) * half, ny = (dx / len) * half;
+    const id = `comet-${lens}-${p.t.team}`;
+    return (
+      <>
+        <defs>
+          <linearGradient id={id} gradientUnits="userSpaceOnUse" x1={a.x.toFixed(1)} y1={a.y.toFixed(1)} x2={b.x.toFixed(1)} y2={b.y.toFixed(1)}>
+            <stop offset="0" stopColor={QCOL[p.q]} stopOpacity={0} />
+            <stop offset="1" stopColor={QCOL[p.q]} stopOpacity={logos ? 0.45 : 0.6} />
+          </linearGradient>
+        </defs>
+        <path d={`M${a.x.toFixed(1)},${a.y.toFixed(1)} L${(b.x + nx).toFixed(1)},${(b.y + ny).toFixed(1)} L${(b.x - nx).toFixed(1)},${(b.y - ny).toFixed(1)} Z`} fill={`url(#${id})`} />
+      </>
+    );
+  };
+
+  /** One team's marker: a logo in a quadrant-colored ring on a computer, a
+   *  labeled dot narrower; a team that isn't picked is a small faint dot. */
+  const marker = (p: Pt) => {
+    if (!lit(p.t.team)) return <circle cx={X(p.x).toFixed(1)} cy={Y(p.y).toFixed(1)} r={logos ? 3.5 : R} fill={QCOL[p.q]} opacity={logos ? 0.3 : 0.15} />;
+    if (logos) {
+      const s = spot(p), r = LS / 2 + 2, img = LS - 4;
+      return (
+        <>
+          <circle cx={s.x.toFixed(1)} cy={s.y.toFixed(1)} r={r} fill="var(--card)" stroke={QCOL[p.q]} strokeWidth={1.6} />
+          <image href={`/logos/light/${p.t.team}.svg`} className="logo-light" x={(s.x - img / 2).toFixed(1)} y={(s.y - img / 2).toFixed(1)} width={img} height={img} />
+          <image href={`/logos/${p.t.team}.svg`} className="logo-dark" x={(s.x - img / 2).toFixed(1)} y={(s.y - img / 2).toFixed(1)} width={img} height={img} />
+        </>
+      );
+    }
+    const lb = labels.get(p.t.team)!;
+    return (
+      <>
+        {lb.leader && <line x1={X(p.x)} y1={Y(p.y)} x2={lb.lx} y2={lb.ly} stroke="var(--muted-foreground)" strokeWidth={0.6} opacity={0.6} />}
+        <circle cx={X(p.x).toFixed(1)} cy={Y(p.y).toFixed(1)} r={R} fill={QCOL[p.q]} stroke="var(--card)" strokeWidth={1} />
+        <text x={lb.x.toFixed(1)} y={(lb.y + LH - 2).toFixed(1)} fontSize={10} fill="var(--secondary-foreground)">{p.t.team}</text>
+      </>
+    );
+  };
 
   const svg = (
     <div className="relative">
@@ -161,19 +269,15 @@ export function useLensChart({ rows, lens, season, focus }: { rows: StandingRow[
         {diag && <text x={diag.x} y={diag.y} fontSize={10.5} fill="var(--muted-foreground)">G% = xG%</text>}
         <text x={(PL + W - PR) / 2} y={H - PB + 32} textAnchor="middle" fontSize={11} fill="var(--muted-foreground)">{L.xl}</text>
         <text x={14} y={(PT + H - PB) / 2} transform={`rotate(-90 14 ${(PT + H - PB) / 2})`} textAnchor="middle" fontSize={11} fill="var(--muted-foreground)">{L.yl}</text>
-        {/* faded teams first, so the picked ones draw on top */}
-        {[...pts].sort((a, b) => +lit(a.t.team) - +lit(b.t.team)).map(p => {
-          const lb = labels.get(p.t.team)!;
-          return (
-            <g key={p.t.team} className="cursor-pointer" opacity={lit(p.t.team) ? 1 : 0.15}
-              onMouseMove={e => setHover({ p, x: e.clientX, y: e.clientY })} onMouseLeave={() => setHover(null)}
-              onClick={() => router.push(`/team/${season}/${p.t.team}`)}>
-              {lb.leader && <line x1={X(p.x)} y1={Y(p.y)} x2={lb.lx} y2={lb.ly} stroke="var(--muted-foreground)" strokeWidth={0.6} opacity={0.6} />}
-              <circle cx={X(p.x).toFixed(1)} cy={Y(p.y).toFixed(1)} r={R} fill={QCOL[p.q]} stroke="var(--card)" strokeWidth={1} />
-              <text x={lb.x.toFixed(1)} y={(lb.y + LH - 2).toFixed(1)} fontSize={10} fill="var(--secondary-foreground)">{p.t.team}</text>
-            </g>
-          );
-        })}
+        {/* all the tails under all the markers, faded teams under picked ones */}
+        {pts.map(p => tailed.has(p.t.team) && <g key={`t-${p.t.team}`} className="pointer-events-none">{tail(p, was.get(p.t.team)!)}</g>)}
+        {[...pts].sort((a, b) => +lit(a.t.team) - +lit(b.t.team)).map(p => (
+          <g key={p.t.team} className="cursor-pointer"
+            onMouseMove={e => setHover({ p, x: e.clientX, y: e.clientY })} onMouseLeave={() => setHover(null)}
+            onClick={() => router.push(`/team/${season}/${p.t.team}`)}>
+            {marker(p)}
+          </g>
+        ))}
       </svg>
       {hover && (
         <div className="pointer-events-none fixed z-50 rounded-md border border-border bg-popover px-2.5 py-2 text-xs leading-relaxed [box-shadow:var(--shadow-l)]"
@@ -181,7 +285,10 @@ export function useLensChart({ rows, lens, season, focus }: { rows: StandingRow[
           <div><b className="font-semibold">{hover.p.t.team}</b> <span style={{ color: QCOL[hover.p.q] }}>{L.q[hover.p.q][2]}</span></div>
           <div>{L.xs}: <b className="tabular font-semibold">{L.fx(hover.p.x)}</b></div>
           <div>{L.ys}: <b className="tabular font-semibold">{L.fy(hover.p.y)}</b></div>
-          <div className="text-muted-foreground">{hover.p.t.w}-{hover.p.t.l}-{hover.p.t.otl}, {hover.p.t.pts} pts</div>
+          {was.has(hover.p.t.team) && (
+            <div className="text-muted-foreground">Season: {L.fx(was.get(hover.p.t.team)!.x)}, {L.fy(was.get(hover.p.t.team)!.y)}</div>
+          )}
+          <div className="text-muted-foreground">{hover.p.t.w}-{hover.p.t.l}-{hover.p.t.otl}, {hover.p.t.pts} pts{n ? ` in the last ${n}` : ""}</div>
         </div>
       )}
     </div>
@@ -201,6 +308,35 @@ export function useLensChart({ rows, lens, season, focus }: { rows: StandingRow[
     </div>
   );
   const extra: React.ReactNode[] = [];
+  if (was.size) {
+    // Each axis that moved by a tenth of the league's spread or more, with an
+    // arrow for its direction, green when the change is the good way.
+    const axis = (d: number, spreadOf: number, flip: boolean | undefined, name: string) => {
+      if (Math.abs(d) / spreadOf < 0.1) return null;
+      const good = flip ? d < 0 : d > 0;
+      return <span key={name} className={good ? "text-good" : "text-bad"}>{name} {d > 0 ? "↑" : "↓"}</span>;
+    };
+    const shown = movers.filter(p => lit(p.t.team)).slice(0, 4).map(m => pts.find(p => p.t.team === m.t.team)!);
+    extra.push(callout("movers", "var(--muted-foreground)", `Biggest moves, last ${n} vs. season`, null,
+      <div className="grid w-full gap-1">
+        {shown.map(p => {
+          const w = was.get(p.t.team)!, fromQ = quadOf(w);
+          const parts = [axis(p.x - w.x, sxAll, L.flipX, L.xs), axis(p.y - w.y, syAll, L.flipY, L.ys)].filter(Boolean);
+          return (
+            <div key={p.t.team} className="flex flex-wrap items-baseline gap-x-2">
+              {teamLinks([p])}
+              {parts.length ? parts : <span className="text-muted-foreground">small moves</span>}
+              {fromQ !== p.q && (
+                <span className="text-muted-foreground">
+                  <i className="mr-1 inline-block size-1.5 rounded-full align-[1px]" style={{ background: QCOL[fromQ] }} />→
+                  <i className="ml-1 mr-1 inline-block size-1.5 rounded-full align-[1px]" style={{ background: QCOL[p.q] }} />{L.q[p.q][2].toLowerCase()}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>));
+  }
   if (L.diag) {
     const gap = pts.map(p => ({ p, g: p.y - p.x })).sort((a, b) => a.g - b.g);
     const list = (xs: typeof gap) => xs.map(({ p, g }) => (
