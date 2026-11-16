@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { currentArticles } from "@/lib/articles";
 import { gameIds, playerGames, seasonIndex, seasons, teamSeasons } from "@/lib/data";
 
 export const dynamic = "force-static";
@@ -15,6 +16,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     page("/", last(seasons()[0])), page("/about"), page("/model"), page("/privacy"), page("/compare"),
     ...seasons().flatMap(s => [`/games/${s}`, `/teams/${s}`, `/players/${s}`, `/regression/${s}`, `/playoffs/${s}`].map(p => page(p, last(s)))),
+    page("/articles", last(seasons()[0])),
+    ...currentArticles().map(a => page(`/articles/${a.slug}`, a.through)),
     ...teamSeasons().map(({ season, team }) => page(`/team/${season}/${team}`, last(season))),
     ...[...playerGames()].map(([id, log]) => page(`/player/${id}`, log[log.length - 1]?.date)),
     ...seasons().flatMap(s => gameIds(s).map(id => page(`/game/${id}`, dateOf.get(id)))),
