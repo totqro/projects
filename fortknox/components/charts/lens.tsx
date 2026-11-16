@@ -154,8 +154,8 @@ export function useLensChart({ rows, lens, season, focus, from, window: n }: {
   const ends = [...base, ...[...tailed].map(k => was.get(k)!)];
   // The plot sits between two bands that hold the quadrant labels, so the
   // labels never sit on top of a team.
-  const [W, H] = logos ? [1000, 640] : [610, 520];
-  const PL = 76, PR = 14, PT = 52, PB = 78, LS = 24;
+  const [W, H] = logos ? [1000, 700] : [610, 520];
+  const PL = 76, PR = 14, PT = 52, PB = 78, LS = 36;
   let x0 = Math.min(...ends.map(p => p.x)), x1 = Math.max(...ends.map(p => p.x));
   let y0 = Math.min(...ends.map(p => p.y)), y1 = Math.max(...ends.map(p => p.y));
   if (L.diag) { x0 = y0 = Math.min(x0, y0); x1 = y1 = Math.max(x1, y1); }
@@ -179,7 +179,7 @@ export function useLensChart({ rows, lens, season, focus, from, window: n }: {
   const diag = L.diag ? diagLabel(X, Y, x0, x1, pts.map(p => [X(p.x), Y(p.y)]), labels) : null;
   // Where each picked team's logo is drawn: its spot, nudged off its neighbours.
   const at = logos
-    ? spreadOut(pts.filter(p => lit(p.t.team)).map(p => ({ key: p.t.team, x: X(p.x), y: Y(p.y) })), LS + 4, [PL, PT, W - PR, H - PB])
+    ? spreadOut(pts.filter(p => lit(p.t.team)).map(p => ({ key: p.t.team, x: X(p.x), y: Y(p.y) })), LS + 2, [PL, PT, W - PR, H - PB])
     : new Map<string, { x: number; y: number }>();
   const spot = (p: Pt) => at.get(p.t.team) ?? { x: X(p.x), y: Y(p.y) };
 
@@ -189,7 +189,7 @@ export function useLensChart({ rows, lens, season, focus, from, window: n }: {
     const a = { x: X(w.x), y: Y(w.y) }, b = spot(p);
     const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
     if (len < 2) return null;
-    const half = logos ? LS * 0.32 : R * 0.9, nx = (-dy / len) * half, ny = (dx / len) * half;
+    const half = logos ? LS * 0.26 : R * 0.9, nx = (-dy / len) * half, ny = (dx / len) * half;
     const id = `comet-${lens}-${p.t.team}`;
     return (
       <>
@@ -209,7 +209,7 @@ export function useLensChart({ rows, lens, season, focus, from, window: n }: {
   const marker = (p: Pt) => {
     if (!lit(p.t.team)) return <circle cx={X(p.x).toFixed(1)} cy={Y(p.y).toFixed(1)} r={logos ? 3.5 : R} fill={QCOL[p.q]} opacity={logos ? 0.3 : 0.15} />;
     if (logos) {
-      const s = spot(p), r = LS / 2 + 2, img = LS - 4;
+      const s = spot(p), r = LS / 2 + 1, img = LS - 6;
       return (
         <>
           <circle cx={s.x.toFixed(1)} cy={s.y.toFixed(1)} r={r} fill="var(--card)" stroke={QCOL[p.q]} strokeWidth={1.6} />

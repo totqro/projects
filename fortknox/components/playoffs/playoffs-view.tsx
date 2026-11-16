@@ -9,8 +9,9 @@ import { Segmented } from "@/components/teams/teams-view";
 import { TeamLogo } from "@/components/site/team-logo";
 import { Section } from "@/components/site/section";
 
-type Grouping = "conference" | "division" | "league";
-type Row = ProjTeam & { rk: number; cut?: boolean };
+type Grouping = "wildcard" | "conference" | "division" | "league";
+/** `lab` replaces the rank shown in the # column (WC1, WC2 in the wild-card view). */
+type Row = ProjTeam & { rk: number; lab?: string; cut?: boolean };
 
 /** 0.004 to "<1%", 0.996 to ">99%", else whole percents. */
 function odds(p: number) {
@@ -47,7 +48,7 @@ function Range({ t, min, max }: { t: ProjTeam; min: number; max: number }) {
 }
 
 const cols = (season: number, min: number, max: number): Column<Row>[] => [
-  { k: "rk", label: "#", get: t => t.rk, asc: true, cell: t => <span className="text-muted-foreground">{t.rk}</span> },
+  { k: "rk", label: "#", get: t => t.rk, asc: true, cell: t => <span className="text-muted-foreground">{t.lab ?? t.rk}</span> },
   {
     k: "team", label: "Team", l: true, pin: true, get: t => t.team, asc: true,
     cell: t => <Link href={`/team/${season}/${t.team}`} className="flex w-[4.25rem] items-center gap-2.5 font-medium hover:underline"><TeamLogo team={t.team} size={26} />{t.team}</Link>,
@@ -68,26 +69,44 @@ function groups(rows: ProjTeam[], g: Grouping): { title: string | null; rows: Ro
   const rank = (rs: ProjTeam[], cutAt?: number) =>
     rs.slice().sort(byOdds).map((t, i) => ({ ...t, rk: i + 1, cut: cutAt != null && i === cutAt - 1 }));
   if (g === "league") return [{ title: null, rows: rank(rows) }];
+  // The NHL's wild-card table, on the projection: the likeliest top three in
+  // each division, then the rest of the conference with the two wild cards
+  // above the line.
+  if (g === "wildcard") {
+    const out: { title: string; rows: Row[] }[] = [];
+    for (const [c, divs] of [["East", ["Atlantic", "Metropolitan"]], ["West", ["Central", "Pacific"]]] as const) {
+      const top = new Set<string>();
+      for (const d of divs) {
+        const r = rank(rows.filter(t => t.div === d)).slice(0, 3);
+        r.forEach(t => top.add(t.team));
+        out.push({ title: `${d} Division`, rows: r });
+      }
+      const rest = rank(rows.filter(t => t.conf === c && !top.has(t.team)), 2)
+        .map((t, i) => ({ ...t, lab: i < 2 ? `WC${i + 1}` : undefined }));
+      out.push({ title: `${c}ern Conference wild card`, rows: rest });
+    }
+    return out;
+  }
   if (g === "conference")
     return (["East", "West"] as const).map(c => ({ title: `${c}ern Conference`, rows: rank(rows.filter(t => t.conf === c), 8) }));
   return ["Atlantic", "Metropolitan", "Central", "Pacific"].map(d => ({ title: `${d} Division`, rows: rank(rows.filter(t => t.div === d), 3) }));
 }
 
 export function PlayoffsView({ season, teams }: { season: number; teams: ProjTeam[] }) {
-  const [g, setG] = React.useState<Grouping>("conference");
+  const [g, setG] = React.useState<Grouping>("wildcard");
   const min = Math.min(...teams.map(t => t.lo)) - 2, max = Math.max(...teams.map(t => t.hi)) + 2;
   const c = React.useMemo(() => cols(season, min, max), [season, min, max]);
   return (
     <div className="space-y-8">
       <Segmented value={g} onChange={setG} label="Group teams by" tabs
-        options={[["conference", "Conference"], ["division", "Division"], ["league", "League"]]} />
+        options={[["wildcard", "Wild card"], ["conference", "Conference"], ["division", "Division"], ["league", "League"]]} />
       <div className="grid gap-8">
         {groups(teams, g).map(grp => (
           <Section key={grp.title ?? "league"} title={grp.title ?? "League"}>
             <div className="overflow-x-auto">
               <SortTable rows={grp.rows} cols={c} initial={{ sort: "rk", asc: true }} rowKey={t => t.team}
                 rowProps={t => ({ className: cn(t.cut && "cut") })} csv={`playoff-odds-${season}`}
-                hide={g === "division" ? new Set(["pres", "elo"]) : undefined} />
+                hide={g === "division" || g === "wildcard" ? new Set(["pres", "elo"]) : undefined} />
             </div>
           </Section>
         ))}
