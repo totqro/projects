@@ -209,7 +209,7 @@ export function useLensChart({ rows, lens, season, focus, from, window: n }: {
   const marker = (p: Pt) => {
     if (!lit(p.t.team)) return <circle cx={X(p.x).toFixed(1)} cy={Y(p.y).toFixed(1)} r={logos ? 3.5 : R} fill={QCOL[p.q]} opacity={logos ? 0.3 : 0.15} />;
     if (logos) {
-      const s = spot(p), r = LS / 2 + 1, img = LS - 6;
+      const s = spot(p), r = LS / 2 + 1, img = LS;
       return (
         <>
           <circle cx={s.x.toFixed(1)} cy={s.y.toFixed(1)} r={r} fill="var(--card)" stroke={QCOL[p.q]} strokeWidth={1.6} />
@@ -237,10 +237,10 @@ export function useLensChart({ rows, lens, season, focus, from, window: n }: {
           return (
             <g key={k}>
               <rect x={a} y={b} width={c - a} height={d - b} fill={QCOL[k]} opacity={0.07} />
-              <text x={tx} y={ty} textAnchor={right ? "end" : "start"} fill={QCOL[k]} fontSize={11.5}>
-                <tspan fontWeight={700}>{L.q[k][0]}</tspan>
-                <tspan x={tx} dy={13} fontWeight={700}>{L.q[k][1]}</tspan>
-                <tspan x={tx} dy={13} fontSize={10.5} opacity={0.85}>({L.q[k][2]})</tspan>
+              <text x={tx} y={ty} textAnchor={right ? "end" : "start"} fill={QCOL[k]} fontSize={10.5}>
+                <tspan fontSize={12.5} fontWeight={700}>{L.q[k][2]}</tspan>
+                <tspan x={tx} dy={13} opacity={0.9}>{L.q[k][0]},</tspan>
+                <tspan x={tx} dy={12} opacity={0.9}>{L.q[k][1]}</tspan>
               </text>
             </g>
           );
@@ -351,7 +351,7 @@ export function useLensChart({ rows, lens, season, focus, from, window: n }: {
       {extra}
       {(["hh", "hl", "lh", "ll"] as Quad[]).map(k => {
         const g = pts.filter(p => p.q === k && lit(p.t.team)).sort((a, b) => dist(b) - dist(a));
-        return callout(k, QCOL[k], `${L.q[k][0]} ${L.q[k][1]}`, L.q[k][2], g.length ? teamLinks(g) : "–");
+        return callout(k, QCOL[k], L.q[k][2], `${L.q[k][0]}, ${L.q[k][1]}`, g.length ? teamLinks(g) : "–");
       })}
     </div>
   );
