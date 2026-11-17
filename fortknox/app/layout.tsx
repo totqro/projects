@@ -6,7 +6,7 @@ import "@fontsource/ibm-plex-sans/400";
 import "@fontsource/ibm-plex-sans/500";
 import "@fontsource/ibm-plex-sans/600";
 import "@fontsource/ibm-plex-sans/700";
-import { Barlow, Big_Shoulders } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { currentSeason, seasons } from "@/lib/data";
 import { Wordmark } from "@/components/site/logo";
@@ -17,10 +17,29 @@ import { Trail } from "@/components/site/trail";
 import { Analytics } from "@/components/site/analytics";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-// The two faces, downloaded at build time and served from the site: Big
-// Shoulders for headings and scores, Barlow for everything else.
-const sans = Barlow({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-barlow", display: "swap" });
-const display = Big_Shoulders({ subsets: ["latin"], weight: ["700", "800", "900"], variable: "--font-big-shoulders", display: "swap", adjustFontFallback: false });
+// The two faces, served from the site: Big Shoulders for headings and
+// scores, Barlow for everything else. The files come from the Fontsource npm
+// packages, not next/font/google: that one downloads from Google Fonts on
+// every build, and a failed download (a few times a day on GitHub's runners)
+// failed the whole deploy.
+// next/font needs literal options, so each file is listed.
+const sans = localFont({
+  src: [
+    { path: "../node_modules/@fontsource/barlow/files/barlow-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "../node_modules/@fontsource/barlow/files/barlow-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "../node_modules/@fontsource/barlow/files/barlow-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "../node_modules/@fontsource/barlow/files/barlow-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ],
+  variable: "--font-barlow", display: "swap",
+});
+const display = localFont({
+  src: [
+    { path: "../node_modules/@fontsource/big-shoulders/files/big-shoulders-latin-700-normal.woff2", weight: "700", style: "normal" },
+    { path: "../node_modules/@fontsource/big-shoulders/files/big-shoulders-latin-800-normal.woff2", weight: "800", style: "normal" },
+    { path: "../node_modules/@fontsource/big-shoulders/files/big-shoulders-latin-900-normal.woff2", weight: "900", style: "normal" },
+  ],
+  variable: "--font-big-shoulders", display: "swap", adjustFontFallback: false,
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://highslot.web.app"),
