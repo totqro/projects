@@ -194,8 +194,8 @@ export const LENSES: Record<string, Lens> = {
     x: t => t["5v5"].xgf60, y: t => t["5v5"].xga60, flipY: true, fx: v => v.toFixed(2), fy: v => v.toFixed(2),
     xl: "Expected goals for per 60 min, 5v5 (xGF/60) →", yl: "Expected goals against per 60 min, 5v5 (fewer ↑)",
     xs: "5v5 xGF/60", ys: "5v5 xGA/60", tx: "num", ty: "num",
-    q: { hh: ["Above-avg offense", "above-avg defense", "Controlling play"], lh: ["Below-avg offense", "above-avg defense", "Tight, low-event games"],
-      hl: ["Above-avg offense", "below-avg defense", "Wide-open games"], ll: ["Below-avg offense", "below-avg defense", "Getting outplayed"] },
+    q: { hh: ["Above-avg offense", "Above-avg defense", "Controlling play"], lh: ["Below-avg offense", "Above-avg defense", "Tight, low-event games"],
+      hl: ["Above-avg offense", "Below-avg defense", "Wide-open games"], ll: ["Below-avg offense", "Below-avg defense", "Getting outplayed"] },
   },
   luck: {
     name: "Luck",
@@ -203,8 +203,8 @@ export const LENSES: Record<string, Lens> = {
     x: t => share(t.xgf, t.xga), y: t => share(t.gf_x, t.ga_x), mx: 0.5, my: 0.5, mxl: "Even", myl: "Even", diag: true, fx: v => pct(v), fy: v => pct(v),
     xl: "Share of expected goals (xG%) →", yl: "Share of goals (G%) ↑",
     xs: "xG%", ys: "G%", tx: "pct", ty: "pct",
-    q: { hh: ["More chances than opponents", "and more goals", "Earning their results"], lh: ["Fewer chances than opponents", "but more goals", "Results ahead of play"],
-      hl: ["More chances than opponents", "but fewer goals", "Results behind play"], ll: ["Fewer chances than opponents", "and fewer goals", "Struggling"] },
+    q: { hh: ["More chances than opponents", "More goals than opponents", "Earning their results"], lh: ["Fewer chances than opponents", "More goals than opponents", "Results ahead of play"],
+      hl: ["More chances than opponents", "Fewer goals than opponents", "Results behind play"], ll: ["Fewer chances than opponents", "Fewer goals than opponents", "Struggling"] },
   },
   finish: {
     name: "Finishing",
@@ -213,8 +213,8 @@ export const LENSES: Record<string, Lens> = {
     x: t => (t.gp ? t.xgf / t.gp : null), y: t => (t.gp ? t.gax / t.gp : null), my: 0, myl: "As expected", fx: v => v.toFixed(2), fy: sgn2,
     xl: "Expected goals for per game (xGF) →", yl: "Goals above expected per game (GAx) ↑",
     xs: "xGF per game", ys: "GAx per game", tx: "num", ty: "signed",
-    q: { hh: ["Above-avg chances", "scoring more than expected", "Finishing well"], lh: ["Below-avg chances", "scoring more than expected", "Few chances, but scoring"],
-      hl: ["Above-avg chances", "scoring less than expected", "Missing their chances"], ll: ["Below-avg chances", "scoring less than expected", "Struggling to score"] },
+    q: { hh: ["Above-avg chances", "Scoring more than expected", "Finishing well"], lh: ["Below-avg chances", "Scoring more than expected", "Few chances, but scoring"],
+      hl: ["Above-avg chances", "Scoring less than expected", "Missing their chances"], ll: ["Below-avg chances", "Scoring less than expected", "Struggling to score"] },
   },
   save: {
     name: "Goaltending",
@@ -222,8 +222,8 @@ export const LENSES: Record<string, Lens> = {
     x: t => (t.gp ? t.xga / t.gp : null), flipX: true, y: t => (t.gp ? t.gsax / t.gp : null), my: 0, myl: "As expected", fx: v => v.toFixed(2), fy: sgn2,
     xl: "Expected goals against per game (xGA, fewer →)", yl: "Goals saved above expected per game (GSAx) ↑",
     xs: "xGA per game", ys: "GSAx per game", tx: "num", ty: "signed",
-    q: { hh: ["Above-avg defense", "goalies saving more than expected", "Performing well"], lh: ["Below-avg defense", "goalies saving more than expected", "Goalie bailing them out"],
-      hl: ["Above-avg defense", "goalies saving fewer than expected", "Goalie letting them down"], ll: ["Below-avg defense", "goalies saving fewer than expected", "Struggling in their end"] },
+    q: { hh: ["Above-avg defense", "Goalies saving more than expected", "Performing well"], lh: ["Below-avg defense", "Goalies saving more than expected", "Goalie bailing them out"],
+      hl: ["Above-avg defense", "Goalies saving fewer than expected", "Goalie letting them down"], ll: ["Below-avg defense", "Goalies saving fewer than expected", "Struggling in their end"] },
   },
 };
 /** Which quadrant each team falls in on a lens, split the way the chart
