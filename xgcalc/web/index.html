@@ -64,6 +64,7 @@ kbd{font-family:var(--body); font-size:11px; border:1px solid var(--line-2); bor
 #light.ok{color:var(--ok); border-color:rgba(0,255,136,.45)}
 #poss{font-family:var(--label); font-size:12px; letter-spacing:.06em; padding:4px 9px; border:1px solid var(--line); color:var(--ink-3)}
 #poss.us{color:var(--bg); background:var(--us); border-color:var(--us); font-weight:700}
+#poss .ozt{font-family:var(--head); margin-left:6px; font-variant-numeric:tabular-nums}
 #poss.them{color:var(--bg); background:var(--them); border-color:var(--them); font-weight:700}
 .rinkhead .end.oz-us{border-style:solid; border-color:var(--us); box-shadow:0 0 10px rgba(0,212,255,.35)}
 .rinkhead .end.oz-them{border-style:solid; border-color:var(--them); box-shadow:0 0 10px rgba(255,51,102,.35)}
@@ -615,8 +616,12 @@ function toggleOppEN(sec){
 }
 function toggleClock(){ if(G.over) return; G.clock.push({w:Date.now(), k: now().run ? "pause" : "run"}); saveGame(); render(); }
 function syncClock(sec){ const c = now(); G.clock.push({w:Date.now(), k:"set", p:c.p, s:sec, sync:true}); saveGame(); render(); }
+/* Ending a period downloads its shots; ending the game adds the full game.
+   Spaced out so the browser takes each as its own download. */
+function autoExport(scopes){ scopes.forEach((sc, i) => setTimeout(() => exportShots(sc), 400 * i)); }
 function nextPeriod(){
   const c = now(), w = Date.now();
+  autoExport([c.p]);
   G.clock.push({w, k:"pause"}, {w:w+1, k:"set", p:c.p+1, s:periodLen(c.p+1)});
   viewP = null;
   /* The new period starts 1 ms from now: draw again once it has. */
@@ -653,6 +658,7 @@ function finalScore(D){
   return {us:a + (so && so.winner === "us" ? 1 : 0), them:b + (so && so.winner === "them" ? 1 : 0), so:so && so.winner ? so : null};
 }
 function startShootout(){
+  autoExport([now().p]);
   if(now().run) G.clock.push({w:Date.now(), k:"pause"});
   mutate(() => { G.soOn = true; selId = null; });
 }
@@ -664,6 +670,8 @@ function leaveShootout(){ mutate(() => { G.soOn = false; selId = null; }); }
    not the clock. */
 function endGame(){
   const c = now(), w = Date.now();
+  /* After a shootout its OT period already went down when the shootout started. */
+  autoExport(G.soOn ? [null] : [c.p, null]);
   G.clock.push({w, k:"pause"}, {w:w+1, k:"set", p:c.p, s:0});
   mutate(() => { G.over = true; G.soOn = false; selId = null; });
   setTimeout(render, 20);
@@ -806,6 +814,16 @@ function possession(){
   G.poss.map(o => ({p:o.p, sec:secOf(o), w:o.w, side:o.side})).sort(cmp).forEach(o => (by[o.p] = by[o.p] || []).push(o));
   /* Who holds the zone during the second read at clock m of period p. */
   return (p, m) => { let side = null; for(const o of by[p] || []){ if(o.sec <= m) break; side = o.side; } return sideTeam(side, p); };
+}
+/* The live offensive-zone stint: who holds it and since which clock second. */
+function possStint(p, m){
+  let side = null, start = null;
+  for(const o of G.poss.filter(o => o.p === p).map(o => ({sec:secOf(o), w:o.w, side:o.side, p:o.p})).sort(cmp)){
+    if(o.sec <= m) break;
+    if(o.side !== side){ side = o.side; start = o.sec; }
+  }
+  const team = sideTeam(side, p);
+  return team ? {team, side, sec:Math.max(0, start - m)} : null;
 }
 function setPoss(side){
   const c = now(), cur = possession()(c.p, c.v - 0.01);
@@ -1110,6 +1128,9 @@ function logShot(x, y){
                   type:"UNKNOWN", result:"SAVE", reb:null, rush:false, xi:false, offd:false};
     if(past) s.s = 0;
     G.shots.push(s);
+    /* A shot at an end means the team attacking it is in its zone. */
+    if(!past){ const side = x >= 0 ? "R" : "L";
+      if(possession()(c.p, c.v - 0.01) !== sideTeam(side, c.p)) G.poss.push({w:s.w, p:c.p, side}); }
     selId = null;
   });
 }
@@ -1386,6 +1407,9 @@ function renderTop(D){
   clk.className = "mono " + (c.run ? "run" : "stop");
   $("runTag").textContent = G.over ? (G.so.length ? "SHOOTOUT" : c.p >= 4 ? "OVERTIME" : "") : G.soOn ? "SHOOTOUT" : c.run ? "RUNNING" : "PAUSED";
   $("bRun").innerHTML = (c.run ? "Pause" : "Start") + " <kbd>Tab</kbd>";
+  const st = G.soOn || G.over ? null : possStint(c.p, c.v - 0.01), pe = $("poss");
+  pe.className = st ? st.team : "";
+  pe.innerHTML = st ? `OZ ${esc(st.team === "us" ? S.us : S.opp)} ${(st.team === "us") === usAttacksRight(c.p) ? "&rarr;" : "&larr;"} <span class="ozt">${fmt(st.sec)}</span>` : "OZ &mdash;";
   if(!D) return;
   const act = endAction(D);
   $("bNext").innerHTML = act === "resume" ? "Resume" : act === "end" ? "End game <kbd>]</kbd>" : act === "so" ? "Shootout <kbd>]</kbd>" : "End per <kbd>]</kbd>";
@@ -1406,9 +1430,7 @@ function renderTop(D){
     (need ? `<span class="warnc">${need} need a type</span>` : "")+
     (saveFailed ? `<span class="badc">NOT SAVING: export a backup</span>` : "");
   renderLight(D);
-  const oz = D.poss(c.p, c.v - 0.01), pe = $("poss");
-  pe.className = oz || "";
-  pe.innerHTML = oz ? `OZ ${esc(oz === "us" ? S.us : S.opp)} ${(oz === "us") === usAttacksRight(c.p) ? "&rarr;" : "&larr;"}` : "OZ &mdash;";
+  const oz = st ? st.team : null;
   /* The ends glow for live possession only, not on an earlier period's map. */
   const right = usAttacksRight(c.p), oz2 = shownP() === c.p ? oz : null;
   $("endL").classList.toggle("oz-us", oz2 === "us" && !right); $("endL").classList.toggle("oz-them", oz2 === "them" && right);
@@ -1553,36 +1575,43 @@ function download(name, text, type){
 const cell = v => { const s = String(v === null || v === undefined ? "" : v); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; };
 const csv = rows => rows.map(r => r.map(cell).join(",")).join("\n") + "\n";
 const slug = s => String(s).trim().replace(/[^A-Za-z0-9]+/g, "_").replace(/^_|_$/g, "") || "game";
-const base = () => `${S.date}_${slug(S.us)}_vs_${slug(S.opp)}`;
+/* "11-21 vs Lakehead P1": a slash can't go in a file name, so the date
+   reads month-day. scope is a period number, or null for the full game. */
+const scopeTag = scope => scope ? perLabel(scope) : "FULL";
+const base = scope => { const [, m, d] = String(S.date).split("-");
+  const name = String(S.opp).trim().replace(/[\\/:*?"<>|]+/g, " ").trim() || "Opponent";
+  return `${m && d ? m + "-" + d : S.date} ${S.venue === "away" ? "@" : "vs"} ${name} ${scopeTag(scope)}`; };
+const exportScope = () => { const v = $("rScope").value; return v ? +v : null; };
 
-function exportShots(){
+function exportShots(scope){
+  if(scope === undefined) scope = exportScope();
   const D = derive();
   const rows = [["Period","Team","Player","Type","X","Y","Shot Type","Strength","Clock","Rebound","Situation","xG","OnIce","Goalie","OnIceTeam","Rush","CrossIce","Tier","OffDefender"]];
-  D.ordered.forEach(s => { const I = D.shotInfo[s.id];
+  D.ordered.filter(s => !scope || s.p === scope).forEach(s => { const I = D.shotInfo[s.id];
     rows.push([s.p <= 3 ? s.p : "OT", s.team === "us" ? S.us : S.opp, "", RESULT_EXPORT[s.result], s.x, s.y,
       TYPE_EXPORT[s.type], SIT_TEXT[I.situation] || "", fmt(I.sec), I.rebound ? 1 : 0, I.situation,
       I.xg === null ? "" : I.xg.toFixed(4), I.onIce.filter(n => n !== I.goalie).join(" "), I.goalie || "", S.us,
       s.rush ? 1 : 0, s.xi ? 1 : 0, I.tier, s.offd && s.result === "GOAL" ? 1 : 0]); });
   /* Shootout attempts as period SO: Shot Chart and score_tagged.py leave
      them out of every number, and the chart adds the deciding goal. */
-  G.so.forEach(a => rows.push(["SO", a.team === "us" ? S.us : S.opp, a.shooter || "", RESULT_EXPORT[a.result], a.x, a.y,
+  if(!scope) G.so.forEach(a => rows.push(["SO", a.team === "us" ? S.us : S.opp, a.shooter || "", RESULT_EXPORT[a.result], a.x, a.y,
     TYPE_EXPORT[a.type], "", "", 0, "", "", "", "", S.us, 0, 0, "", 0]));
-  download(base() + "_shots.csv", csv(rows));
+  download(base(scope) + " shots.csv", csv(rows));
 }
 function exportPlayers(){
-  const st = playerStats(derive());
+  const scope = exportScope(), st = playerStats(derive(), scope);
   const rows = [["Number","Name","Pos","TOI","TOI_sec","Shifts","CF","CA","GF","GA","xGF","xGA","xGF_pct","xGF_60","xGA_60"]];
   Object.values(st).forEach(r => rows.push([r.p.num, r.p.name, r.p.pos, fmt(r.toi), Math.round(r.toi), r.shifts, r.cf, r.ca, r.gf, r.ga,
     r.xgf.toFixed(3), r.xga.toFixed(3), r.xgf + r.xga > 0 ? (100*r.xgf/(r.xgf+r.xga)).toFixed(1) : "",
     r.toi > 0 ? (r.xgf*3600/r.toi).toFixed(3) : "", r.toi > 0 ? (r.xga*3600/r.toi).toFixed(3) : ""]));
-  download(base() + "_players.csv", csv(rows));
+  download(base(scope) + " players.csv", csv(rows));
 }
 function exportShifts(){
   const D = derive(), R = rosterMap();
   const rows = [["Number","Name","Pos","Period_on","Clock_on","Period_off","Clock_off","Seconds"]];
   D.shifts.slice().sort((a,b) => a.p1 - b.p1 || b.s1 - a.s1).forEach(s => rows.push([s.num, (R[s.num]||{}).name || "", (R[s.num]||{}).pos || "",
     perLabel(s.p1), fmt(s.s1), perLabel(s.p2), s.open ? "" : fmt(s.s2), Math.round(between(s.p1, s.s1, s.p2, s.s2))]));
-  download(base() + "_shifts.csv", csv(rows));
+  download(base(null) + " shifts.csv", csv(rows));
 }
 /* ================================================================
    TOI Live Stats sheet: the team's workbook tracks one row per second
@@ -1632,7 +1661,7 @@ function toiSheetRows(){
   return rows;
 }
 const toiSheetTSV = () => toiSheetRows().map(r => r.join("\t")).join("\n") + "\n";
-function exportBackup(){ download(base() + "_backup.json", JSON.stringify({setup:S, game:G}, null, 1), "application/json"); }
+function exportBackup(){ download(base(null) + " backup.json", JSON.stringify({setup:S, game:G}, null, 1), "application/json"); }
 
 /* ================================================================
    Report: one printable portrait page, the same design as Shot Chart's.
@@ -2170,14 +2199,14 @@ document.querySelectorAll(".tabs [data-view]").forEach(b => b.onclick = () => se
 $("bHelp").onclick = () => toggleHelp();
 $("help").onclick = e => { if(e.target === $("help")) toggleHelp(false); };
 
-$("xShots").onclick = exportShots; $("xPlayers").onclick = exportPlayers;
+$("xShots").onclick = () => exportShots(); $("xPlayers").onclick = exportPlayers;
 $("xShifts").onclick = exportShifts; $("xBackup").onclick = exportBackup; $("xReport").onclick = exportReport;
 $("xToi").onclick = async () => {
   const text = toiSheetTSV(), n = $("toiNote");
   try{ await navigator.clipboard.writeText(text); n.innerHTML = `<span class="okc">Copied 4,020 rows.</span> Click <b>A2</b> on <b>TOI TRACKER</b> and paste.`; }
   catch(e){ n.innerHTML = `<span class="warnc">The clipboard is blocked here; use the .tsv button, open it, copy everything, paste at A2.</span>`; }
 };
-$("xToiFile").onclick = () => download(base() + "_TOI_TRACKER.tsv", toiSheetTSV(), "text/tab-separated-values");
+$("xToiFile").onclick = () => download(base(null) + " TOI_TRACKER.tsv", toiSheetTSV(), "text/tab-separated-values");
 
 $("sSave").onclick = () => {
   const r = readSetup();
