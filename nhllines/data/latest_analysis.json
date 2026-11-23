@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-23T18:15:08.515684-04:00",
+  "timestamp": "2026-11-23T18:43:51.566727-04:00",
   "stake": 0.5,
   "days_back": 90,
   "min_edge": 0.04,
@@ -9,7 +9,7 @@
       "game": "CBJ @ NJD",
       "home": "NJD",
       "away": "CBJ",
-      "start_time": "2026-11-24T00:00:00Z",
+      "start_time": "2026-11-24T00:10:00Z",
       "model_probs": {
         "home_win_prob": 0.6414485178761264,
         "away_win_prob": 0.35855148212387355,
@@ -42,24 +42,24 @@
         "ml_data_weight": 0.95
       },
       "market_probs": {
-        "home_win_prob": 0.644729178800233,
-        "away_win_prob": 0.35527082119976705,
-        "over_prob": 0.448558885283451,
-        "under_prob": 0.551441114716549,
-        "spread_home_cover_prob": 0.42794036443953615,
+        "home_win_prob": 0.6434770955509299,
+        "away_win_prob": 0.35652290444907014,
+        "over_prob": 0.49548160383777257,
+        "under_prob": 0.5045183961622275,
+        "spread_home_cover_prob": 0.4271923910713963,
         "total_line": 6.5,
         "spread_line": -1.5,
-        "n_books_ml": 1,
-        "n_books_total": 1,
-        "n_books_spread": 1
+        "n_books_ml": 15,
+        "n_books_total": 14,
+        "n_books_spread": 14
       },
       "blended_probs": {
-        "home_win_prob": 0.6060259559650345,
-        "away_win_prob": 0.3939740440349655,
-        "over_prob": 0.4438908229679426,
-        "under_prob": 0.5561091770320574,
-        "home_cover_prob": 0.4390751571500138,
-        "away_cover_prob": 0.3939740440349655,
+        "home_win_prob": 0.6058492669396979,
+        "away_win_prob": 0.3941507330603021,
+        "over_prob": 0.48754389426147127,
+        "under_prob": 0.5124561057385287,
+        "home_cover_prob": 0.43832753598413393,
+        "away_cover_prob": 0.3941507330603021,
         "expected_total": 6.431871554503988,
         "model_confidence": 0.3,
         "ml_data_weight": 0.95,
@@ -177,10 +177,174 @@
       }
     },
     {
+      "game": "CGY @ OTT",
+      "home": "OTT",
+      "away": "CGY",
+      "start_time": "2026-11-24T00:40:00Z",
+      "model_probs": {
+        "home_win_prob": 0.6272244897539345,
+        "away_win_prob": 0.3727755102460655,
+        "expected_total": 6.601519283129493,
+        "over_prob": 0.6040339362580331,
+        "under_prob": 0.39596606374196686,
+        "home_cover_prob": 0.5980597767168843,
+        "away_cover_prob": 0.40194022328311574,
+        "total_line": 5.5,
+        "spread_line": -1.5,
+        "n_games": 50,
+        "avg_similarity": 0.7441737227920017,
+        "confidence": 0.3,
+        "raw_confidence": 0.42923784536631093,
+        "raw_home_win_prob": 0.6358742376576401,
+        "raw_over_prob": 0.644152192191866,
+        "goal_distribution": {
+          "1": 0.02,
+          "2": 0.04,
+          "3": 0.04,
+          "4": 0.12,
+          "5": 0.14,
+          "6": 0.02,
+          "7": 0.28,
+          "8": 0.08,
+          "9": 0.16,
+          "10": 0.06,
+          "11": 0.04
+        },
+        "ml_data_weight": 0.95
+      },
+      "market_probs": {
+        "home_win_prob": 0.6867253355618141,
+        "away_win_prob": 0.3132746644381859,
+        "over_prob": 0.517671381423343,
+        "under_prob": 0.482328618576657,
+        "spread_home_cover_prob": 0.46751482505819225,
+        "total_line": 5.5,
+        "spread_line": -1.5,
+        "n_books_ml": 15,
+        "n_books_total": 14,
+        "n_books_spread": 14
+      },
+      "blended_probs": {
+        "home_win_prob": 0.6159129182860557,
+        "away_win_prob": 0.38408708171394434,
+        "over_prob": 0.5237467213542931,
+        "under_prob": 0.4762532786457069,
+        "home_cover_prob": 0.4874432079996927,
+        "away_cover_prob": 0.38408708171394434,
+        "expected_total": 6.601519283129493,
+        "model_confidence": 0.3,
+        "ml_data_weight": 0.95,
+        "effective_model_weight": 0.2711226659650572,
+        "ml_model_weight": 0.4824663200680437
+      },
+      "n_similar": 50,
+      "n_bets": 1,
+      "context_indicators": {
+        "fatigue": [],
+        "goalie": [
+          {
+            "team": "OTT",
+            "type": "hot",
+            "value": 0.935,
+            "severity": "positive"
+          },
+          {
+            "team": "OTT",
+            "type": "advantage",
+            "value": 47.900000000000006,
+            "severity": "positive"
+          }
+        ],
+        "injuries": [],
+        "splits": [],
+        "advanced": []
+      },
+      "goalie_matchup": {
+        "home": {
+          "name": "Linus Ullmark",
+          "quality_score": 80.7,
+          "recent_save_pct": 0.935,
+          "recent_gaa": 1.52,
+          "recent_quality_starts": 8
+        },
+        "away": {
+          "name": "Dustin Wolf",
+          "quality_score": 32.8,
+          "recent_save_pct": 0.892,
+          "recent_gaa": 3.0,
+          "recent_quality_starts": 5
+        }
+      },
+      "team_splits": {
+        "home": {
+          "games": 10,
+          "wins": 6,
+          "losses": 3,
+          "ot_losses": 1,
+          "win_pct": 0.6,
+          "goals_for": 37,
+          "goals_against": 35,
+          "gf_pg": 3.7,
+          "ga_pg": 3.5,
+          "goal_diff": 0.2
+        },
+        "away": {
+          "games": 10,
+          "wins": 4,
+          "losses": 6,
+          "ot_losses": 0,
+          "win_pct": 0.4,
+          "goals_for": 21,
+          "goals_against": 36,
+          "gf_pg": 2.1,
+          "ga_pg": 3.6,
+          "goal_diff": -1.5
+        }
+      },
+      "injuries": {
+        "home": {
+          "impact_score": 0,
+          "key_injuries": [],
+          "total_injuries": 0,
+          "positions_affected": {},
+          "injury_details": []
+        },
+        "away": {
+          "impact_score": 0,
+          "key_injuries": [],
+          "total_injuries": 0,
+          "positions_affected": {},
+          "injury_details": []
+        }
+      },
+      "advanced_stats": {
+        "home": {
+          "xGF_per_60": 0.0,
+          "xGA_per_60": 0.0,
+          "xGF_pct": 87.8188775510204,
+          "corsi_pct": 50.0,
+          "fenwick_pct": 50.0,
+          "shooting_pct": 0.0,
+          "save_pct": 0.9,
+          "pdo": 100.0
+        },
+        "away": {
+          "xGF_per_60": 0.0,
+          "xGA_per_60": 0.0,
+          "xGF_pct": 86.60098522167488,
+          "corsi_pct": 50.0,
+          "fenwick_pct": 50.0,
+          "shooting_pct": 0.0,
+          "save_pct": 0.9,
+          "pdo": 100.0
+        }
+      }
+    },
+    {
       "game": "LAK @ MTL",
       "home": "MTL",
       "away": "LAK",
-      "start_time": "2026-11-24T00:30:00Z",
+      "start_time": "2026-11-24T00:40:00Z",
       "model_probs": {
         "home_win_prob": 0.5761036972518483,
         "away_win_prob": 0.4238963027481517,
@@ -213,24 +377,24 @@
         "ml_data_weight": 0.95
       },
       "market_probs": {
-        "home_win_prob": 0.5829926410466066,
-        "away_win_prob": 0.4170073589533933,
-        "over_prob": 0.4675324675324675,
-        "under_prob": 0.5324675324675325,
-        "spread_home_cover_prob": 0.3690596562184025,
+        "home_win_prob": 0.5849765927183997,
+        "away_win_prob": 0.4150234072816003,
+        "over_prob": 0.4929604101083003,
+        "under_prob": 0.5070395898916997,
+        "spread_home_cover_prob": 0.37133894455712246,
         "total_line": 6.5,
         "spread_line": -1.5,
-        "n_books_ml": 1,
-        "n_books_total": 1,
-        "n_books_spread": 1
+        "n_books_ml": 15,
+        "n_books_total": 14,
+        "n_books_spread": 14
       },
       "blended_probs": {
-        "home_win_prob": 0.5683216041653159,
-        "away_win_prob": 0.43167839583468415,
-        "over_prob": 0.45809575168170363,
-        "under_prob": 0.5419042483182963,
-        "home_cover_prob": 0.38201651025232786,
-        "away_cover_prob": 0.43167839583468415,
+        "home_win_prob": 0.569631611349869,
+        "away_win_prob": 0.43036838865013105,
+        "over_prob": 0.4817518360755681,
+        "under_prob": 0.5182481639244318,
+        "home_cover_prob": 0.38430171136915225,
+        "away_cover_prob": 0.43036838865013105,
         "expected_total": 6.335153603033419,
         "model_confidence": 0.3,
         "ml_data_weight": 0.95,
@@ -335,174 +499,10 @@
       }
     },
     {
-      "game": "CGY @ OTT",
-      "home": "OTT",
-      "away": "CGY",
-      "start_time": "2026-11-24T00:30:00Z",
-      "model_probs": {
-        "home_win_prob": 0.6272244897539345,
-        "away_win_prob": 0.3727755102460655,
-        "expected_total": 6.601519283129493,
-        "over_prob": 0.6040339362580331,
-        "under_prob": 0.39596606374196686,
-        "home_cover_prob": 0.5980597767168843,
-        "away_cover_prob": 0.40194022328311574,
-        "total_line": 5.5,
-        "spread_line": -1.5,
-        "n_games": 50,
-        "avg_similarity": 0.7441737227920017,
-        "confidence": 0.3,
-        "raw_confidence": 0.42923784536631093,
-        "raw_home_win_prob": 0.6358742376576401,
-        "raw_over_prob": 0.644152192191866,
-        "goal_distribution": {
-          "1": 0.02,
-          "2": 0.04,
-          "3": 0.04,
-          "4": 0.12,
-          "5": 0.14,
-          "6": 0.02,
-          "7": 0.28,
-          "8": 0.08,
-          "9": 0.16,
-          "10": 0.06,
-          "11": 0.04
-        },
-        "ml_data_weight": 0.95
-      },
-      "market_probs": {
-        "home_win_prob": 0.690792883054068,
-        "away_win_prob": 0.30920711694593195,
-        "over_prob": 0.5217391304347826,
-        "under_prob": 0.4782608695652174,
-        "spread_home_cover_prob": 0.4572564612326044,
-        "total_line": 5.5,
-        "spread_line": -1.5,
-        "n_books_ml": 1,
-        "n_books_total": 1,
-        "n_books_spread": 1
-      },
-      "blended_probs": {
-        "home_win_prob": 0.6180180111080198,
-        "away_win_prob": 0.3819819888919802,
-        "over_prob": 0.5259823746212833,
-        "under_prob": 0.4740176253787167,
-        "home_cover_prob": 0.47718967458529027,
-        "away_cover_prob": 0.3819819888919802,
-        "expected_total": 6.601519283129493,
-        "model_confidence": 0.3,
-        "ml_data_weight": 0.95,
-        "effective_model_weight": 0.2711226659650572,
-        "ml_model_weight": 0.4824663200680437
-      },
-      "n_similar": 50,
-      "n_bets": 0,
-      "context_indicators": {
-        "fatigue": [],
-        "goalie": [
-          {
-            "team": "OTT",
-            "type": "hot",
-            "value": 0.935,
-            "severity": "positive"
-          },
-          {
-            "team": "OTT",
-            "type": "advantage",
-            "value": 47.900000000000006,
-            "severity": "positive"
-          }
-        ],
-        "injuries": [],
-        "splits": [],
-        "advanced": []
-      },
-      "goalie_matchup": {
-        "home": {
-          "name": "Linus Ullmark",
-          "quality_score": 80.7,
-          "recent_save_pct": 0.935,
-          "recent_gaa": 1.52,
-          "recent_quality_starts": 8
-        },
-        "away": {
-          "name": "Dustin Wolf",
-          "quality_score": 32.8,
-          "recent_save_pct": 0.892,
-          "recent_gaa": 3.0,
-          "recent_quality_starts": 5
-        }
-      },
-      "team_splits": {
-        "home": {
-          "games": 10,
-          "wins": 6,
-          "losses": 3,
-          "ot_losses": 1,
-          "win_pct": 0.6,
-          "goals_for": 37,
-          "goals_against": 35,
-          "gf_pg": 3.7,
-          "ga_pg": 3.5,
-          "goal_diff": 0.2
-        },
-        "away": {
-          "games": 10,
-          "wins": 4,
-          "losses": 6,
-          "ot_losses": 0,
-          "win_pct": 0.4,
-          "goals_for": 21,
-          "goals_against": 36,
-          "gf_pg": 2.1,
-          "ga_pg": 3.6,
-          "goal_diff": -1.5
-        }
-      },
-      "injuries": {
-        "home": {
-          "impact_score": 0,
-          "key_injuries": [],
-          "total_injuries": 0,
-          "positions_affected": {},
-          "injury_details": []
-        },
-        "away": {
-          "impact_score": 0,
-          "key_injuries": [],
-          "total_injuries": 0,
-          "positions_affected": {},
-          "injury_details": []
-        }
-      },
-      "advanced_stats": {
-        "home": {
-          "xGF_per_60": 0.0,
-          "xGA_per_60": 0.0,
-          "xGF_pct": 87.8188775510204,
-          "corsi_pct": 50.0,
-          "fenwick_pct": 50.0,
-          "shooting_pct": 0.0,
-          "save_pct": 0.9,
-          "pdo": 100.0
-        },
-        "away": {
-          "xGF_per_60": 0.0,
-          "xGA_per_60": 0.0,
-          "xGF_pct": 86.60098522167488,
-          "corsi_pct": 50.0,
-          "fenwick_pct": 50.0,
-          "shooting_pct": 0.0,
-          "save_pct": 0.9,
-          "pdo": 100.0
-        }
-      }
-    },
-    {
       "game": "TOR @ NYI",
       "home": "NYI",
       "away": "TOR",
-      "start_time": "2026-11-24T00:30:00Z",
+      "start_time": "2026-11-24T00:40:00Z",
       "model_probs": {
         "home_win_prob": 0.6198283197416358,
         "away_win_prob": 0.38017168025836423,
@@ -536,24 +536,24 @@
         "ml_data_weight": 0.95
       },
       "market_probs": {
-        "home_win_prob": 0.593369754159424,
-        "away_win_prob": 0.4066302458405761,
-        "over_prob": 0.4956702459300312,
-        "under_prob": 0.5043297540699688,
-        "spread_home_cover_prob": 0.3775334481388264,
+        "home_win_prob": 0.5874481715762456,
+        "away_win_prob": 0.4125518284237544,
+        "over_prob": 0.49225758607941905,
+        "under_prob": 0.507742413920581,
+        "spread_home_cover_prob": 0.37775118162652505,
         "total_line": 6.5,
         "spread_line": -1.5,
-        "n_books_ml": 1,
-        "n_books_total": 1,
-        "n_books_spread": 1
+        "n_books_ml": 15,
+        "n_books_total": 14,
+        "n_books_spread": 14
       },
       "blended_probs": {
-        "home_win_prob": 0.5959340894294789,
-        "away_win_prob": 0.4040659105705211,
-        "over_prob": 0.4912441117849349,
-        "under_prob": 0.5087558882150651,
-        "home_cover_prob": 0.4047010014269929,
-        "away_cover_prob": 0.4040659105705211,
+        "home_win_prob": 0.5950984591663518,
+        "away_win_prob": 0.40490154083364815,
+        "over_prob": 0.4880692513260961,
+        "under_prob": 0.511930748673904,
+        "home_cover_prob": 0.4048371792296042,
+        "away_cover_prob": 0.40490154083364815,
         "expected_total": 6.487732076933509,
         "model_confidence": 0.3,
         "ml_data_weight": 0.95,
@@ -667,9 +667,9 @@
       "game": "UTA @ WPG",
       "home": "WPG",
       "away": "UTA",
-      "start_time": "2026-11-24T00:30:00Z",
+      "start_time": "2026-11-24T00:40:00Z",
       "model_probs": {
-        "home_win_prob": 0.32536260030620306,
+        "home_win_prob": 0.3253626003062031,
         "away_win_prob": 0.6746373996937969,
         "expected_total": 6.028991423773383,
         "over_prob": 0.4437094386993417,
@@ -677,7 +677,7 @@
         "home_cover_prob": 0.4870926420520826,
         "away_cover_prob": 0.5129073579479174,
         "total_line": 6.5,
-        "spread_line": 1.5,
+        "spread_line": -1.5,
         "n_games": 50,
         "avg_similarity": 0.7452601772271104,
         "confidence": 0.3,
@@ -699,24 +699,24 @@
         "ml_data_weight": 0.95
       },
       "market_probs": {
-        "home_win_prob": 0.4956702459300312,
-        "away_win_prob": 0.5043297540699688,
-        "over_prob": 0.4891657638136511,
-        "under_prob": 0.5108342361863489,
-        "spread_home_cover_prob": 0.7001620745542949,
+        "home_win_prob": 0.5020777986089411,
+        "away_win_prob": 0.49792220139105886,
+        "over_prob": 0.49215449701938807,
+        "under_prob": 0.5078455029806119,
+        "spread_home_cover_prob": 0.5555675075917575,
         "total_line": 6.5,
         "spread_line": 1.5,
-        "n_books_ml": 1,
-        "n_books_total": 1,
-        "n_books_spread": 1
+        "n_books_ml": 15,
+        "n_books_total": 14,
+        "n_books_spread": 14
       },
       "blended_probs": {
-        "home_win_prob": 0.3997982489350383,
-        "away_win_prob": 0.6002017510649618,
-        "over_prob": 0.4632071318990463,
-        "under_prob": 0.5367928681009537,
-        "home_cover_prob": 0.3997982489350383,
-        "away_cover_prob": 0.6002017510649618,
+        "home_win_prob": 0.4024467102675909,
+        "away_win_prob": 0.5975532897324092,
+        "over_prob": 0.46598760557420926,
+        "under_prob": 0.5340123944257907,
+        "home_cover_prob": 0.4024467102675909,
+        "away_cover_prob": 0.5975532897324092,
         "expected_total": 6.028991423773383,
         "model_confidence": 0.3,
         "ml_data_weight": 0.95,
@@ -724,7 +724,7 @@
         "ml_model_weight": 0.4824663200680437
       },
       "n_similar": 50,
-      "n_bets": 0,
+      "n_bets": 1,
       "context_indicators": {
         "fatigue": [],
         "goalie": [
@@ -830,7 +830,7 @@
       "game": "ANA @ SEA",
       "home": "SEA",
       "away": "ANA",
-      "start_time": "2026-11-24T02:40:00Z",
+      "start_time": "2026-11-24T02:50:00Z",
       "model_probs": {
         "home_win_prob": 0.6832480382587898,
         "away_win_prob": 0.31675196174121023,
@@ -863,24 +863,24 @@
         "ml_data_weight": 0.95
       },
       "market_probs": {
-        "home_win_prob": 0.5173641257162701,
-        "away_win_prob": 0.4826358742837298,
-        "over_prob": 0.551441114716549,
-        "under_prob": 0.448558885283451,
-        "spread_home_cover_prob": 0.3194444444444444,
+        "home_win_prob": 0.5234038178529647,
+        "away_win_prob": 0.4765961821470352,
+        "over_prob": 0.5470805356692316,
+        "under_prob": 0.45291946433076835,
+        "spread_home_cover_prob": 0.3231148120665194,
         "total_line": 6.5,
         "spread_line": -1.5,
-        "n_books_ml": 1,
-        "n_books_total": 1,
-        "n_books_spread": 1
+        "n_books_ml": 16,
+        "n_books_total": 15,
+        "n_books_spread": 15
       },
       "blended_probs": {
-        "home_win_prob": 0.5909408254707189,
-        "away_win_prob": 0.4090591745292811,
-        "over_prob": 0.5093014919209353,
-        "under_prob": 0.4906985080790647,
-        "home_cover_prob": 0.3283542019620016,
-        "away_cover_prob": 0.4090591745292811,
+        "home_win_prob": 0.5944039048289236,
+        "away_win_prob": 0.4055960951710764,
+        "over_prob": 0.5069048979409018,
+        "under_prob": 0.49309510205909823,
+        "home_cover_prob": 0.3320340910074709,
+        "away_cover_prob": 0.4055960951710764,
         "expected_total": 6.115426900528836,
         "model_confidence": 0.3,
         "ml_data_weight": 0.95,
@@ -1000,7 +1000,7 @@
       "game": "MIN @ SJS",
       "home": "SJS",
       "away": "MIN",
-      "start_time": "2026-11-24T03:00:00Z",
+      "start_time": "2026-11-24T03:10:00Z",
       "model_probs": {
         "home_win_prob": 0.355264632560927,
         "away_win_prob": 0.644735367439073,
@@ -1033,24 +1033,24 @@
         "ml_data_weight": 0.95
       },
       "market_probs": {
-        "home_win_prob": 0.39076376554174075,
-        "away_win_prob": 0.6092362344582594,
-        "over_prob": 0.4826358742837298,
-        "under_prob": 0.5173641257162702,
-        "spread_home_cover_prob": 0.593369754159424,
+        "home_win_prob": 0.38286479843443394,
+        "away_win_prob": 0.6171352015655661,
+        "over_prob": 0.4865678680198421,
+        "under_prob": 0.5134321319801579,
+        "spread_home_cover_prob": 0.5920618056647928,
         "total_line": 6.5,
         "spread_line": 1.5,
-        "n_books_ml": 1,
-        "n_books_total": 1,
-        "n_books_spread": 1
+        "n_books_ml": 16,
+        "n_books_total": 15,
+        "n_books_spread": 15
       },
       "blended_probs": {
-        "home_win_prob": 0.3552616390659188,
-        "away_win_prob": 0.6447383609340812,
-        "over_prob": 0.45995133097580876,
-        "under_prob": 0.5400486690241912,
-        "home_cover_prob": 0.3552616390659188,
-        "away_cover_prob": 0.6447383609340812,
+        "home_win_prob": 0.35002785473237663,
+        "away_win_prob": 0.6499721452676234,
+        "over_prob": 0.4636093373355535,
+        "under_prob": 0.5363906626644466,
+        "home_cover_prob": 0.35002785473237663,
+        "away_cover_prob": 0.6499721452676234,
         "expected_total": 6.203870340053466,
         "model_confidence": 0.3,
         "ml_data_weight": 0.95,
@@ -1162,8 +1162,199 @@
       }
     }
   ],
-  "recommendations": [],
+  "recommendations": [
+    {
+      "game": "CGY @ OTT",
+      "bet_type": "Moneyline",
+      "pick": "CGY ML",
+      "book": "betmgm",
+      "odds": 220,
+      "ev": 0.11453933074231099,
+      "roi": 0.22907866148462197,
+      "edge": 0.07158708171394434,
+      "true_prob": 0.38408708171394434,
+      "implied_prob": 0.3125,
+      "american_odds": 220,
+      "decimal_odds": 3.2,
+      "stake": 0.5,
+      "profit_if_win": 1.1,
+      "loss_if_lose": 0.5,
+      "is_positive_ev": true,
+      "confidence": 0.95,
+      "kelly_fraction": 0.02603166607779795,
+      "kelly_stake": 2.6,
+      "all_book_odds": [
+        {
+          "book": "betmgm",
+          "odds": 220
+        },
+        {
+          "book": "bovada",
+          "odds": 215
+        },
+        {
+          "book": "draftkings",
+          "odds": 210
+        },
+        {
+          "book": "betus",
+          "odds": 210
+        },
+        {
+          "book": "espnbet",
+          "odds": 210
+        },
+        {
+          "book": "lowvig",
+          "odds": 208
+        },
+        {
+          "book": "betonlineag",
+          "odds": 208
+        },
+        {
+          "book": "fanduel",
+          "odds": 205
+        },
+        {
+          "book": "betparx",
+          "odds": 205
+        },
+        {
+          "book": "betrivers",
+          "odds": 205
+        },
+        {
+          "book": "ballybet",
+          "odds": 205
+        },
+        {
+          "book": "betwhale",
+          "odds": 200
+        },
+        {
+          "book": "betanysports",
+          "odds": 200
+        },
+        {
+          "book": "mybookieag",
+          "odds": 199
+        },
+        {
+          "book": "hardrockbet",
+          "odds": 190
+        }
+      ]
+    },
+    {
+      "game": "UTA @ WPG",
+      "bet_type": "Moneyline",
+      "pick": "UTA ML",
+      "book": "ballybet",
+      "odds": -103,
+      "ev": 0.08885105735766535,
+      "roi": 0.1777021147153307,
+      "edge": 0.09016412717083278,
+      "true_prob": 0.5975532897324092,
+      "implied_prob": 0.5073891625615764,
+      "american_odds": -103,
+      "decimal_odds": 1.970873786407767,
+      "stake": 0.5,
+      "profit_if_win": 0.4854368932038835,
+      "loss_if_lose": 0.5,
+      "is_positive_ev": true,
+      "confidence": 0.95,
+      "kelly_fraction": 0.04575829453919766,
+      "kelly_stake": 4.58,
+      "all_book_odds": [
+        {
+          "book": "ballybet",
+          "odds": -103
+        },
+        {
+          "book": "betrivers",
+          "odds": -103
+        },
+        {
+          "book": "betparx",
+          "odds": -103
+        },
+        {
+          "book": "espnbet",
+          "odds": -105
+        },
+        {
+          "book": "hardrockbet",
+          "odds": -105
+        },
+        {
+          "book": "betwhale",
+          "odds": -106
+        },
+        {
+          "book": "mybookieag",
+          "odds": -108
+        },
+        {
+          "book": "lowvig",
+          "odds": -109
+        },
+        {
+          "book": "betonlineag",
+          "odds": -109
+        },
+        {
+          "book": "betus",
+          "odds": -110
+        },
+        {
+          "book": "draftkings",
+          "odds": -112
+        },
+        {
+          "book": "betmgm",
+          "odds": -115
+        },
+        {
+          "book": "fanduel",
+          "odds": -115
+        },
+        {
+          "book": "bovada",
+          "odds": -115
+        },
+        {
+          "book": "betanysports",
+          "odds": -115
+        }
+      ]
+    }
+  ],
   "parlays": [],
-  "quota_info": null,
+  "quota_info": {
+    "total_keys": 3,
+    "total_remaining": 1236,
+    "total_used": 264,
+    "keys": [
+      {
+        "index": 0,
+        "used": 264,
+        "remaining": 236,
+        "last_updated": "2026-11-23T22:43:47.208854"
+      },
+      {
+        "index": 1,
+        "used": 0,
+        "remaining": 500,
+        "last_updated": "Never"
+      },
+      {
+        "index": 2,
+        "used": 0,
+        "remaining": 500,
+        "last_updated": "Never"
+      }
+    ]
+  },
   "slate_date": "2026-11-23"
 }
