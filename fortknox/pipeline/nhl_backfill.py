@@ -32,8 +32,14 @@ CACHE = ROOT / "cache" / "nhl"
 GAMES = "https://api.nhle.com/stats/rest/en/game?cayenneExp=season={}"
 PBP = "https://api-web.nhle.com/v1/gamecenter/{}/play-by-play"
 SHIFTS = "https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId={}"
+# Paged, sorted by playerId. Since about Nov 2026 the stats API ignores
+# limit=-1 and returns at most 100 rows (789 skaters in 2026-27), a different
+# 100 each call when unsorted; pages without a sort overlap. Only a sorted,
+# paged read gets everyone exactly once.
 BIOS = ("https://api.nhle.com/stats/rest/en/{}/bios?isAggregate=false&isGame=false"
-        "&limit=-1&start=0&cayenneExp=seasonId={}%20and%20gameTypeId%3E=2")
+        "&sort=%5B%7B%22property%22%3A%22playerId%22%2C%22direction%22%3A%22ASC%22%7D%5D"
+        "&limit={}&start={}&cayenneExp=seasonId={}%20and%20gameTypeId%3E=2")
+BIOS_PAGE = 100
 
 # The HTML time-on-ice reports (TH home, TV visitor): the fallback when the
 # shift-chart API has nothing for a game, which happens for whole stretches.
@@ -171,18 +177,39 @@ def fetch_game(year, gid):
     return got_pbp, "ok" if shifts.get("data") else "empty"
 
 
+def fetch_bios(kind, year):
+    """Every player's bio for a season, read page by page in playerId order.
+    Raises if the pages don't add up to the API's own total, so a short read
+    never replaces a complete file."""
+    rows, start, total = [], 0, None
+    while total is None or start < total:
+        page = get(BIOS.format(kind, BIOS_PAGE, start, season_id(year)))
+        total = page.get("total", 0)
+        rows += page.get("data", [])
+        if not page.get("data"):
+            break
+        start += BIOS_PAGE
+    # A player can have more than one row (regular season and playoffs), so
+    # count rows, not players. Sorted, the file only changes when a bio does,
+    # so the sheets workflow doesn't take every run for new data.
+    if len(rows) != total:
+        raise RuntimeError(f"{kind} bios {year}: got {len(rows)} rows of {total}")
+    rows.sort(key=lambda r: (r["playerId"], json.dumps(r, sort_keys=True)))
+    return {"data": rows, "total": total}
+
+
 def backfill_season(year, workers, refresh_bios):
     d = CACHE / str(year)
     d.mkdir(parents=True, exist_ok=True)
     for kind in ("skater", "goalie"):
         p = d / f"bios_{kind}.json.gz"
         if refresh_bios or not p.exists():
-            bios = get(BIOS.format(kind, season_id(year)))
-            # The API lists the same players in a different order each call;
-            # sorted, the file only changes when a bio does, so the sheets
-            # workflow doesn't take every run for new data.
-            bios["data"] = sorted(bios.get("data", []), key=lambda r: r["playerId"])
-            save(p, bios)
+            try:
+                save(p, fetch_bios(kind, year))
+            except Exception as e:
+                if not p.exists():
+                    raise
+                print(f"  {kind} bios not refreshed, keeping the cached file: {e}", file=sys.stderr)
 
     games = final_games(year)
     todo = [g for g in games
