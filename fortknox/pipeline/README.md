@@ -96,8 +96,12 @@ model is recalibrated (isotonic) on the latest season; measurements are in
 
 MoneyPuck still ranks shots better; our inputs match theirs, so the gap is
 their model, and how much of it is out-of-sample isn't knowable from here.
-The production model (train 2015-2024, calibrate 2025) scores the 2026-27
-games it has never seen at AUC 0.776 and 851 xG for 849 goals (139 games).
+The production model (train 2015-2024 with recency decay 0.2, calibrate 2025)
+scores the 2026-27 games it has never seen (384 games, through Nov 23) at AUC
+0.786 and 2,355 xG for 2,419 goals. During the season the sheets also scale
+each strength group's xG to the season's earlier days (`INSEASON_K` in
+`src/models/nhl_xg.py`, written to `{season}/xg_recal.json`), which brings
+that to 2,380; `experiments/xg_inseason.py` has the walk-forward test.
 
 **After every game.** `.github/workflows/xg-game-sheets.yml` runs every 20
 minutes from noon to 4am ET, fetches newly final games (the raw cache rides

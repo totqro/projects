@@ -132,7 +132,8 @@ def production(df):
     calib = in_progress - 1
     train, valid = df[df.season < calib], df[df.season == calib]
     num, cat = FEATURE_SETS["full"]
-    m = XGModel(num, cat).fit(train, valid)
+    # One calibration curve: xg_lab.py found per-strength curves no better on log loss.
+    m = XGModel(num, cat).fit(train, valid, calibration="global")
     print(f"production: train {train.season.min()}-{calib - 1} {len(train):,}, "
           f"calibrate {calib} {len(valid):,}, {m.clf.max_iter} trees")
     live = df[df.season == in_progress]

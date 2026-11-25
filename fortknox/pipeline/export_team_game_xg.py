@@ -35,7 +35,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 from nhl_sheets import current_season  # noqa: E402
-from src.models.nhl_xg import FEATURE_SETS, XGModel  # noqa: E402
+from src.models.nhl_xg import inseason_adjust, inseason_table, strength_group, FEATURE_SETS, XGModel  # noqa: E402
 
 DATA = ROOT / "data" / "nhl_shots.parquet"
 MODEL_PATH = ROOT / "data" / "nhl_xg_model.joblib"
@@ -97,8 +97,14 @@ def main():
     for season in seasons:
         part = df[(df.season == season) & (df.is_playoff == 0)].copy()
         if season == live:
-            part["xg"] = joblib.load(MODEL_PATH).predict(part)
-            provenance[str(season)] = "production model (nhl_xg_model.joblib)"
+            # Scaled to the season so far, as the site's sheets are.
+            whole = df[df.season == season]
+            dates, group = whole.game_date.astype(str).to_numpy(), strength_group(whole.situation)
+            model_xg = joblib.load(MODEL_PATH).predict(whole)
+            xg = inseason_adjust(model_xg, dates, group,
+                                 inseason_table(dates, whole.goal.to_numpy(), model_xg, group))
+            part["xg"] = pd.Series(xg, index=whole.index).loc[part.index]
+            provenance[str(season)] = "production model (nhl_xg_model.joblib), in-season recalibration"
             print(f"  {season}: production model, season in progress", flush=True)
         else:
             xg = pd.Series(walk_forward_xg(df, season), index=df.index[df.season == season])

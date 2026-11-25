@@ -95,7 +95,11 @@ def run(sheets, date):
             nhl_backfill.save(raw / f"{gid}.shifts.json.gz", shifts)
             states[gid] = (state, live_block(pbp, state), bool(shifts.get("data")))
         if states:
-            build(season, tmp / "out", fetch=False, cache=tmp / "cache")
+            # Tonight's games alone aren't the season: scale them by the published
+            # season so far, as their sheets will be once final.
+            recal = sheets / str(season) / "xg_recal.json"
+            build(season, tmp / "out", fetch=False, cache=tmp / "cache",
+                  recal=recal if recal.exists() else None)
             for gid, (state, block, has_shifts) in states.items():
                 sheet = json.loads((tmp / "out" / str(season) / "games" / f"{gid}.json").read_text())
                 sheet["live"] = {**block, "shifts": has_shifts}

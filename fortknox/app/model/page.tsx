@@ -60,7 +60,7 @@ export default function Model() {
           <H3>What it can&apos;t see</H3>
           <P>The public feed doesn&apos;t log passes or zone entries, so <b>cross-ice feeds and true rushes are invisible</b>. The model uses proxies: seconds since the puck was last outside the zone, since the team won it, and whether the puck crossed the middle. They help a little. Screens, traffic, shot speed and where the shot was aimed aren&apos;t in the data at all.</P>
           <H3>How good it is</H3>
-          <P>There are two models. The <b>served model</b> scores every game on this site. It was trained on 2015-16 to 2024-25 and then calibrated on 2025-26. The <b>evaluation model</b> exists only to measure the served one honestly. It was trained through 2022-23 and calibrated on 2023-24, so it never saw the seasons it&apos;s tested on.</P>
+          <P>There are two models. The <b>served model</b> scores every game on this site. It was trained on 2015-16 to 2024-25 and then calibrated on 2025-26. Scoring drifts from one season to the next, so during a season it also adjusts to the games already played: before each game day, the odds at 5v5, on the power play and in other situations are scaled by how goals compare with xG on earlier days. A game&apos;s xG doesn&apos;t change after its date. The <b>evaluation model</b> exists only to measure the served one honestly. It was trained through 2022-23 and calibrated on 2023-24, so it never saw the seasons it&apos;s tested on.</P>
           <Table className="tabular text-[13px]">
             <TableHeader className="bg-transparent">
               <TableRow className="hover:bg-transparent">

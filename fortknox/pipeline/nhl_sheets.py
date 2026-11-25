@@ -14,6 +14,9 @@ this one command. Writes, under --out/{season}/:
   teams.json            season totals and 5v5 / PP / PK rates per team
   players.json          skaters (individual, on-ice and off-ice) and goalies (GSAx)
   lines.json            5v5 forward lines, defence pairs and every pair of teammates
+  xg_recal.json         the season's running goals and model xG per strength
+                        group, which scale each game's xG to the season so far
+                        (src/models/nhl_xg.py: INSEASON_K); nhl_live.py reads it
 
 and refreshes --out/seasons.json, the list of seasons present, newest first.
 
@@ -40,6 +43,7 @@ from build_nhl_dataset import load_bios  # noqa: E402
 from src.data.nhl_events import game_shots  # noqa: E402
 from src.data.nhl_toi import STATES, game_toi  # noqa: E402
 from src.data.nhl_units import game_units  # noqa: E402
+from src.models.nhl_xg import inseason_adjust, inseason_table, strength_group  # noqa: E402
 
 MODEL_PATH = ROOT / "data" / "nhl_xg_model.joblib"
 # Each shooter's finishing baseline by season (fit_shooter_baseline.py).
@@ -79,9 +83,10 @@ def shooter_baseline(season):
     return {int(k): v for k, v in s["rate"].items()} if s else None
 
 
-def build(season, root, fetch, cache=None):
+def build(season, root, fetch, cache=None, recal=None):
     """`cache` replaces the raw-feed cache (nhl_live.py points it at tonight's
-    games in progress)."""
+    games in progress). `recal` is a published xg_recal.json to scale xG by
+    instead of the season's own games (live games aren't the whole season)."""
     out = root / str(season)
     if fetch:
         nhl_backfill.backfill_season(season, workers=6, refresh_bios=True)
@@ -100,7 +105,12 @@ def build(season, root, fetch, cache=None):
     shots = pd.DataFrame([r for _, _, rows in games for r in rows])
     unblocked = shots.event != "BLOCK"
     shots["xg"] = 0.0
-    shots.loc[unblocked, "xg"] = model.predict(shots[unblocked])
+    u = shots[unblocked]
+    dates, group = u.game_date.astype(str).to_numpy(), strength_group(u.situation)
+    model_xg = model.predict(u)
+    recal_table = (json.loads(Path(recal).read_text()) if recal
+                   else inseason_table(dates, u.goal.to_numpy(), model_xg, group))
+    shots.loc[unblocked, "xg"] = inseason_adjust(model_xg, dates, group, recal_table)
     by_game = {g: part for g, part in shots.groupby("game_id")}
     # The shots a finishing baseline counts (unblocked, not at an empty net),
     # per shooter and phase, for each skater's expected GAx.
@@ -266,6 +276,8 @@ def build(season, root, fetch, cache=None):
     index.sort(key=lambda g: (g["date"], g["id"]), reverse=True)
     stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
     write(out / "index.json", {"season": season, "updated": stamp, "games": index})
+    if not recal:
+        write(out / "xg_recal.json", {"season": season, "updated": stamp, **recal_table})
     write(out / "teams.json", {"season": season, "updated": stamp, **{
         ph: [team_row(k, v) for k, v in sorted(teams_by[ph].items())] for ph in teams_by}})
     write(out / "players.json", {"season": season, "updated": stamp, **{
