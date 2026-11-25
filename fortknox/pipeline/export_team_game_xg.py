@@ -9,6 +9,9 @@ nhllines builds its xG features from one {game_id: {team: totals}} shape
 (src/data/moneypuck_data.py). This writes High Slot's version of it, so the
 win model can be fitted and gated on High Slot xG instead of MoneyPuck's.
 
+Every season's xG is then scaled to its own earlier days, as the site's
+sheets are (src/models/nhl_xg.py: INSEASON_K).
+
 Every completed season is scored walk-forward: season S by a model trained on
 2015 .. S-2 and calibrated on S-1, so no season's xG has seen its own goals.
 The production model would not do: it trains on every complete season but
@@ -49,7 +52,7 @@ def walk_forward_xg(df, season):
     train = df[df.season <= season - 2]
     valid = df[df.season == season - 1]
     num, cat = FEATURE_SETS["full"]
-    m = XGModel(num, cat).fit(train, valid)
+    m = XGModel(num, cat).fit(train, valid, calibration="global")   # as served
     print(f"  {season}: trained {train.season.min()}-{season - 2}, calibrated {season - 1}, "
           f"{m.clf.max_iter} trees", flush=True)
     return m.predict(df[df.season == season])
@@ -96,20 +99,21 @@ def main():
     games, provenance = {}, {}
     for season in seasons:
         part = df[(df.season == season) & (df.is_playoff == 0)].copy()
+        whole = df[df.season == season]
         if season == live:
-            # Scaled to the season so far, as the site's sheets are.
-            whole = df[df.season == season]
-            dates, group = whole.game_date.astype(str).to_numpy(), strength_group(whole.situation)
             model_xg = joblib.load(MODEL_PATH).predict(whole)
-            xg = inseason_adjust(model_xg, dates, group,
-                                 inseason_table(dates, whole.goal.to_numpy(), model_xg, group))
-            part["xg"] = pd.Series(xg, index=whole.index).loc[part.index]
-            provenance[str(season)] = "production model (nhl_xg_model.joblib), in-season recalibration"
+            provenance[str(season)] = "production model (nhl_xg_model.joblib)"
             print(f"  {season}: production model, season in progress", flush=True)
         else:
-            xg = pd.Series(walk_forward_xg(df, season), index=df.index[df.season == season])
-            part["xg"] = xg.loc[part.index]
+            model_xg = walk_forward_xg(df, season)
             provenance[str(season)] = f"walk-forward: train 2015-{season - 2}, calibrate {season - 1}"
+        # Every season scaled to its own earlier days, as the site's sheets
+        # are, so a model fitted on past seasons sees the xG it is served.
+        dates, group = whole.game_date.astype(str).to_numpy(), strength_group(whole.situation)
+        xg = inseason_adjust(model_xg, dates, group,
+                             inseason_table(dates, whole.goal.to_numpy(), model_xg, group))
+        part["xg"] = pd.Series(xg, index=whole.index).loc[part.index]
+        provenance[str(season)] += ", in-season recalibration"
         agg = aggregate(part)
         print(f"  {season}: {len(agg)} games, xG/goals {part.xg.sum() / part.goal.sum():.4f}", flush=True)
         games.update(agg)
